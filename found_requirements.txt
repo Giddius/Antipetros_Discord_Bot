@@ -1,0 +1,7 @@
+"discord_flags>=2.1.1",
+"discord>=1.0.1",
+"gidconfig>=0.1.2",
+"gidlogger>=0.1.2",
+"Pillow>=8.0.1",
+"PyGithub>=1.53",
+"python-dotenv>=0.15.0",

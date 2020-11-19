@@ -606,4 +606,4 @@ create_venv_logs/
 _project_meta.env
 misc/
 # Project Specific ignores
-found_requirements.txt
+

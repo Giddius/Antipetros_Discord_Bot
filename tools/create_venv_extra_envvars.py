@@ -9,19 +9,17 @@ REPLACEMENT = r"""@echo off
 set FILEFOLDER=%~dp0
 
 pushd %FILEFOLDER%
-echo.
 rem ----------------------------------------------------------------
 cd ..\..\tools
 echo ##################### setting vars from %cd%\_project_meta.env
-echo.
-for /f %%i in (_project_meta.env) do set %%i&& echo %%i
+for /f %%i in (_project_meta.env) do set %%i && echo %%i
 rem ----------------------------------------------------------------
 popd
 """
 
 
 def create_project_meta_env_file():
-    _workspacedirbatch = os.path.dirname(os.getcwd())
+    _workspacedirbatch = os.getcwd()
     _toplevelmodule = os.path.join(_workspacedirbatch, PROJECT_NAME)
     _main_script_file = os.path.join(_toplevelmodule, '__main__.py')
     with open("_project_meta.env", 'w') as envfile:

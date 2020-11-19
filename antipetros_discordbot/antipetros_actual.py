@@ -1,13 +1,13 @@
 
 # region [Imports]
-from pprint import pprint, pformat
+from pprint import pprint
 import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from antipetros_discordbot.utility.exceptions import TokenError
 import configparser
-from gidtools.gidfiles import writeit, appendwriteit, clearit
+
 from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG
 # endregion[Imports]
 
@@ -48,8 +48,7 @@ def get_token():
 
 
 def create_bot():
-    _prefix = commands.when_mentioned_or(dynamic_command_prefix()) if BASE_CONFIG.getboolean('command_settings', 'use_on_mention') is True else dynamic_command_prefix()
-    return commands.Bot(command_prefix=_prefix, HELP_COMMAND=get_help_command(), self_bot=False)
+    return commands.Bot(command_prefix=commands.when_mentioned_or(dynamic_command_prefix()), HELP_COMMAND=get_help_command(), self_bot=False)
 
 
 def get_initial_extensions():
@@ -65,20 +64,20 @@ ANTI_PETROS_BOT = create_bot()
 if __name__ == '__main__':
     ANTI_PETROS_BOT.load_extension("antipetros_discordbot.cogs.admin_cog")
     for extension in get_initial_extensions():
-
-        ANTI_PETROS_BOT.load_extension(extension)
         print(f"{extension.split('.')[-1]}.py loaded")
+        ANTI_PETROS_BOT.load_extension(extension)
+
+# setting bot activity and presence and logging connection.
 
 
 @ANTI_PETROS_BOT.event
 async def on_ready():
     print('trying to log on as {0}!'.format(ANTI_PETROS_BOT.user.name))
 
+    print(f'{ANTI_PETROS_BOT.user.name} has connected to Discord!')
     if BASE_CONFIG.getboolean('general_settings', 'use_startup_message') is True:
         channel = ANTI_PETROS_BOT.get_channel(BASE_CONFIG.getint('startup_message', 'channel'))
         await channel.send(BASE_CONFIG.get('startup_message', 'message'))
-
-    print(f'{ANTI_PETROS_BOT.user.name} has connected to Discord!')
 # running the bot
 
 ANTI_PETROS_BOT.run(get_token(), bot=True, reconnect=True)
