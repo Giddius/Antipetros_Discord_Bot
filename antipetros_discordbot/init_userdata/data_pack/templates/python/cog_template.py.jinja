@@ -1,0 +1,194 @@
+
+# region [Imports]
+
+# * Standard Library Imports -->
+import gc
+import os
+import re
+import sys
+import json
+import lzma
+import time
+import queue
+import logging
+import platform
+import subprocess
+from enum import Enum, Flag, auto
+from time import sleep
+from pprint import pprint, pformat
+from typing import Union
+from datetime import tzinfo, datetime, timezone, timedelta
+from functools import wraps, lru_cache, singledispatch, total_ordering, partial
+from contextlib import contextmanager
+from collections import Counter, ChainMap, deque, namedtuple, defaultdict
+from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from tempfile import TemporaryDirectory
+from urllib.parse import urlparse
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+import unicodedata
+from io import BytesIO
+
+# * Third Party Imports -->
+# import requests
+# import pyperclip
+# import matplotlib.pyplot as plt
+# from bs4 import BeautifulSoup
+# from dotenv import load_dotenv
+# from github import Github, GithubException
+# from jinja2 import BaseLoader, Environment
+# from natsort import natsorted
+# from fuzzywuzzy import fuzz, process
+import aiohttp
+import discord
+from discord.ext import tasks, commands
+from discord import DiscordException
+import discord
+from async_property import async_property
+
+# * Gid Imports -->
+import gidlogger as glog
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, readbin, linereadit, writeit, writebin, appendwriteit, loadjson, writejson, pickleit, get_pickled, clearit
+from antipetros_discordbot.data.config.config_singleton import BASE_CONFIG, COGS_CONFIG
+
+{% for extra_import in cog_item.extra_imports %}
+{{ extra_import }}
+{% endfor %}
+
+# endregion[Imports]
+
+# region [TODO]
+
+
+# endregion [TODO]
+
+# region [AppUserData]
+
+# endregion [AppUserData]
+
+# region [Logging]
+
+log = glog.aux_logger(__name__)
+log.info(glog.imported(__name__))
+
+# endregion[Logging]
+
+# region [Constants]
+
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# endregion[Constants]
+
+class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}{% for com_attr_name, com_attr_value in cog_item.all_com_attr %}'{{ com_attr_name }}': {{ com_attr_value }}{{ ", " if not loop.last }}{% endfor %}{{ "}" }}):
+
+# region [ClassAttributes]
+    config_name = "{{ cog_item.config_name }}"
+# endregion [ClassAttributes]
+
+# region [Init]
+
+    def __init__(self,bot):
+        self.bot = bot
+        {% for cog_loop in cog_item.all_loops %}
+        self.{{ cog_loop.name }}.start()
+        {% endfor %}
+        if self.bot.is_debug:
+            self.save_commands()
+        glog.class_init_notification(log, self)
+
+# endregion [Init]
+
+# region [Properties]
+
+    @property
+    def allowed_channels(self):
+        return set(COGS_CONFIG.getlist(self.config_name, 'allowed_channels'))
+
+# endregion [Properties]
+
+# region [Setup]
+
+    def save_commands(self):
+        command_json_file = r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\commands.json"
+        command_json = loadjson(command_json_file)
+        command_json[str(self)] = {'description': __doc__, 'commands': {(com.name + ' ' + com.signature).replace('<ctx>','').replace('  ',' ').strip(): com.help for com in self.get_commands()}}
+        writejson(command_json, command_json_file, indent=4)
+        log.debug("commands for %s saved to %s", self, command_json_file)
+
+
+
+# endregion [Setup]
+
+# region [Loops]
+
+    {% for cog_loop in cog_item.all_loops %}
+    {{ cog_loop.code }}
+
+    {% endfor %}
+
+# endregion [Loops]
+
+# region [Listener]
+
+
+    {% for listener in cog_item.all_listeners %}
+    {{ listener.code }}
+
+    {% endfor %}
+
+# endregion [Listener]
+
+# region [Commands]
+
+    {% for command in cog_item.all_commands %}
+    {{ command.code }}
+
+    {% endfor %}
+
+# endregion [Commands]
+
+# region [DataStorage]
+
+
+
+# endregion [DataStorage]
+
+# region [Embeds]
+
+
+
+# endregion [Embeds]
+
+# region [HelperMethods]
+
+
+
+# endregion [HelperMethods]
+
+# region [SpecialMethods]
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.bot.user.name})"
+
+    def __str__(self):
+        return self.__class__.__name__
+
+    def cog_unload(self):
+        {% if cog_item.all_loops is defined and cog_item.all_loops|length > 0 %}
+        {% for cog_loop in cog_item.all_loops %}
+        self.{{ cog_loop.name }}.stop()
+        {% endfor %}
+        {% else %}
+        pass
+        {% endif %}
+
+# endregion [SpecialMethods]
+
+
+def setup(bot):
+    """
+    Mandatory function to add the Cog to the bot.
+    """
+    bot.add_cog({{ cog_item.name }}(bot))
+

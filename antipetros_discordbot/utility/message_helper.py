@@ -1,6 +1,5 @@
+# * Third Party Imports -->
 import discord
-from discord.ext import commands
-
 
 async def add_to_embed_listfield(embed: discord.Embed, field_name: str, items: list, prefix: str = None, in_line: bool = False):
     _value = []

@@ -1,0 +1,17 @@
+Jinja2
+checksumdir
+click
+regex
+parce
+fuzzywuzzy
+python-Levenshtein
+Pillow==8.0.0
+PyGithub
+discord
+discord_flags
+discord.py-stubs
+url-normalize
+async-property
+watchgod
+weasyprint
+pdfkit

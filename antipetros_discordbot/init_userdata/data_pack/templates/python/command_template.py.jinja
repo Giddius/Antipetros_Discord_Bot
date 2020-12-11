@@ -1,0 +1,9 @@
+
+    @commands.command()
+    {% raw %}@ commands.has_any_role(*COGS_CONFIG.getlist('{{ cog_item.config_name }}', 'allowed_roles')){% endraw %}
+    async def {{ command_item.name }}(self, ctx):
+        log.debug("command was triggered, by '%s'", ctx.author.name)
+        if ctx.channel.name not in self.allowed_channels:
+            log.debug("command aborted, because: wrong channel")
+            return
+        pass

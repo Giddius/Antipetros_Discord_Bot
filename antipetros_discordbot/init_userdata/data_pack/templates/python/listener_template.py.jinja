@@ -1,0 +1,10 @@
+
+    @ commands.Cog.listener(name="{{ listener_item.event_name }}")
+    {% raw %}@ commands.has_any_role(*COGS_CONFIG.getlist('{{ cog_item.config_name }}', 'allowed_roles')){% endraw %}
+    async def {{ listener_item.name }}(self, payload):
+        log.debug("listener was triggered")
+        channel = self.bot.get_channel(payload.channel_id)
+        if channel.name not in self.allowed_channels:
+            log.debug("listener aborted, because: wrong channel")
+            return
+        pass

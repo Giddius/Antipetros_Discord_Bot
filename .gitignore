@@ -604,6 +604,10 @@ shebang.txt
 private_quick_scripts/
 create_venv_logs/
 _project_meta.env
-misc/
+
 # Project Specific ignores
-found_requirements.txt
+
+antipetros_discordbot/data/data_storage/sqlite_data/save_db.db
+*.db
+quick_test.txt
+**/data_storage/images/

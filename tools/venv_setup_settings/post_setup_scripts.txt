@@ -1,0 +1,2 @@
+%WORKSPACE_FOLDER%\.venv\Scripts\pyqt5toolsinstalluic.exe
+create_venv_extra_envvars.py,%WORKSPACE_FOLDER% %PROJECT_NAME% %PROJECT_AUTHOR%
