@@ -1,0 +1,3 @@
+    @commands.command(aliases=get_aliases("{{ function.name }}"))
+    @ commands.has_any_role(*COGS_CONFIG.getlist("{{ function.cog_config_name }}", 'allowed_roles'))
+    @in_allowed_channels(set(COGS_CONFIG.getlist("{{ function.cog_config_name }}", 'allowed_channels')))

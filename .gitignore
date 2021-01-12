@@ -604,6 +604,23 @@ shebang.txt
 private_quick_scripts/
 create_venv_logs/
 _project_meta.env
-misc/
+
 # Project Specific ignores
 
+antipetros_discordbot/data/data_storage/sqlite_data/save_db.db
+*.db
+quick_test.txt
+**/data_storage/images/
+oauth2_google_credentials.json
+/antipetros_discordbot/init_userdata/data_pack/misc/token.pickle
+pyproject.toml
+.gitignore
+*_latency_graph.png
+*_memory_graph.png
+antipetros_discordbot/reports
+token.env
+tools/_project_devmeta.env
+antipetros_discordbot/init_userdata/data_pack/image_files/other_images/armaimage.png
+antipetros_discordbot/init_userdata/data_pack/misc/boston.ttf
+tools/_project_devmeta.env
+antipetros_discordbot/init_userdata/data_pack/temp_files/last_shutdown_message.pkl

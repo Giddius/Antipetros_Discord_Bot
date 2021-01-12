@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="{{ style_sheet }}" type="text/css">
+</head>
+
+<body>
+    <h1>Saved Suggestions</h1>
+    <p>
+        {% for suggestion in all_suggestions %}
+        <div style = "page-break-inside: avoid;background-color: Snow;width: 90%;padding: 5px;border: 2px solid OliveDrab;margin: 0;">
+        <h2><a href="{{ suggestion.link_to_message }}">{{ suggestion.name }}</a></h2>
+        <blockquote>
+            <h3>Category: <u><b>{{ suggestion.category_name }}</u></b></h3>
+            <blockquote>
+                <details>
+                    <summary>Infos</summary>
+                    <ul>
+                        <li>ID: <b>{{ suggestion.sql_id }}</b></li>
+                        <li>Author: {{ suggestion.author_name }}</li>
+                        <li>Saved by: {{ suggestion.setter_name }}</li>
+                        <li>Posted time: {{ suggestion.utc_posted_time }}</li>
+                        <li>Saved time: {{ suggestion.utc_saved_time }}</li>
+                        <li>Upvotes: {{ suggestion.upvotes }}</li>
+                        <li>Downvotes: {{ suggestion.downvotes }}</li>
+                    </ul>
+                </details>
+            </blockquote>
+            <blockquote>
+                <details>
+                    <summary>Content</summary>
+                    <blockquote>
+                        <u><b>Suggestion:</b></u><br>
+
+                        {{ suggestion.content }}
+                        </div>
+                        {% if suggestion.data_name is not none %}
+                        <blockquote>
+                            <u><b>Extra Data:</b></u><br>
+                            <img src="{{ suggestion.data_location }}" alt="{{ suggestion.data_name }}">
+                            </blockquote>
+                        {% endif %}
+                </details>
+
+        </blockquote>
+        </blockquote>
+        </blockquote>
+    </div>
+    </p>
+    {% endfor %}
+</body>

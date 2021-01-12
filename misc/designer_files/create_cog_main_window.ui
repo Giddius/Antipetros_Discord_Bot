@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CreateCogMainWindow</class>
+ <widget class="QMainWindow" name="CreateCogMainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>755</width>
+    <height>441</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Create New Cog</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../../antipetros_discordbot/dev_tools/gui/create_cog_resources.qrc">
+    <normaloff>:/icons/icons/cog_icon.png</normaloff>:/icons/icons/cog_icon.png</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0" colspan="3">
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="childrenCollapsible">
+       <bool>false</bool>
+      </property>
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QLabel" name="commands_list_label">
+          <property name="text">
+           <string>Commands</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="BaseCogPartsView" name="commands_listView">
+          <property name="minimumSize">
+           <size>
+            <width>201</width>
+            <height>192</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="add_command_pushButton">
+          <property name="text">
+           <string>Add Command</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QLabel" name="listener_list_label">
+          <property name="text">
+           <string>Listener</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="BaseCogPartsView" name="listener_listView">
+          <property name="minimumSize">
+           <size>
+            <width>202</width>
+            <height>192</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="add_listener_pushButton">
+          <property name="text">
+           <string>Add Listener</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QLabel" name="loops_list_label">
+          <property name="text">
+           <string>Loops</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="BaseCogPartsView" name="loops_listView">
+          <property name="minimumSize">
+           <size>
+            <width>201</width>
+            <height>192</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="add_loop_pushButton">
+          <property name="text">
+           <string>Add Loop</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="3">
+     <widget class="QPushButton" name="create_new_cog_file_pushButton">
+      <property name="text">
+       <string>Create New Cog File</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <layout class="QFormLayout" name="formLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="cog_name_label">
+        <property name="text">
+         <string>Cog Name: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="cog_name_lineedit"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="cog_category_label">
+        <property name="text">
+         <string>Cog Category: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="cog_category_combo"/>
+      </item>
+      <item row="3" column="0" colspan="2">
+       <widget class="QGroupBox" name="custom_config_name_groupBox">
+        <property name="title">
+         <string>use custom config name</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <item>
+          <widget class="QLineEdit" name="custom_config_name_lineEdit"/>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="cog_exists_label">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgba(226, 4, 4, 100);</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::WinPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <property name="lineWidth">
+         <number>2</number>
+        </property>
+        <property name="midLineWidth">
+         <number>1</number>
+        </property>
+        <property name="text">
+         <string>A Cog with this name already exists!</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="1" colspan="2">
+     <widget class="QGroupBox" name="command_attributes_groupBox">
+      <property name="title">
+       <string>Command Attributes</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <widget class="QCheckBox" name="comattr_hidden_checkBox">
+         <property name="text">
+          <string>Hidden</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>755</width>
+     <height>21</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>BaseCogPartsView</class>
+   <extends>QListView</extends>
+   <header>antipetros_discordbot.dev_tools.gui.views.base_view</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="../../antipetros_discordbot/dev_tools/gui/create_cog_resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
