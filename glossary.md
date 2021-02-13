@@ -4,20 +4,20 @@
 
 ---
 
-<h3><u>Cog</h3></u>
+<h3><u>Cogs</h3></u>
 
 <details><summary></summary>
 <br>
 
-Container for Commands. Simplified it is a Discord class. As a class it is able to keep states.
+A container for commands. Simply put, it is a Discord class. As a class it is able to keep states.
 
 __Inside a Cog there can be defined__:
 - commands
-- listener
+- listeners
 - background loops
 
-It is implemented in a way, that it gets loaded like a plugin, therefore can be disabled, reloaded or unloaded easily.
-Can also be seen as a kind of Category for commands. Each Cog has access to the bot itself and can therefore access bot attributes as well as other Cogs (in a complicated way).
+Cogs are implemented to fucntion and load like a plugin, therefore they can be disabled, reloaded or unloaded easily.
+Also acts as a kind of category for commands. Each Cog has access to the bot itself and can therefore access bot attributes, as well as other Cogs.
 
 </details>
 
@@ -30,7 +30,7 @@ Can also be seen as a kind of Category for commands. Each Cog has access to the 
 <br>
 
 Asynchronus code excecution. It is the reason why the bot still responds even though there is a command already running.
-Some aweful implementation which makes code duplication almost mandatory. I may write more about it when I stop hating it like the devilspawn it is.
+Awful implementation makes code duplication almost mandatory. I may write more about it when I stop hating it like the devilspawn it is.
 
 __asnycio function definition__:
 ```py
@@ -43,16 +43,16 @@ __asyncio function call__:
 x = await function_name('I hate asyncio')
 ```
 
-__stupid asyncio problems:__
+__Stupid Asyncio problems:__
 - you can call normal functions from asyncio functions, but you cannot call asyncio functions from normal functions
 - you should almost always look for a version of the package you want to use, that is written specialy for asyncio. (**aiohttp** vs. **requests**)
-- if you call a normal function make sure it is not a long calculating one, as everything basically halts while it is executing.
-- If you do have to, use
+- if you call a normal function, make sure it is not a long calculating one. As everything basically halts while it is executing.
+- If you do have to, use:
 ```python
-x = await run_in_executor(normal_function_name, parmeter_name)
+x = await run_in_executor(normal_function_name, parameter_name)
 ```
 
-- best to most often write the function or method as normal function and I will convert it to the astupido afterwards.
+- It is easiest to write the fucntion or method as a normal function and I will convert it to astupido afterwards.
 
 
 yay Cargo-culting
