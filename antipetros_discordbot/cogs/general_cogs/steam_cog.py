@@ -19,6 +19,7 @@ from fuzzywuzzy import process as fuzzprocess
 from discord.ext import flags, tasks, commands
 from discord import AllowedMentions
 import discord
+
 from pyfiglet import Figlet
 from bs4 import BeautifulSoup
 # * Gid Imports ----------------------------------------------------------------------------------------->
@@ -103,7 +104,8 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
                  'nov': 11,
                  'dec': 12}
     image_link_regex = re.compile(r"(?<=\')(?P<image_link>.*)(?=\')")
-    workshop_item = namedtuple("WorkshopItem", ['title', 'updated', 'requirements', 'url', "image_link"])
+    workshop_item = namedtuple("WorkshopItem", ['title', 'updated', 'requirements', 'url', "image_link", "size", "id"])
+    date_time_format = "%Y-%m-%d %H:%M"
     # endregion [ClassAttributes]
 
     # region [Init]
@@ -122,13 +124,17 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 
 # region [Properties]
 
+    @property
+    def registered_workshop_items(self):
+        return [self.workshop_item(**item) for item in loadjson(self.registered_workshop_items_file)]
+
 
 # endregion [Properties]
 
 # region [Setup]
 
     async def on_ready_setup(self):
-
+        self.check_for_updates.start()
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -142,8 +148,15 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 
     @tasks.loop(minutes=5, reconnect=True)
     async def check_for_updates(self):
-        for item in self.register_items:
-            pass
+        for item in self.registered_workshop_items:
+            log.debug("checking steam_workshop_item '%s' for possible update", item.title)
+            new_item = await self._get_fresh_item_data(item.id)
+            updated_new = datetime.strptime(new_item.updated, self.date_time_format)
+            updated_old = datetime.strptime(item.updated, self.date_time_format)
+            log.debug("comapring time '%s' new, to '%s' old", updated_new.strftime(self.date_time_format), updated_old.strftime(self.date_time_format))
+            if updated_new > updated_old:
+                await self._update_item_in_registered_items(item, new_item)
+                await self.notify_update(item, new_item)
 
 # endregion [Loops]
 # region [Listener]
@@ -152,12 +165,33 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role_2()
+    async def register_workshop_item(self, ctx, item_ids: commands.Greedy[int]):
+        for item_id in item_ids:
+            item = await self._get_fresh_item_data(item_id)
+            saved = await self._add_item_to_registered_items(item)
+            if saved is False:
+                await ctx.send(f'Item "{item.title}" with id "{item.id}" already registered!')
+                return
+            req_value = '\n'.join([f"**{req_name}**\n{req_link}" for req_name, req_link in item.requirements]) if len(item.requirements) > 0 else 'No Requirements'
+            fields = [self.bot.field_item(name="Last Updated:", value=item.updated, inline=False),
+                      self.bot.field_item(name='Requirements:', value=req_value, inline=False),
+                      self.bot.field_item(name="Size:", value=item.size, inline=False)]
+
+            embed_data = await self.bot.make_generic_embed(author={'name': "link to steam workshop page 🔗", 'url': item.url, 'icon_url': item.image_link}, title=item.title, description="was added to registered Workshop Items", image=item.image_link,
+                                                           fields=fields, thumbnail=None)
+
+            await ctx.send(**embed_data)
+
+    @auto_meta_info_command()
+    @allowed_channel_and_allowed_role_2()
     async def get_workshop_item_data(self, ctx, item_id: int):
         item = await self._get_fresh_item_data(item_id)
+        req_value = '\n'.join([f"**{req_name}**\n{req_link}" for req_name, req_link in item.requirements]) if len(item.requirements) > 0 else 'No Requirements'
         fields = [self.bot.field_item(name="Last Updated:", value=item.updated, inline=False),
-                  self.bot.field_item(name='Requirements:', value='\n'.join([f"**{req_name}**\n{req_link}" for req_name, req_link in item.requirements]), inline=False)]
+                  self.bot.field_item(name='Requirements:', value=req_value, inline=False),
+                  self.bot.field_item(name="Size:", value=item.size, inline=False)]
 
-        embed_data = await self.bot.make_generic_embed(title=item.title, description=item.url, image=item.image_link,
+        embed_data = await self.bot.make_generic_embed(author={'name': "link to steam workshop page 🔗", 'url': item.url, 'icon_url': item.image_link}, title=item.title, image=item.image_link,
                                                        fields=fields, thumbnail=None)
 
         await ctx.send(**embed_data)
@@ -168,6 +202,34 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 # endregion [Embeds]
 # region [HelperMethods]
 
+    async def notify_update(self, old_item, new_item):
+        print(f"{new_item.title} had an update")
+
+    async def _add_item_to_registered_items(self, item):
+        data = loadjson(self.registered_workshop_items_file)
+        if item.id not in [existing_item.get('id') for existing_item in data]:
+            data.append(item._asdict())
+            writejson(data, self.registered_workshop_items_file)
+            return True
+        else:
+            return False
+
+    async def _remove_item_from_registered_items(self, item):
+        data = loadjson(self.registered_workshop_items_file)
+        if item.id in [existing_item.get('id') for existing_item in data]:
+            data.remove(item._asdict())
+            writejson(data, self.registered_workshop_items_file)
+            return True
+        else:
+            return False
+
+    async def _update_item_in_registered_items(self, old_item, new_item):
+        data = loadjson(self.registered_workshop_items_file)
+        old_item_data = old_item._asdict()
+        data.remove(old_item_data)
+        data.append(new_item._asdict())
+        writejson(data, self.registered_workshop_items_file)
+
     async def _parse_update_date(self, in_update_data: str):
         date, time = in_update_data.split('@')
         if ',' not in date:
@@ -175,7 +237,15 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
         date = date.replace(',', '').strip()
         day, month_string, year = date.split(' ')
         month = self.month_map.get(month_string.casefold())
-        update_datetime = datetime(year=int(year), month=int(month), day=int(day))
+        if 'pm' in time:
+            time = time.replace('pm', '').strip()
+            hours, minutes = time.split(':')
+            hours = int(hours) + 12
+        else:
+            time = time.replace('am', '').strip()
+            hours, minutes = time.split(':')
+            hours = int(hours)
+        update_datetime = datetime(year=int(year), month=int(month), day=int(day), hour=int(hours), minute=int(minutes))
         return update_datetime
 
     async def _get_title(self, in_soup: BeautifulSoup):
@@ -188,11 +258,14 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 
     async def _get_requirements(self, in_soup: BeautifulSoup):
         _out = []
-        reqs = in_soup.find_all("div", {"class": "requiredItemsContainer"})[0]
-        for i in reqs.find_all('a', href=True):
-            link = i.get('href', None)
-            text = i.text.strip()
-            _out.append((text, link))
+        try:
+            reqs = in_soup.find_all("div", {"class": "requiredItemsContainer"})[0]
+            for i in reqs.find_all('a', href=True):
+                link = i.get('href', None)
+                text = i.text.strip()
+                _out.append((text, link))
+        except IndexError:
+            pass
         return _out
 
     async def _get_image_link(self, in_soup: BeautifulSoup):
@@ -200,6 +273,10 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
         match = self.image_link_regex.search(image)
         if match:
             return match.group('image_link')
+
+    async def _get_item_size(self, in_soup: BeautifulSoup):
+        size = in_soup.findAll("div", {"class": "detailsStatRight"})[0]
+        return size.text
 
     async def _get_fresh_item_data(self, item_id: int):
         item_url = f"{self.base_url}{item_id}"
@@ -209,10 +286,12 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
                 soup = BeautifulSoup(content, 'html.parser')
                 updated = await self._get_updated(soup)
                 return self.workshop_item(title=await self._get_title(soup),
-                                          updated=updated.strftime(self.bot.std_date_time_format),
+                                          updated=updated.strftime(self.date_time_format),
                                           requirements=await self._get_requirements(soup),
                                           url=item_url,
-                                          image_link=await self._get_image_link(soup))
+                                          image_link=await self._get_image_link(soup),
+                                          size=await self._get_item_size(soup),
+                                          id=item_id)
 
 
 # endregion [HelperMethods]
@@ -227,7 +306,7 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 
     def cog_unload(self):
 
-        pass
+        self.check_for_updates.stop()
 
 
 # endregion [SpecialMethods]

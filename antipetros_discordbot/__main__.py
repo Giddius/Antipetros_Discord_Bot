@@ -159,6 +159,7 @@ def stop():
 
 @cli.command(name='run')
 @click.option('--token', '-t')
+@click.option('--steam-api-key', '-s')
 def run(token):
     """
     Standard way to start the bot and connect it to discord.

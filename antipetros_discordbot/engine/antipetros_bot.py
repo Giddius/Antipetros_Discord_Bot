@@ -12,7 +12,7 @@ import random
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
-
+from steamy import SteamAPI
 from udpy import AsyncUrbanClient
 from watchgod import Change, awatch
 from discord.ext import tasks, commands
