@@ -34,12 +34,12 @@ requires = [
     "pytz==2020.5",
     "antistasi_template_checker==0.1.1",
     "discord==1.0.1",
-    "gidappdata>=0.1.12",
+    "gidappdata>=0.1.13",
     "gidlogger>=0.1.8",
     "Pillow==8.1.0",
     "python-dotenv==0.15.0",
     "udpy==2.0.0",
-    "gidconfig>=0.1.15",
+    "gidconfig>=0.1.16",
 ]
 
 [tool.flit.scripts]

@@ -189,7 +189,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
             await self.remove_give_away(event_item)
             return
 
-        for _ in range(0, max(event_item.amount_winners, len(users))):
+        for _ in range(0, min(event_item.amount_winners, len(users))):
             winner_num = secrets.randbelow(len(users))
             winners.append(users.pop(winner_num))
 

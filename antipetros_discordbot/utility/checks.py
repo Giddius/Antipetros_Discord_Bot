@@ -49,9 +49,21 @@ log = glog.aux_logger(__name__)
 # endregion[Constants]
 
 
-def in_allowed_channels(allowed_channels: Iterable):
-    def predicate(ctx):
-        return ctx.channel.name in allowed_channels if not isinstance(ctx.channel, discord.DMChannel) else False
+def in_allowed_channels():
+    def predicate(ctx: commands.Context):
+        cog = ctx.cog
+        command = ctx.command
+        author = ctx.author
+        channel = ctx.channel
+        bot = ctx.bot
+        if channel.type is discord.ChannelType.private:
+            raise IsNotTextChannelError(ctx, channel.type)
+        allowed_channel_names = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('channels'))
+        if callable(allowed_channel_names):
+            allowed_channel_names = allowed_channel_names(command)
+        if allowed_channel_names != ['all'] and channel.name.casefold() not in allowed_channel_names + ['bot-testing']:
+            raise NotAllowedChannelError(ctx, allowed_channel_names)
+        return True
     return commands.check(predicate)
 
 

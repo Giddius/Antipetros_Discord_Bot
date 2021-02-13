@@ -7,6 +7,12 @@ A feature to create polls, let them run for a specified time and afterwards get 
 
 ### Needed Infos
 
+- How many options max (ever, there is a hard limit of about 20-25, I can work around if need, but would like to know if it is really needed)
+- What info you want after the poll has finished (who voted what, who voted when, ...)
+- what of the poll do you want to be able to set via the command, with defaults (the title, the description, the emojis to use,...)
+- what kind of graph or if you want a graph afterwards.
+- do you want a text report afterwards?
+- auto notification of eligible voters?
 
 
 #### Example Poll from different Bot

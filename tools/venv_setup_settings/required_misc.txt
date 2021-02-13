@@ -4,6 +4,7 @@ Pillow
 PyGithub
 TextBlob
 WeasyPrint
+aioftp
 aiosqlite
 antistasi_template_checker
 arrow
@@ -17,7 +18,6 @@ cryptography
 dateparser
 discord-flags
 discord.py
-discord.py-stubs
 emoji
 fuzzywuzzy
 google-api-python-client

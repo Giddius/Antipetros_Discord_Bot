@@ -25,7 +25,7 @@ from antipetros_discordbot.utility.misc import save_commands, color_hex_embed, a
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester
 from antipetros_discordbot.utility.named_tuples import MovieQuoteItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState
@@ -72,7 +72,8 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                 'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
                              "2021-02-06 05:26:32",
                              "a296317ad6ce67b66c11e18769b28ef24060e5dac5a0b61a9b00653ffbbd9f4e521b2481189f075d029a4e9745892052413d2364e0666a97d9ffc7561a022b07")}
-    required_config_data = dedent("""""")
+    required_config_data = dedent("""
+                                  """)
 
     def __init__(self, bot):
         self.bot = bot
@@ -94,6 +95,10 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     @commands.Cog.listener(name="on_raw_reaction_add")
     async def emoji_tester(self, payload):
+        disable = True
+
+        if disable is True:
+            return
         emoji = payload.emoji
 
         if emoji.is_custom_emoji():
@@ -110,10 +115,10 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             log.debug("unicode emoji hash: '%s'", hash(emoji))
             log.debug("unicode emoji customized name: '%s'", create_emoji_custom_name(str(emoji)))
 
-    @commands.command(aliases=get_aliases("roll"), enabled=get_command_enabled('roll'))
+    @auto_meta_info_command(enabled=get_command_enabled('roll'))
     @allowed_channel_and_allowed_role_2()
     @log_invoker(log, 'debug')
-    async def roll(self, ctx, target_time: int = 1):
+    async def roll_blocking(self, ctx, target_time: int = 1):
         start_time = time()
         time_multiplier = 151267
         random_stats_funcs = [("mean", mean),
@@ -138,42 +143,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await ctx.send(embed=await make_basic_embed(title='Roll Result', text='this is a long blocking command for debug purposes', symbol='debug_2', duration=time_taken, ** stats_data))
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
-    @log_invoker(log, 'debug')
-    async def check_random(self, ctx, amount_data_points: int = 10000, amount_possible_values: int = 100):
-        async with ctx.typing():
-            _sleep_marker = 1000 if amount_data_points >= 100000 else 100
-            _results = {pos_num + 1: 0 for pos_num in range(amount_possible_values)}
-            for i in range(amount_data_points):
-                point = random.randint(1, amount_possible_values)
-                _results[point] += 1
-                if (i + 1) % (amount_data_points // _sleep_marker) == 0:
-                    percent = round(((i + 1) / amount_data_points) * 100, ndigits=1)
-                    log.debug(f"reached {i+1}, {percent}% done!")
-                    await asyncio.sleep(1 / random.randint(1, 100))
-            await asyncio.sleep(2)
-            x = []
-            y = []
-            for key, value in _results.items():
-                x.append(key)
-                y.append(value)
-            plt.plot(x, y, 's-b', markersize=4, linewidth=0.2, alpha=1)
-
-            plt.axis(ymin=0, ymax=max(value for key, value in _results.items()) * 1.05, xmax=amount_possible_values, xmin=1)
-            with BytesIO() as image_binary:
-                plt.savefig(image_binary, format='png')
-                plt.close()
-                image_binary.seek(0)
-
-                await ctx.send(file=discord.File(image_binary, filename='checkrandomgraph.png'), delete_after=120)
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
-
-    def __str__(self):
-        return self.qualified_name
-
-    @commands.command(aliases=get_aliases("request_server_restart"))
     @allowed_channel_and_allowed_role_2()
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def request_server_restart(self, ctx):
@@ -219,6 +188,24 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         except asyncio.TimeoutError:
             await ctx.send('No answer received, aborting request, you can always try again')
             return
+
+    @auto_meta_info_command()
+    @commands.is_owner()
+    async def save_embed(self, ctx, message: discord.Message):
+        if len(message.embeds) == 0:
+            await ctx.send("the message has no embed, aborting")
+            return
+
+        embed = message.embeds[0]
+        embed_dict = embed.to_dict()
+        writejson(embed_dict, pathmaker(APPDATA["saved_embeds"], f"{message.id}.json"))
+        await ctx.send(f'saved embed from message {message.id}')
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
+
+    def __str__(self):
+        return self.qualified_name
 
 
 def setup(bot):

@@ -44,10 +44,12 @@ def _default_alias_maker(command_name: str) -> List[str]:
         :class:`list[str]`: modified aliases.
     """
     default_alias_chars = BASE_CONFIG.retrieve('command_meta', 'base_alias_replacements', typus=List[str], direct_fallback='-')
-    aliases = []
+    default_aliases = []
     for char in default_alias_chars:
-        aliases.append(command_name.replace('_', char))
-    return list(set(aliases))
+        mod_name = command_name.replace('_', char)
+        if mod_name not in default_aliases and mod_name != command_name:
+            default_aliases.append(mod_name)
+    return default_aliases
 
 
 def auto_meta_info_command(name=None, cls=None, **attrs):
@@ -93,12 +95,12 @@ def auto_meta_info_command(name=None, cls=None, **attrs):
 
     def decorator(func):
         command_name = func.__name__ if name is None else name
-        aliases = []
-        aliases += _default_alias_maker(command_name)
-        aliases += attrs.get('aliases', [])
-        aliases += _get_custom_aliases(command_name=command_name)
+
+        aliases = _default_alias_maker(command_name) + _get_custom_aliases(command_name=command_name) + attrs.get('aliases', [])
+        aliases = list(set(map(lambda x: x.casefold(), aliases)))
+
         if isinstance(func, Command):
             raise TypeError('Callback is already a command.')
-        return cls(func, name=name, aliases=list(set(aliases)), ** attrs)
+        return cls(func, name=name, aliases=aliases, ** attrs)
 
     return decorator

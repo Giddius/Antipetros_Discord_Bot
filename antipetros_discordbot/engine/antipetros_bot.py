@@ -451,18 +451,14 @@ class AntiPetrosBot(commands.Bot):
 
     async def debug_function(self):
         log.debug("debug function triggered")
-        path = pathmaker(APPDATA['debug'], 'general_debug')
-        extension = 'json'
-        app_info = await self.application_info()
-        _out = {'id': app_info.id,
-                "name": app_info.name,
-                "owner_name": app_info.owner.name,
-                'description': app_info.description,
-                'bot_public': app_info.bot_public,
-                "bot_require_code_grant": app_info.bot_require_code_grant,
-                "summary": app_info.summary}
-        writejson({channel.id: channel.name for channel in self.antistasi_guild.channels}, 'all_emojis.json')
-        writejson(_out, path + '.' + extension)
+        role_data = []
+        for role in self.antistasi_guild.roles:
+            if role.name != '@everyone':
+                role_members = [member.name for member in role.members]
+                role_data.append({'name': role.name, 'position': role.position, 'tags': str(role.tags), 'members': role_members, 'managed': role.managed, 'hoist': role.hoist, 'created_at': role.created_at.strftime(self.std_date_time_format)})
+        role_data = sorted(role_data, key=lambda x: x.get('position'))
+        writejson(role_data, 'all_roles.json', sort_keys=False)
+        log.debug("debug function finished")
 
     def __repr__(self):
         return f"{self.__class__.__name__}()"

@@ -1,0 +1,31 @@
+{% macro basic_glossary_entry(name, description, key_formats,value_formats) -%}
+### {{ name }}
+
+{{ description }}
+
+{% endmacro -%}
+
+
+{% macro dropdown_glossary_entry(name, description, key_formats,value_formats) %}
+<details><summary>{% for format in key_formats %}<{{ format }}>{% endfor %}{{ name }}{% for format in key_formats %}</{{ format }}>{% endfor %}</summary>
+<br>
+
+{% for format in value_formats %}<{{ format }}>{% endfor %}{{ description }}{% for format in value_formats %}</{{ format }}>{% endfor %}
+
+</details>
+
+{% endmacro %}
+
+
+
+{% macro seperated_dropdown_glossary_entry(name, description, key_formats,value_formats) -%}
+
+{% for format in key_formats %}<{{ format }}>{% endfor %}{{ name }}{% for format in key_formats %}</{{ format }}>{% endfor %}
+
+<details><summary></summary>
+<br>
+
+{% for format in value_formats %}<{{ format }}>{% endfor %}{{ description }}{% for format in value_formats %}</{{ format }}>{% endfor %}
+
+</details>
+{% endmacro -%}

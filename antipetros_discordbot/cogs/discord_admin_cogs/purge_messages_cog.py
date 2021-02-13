@@ -5,28 +5,26 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from typing import Optional
-
+from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
-from discord.ext import commands
+from discord.ext import flags, tasks, commands
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import save_commands
-from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, is_even
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, in_allowed_channels
 from antipetros_discordbot.utility.converters import DateOnlyConverter
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
+from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 # endregion[Imports]
 
 # region [TODO]
-
-
-# TODO: get_logs command
-# TODO: get_appdata_location command
 
 
 # endregion [TODO]
@@ -49,37 +47,62 @@ APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-CONFIG_NAME = "purge_message"
+COG_NAME = "PurgeMessagesCog"
 
+CONFIG_NAME = make_config_name(COG_NAME)
+
+get_command_enabled = command_enabled_checker(CONFIG_NAME)
 # endregion[Constants]
 
 
-class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": "PurgeMessagesCog"}):
+class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     """
     Soon
     """
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING,
+                'is_ready': (CogState.FEATURE_MISSING,
                              "2021-02-06 05:19:50",
                              "b0fabfbd25ed7b45a009737879c2ef61262acce2c3e9043d7b2b27e51f6cd8de27fea94d52e1f97739765b4629d534de76bf28b241c5f27bd96917f3eb8c7e6e")}
+
+    required_config_data = dedent("""
+                                  """)
+
+# region [Setup]
+
+    async def on_ready_setup(self):
+
+        log.debug('setup for cog "%s" finished', str(self))
+
+    async def update(self, typus):
+        return
+        log.debug('cog "%s" was updated', str(self))
+
+
+# endregion [Setup]
+
 
     def __init__(self, bot):
         self.bot = bot
         self.support = self.bot.support
+        self.allowed_channels = allowed_requester(self, 'channels')
+        self.allowed_roles = allowed_requester(self, 'roles')
+        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         glog.class_init_notification(log, self)
 
-    @commands.command(aliases=get_aliases("purge_antipetros"))
+    @flags.add_flag("--and-giddi", '-gid', type=bool, default=False)
+    @flags.add_flag("--number-of-messages", '-n', type=int, default=1000)
+    @auto_meta_info_command(enabled=get_command_enabled("purge_antipetros"), cls=flags.FlagCommand)
     @commands.is_owner()
-    @in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
-    async def purge_antipetros(self, ctx, and_giddi: Optional[str] = None, number_of_messages: Optional[int] = 1000):
+    @in_allowed_channels()
+    async def purge_antipetros(self, ctx: commands.Context, **command_flags):
 
         def is_antipetros(message):
-            if and_giddi != "and_giddi":
+            if command_flags.get('and_giddi') is False:
                 return message.author.id == self.bot.id
             return message.author.id in [self.bot.id, self.bot.creator.id]
 
-        await ctx.channel.purge(limit=number_of_messages, check=is_antipetros, bulk=True)
+        await ctx.channel.purge(limit=command_flags.get('number_of_messages'), check=is_antipetros, bulk=True)
 
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"
@@ -87,21 +110,14 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": "Pur
     def __str__(self):
         return self.qualified_name
 
-    @commands.command(aliases=get_aliases("purge_msg_from_user"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist("general_debug", 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist(CONFIG_NAME, 'allowed_channels')))
-    async def purge_msg_from_user(self, ctx, user: discord.User, number_of_messages: Optional[int] = 1000, since: Optional[DateOnlyConverter] = None):
-
-        def is_user(message):
-            return message.author.id == user.id
-
-        messages_deleted = await ctx.channel.purge(limit=number_of_messages, check=is_user, after=since, bulk=True)
-        await ctx.send(f"deleted {len(messages_deleted)} messages from {user.name}")
 
 # region[Main_Exec]
 
 
 def setup(bot):
-    bot.add_cog(PurgeMessagesCog(bot))
+    """
+    Mandatory function to add the Cog to the bot.
+    """
+    bot.add_cog(attribute_checker(PurgeMessagesCog(bot)))
 
 # endregion[Main_Exec]

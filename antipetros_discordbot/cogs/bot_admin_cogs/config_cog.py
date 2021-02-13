@@ -121,6 +121,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         """
         standard setup async method.
@@ -139,7 +140,6 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 # endregion [Setup]
 
 # region [Properties]
-
 
     @property
     def notify_when_changed(self):
@@ -476,18 +476,22 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 # region [Helper]
 
     async def notify(self, event):
+        roles = await self.get_notify_roles()
+        embed_data = await event.as_embed_message()
         if self.notify_via.casefold() == 'dm':
-            pass
+            member_to_notify = list(set([role.members for role in roles]))
+            for member in member_to_notify:
+                await member.send(**embed_data)
+
         else:
             channel = await self.bot.channel_from_name(self.notify_via)
-            roles = await self.get_notify_roles()
-            embed_data = await event.as_embed_message()
             await channel.send(content=' '.join(role.mention for role in roles), **embed_data)
 
 
 # endregion[Helper]
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"

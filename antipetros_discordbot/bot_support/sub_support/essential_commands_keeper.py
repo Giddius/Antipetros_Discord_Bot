@@ -78,6 +78,13 @@ class EssentialCommandsKeeper(SubSupportBase):
     def add_commands(self):
         self.bot.add_command(commands.Command(self.reload_all_ext, aliases=['reload', 'refresh']))
         self.bot.add_command(commands.Command(self.shutdown, aliases=['die', 'rip', 'go-away', 'go_away', 'go.away', 'goaway']))
+        self.bot.add_listener(self.stop_the_reaction_petros, 'on_reaction_add')
+
+    async def stop_the_reaction_petros(self, reaction: discord.Reaction, user):
+        message = reaction.message
+        author = message.author
+        if user.id == 155149108183695360 and author.id in [self.bot.id, self.bot.creator.id]:
+            await reaction.remove(user)
 
     @commands.is_owner()
     async def reload_all_ext(self, ctx):
