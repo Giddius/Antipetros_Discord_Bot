@@ -76,7 +76,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.UNTESTED | CogState.FEATURE_MISSING,
+                'is_ready': (CogState.WORKING | CogState.FEATURE_MISSING,
                              "2021-02-06 03:32:39",
                              "05703df4faf098a7f3f5cea49c51374b3225162318b081075eb0745cc36ddea6ff11d2f4afae1ac706191e8db881e005104ddabe5ba80687ac239ede160c3178")}
 

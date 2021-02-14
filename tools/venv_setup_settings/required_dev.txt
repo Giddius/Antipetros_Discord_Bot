@@ -16,3 +16,6 @@ pydeps
 pypandoc
 pyqt5-tools
 python-magic
+pyspellchecker
+stdlib-list
+language_tool_python

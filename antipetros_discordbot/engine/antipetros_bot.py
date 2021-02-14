@@ -82,7 +82,6 @@ class AntiPetrosBot(commands.Bot):
         self.help_invocation = help_invocation
         self.description = readit(APPDATA['bot_description.md'])
         self.support = BotSupporter(self)
-        self.general_data = loadjson(APPDATA['general_data.json'])
         self.max_message_length = 1900
         self.commands_executed = 0
         self.bot_member = None
@@ -236,7 +235,7 @@ class AntiPetrosBot(commands.Bot):
     async def _get_bot_info(self):
         if self.all_bot_roles is None:
             self.all_bot_roles = []
-            self.bot_member = await self.retrieve_member(self.antistasi_guild.id, self.id)
+            self.bot_member = await self.retrieve_antistasi_member(self.id)
             for index, role in enumerate(self.bot_member.roles):
                 if index != 0:
                     self.all_bot_roles.append(role)
@@ -344,10 +343,6 @@ class AntiPetrosBot(commands.Bot):
         return list(set(_out))
 
     @ property
-    def antistasi_guild(self):
-        return self.get_guild(self.general_data.get('antistasi_guild_id'))
-
-    @ property
     def id(self):
         return self.user.id
 
@@ -390,13 +385,6 @@ class AntiPetrosBot(commands.Bot):
             message = 'message has no content'
         await self.creator.member_object.send(content=message, embed=embed, file=file)
 
-    async def retrieve_antistasi_member(self, user_id):
-        return await self.antistasi_guild.fetch_member(user_id)
-
-    async def retrieve_member(self, guild_id, user_id):
-        guild = self.get_guild(guild_id)
-        return await guild.fetch_member(user_id)
-
     async def split_to_messages(self, ctx, message, split_on='\n', in_codeblock=False, syntax_highlighting='json'):
         _out = ''
         chunks = message.split(split_on)
@@ -416,15 +404,6 @@ class AntiPetrosBot(commands.Bot):
     def sync_channel_from_name(self, channel_name):
         return {channel.name.casefold(): channel for channel in self.antistasi_guild.channels}.get(channel_name.casefold())
 
-    async def channel_from_name(self, channel_name):
-        return {channel.name.casefold(): channel for channel in self.antistasi_guild.channels}.get(channel_name.casefold())
-
-    async def channel_from_id(self, channel_id: int):
-        return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)
-
-    async def member_by_name(self, member_name):
-        return {member.name.casefold(): member for member in self.antistasi_guild.members}.get(member_name.casefold())
-
     async def execute_in_thread(self, func, *args, **kwargs):
         return await self.loop.run_in_executor(self.executor, func, *args, **kwargs)
 
@@ -437,17 +416,6 @@ class AntiPetrosBot(commands.Bot):
         feat_suggest_json = loadjson(self.bot_feature_suggestion_json_file)
         feat_suggest_json.append(item._asdict())
         writejson(feat_suggest_json, self.bot_feature_suggestion_json_file)
-
-    async def role_from_string(self, role_name):
-        return {role.name.casefold(): role for role in self.antistasi_guild.roles}.get(role_name.casefold())
-
-    async def all_members_with_role(self, role: str):
-        role = await self.role_from_string(role)
-        _out = []
-        for member in self.antistasi_guild.members:
-            if role in member.roles:
-                _out.append(member)
-        return list(set(_out))
 
     async def debug_function(self):
         log.debug("debug function triggered")

@@ -106,7 +106,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
                           'Netherlands': 'nl'
                           }
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.UNTESTED | CogState.FEATURE_MISSING,
+                'is_ready': (CogState.WORKING | CogState.FEATURE_MISSING,
                              "2021-02-06 03:40:46",
                              "29d140f50313ab11e4ec463a204b56dbcba90f86502c5f4a027f4d1ab7f25525dcf97a5619fd1b88709b95e6facb81a7620b39551c98914dcb6f6fbf3038f542")}
 
@@ -138,7 +138,6 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -155,7 +154,6 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 # endregion [Loops]
 
 # region [Listener]
-
 
     async def _emoji_translate_checks(self, payload):
         command_name = "emoji_translate_listener"
@@ -260,6 +258,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
 # region [HelperMethods]
 
+
     @staticmethod
     def get_emoji_name(s):
         return s.encode('ascii', 'namereplace').decode('utf-8', 'namereplace')
@@ -268,6 +267,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

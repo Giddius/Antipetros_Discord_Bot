@@ -5,21 +5,21 @@ __Inside a Cog there can be defined__:
 - listener
 - background loops
 
-It is implemented in a way, that it gets loaded like a plugin, therefore can be disabled, reloaded or unloaded easily.
+It is implemented in a way, that it gets loaded like a plug-in, therefore can be disabled, reloaded or unloaded easily.
 Can also be seen as a kind of Category for commands. Each Cog has access to the bot itself and can therefore access bot attributes as well as other Cogs (in a complicated way).
 
 
-Asyncio === Asynchronus code excecution. It is the reason why the bot still responds even though there is a command already running.
-Some aweful implementation which makes code duplication almost mandatory. I may write more about it when I stop hating it like the devilspawn it is.
+Asyncio === Asynchronus code execution. It is the reason why the bot still responds even though there is a command already running.
+Some awful implementation which makes code duplication almost mandatory. I may write more about it when I stop hating it like the devilspawn it is.
 
 __asnycio function definition__:
-```py
+```python
 async def function_name(parameter_name):
     print(parameter_name)
     return parameter_name
 ```
 __asyncio function call__:
-```py
+```python
 x = await function_name('I hate asyncio')
 ```
 
@@ -35,7 +35,7 @@ x = await run_in_executor(normal_function_name, parmeter_name)
 - best to most often write the function or method as normal function and I will convert it to the astupido afterwards.
 
 
-yay Cargo-culting
+
 
 
 Listener === TODO

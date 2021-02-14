@@ -128,10 +128,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
         return COGS_CONFIG.getint(CONFIG_NAME, 'stamps_margin')
 
     @property
-    def stamp_opacity(self):
-        return COGS_CONFIG.getfloat(CONFIG_NAME, 'stamp_opacity')
-
-    @property
     def avatar_stamp_fraction(self):
         return COGS_CONFIG.getfloat(CONFIG_NAME, 'avatar_stamp_fraction')
 
@@ -148,10 +144,10 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
                 name = file.name.split('.')[0].replace(' ', '_').strip().upper()
                 self.stamps[name] = file.path
 
-    def _get_stamp_image(self, stamp_name):
+    def _get_stamp_image(self, stamp_name, stamp_opacity):
         image = Image.open(self.stamps.get(stamp_name))
         alpha = image.split()[3]
-        alpha = ImageEnhance.Brightness(alpha).enhance(self.stamp_opacity)
+        alpha = ImageEnhance.Brightness(alpha).enhance(stamp_opacity)
         image.putalpha(alpha)
         return image.copy()
 
@@ -252,6 +248,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
     @flags.add_flag("--stamp-image", "-si", type=str, default='ASLOGO1')
     @flags.add_flag("--first-pos", '-fp', type=str, default="bottom")
     @flags.add_flag("--second-pos", '-sp', type=str, default="right")
+    @flags.add_flag("--stamp-opacity", '-so', type=float, default=1.0)
     @flags.add_flag('--factor', '-f', type=float, default=None)
     @commands.command(aliases=get_aliases("stamp_image"), enabled=get_command_enabled("stamp_image"), cls=flags.FlagCommand)
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
@@ -285,7 +282,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
             for _file in ctx.message.attachments:
                 # TODO: maybe make extra attribute for input format, check what is possible and working. else make a generic format list
                 if any(_file.filename.endswith(allowed_ext) for allowed_ext in self.allowed_stamp_formats):
-                    _stamp = self._get_stamp_image(flags.get('stamp_image'))
+                    _stamp = self._get_stamp_image(flags.get('stamp_image'), flags.get('stamp_opacity'))
                     _stamp = _stamp.copy()
                     with TemporaryDirectory(prefix='temp') as temp_dir:
                         temp_file = Path(pathmaker(temp_dir, 'temp_file.png'))

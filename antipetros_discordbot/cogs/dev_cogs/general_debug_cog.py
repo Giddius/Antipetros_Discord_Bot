@@ -201,6 +201,11 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         writejson(embed_dict, pathmaker(APPDATA["saved_embeds"], f"{message.id}.json"))
         await ctx.send(f'saved embed from message {message.id}')
 
+    @auto_meta_info_command()
+    @commands.is_owner()
+    async def quick_latency(self, ctx):
+        await ctx.send(f"{round(self.bot.latency * 1000)} ms")
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
