@@ -191,3 +191,32 @@ def subreadme_toc(c, output_file=None):
         f.write('# Sub-ReadMe Links\n\n')
         for title, link in found_subreadmes:
             f.write(f"\n* [{make_title(title)}]({link})\n\n---\n")
+
+
+@task
+def increment_version(c, increment_part='minor'):
+    init_file = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "__init__.py")
+    with open(init_file, 'r') as f:
+        content = f.read()
+    version_line = None
+
+    for line in content.splitlines():
+        if '__version__' in line:
+            version_line = line
+            break
+    if version_line is None:
+        raise RuntimeError('Version line not found')
+    cleaned_version_line = version_line.replace('__version__', '').replace('=', '').replace('"', '').replace("'", "").strip()
+    major, minor, patch = cleaned_version_line.split('.')
+
+    if increment_part == 'patch':
+        patch = str(int(patch) + 1)
+    elif increment_part == 'minor':
+        minor = str(int(minor) + 1)
+        patch = str(0)
+    elif increment_part == 'major':
+        major = str(int(major) + 1)
+        minor = str(0)
+        patch = str(0)
+    with open(init_file, 'w') as f:
+        f.write(content.replace(version_line, f"__version__ = '{major}.{minor}.{patch}'"))
