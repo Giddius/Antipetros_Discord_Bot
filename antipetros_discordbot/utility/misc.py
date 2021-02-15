@@ -150,8 +150,8 @@ def sync_to_async(_func):
 
 
 def save_commands(cog):
-    command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/commands.json')
-    command_help_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/command_help.json')
+    command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/data/commands.json')
+    command_help_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/data/command_help.json')
     if os.path.isfile(command_json_file) is False:
         writejson({}, command_json_file)
     if os.path.isfile(command_help_file) is False:
@@ -191,7 +191,7 @@ def make_command_subsection_seperator(command_name):
 
 
 def generate_base_cogs_config(bot: commands.Bot):
-    out_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/standard_cogs_config.ini')
+    out_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/prototype_files/standard_cogs_config.ini')
     sub_section_seperator = f'# {"_"*75}'
     command_section_seperator = f'# {"COMMANDS".center(75, "-")}'
     listener_section_seperator = f'# {"LISTENER".center(75, "+")}'
@@ -210,8 +210,8 @@ def generate_base_cogs_config(bot: commands.Bot):
             out_lines.append(make_command_subsection_seperator(command.name))
             out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('enabled')[0]} = {COMMAND_CONFIG_SUFFIXES.get('enabled')[1]}")
             out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('channels')[0]} = {COMMAND_CONFIG_SUFFIXES.get('channels')[1]}")
-            if all(isinstance(check, type(owner_or_admin)) is False for check in command.checks):
-                out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('roles')[0]} = {COMMAND_CONFIG_SUFFIXES.get('roles')[1]}")
+
+            out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('roles')[0]} = {COMMAND_CONFIG_SUFFIXES.get('roles')[1]}")
             if any(getclosurevars(check).nonlocals.get('in_dm_allowed', False) is True for check in command.checks):
                 out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('dm_ids')[0]} = {COMMAND_CONFIG_SUFFIXES.get('dm_ids')[1]}")
     writeit(out_file, '\n\n'.join(out_lines))

@@ -10,8 +10,10 @@ from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_
 import asyncio
 from io import BytesIO
 from textwrap import dedent
+from typing import Optional
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
+from discord.ext.commands import Greedy
 from discord.ext import commands
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -69,7 +71,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     """
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
+                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
                              "2021-02-06 05:26:32",
                              "a296317ad6ce67b66c11e18769b28ef24060e5dac5a0b61a9b00653ffbbd9f4e521b2481189f075d029a4e9745892052413d2364e0666a97d9ffc7561a022b07")}
     required_config_data = dedent("""
@@ -211,6 +213,75 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     def __str__(self):
         return self.qualified_name
+
+    @auto_meta_info_command(aliases=['pin'])
+    @commands.is_owner()
+    async def pin_message(self, ctx: commands.Context, *, reason: str):
+        if ctx.channel.name.casefold() not in ['bot-testing', 'bot-development']:
+            return
+        if ctx.message.reference.resolved is None:
+            await ctx.send('you need to reply to a message, that should be pinned, aborting!')
+            return
+        message = ctx.message.reference.resolved
+        log.debug(f"{reason=}")
+        await message.pin(reason=reason)
+        await ctx.message.delete()
+
+    @auto_meta_info_command(aliases=['unpin'])
+    @commands.is_owner()
+    async def unpin_message(self, ctx: commands.Context, *, reason: str):
+        if ctx.channel.name.casefold() not in ['bot-testing', 'bot-development']:
+            return
+        if ctx.message.reference.resolved is None:
+            await ctx.send('you need to reply to a message, that should be pinned, aborting!')
+            return
+        message = ctx.message.reference.resolved
+        log.debug(f"{reason=}")
+        await message.unpin(reason=reason)
+        await ctx.send(f'UNpinned message {message.id}', delete_after=60)
+        await ctx.message.delete()
+
+    async def _apply_overwrites(self, channel: discord.TextChannel, permissions: dict, selector):
+        for name, value in list(channel.overwrites_for(selector)):
+            if value is not None:
+                permissions[name] = value
+        return permissions
+
+    @auto_meta_info_command(aliases=['channel_permissions'])
+    @commands.is_owner()
+    async def check_bot_channel_permissions(self, ctx: commands.Context, channel: Optional[discord.TextChannel] = None, display_mode: Optional[str] = 'only_true'):
+        channel = ctx.channel if channel is None else channel
+        bot_member = self.bot.bot_member
+        permissions = {}
+        for name, value in channel.permissions_for(bot_member):
+            permissions[name] = value
+        for selector in [self.bot.bot_member] + self.bot.all_bot_roles:
+            permissions = await self._apply_overwrites(channel=channel, permissions=permissions, selector=selector)
+        if display_mode.casefold() == 'only_true':
+            description = '```ini\n' + f'\n{"-"*35}\n'.join(f"{permission_name} = {' '*(25-len(permission_name))} {permission_bool}" for permission_name, permission_bool in permissions.items() if permission_bool is True) + '\n```'
+        elif display_mode.casefold() == 'all':
+            permission_list = [f"{'+' if permission_bool is True else '-'} {permission_name} = {' '*(25-len(permission_name))} {permission_bool}" for permission_name, permission_bool in permissions.items()]
+            description = '```diff\n' + '\n'.join(sorted(permission_list, key=lambda x: x.endswith('True'), reverse=True)) + '\n```'
+        elif display_mode.casefold() == 'only_false':
+            description = '```ini\n' + f'\n{"-"*35}\n'.join(f"{permission_name} = {' '*(25-len(permission_name))} {permission_bool}" for permission_name, permission_bool in permissions.items() if permission_bool is False) + '\n```'
+
+        embed_data = await self.bot.make_generic_embed(title=f'Permissions for **__{self.bot.display_name.upper()}__** in **__{channel.name.upper()}__**', description=description, thumbnail=None, footer='not_set')
+        await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+    @ commands.command(aliases=get_aliases("delete_msg"))
+    @ commands.is_owner()
+    async def delete_msg(self, ctx, msg_id: int):
+
+        channel = ctx.channel
+        message = await channel.fetch_message(msg_id)
+        await message.delete()
+        await ctx.message.delete()
+
+    @ commands.command()
+    @ commands.is_owner()
+    async def check_embed_gif(self, ctx: commands.Context):
+        embed_data = await self.bot.make_generic_embed(title="check embed gif", image=APPDATA['COMMAND_the_dragon.gif'])
+        await ctx.send(**embed_data)
 
 
 def setup(bot):

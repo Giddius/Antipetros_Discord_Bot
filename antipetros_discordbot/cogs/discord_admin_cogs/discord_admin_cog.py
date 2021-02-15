@@ -71,7 +71,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": "Ad
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED,
+                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.DOCUMENTATION_MISSING,
                              "2021-02-06 05:21:10",
                              "8f8fac3c998a0c078515c34712eff238644084f8de06831e9aa13dc36d42978885790242db11e078f4b8f3aa576af177c5143144351d807347e58797eb614027")}
     # endregion[ClassAttributes]

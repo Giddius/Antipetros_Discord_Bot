@@ -101,6 +101,6 @@ def auto_meta_info_command(name=None, cls=None, **attrs):
 
         if isinstance(func, Command):
             raise TypeError('Callback is already a command.')
-        return cls(func, name=name, aliases=aliases, ** attrs)
+        return cls(func, name=name, aliases=aliases, **{key: value for key, value in attrs.items() if key != 'aliases'})
 
     return decorator

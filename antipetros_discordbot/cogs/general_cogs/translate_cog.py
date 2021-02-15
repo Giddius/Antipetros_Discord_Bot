@@ -106,7 +106,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
                           'Netherlands': 'nl'
                           }
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.FEATURE_MISSING,
+                'is_ready': (CogState.WORKING | CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
                              "2021-02-06 03:40:46",
                              "29d140f50313ab11e4ec463a204b56dbcba90f86502c5f4a027f4d1ab7f25525dcf97a5619fd1b88709b95e6facb81a7620b39551c98914dcb6f6fbf3038f542")}
 
