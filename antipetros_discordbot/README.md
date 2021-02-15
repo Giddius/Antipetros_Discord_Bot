@@ -1,0 +1,7 @@
+
+## Foreword
+
+
+
+
+## Giddi's Idiosyncrasies

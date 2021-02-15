@@ -44,7 +44,7 @@ requires = [
 
 [tool.flit.scripts]
 antipetrosbot = "antipetros_discordbot.__main__:cli"
-mksubsupport = "antipetros_discordbot.dev_tools_and_scripts.cli.gen_sub_supporter:new_sub_supporter_class"
+
 
 [tool.flit.sdist]
 exclude = [

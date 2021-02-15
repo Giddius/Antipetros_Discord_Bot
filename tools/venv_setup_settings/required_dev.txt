@@ -19,3 +19,4 @@ python-magic
 pyspellchecker
 stdlib-list
 language_tool_python
+commonmark

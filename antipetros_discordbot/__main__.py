@@ -19,7 +19,7 @@ import discord
 from dotenv import find_dotenv, load_dotenv
 import gidlogger as glog
 from antipetros_discordbot import MAIN_DIR
-from antipetros_discordbot.utility.misc import check_if_int, generate_base_cogs_config, save_commands
+from antipetros_discordbot.utility.misc import check_if_int, generate_base_cogs_config, save_commands, generate_help_data
 from antipetros_discordbot.utility.crypt import decrypt_db, encrypt_db
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.utility.gidtools_functions import writeit, pathmaker, writejson
@@ -74,7 +74,7 @@ def configure_logger():
         log_stdout = 'both'
 
     _log = glog.main_logger(_log_file, log_level, other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata"], log_to=log_stdout, in_back_up=in_back_up)
-    _log.info(glog.NEWRUN())
+    # _log.info(glog.NEWRUN())
     if use_logging is False:
         logging.disable(logging.CRITICAL)
     if os.getenv('IS_DEV') == 'yes':
@@ -102,18 +102,56 @@ def cli():
     """
 
 
-@cli.command(name='info')
-def command_info_run():
+@cli.group()
+def collect_data():
+    """
+    dummy function to initiate click group.
+
+    """
+
+
+@collect_data.command(name='command')
+@click.option('--output-file', '-o', default=None)
+@click.option('--verbose', '-v', type=bool, default=False)
+def command_info_run(output_file, verbose):
     """
     Function and cli command to start up the bot, collect bot-commands extended info, but not connect to discord.
 
     collected as json in /docs
 
     """
+    if verbose is False:
+        logging.disable(logging.CRITICAL)
     anti_petros_bot = AntiPetrosBot()
-    generate_base_cogs_config(anti_petros_bot)
     for cog_name, cog_object in anti_petros_bot.cogs.items():
-        save_commands(cog_object)
+        print(f"Collecting command-info for '{cog_name}'")
+        save_commands(cog_object, output_file=output_file)
+    print('#' * 15 + ' finished collecting command-infos ' + '#' * 15)
+
+
+@collect_data.command(name='config')
+@click.option('--output-file', '-o', default=None)
+@click.option('--verbose', '-v', type=bool, default=False)
+def config_data_run(output_file, verbose):
+    if verbose is False:
+        logging.disable(logging.CRITICAL)
+    anti_petros_bot = AntiPetrosBot()
+    print("Generating Prototype cogs_config.ini")
+    generate_base_cogs_config(anti_petros_bot, output_file=output_file)
+    print('#' * 15 + ' finished generating Prototype cogs_config.ini ' + '#' * 15)
+
+
+@collect_data.command(name='bot-help')
+@click.option('--output-file', '-o', default=None)
+@click.option('--verbose', '-v', type=bool, default=False)
+def bot_help_data_run(output_file, verbose):
+    if verbose is False:
+        logging.disable(logging.CRITICAL)
+    anti_petros_bot = AntiPetrosBot()
+    for cog_name, cog_object in anti_petros_bot.cogs.items():
+        print(f"Collecting help-data for '{cog_name}'")
+        generate_help_data(cog_object, output_file=output_file)
+    print('#' * 15 + ' finished collecting help-data ' + '#' * 15)
 
 
 def non_click_command_info_run():
