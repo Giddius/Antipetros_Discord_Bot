@@ -1,11 +1,14 @@
 --force-reinstall numpy==1.19.3
 PyQt5-stubs
 autopep8
+commonmark
+docstr-coverage
 grip
 icecream
 ipython
 isort
 jupyter
+language_tool_python
 matplotlib
 memory-profiler
 objectgraph
@@ -15,8 +18,7 @@ pipreqs
 pydeps
 pypandoc
 pyqt5-tools
-python-magic
 pyspellchecker
+python-magic
 stdlib-list
-language_tool_python
-commonmark
+optimize-images

@@ -3,6 +3,29 @@ import sys
 import os
 import toml
 from pprint import pprint
+from time import sleep
+import json
+from PIL import Image, ImageFilter, ImageOps
+
+
+def bytes2human(n, annotate=False):
+    # http://code.activestate.com/recipes/578019
+    # >>> bytes2human(10000)
+    # '9.8K'
+    # >>> bytes2human(100001221)
+    # '95.4M'
+    symbols = ('Kb', 'Mb', 'Gb', 'Tb', 'Pb', 'Eb', 'Zb', 'Yb')
+    prefix = {s: 1 << (i + 1) * 10 for i, s in enumerate(symbols)}
+    for s in reversed(symbols):
+        if n >= prefix[s]:
+            _out = float(n) / prefix[s]
+            if annotate is True:
+                _out = '%.1f %s' % (_out, s)
+            return _out
+    _out = n
+    if annotate is True:
+        _out = "%s b" % _out
+    return _out
 
 
 def pathmaker(first_segment, *in_path_segments, rev=False):
@@ -28,6 +51,12 @@ def pathmaker(first_segment, *in_path_segments, rev=False):
     if rev is True or sys.platform not in ['win32', 'linux']:
         return os.path.normpath(_path)
     return os.path.normpath(_path).replace(os.path.sep, '/')
+
+
+def writejson(in_object, in_file, sort_keys=True, indent=4):
+    with open(in_file, 'w') as jsonoutfile:
+        print(f"writing json '{in_file}'")
+        json.dump(in_object, jsonoutfile, sort_keys=sort_keys, indent=indent)
 
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -220,3 +249,85 @@ def increment_version(c, increment_part='minor'):
         patch = str(0)
     with open(init_file, 'w') as f:
         f.write(content.replace(version_line, f"__version__ = '{major}.{minor}.{patch}'"))
+
+
+@task
+def collect_todos(c, output_file=None):
+    current_branch = c.run("git rev-parse --abbrev-ref HEAD", hide='out').stdout.strip()
+    base_url = f"https://github.com/official-antistasi-community/Antipetros_Discord_Bot/tree/{current_branch}"
+    line_specifier = "#L"
+    output_file = pathmaker(THIS_FILE_DIR, "docs", "all_todos.md") if output_file is None else pathmaker(output_file)
+    remove_path_part = pathmaker(THIS_FILE_DIR).casefold() + '/'
+    pyfiles = []
+    todos = []
+    for dirname, folderlist, filelist in os.walk(pathmaker(THIS_FILE_DIR, PROJECT_NAME)):
+        if all(excl_dir.casefold() not in dirname.casefold() for excl_dir in ['.git', '.venv', '.vscode', '__pycache__', '.pytest_cache', "private_quick_scripts"]):
+            for file in filelist:
+                if file.endswith('.py'):
+                    path = pathmaker(dirname, file)
+                    rel_path = path.casefold().replace(remove_path_part, '')
+                    with open(path, 'r') as f:
+                        content = f.read()
+                    pyfiles.append({"name": file, 'path': path, "rel_path": rel_path, 'content': content, 'content_lines': content.splitlines(), 'todos': []})
+    for file_data in pyfiles:
+        has_todo = False
+        for index, line in enumerate(file_data.get('content_lines')):
+            if '# TODO' in line:
+                has_todo = True
+                file_data["todos"].append((line, index))
+        if has_todo is True:
+            todos.append(file_data)
+    with open(output_file, 'w') as f:
+        f.write('# TODOs collected from files\n\n')
+        for item in todos:
+            f.write(f"## {item.get('name')}\n\n")
+            for todo, line_number in item.get('todos'):
+                cleaned_todo = todo.replace('# TODO', '').strip().lstrip(':').strip()
+                link = f"{base_url}/{item.get('rel_path')}{line_specifier}{str(line_number)}"
+                text = f"line {str(line_number)}:"
+                f.write(f"- [ ] [{text}]({link})  `{cleaned_todo}`\n<br>\n")
+            f.write('\n---\n\n')
+
+
+@task
+def docstring_data(c, output_file=None):
+    def check_if_empty(path):
+        with open(path, 'r') as f:
+            content = f.read()
+        return len(content) == 0
+    from docstr_coverage.coverage import get_docstring_coverage
+    pyfiles = []
+    for dirname, folderlist, filelist in os.walk(pathmaker(THIS_FILE_DIR, PROJECT_NAME)):
+        if all(excl_dir.casefold() not in dirname.casefold() for excl_dir in ['.git', '.venv', '.vscode', '__pycache__', '.pytest_cache', "private_quick_scripts", "dev_tools_and_scripts", 'gidsql']):
+            for file in filelist:
+                if file.endswith('.py'):
+                    path = pathmaker(dirname, file)
+                    if check_if_empty(path) is False:
+                        pyfiles.append(path)
+    file_stats, overall_stats = get_docstring_coverage(pyfiles, skip_magic=True)
+    docstring_stats = {"files": file_stats, 'overall': overall_stats}
+
+    output_file = pathmaker(THIS_FILE_DIR, "docs", "all_missing_docstrings.json") if output_file is None else pathmaker(output_file)
+    writejson(docstring_stats, output_file)
+
+
+@task
+def optimize_art(c, quality=100):
+    folder = pathmaker(THIS_FILE_DIR, 'art', 'finished', 'images')
+    for file in os.scandir(folder):
+        if file.is_file() and file.name.endswith('.png') or file.name.endswith('.jpg'):
+            print(f'optimizing image "{file.name}"')
+            orig_size = os.path.getsize(file.path)
+            print(f"original size: {bytes2human(orig_size, True)}")
+            img = Image.open(file.path)
+
+            img.save(file.path, quality=quality, optimize=True)
+            new_size = os.path.getsize(file.path)
+            size_dif = max(new_size, orig_size) - min(new_size, orig_size)
+            pre_mod = '-' if orig_size > new_size else '+'
+            print(f"finished optimizing '{file.name}'")
+            print(f"New size: {bytes2human(new_size, True)}")
+            print(f"Difference: {pre_mod}{bytes2human(size_dif, True)}")
+            print('#' * 50 + "\n")
+            if file.name.endswith('.jpg'):
+                os.rename(file.path, file.path.replace('.jpg', '.png'))

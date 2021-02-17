@@ -2,14 +2,16 @@
 
 """
 Main module, starts the Antistasi Discord Bot.
-On the Cli use: antipetrosbot run [-t token file] [-save]
+
+On the Cli use:
+    >>> antipetrosbot run [-t token]
 
 """
 # endregion [Module_Docstring]
 
 
 # region [Imports]
-
+import shutil
 import os
 import logging
 from time import sleep
@@ -38,10 +40,22 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
+BASE_CONFIG.save()
 COGS_CONFIG.save()
+
 # endregion [Constants]
 
 # region [Logging]
+
+
+def filter_asyncio_call(record: logging.LogRecord):
+    """
+    filters the asyncio logger to only log calls that show if something is blocking.
+
+    """
+    if record.getMessage().startswith('Executing'):
+        return 1
+    return 0
 
 
 def configure_logger():
@@ -65,16 +79,21 @@ def configure_logger():
         """
 
         return getattr(BASE_CONFIG, attr_name)('logging', key)
+
     log_stdout = 'both' if from_config('log_also_to_stdout', 'getboolean') is True else 'file'
     log_level = from_config('logging_level', 'get')
-    _log_file = glog.log_folderer(__name__, APPDATA)
+    _log_file = glog.timestamp_log_folderer(os.getenv('APP_NAME'), APPDATA)
+    for file in os.scandir(os.path.dirname(_log_file)):
+        if file.is_file() and file.name.endswith('.log'):
+            shutil.move(file.path, pathmaker(os.path.dirname(file.path), 'old_logs'))
     in_back_up = from_config('amount_keep_old_logs', 'getint')
     use_logging = from_config('use_logging', 'getboolean')
     if os.getenv('IS_DEV') == 'true':
         log_stdout = 'both'
 
     _log = glog.main_logger(_log_file, log_level, other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata"], log_to=log_stdout, in_back_up=in_back_up)
-    # _log.info(glog.NEWRUN())
+    asyncio_logger = logging.getLogger('asyncio')
+    asyncio_logger.addFilter(filter_asyncio_call)
     if use_logging is False:
         logging.disable(logging.CRITICAL)
     if os.getenv('IS_DEV') == 'yes':
@@ -115,9 +134,9 @@ def collect_data():
 @click.option('--verbose', '-v', type=bool, default=False)
 def command_info_run(output_file, verbose):
     """
-    Function and cli command to start up the bot, collect bot-commands extended info, but not connect to discord.
+    Cli command to start up the bot, collect bot-commands extended info, but not connect to discord.
 
-    collected as json in /docs
+    collected in `/docs/resources/data` as `commands.json`, `command_help.json`
 
     """
     if verbose is False:
@@ -133,6 +152,12 @@ def command_info_run(output_file, verbose):
 @click.option('--output-file', '-o', default=None)
 @click.option('--verbose', '-v', type=bool, default=False)
 def config_data_run(output_file, verbose):
+    """
+    Cli command to start up the bot, collect config prototype files, but not connect to discord.
+
+    collected in `/docs/resources/prototype_files` as `standard_cogs_config.ini`, `standard_base_config.ini`
+
+    """
     if verbose is False:
         logging.disable(logging.CRITICAL)
     anti_petros_bot = AntiPetrosBot()
@@ -145,6 +170,12 @@ def config_data_run(output_file, verbose):
 @click.option('--output-file', '-o', default=None)
 @click.option('--verbose', '-v', type=bool, default=False)
 def bot_help_data_run(output_file, verbose):
+    """
+    Cli command to start up the bot, collect help info data, but not connect to discord.
+
+    collected in `/docs/resources/data` as `command_help.json`
+
+    """
     if verbose is False:
         logging.disable(logging.CRITICAL)
     anti_petros_bot = AntiPetrosBot()
@@ -154,26 +185,18 @@ def bot_help_data_run(output_file, verbose):
     print('#' * 15 + ' finished collecting help-data ' + '#' * 15)
 
 
-def non_click_command_info_run():
-    """
-    Function and cli command to start up the bot, collect bot-commands extended info, but not connect to discord.
-
-    collected as json in /docs
-
-    """
-    anti_petros_bot = AntiPetrosBot()
-    generate_base_cogs_config(anti_petros_bot)
-    command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/commands.json')
-    command_help_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/command_help.json')
-    for file in [command_json_file, command_help_file]:
-        if os.path.isfile(file) is True:
-            os.remove(file)
-    for cog_name, cog_object in anti_petros_bot.cogs.items():
-        save_commands(cog_object)
-
-
 @cli.command(name="clean")
 def clean_user_data():
+    """
+    Cli command to clean the 'APPDATA' folder that was created.
+
+    Deletes all files, created by this application in the `APPDATA` folder.
+
+    Can be seen as a deinstall command.
+
+    Raises:
+        RuntimeError: if you try to delete the folder while `IS_DEV` is set, it raises andd error so not to delete the dev `APPDATA` folder.
+    """
     if os.environ['IS_DEV'].casefold() in ['true', 'yes', '1'] or APPDATA.dev is True:
         raise RuntimeError("Cleaning not possible in Dev Mode")
     APPDATA.clean(APPDATA.AllFolder)
@@ -183,7 +206,7 @@ def clean_user_data():
 def stop():
     """
     Cli way of autostoping the bot.
-    creates and file in a specific folder that acts like a shutdown trigger (bot watches the folder)
+    Writes a file to a specific folder that acts like a shutdown trigger (bot watches the folder)
     afterwards deletes the file. Used as redundant way to shut down if other methods fail, if this fails, the server has to be restarted.
 
     """
@@ -197,7 +220,6 @@ def stop():
 
 @cli.command(name='run')
 @click.option('--token', '-t')
-@click.option('--steam-api-key', '-s')
 def run(token):
     """
     Standard way to start the bot and connect it to discord.
@@ -216,13 +238,14 @@ def main(token: str):
     """
     Starts the Antistasi Discord Bot 'AntiPetros'.
 
-    creates the bot, loads the extensions and starts the bot with the Token.
-    is extra function so the bot can be started via cli but also from within vscode.
+    Instantiates the bot, loads the extensions and starts the bot with the Token.
+    This is seperated from the Cli run function so the bot can be started via cli but also from within vscode.
 
     Args:
         token_file ([str]): discord token
         save_token_file ([str]): key to decrypt the db's
     """
+    log.info(glog.NEWRUN())
     os.environ['INFO_RUN'] = "0"
     anti_petros_bot = AntiPetrosBot(token=token)
 

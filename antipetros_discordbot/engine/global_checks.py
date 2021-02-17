@@ -1,7 +1,5 @@
 """
-[summary]
-
-[extended_summary]
+Conatains Checks that should be applied as global Checks to the Bot itself
 """
 
 # region [Imports]
@@ -45,6 +43,18 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def user_not_blacklisted(bot, logger):
+    """
+    Checks if the User invoking the command is Blacklisted from invoking commands.
+
+    Blocks the command if he is Blacklisted.
+
+    Blacklisted User data is stored in `blacklist.json` and all access to it runs via the sub_supporter `blacklist_warden.py`.
+
+    Args:
+        bot `discord.ext.commands.Bot`: Bot instance to access the sub_supporter `blacklist_warden.py`.
+        logger `logging.Logger`: Logger to log the invokation try of the blacklisted User.
+
+    """
     async def predicate(ctx):
         if bot.is_blacklisted(ctx.author):
             logger.warning('Tried invocation by blacklisted user: "%s", id: "%s"', ctx.author.name, str(ctx.author.id))

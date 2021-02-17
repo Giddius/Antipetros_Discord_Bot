@@ -1,3 +1,8 @@
+"""
+Actual Bot class.
+
+"""
+
 # region [Imports]
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
@@ -12,16 +17,14 @@ import random
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
-from steamy import SteamAPI
 from udpy import AsyncUrbanClient
 from watchgod import Change, awatch
 from discord.ext import tasks, commands
 import arrow
 from humanize import naturaltime
-try:
-    from icecream import ic
-except ImportError:  # Graceful fallback if IceCream isn't installed.
-    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+
+from icecream import ic
+
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -65,6 +68,9 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class AntiPetrosBot(commands.Bot):
+
+    # region [ClassAttributes]
+
     creator = CreatorMember('Giddi', 576522029470056450, None, None)
     executor = ThreadPoolExecutor(6, thread_name_prefix='Bot_Thread')
     discord_admin_cog_import_path = "antipetros_discordbot.cogs.discord_admin_cogs.discord_admin_cog"
@@ -73,7 +79,11 @@ class AntiPetrosBot(commands.Bot):
     essential_cog_paths = BOT_ADMIN_COG_PATHS + DISCORD_ADMIN_COG_PATHS
     dev_cog_paths = DEV_COG_PATHS
 
+# endregion[ClassAttributes]
+
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
+
+        # region [Init]
         super().__init__(owner_ids={self.creator.id, 413109712695984130, 122348088319803392},
                          case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'),
                          self_bot=False,
@@ -102,6 +112,8 @@ class AntiPetrosBot(commands.Bot):
             self._setup()
 
         glog.class_init_notification(log, self)
+
+        # endregion[Init]
 
     def get_intents(self):
 
@@ -166,6 +178,7 @@ class AntiPetrosBot(commands.Bot):
         self._watch_for_shutdown_trigger.start()
         self._watch_for_config_changes.start()
         self._watch_for_alias_changes.start()
+        log.info("Bot is ready")
 
     async def handle_previous_shutdown_msg(self):
         if os.path.isfile(self.shutdown_message_pickle_file):
@@ -449,6 +462,8 @@ class AntiPetrosBot(commands.Bot):
         writejson(role_data, 'all_roles.json', sort_keys=False)
         log.debug("debug function finished")
 
+# region [SpecialMethods]
+
     def __repr__(self):
         return f"{self.__class__.__name__}()"
 
@@ -459,3 +474,5 @@ class AntiPetrosBot(commands.Bot):
         if hasattr(self.support, attr_name) is True:
             return getattr(self.support, attr_name)
         return getattr(super(), attr_name)
+
+# endregion[SpecialMethods]

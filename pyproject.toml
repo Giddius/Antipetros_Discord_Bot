@@ -35,7 +35,7 @@ requires = [
     "antistasi_template_checker==0.1.1",
     "discord==1.0.1",
     "gidappdata>=0.1.13",
-    "gidlogger>=0.1.8",
+    "gidlogger>=0.1.9",
     "Pillow==8.1.0",
     "python-dotenv==0.15.0",
     "udpy==2.0.0",
