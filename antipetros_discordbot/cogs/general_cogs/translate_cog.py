@@ -138,6 +138,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -154,6 +155,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 # endregion [Loops]
 
 # region [Listener]
+
 
     async def _emoji_translate_checks(self, payload):
         command_name = "emoji_translate_listener"
@@ -192,13 +194,13 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
         if message.embeds != []:
             log.debug('translating embed')
-            await self.translate_embed(channel, message, message.embeds[0], country_code)
+            await self.translate_embed(payload.member, channel, message, message.embeds[0], country_code)
             return
 
         translated = self.translator.translate(text=message.content, dest=country_code, src="auto")
-        await message.reply(f"**in {LANGUAGES.get(country_code)}:**\n {translated.text.strip('.')}", allowed_mentions=AllowedMentions.none())
+        await payload.member.send(f"**in {LANGUAGES.get(country_code)}:**\n {translated.text.strip('.')}", allowed_mentions=AllowedMentions.none())
 
-    async def translate_embed(self, channel, message, embed, country_code):
+    async def translate_embed(self, member, channel, message, embed, country_code):
         embed_dict = embed.to_dict()
         if "author" in embed_dict:
             embed_dict['author']['name'] = await self._translate_text(embed_dict['author'].get('name', ''), country_code=country_code)
@@ -214,7 +216,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
                                 'value': await self._translate_text(field.get('value', ''), country_code=country_code),
                                 'inline': field.get('inline', False)})
         embed_dict['fields'] = _new_fields
-        await message.reply(embed=discord.Embed.from_dict(embed_dict), allowed_mentions=AllowedMentions.none())
+        await member.send(embed=discord.Embed.from_dict(embed_dict), allowed_mentions=AllowedMentions.none())
 
     async def _translate_text(self, text: str, country_code: str):
         try:
@@ -258,7 +260,6 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
 # region [HelperMethods]
 
-
     @staticmethod
     def get_emoji_name(s):
         return s.encode('ascii', 'namereplace').decode('utf-8', 'namereplace')
@@ -267,7 +268,6 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

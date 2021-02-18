@@ -14,6 +14,7 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from typing import Union, TYPE_CHECKING, List, Set, Tuple
 import random
+from webdav3.client import Client
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord

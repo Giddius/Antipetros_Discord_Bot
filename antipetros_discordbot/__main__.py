@@ -58,6 +58,18 @@ def filter_asyncio_call(record: logging.LogRecord):
     return 0
 
 
+def limit_log_backups(backup_folder):
+    all_files = []
+    for file in os.scandir(backup_folder):
+        if file.is_file():
+            all_files.append((file.path, os.stat(file.path).st_ctime))
+    all_files = sorted(all_files, key=lambda x: x[1])
+    amount_to_keep = BASE_CONFIG.getint('logging', "amount_keep_old_logs")
+    while len(all_files) > amount_to_keep:
+        to_delete = all_files.pop(0)
+        os.remove(to_delete[0])
+
+
 def configure_logger():
     """
     Configures the logger from the base_config.ini file.
@@ -86,6 +98,7 @@ def configure_logger():
     for file in os.scandir(os.path.dirname(_log_file)):
         if file.is_file() and file.name.endswith('.log'):
             shutil.move(file.path, pathmaker(os.path.dirname(file.path), 'old_logs'))
+    limit_log_backups(pathmaker(os.path.dirname(_log_file), 'old_logs'))
     in_back_up = from_config('amount_keep_old_logs', 'getint')
     use_logging = from_config('use_logging', 'getboolean')
     if os.getenv('IS_DEV') == 'true':
@@ -220,7 +233,9 @@ def stop():
 
 @cli.command(name='run')
 @click.option('--token', '-t')
-def run(token):
+@click.option('--nextcloud-username', '-nu')
+@click.option('--nextcloud-password', '-np')
+def run(token, nextcloud_username, nextcloud_password):
     """
     Standard way to start the bot and connect it to discord.
     takes the token as string and the key to decrypt the db also as string.
@@ -231,10 +246,10 @@ def run(token):
         save_token_file ([str]): key to decrypt the db's
     """
     os.environ['INFO_RUN'] = "0"
-    main(token=token)
+    main(token=token, nextcloud_username=nextcloud_username, nextcloud_password=nextcloud_password)
 
 
-def main(token: str):
+def main(token: str, nextcloud_username: str = None, nextcloud_password: str = None):
     """
     Starts the Antistasi Discord Bot 'AntiPetros'.
 
@@ -246,6 +261,10 @@ def main(token: str):
         save_token_file ([str]): key to decrypt the db's
     """
     log.info(glog.NEWRUN())
+    if nextcloud_username is not None:
+        os.environ['NEXTCLOUD_USERNAME'] = nextcloud_username
+    if nextcloud_password is not None:
+        os.environ['NEXTCLOUD_PASSWORD'] = nextcloud_password
     os.environ['INFO_RUN'] = "0"
     anti_petros_bot = AntiPetrosBot(token=token)
 
@@ -257,8 +276,9 @@ def main(token: str):
 if __name__ == '__main__':
     if os.getenv('IS_DEV') == 'true':
         load_dotenv('token.env')
+        load_dotenv("nextcloud.env")
 
-        main(token=os.getenv('ANTIDEVTROS_TOKEN'))
+        main(token=os.getenv('ANTIDEVTROS_TOKEN'), nextcloud_username=os.getenv('NX_USERNAME'), nextcloud_password=os.getenv("NX_PASSWORD"))
     else:
         main()
 

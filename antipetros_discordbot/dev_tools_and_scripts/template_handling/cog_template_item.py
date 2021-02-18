@@ -47,9 +47,8 @@ from contextlib import contextmanager
 from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
 from collections import Counter, ChainMap, deque, namedtuple, defaultdict
 from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
+
 
 # * Third Party Imports --------------------------------------------------------------------------------->
 import autopep8
@@ -96,65 +95,6 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class LoopTemplateItem:
-
-    allowed_attributes_map = {"seconds": float,
-                              "minutes": float,
-                              "hours": float,
-                              "count": int,
-                              "reconnect": bool,
-                              "loop": asyncio.AbstractEventLoop}
-
-    def __init__(self, name):
-        self.name = name
-        self.all_attributes = {"seconds": 0.0, "minutes": 0.0, "hours": 0.0, "count": "None", "reconnect": True, "loop": "None"}
-
-    def set_attribute(self, attribute_name, value):
-        if attribute_name not in self.allowed_attributes_map:
-            raise KeyError
-        typus = self.allowed_attributes_map.get(attribute_name)
-        if not isinstance(value, typus):
-            raise TypeError
-        self.all_attributes[attribute_name] = value
-
-
-class ListenerTemplateItem:
-    event_mapping = EVENT_MAPPING
-
-    def __init__(self, name, event_name):
-        self.name = name
-        if event_name not in self.event_mapping:
-            raise KeyError(f'unknown event "{event_name}"')
-        self._event_name = event_name
-
-    @property
-    def args(self):
-        return self.event_mapping.get(self.event_name, [])
-
-    @property
-    def event_name(self):
-        return self._event_name.name
-
-    @event_name.setter
-    def event_name(self, value: str):
-        if value not in self.event_mapping:
-            raise KeyError(f'unknown event "{value}"')
-        self._event_name = value
-
-
-class CommandTemplateItem:
-    allowed_check_config_keys = {'allowed_in_dm_key', 'allowed_roles_key', 'allowed_channel_key'}
-
-    def __init__(self, name, dm_allowed=False, log_invocation=False, **check_config_keys: Dict[str, str]):
-        self.name = name
-        self.dm_allowed = dm_allowed
-        self.log_invocation = log_invocation
-        for key, value in check_config_keys.items():
-            if key not in self.allowed_check_config_keys:
-                raise KeyError(f'config_key "{key}" not allowed key, {self.allowed_check_config_keys=}')
-            setattr(self, key, value)
-
-
 class CogTemplateItem:
     allowed_command_attr = {"hidden": bool, "enabled": bool}
     standard_template_name = 'cog_template.py.jinja'
@@ -165,16 +105,13 @@ class CogTemplateItem:
         self._check_name()
         self.category = category
         self.overwrite = overwrite
-        self.all_loops = []
-        self.all_listeners = []
-        self.all_commands = []
-        self.all_com_attr = {}
         self.extra_imports = []
         self.config_options = []
+        self.all_com_attr = {}
         self._template_name = self.standard_template_name
         self.format_code = True
 
-    def add_extra_import(self, package_name, typus=None, *members):
+    def add_extra_import(self, package_name, *members, typus=None):
         import_statement = ''
         if typus is None:
             import_statement = f"import {package_name}"
@@ -191,48 +128,6 @@ class CogTemplateItem:
         if not isinstance(value, typus):
             raise TypeError(f"cog_command_attribute '{key}' has to be type '{typus.__name__}'")
         self.all_com_attr[key] = value
-
-    def add_command(self, command_name, dm_allowed=False, log_invocation=False, **check_config_keys: Dict[str, str]):
-        self.all_commands.append(CommandTemplateItem(command_name, dm_allowed, log_invocation, **check_config_keys))
-        for key, value in check_config_keys.items():
-            if value not in self.config_options:
-                self.config_options.append(value)
-
-    def remove_command(self, command_name):
-        to_delete_index = None
-        for index, command in enumerate(self.all_commands):
-            if command.name == command_name:
-                to_delete_index = index
-        if to_delete_index is None:
-            raise IndexError
-        self.all_commands.pop(to_delete_index)
-
-    def add_listener(self, listener_name, listener_event):
-        self.all_listeners.append(ListenerTemplateItem(listener_name, listener_event))
-
-    def remove_listener(self, listener_name):
-        to_delete_index = None
-        for index, listener in enumerate(self.all_listeners):
-            if listener.name == listener_name:
-                to_delete_index = index
-        if to_delete_index is None:
-            raise IndexError
-        self.all_listeners.pop(to_delete_index)
-
-    def add_loop(self, loop_name, **loop_attributes):
-        loop_item = LoopTemplateItem(loop_name)
-        for key, value in loop_attributes.items():
-            loop_item.set_attribute(key, value)
-        self.all_loops.append(loop_item)
-
-    def remove_loop(self, loop_name):
-        to_delete_index = None
-        for index, loop in enumerate(self.all_loops):
-            if loop.name == loop_name:
-                to_delete_index = index
-        if to_delete_index is None:
-            raise IndexError
-        self.all_loops.pop(to_delete_index)
 
     @property
     def _alt_name(self):
@@ -297,15 +192,7 @@ class CogTemplateItem:
             self.name = self.name + 'Cog'
 
     def _render(self):
-        return self.template(**{self.template_var_name: self})
-
-    def add_to_config(self):
-        if self.config_name in COGS_CONFIG:
-            return
-        COGS_CONFIG.add_section(self.config_name)
-        for option in self.config_options:
-            COGS_CONFIG.set(self.config_name, option, "")
-        COGS_CONFIG.save()
+        return self.template(**{self.template_var_name: self}, timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     def write(self):
         if os.path.isfile(self.file_path) is True and self.overwrite is False:
@@ -318,10 +205,10 @@ class CogTemplateItem:
         create_folder(self.category_folder_path)
         create_file(pathmaker(self.category_folder_path, '__init__.py'))
         self.write()
-        self.add_to_config()
 
 
 # region[Main_Exec]
 if __name__ == '__main__':
-    pass
+    x = CogTemplateItem('AntistasiLogWatcherCog', "antistasi_tool")
+    x.generate()
 # endregion[Main_Exec]
