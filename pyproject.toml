@@ -48,7 +48,6 @@ requires = [
     "PyQt5==5.15.2",
     "python-dotenv==0.15.0",
     "python_magic==0.4.22",
-    "secrets==1.0.2",
     "udpy==2.0.0",
 ]
 
