@@ -56,8 +56,7 @@ log = glog.aux_logger(__name__)
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
-# location of this file, does not work if app gets compiled to exe with pyinstaller
-THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))# location of this file, does not work if app gets compiled to exe with pyinstaller
 COG_NAME = "TranslateCog"
 CONFIG_NAME = make_config_name(COG_NAME)
 get_command_enabled = command_enabled_checker(CONFIG_NAME)

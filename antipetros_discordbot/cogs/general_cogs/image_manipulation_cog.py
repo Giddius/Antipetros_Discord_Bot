@@ -36,7 +36,6 @@ from antipetros_discordbot.utility.enums import CogState
 # TODO: create regions for this file
 # TODO: Document and Docstrings
 
-
 # endregion [TODO]
 
 # region [Logging]
@@ -50,8 +49,7 @@ glog.import_notification(log, __name__)
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
-# location of this file, does not work if app gets compiled to exe with pyinstaller
-THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__)) # location of this file, does not work if app gets compiled to exe with pyinstaller
 COG_NAME = "ImageManipulationCog"
 CONFIG_NAME = make_config_name(COG_NAME)
 get_command_enabled = command_enabled_checker(CONFIG_NAME)
@@ -333,7 +331,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
         """
         Stamps the avatar of a Member with the Antistasi Crest.
 
-        Returns the new stamped avatar as image, that the Member can save and replace his orginal avatar with.
+        Returns the new stamped avatar as a .PNG image that the Member can save and replace his orginal avatar with.
 
         """
         avatar_image = await self.get_avatar_from_user(ctx.author)
@@ -341,7 +339,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
         modified_avatar = await self.bot.execute_in_thread(self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
 
         name = f"{ctx.author.name}_Member_avatar"
-        await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**")
+        await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**") #change completion line to "Pledge your allegiance to the Antistasi Rebellion!"?
 
     async def get_avatar_from_user(self, user):
         avatar = user.avatar_url
