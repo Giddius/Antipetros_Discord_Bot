@@ -49,7 +49,7 @@ glog.import_notification(log, __name__)
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
-THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__)) # location of this file, does not work if app gets compiled to exe with pyinstaller
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))  # location of this file, does not work if app gets compiled to exe with pyinstaller
 COG_NAME = "ImageManipulationCog"
 CONFIG_NAME = make_config_name(COG_NAME)
 get_command_enabled = command_enabled_checker(CONFIG_NAME)
@@ -90,10 +90,10 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
                                     WatermarkPosition.Center | WatermarkPosition.Center: self._to_center_center,
                                     WatermarkPosition.Center | WatermarkPosition.Bottom: self._to_bottom_center,
                                     WatermarkPosition.Center | WatermarkPosition.Top: self._to_top_center}
-        self.base_map_image = Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v3_2000_w_outposts.png")
-        self.outpost_overlay = {'city': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_city_marker.png"),
-                                'volcano': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_volcano_marker.png"),
-                                'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
+        # self.base_map_image = Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v3_2000_w_outposts.png")
+        # self.outpost_overlay = {'city': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_city_marker.png"),
+        #                         'volcano': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_volcano_marker.png"),
+        #                         'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
         self.old_map_message = None
         self._get_stamps()
         self.allowed_channels = allowed_requester(self, 'channels')
@@ -105,6 +105,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
 # endregion[Init]
 
 # region [Setup]
+
 
     async def on_ready_setup(self):
         self._get_stamps()
@@ -339,7 +340,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
         modified_avatar = await self.bot.execute_in_thread(self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
 
         name = f"{ctx.author.name}_Member_avatar"
-        await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**") #change completion line to "Pledge your allegiance to the Antistasi Rebellion!"?
+        await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**")  # change completion line to "Pledge your allegiance to the Antistasi Rebellion!"?
 
     async def get_avatar_from_user(self, user):
         avatar = user.avatar_url
@@ -364,31 +365,30 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
         bytes_out.seek(0)
         return base_image, bytes_out
 
-    @commands.command(aliases=get_aliases("map_changed"), enabled=get_command_enabled("map_changed"))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
-    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
-    async def map_changed(self, ctx, marker, color):
-        """
-        Proof of concept for future real time server map.
-        """
-        log.info("command was initiated by '%s'", ctx.author.name)
-        with BytesIO() as image_binary:
+    # @commands.command(aliases=get_aliases("map_changed"), enabled=get_command_enabled("map_changed"))
+    # @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    # @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
+    # async def map_changed(self, ctx, marker, color):
+    #     """
+    #     Proof of concept for future real time server map.
+    #     """
+    #     log.info("command was initiated by '%s'", ctx.author.name)
+    #     with BytesIO() as image_binary:
 
-            self.base_map_image, image_binary = await self.bot.execute_in_thread(self.map_image_handling, self.base_map_image, marker, color, image_binary)
+    #         self.base_map_image, image_binary = await self.bot.execute_in_thread(self.map_image_handling, self.base_map_image, marker, color, image_binary)
 
-            if self.old_map_message is not None:
-                await self.old_map_message.delete()
-            delete_time = None
-            embed = discord.Embed(title='Current Server Map State', color=self.support.green.discord_color, timestamp=datetime.now(tz=timezone("Europe/Berlin")), type="image")
-            embed.set_author(name='Antistasi Community Server 1', icon_url="https://s3.amazonaws.com/files.enjin.com/1218665/site_logo/NEW%20LOGO%20BANNER.png", url="https://a3antistasi.enjin.com/")
-            embed.set_image(url="attachment://map.png")
-            self.old_map_message = await ctx.send(embed=embed, file=discord.File(fp=image_binary, filename="map.png"), delete_after=delete_time)
+    #         if self.old_map_message is not None:
+    #             await self.old_map_message.delete()
+    #         delete_time = None
+    #         embed = discord.Embed(title='Current Server Map State', color=self.support.green.discord_color, timestamp=datetime.now(tz=timezone("Europe/Berlin")), type="image")
+    #         embed.set_author(name='Antistasi Community Server 1', icon_url="https://s3.amazonaws.com/files.enjin.com/1218665/site_logo/NEW%20LOGO%20BANNER.png", url="https://a3antistasi.enjin.com/")
+    #         embed.set_image(url="attachment://map.png")
+    #         self.old_map_message = await ctx.send(embed=embed, file=discord.File(fp=image_binary, filename="map.png"), delete_after=delete_time)
 
-        log.debug("finished 'map_changed' command")
+    #     log.debug("finished 'map_changed' command")
 
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
