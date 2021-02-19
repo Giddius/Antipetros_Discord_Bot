@@ -55,6 +55,12 @@ class AioSuggestionDataStorageSQLite:
         self.db.vacuum()
         glog.class_init_notification(log, self)
 
+    async def get_save_emojis(self):
+        _out = {}
+        for item in await self.db.aio_query('get_all_save_emojis', row_factory=True):
+            _out[item["name"]] = item['save_emoji']
+        return _out
+
     async def category_emojis(self):
         _out = {}
         for item in await self.db.aio_query('SELECT "emoji", "name" FROM "category_tbl"', row_factory=True):
@@ -69,7 +75,7 @@ class AioSuggestionDataStorageSQLite:
         return _out
 
     async def update_votes(self, vote_type, amount, message_id):
-        phrase = 'update_upvotes' if vote_type == 'THUMBS UP SIGN' else 'update_downvotes'
+        phrase = 'update_upvotes' if vote_type == 'thumbs_up' else 'update_downvotes'
         await self.db.aio_write(phrase, (amount, message_id))
 
     async def update_category(self, category, message_id):
@@ -92,7 +98,8 @@ class AioSuggestionDataStorageSQLite:
         return result[0]
 
     async def remove_suggestion_by_id(self, suggestion_id):
-        data_id = await self.db.aio_query('get_data_id_by_message_id', (suggestion_id,), row_factory=True)[0]['extra_data_id']
+        data_id = await self.db.aio_query('get_data_id_by_message_id', (suggestion_id,), row_factory=True)
+        data_id = data_id[0]['extra_data_id']
         await self.db.aio_write('remove_suggestion_by_id', (suggestion_id,))
         if data_id is not None:
             await self.db.aio_write('remove_extra_data_by_id', (data_id,))
@@ -115,7 +122,8 @@ class AioSuggestionDataStorageSQLite:
                          suggestion_item.message.created_at,
                          suggestion_item.time,
                          suggestion_item.message.content,
-                         suggestion_item.message.jump_url)
+                         suggestion_item.message.jump_url,
+                         suggestion_item.team)
 
         else:
             extra_data_name, extra_data_path = suggestion_item.extra_data
@@ -130,6 +138,7 @@ class AioSuggestionDataStorageSQLite:
                          suggestion_item.time,
                          suggestion_item.message.content,
                          suggestion_item.message.jump_url,
+                         suggestion_item.team,
                          extra_data_name)
         await self.db.aio_write(sql_phrase, arguments)
         await self.db.aio_vacuum()

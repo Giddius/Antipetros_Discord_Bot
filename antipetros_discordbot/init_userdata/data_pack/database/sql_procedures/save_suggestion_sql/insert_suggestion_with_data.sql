@@ -8,7 +8,7 @@ INSERT
         "utc_saved_time",
         "content",
         "link_to_message",
-        "extra_data_id"
+        "team_id" "extra_data_id"
     )
 VALUES (
         ?,
@@ -27,6 +27,11 @@ VALUES (
         ?,
         ?,
         ?,
+        (
+            SELECT "id"
+            FROM "team_tbl"
+            WHERE "name" = ?
+        ),
         (
             SELECT "id"
             from "extra_data_tbl"

@@ -160,7 +160,7 @@ def save_commands(cog, output_file=None):
     command_json[str(cog)] = {'file_path': pathmaker(os.path.abspath(inspect.getfile(cog.__class__))),
                               'description': dedent(str(inspect.getdoc(cog.__class__))),
                               "commands": {},
-                              "state": [' | '.join(map(str, CogState.split(cog.docattrs.get('is_ready')[0]))), cog.docattrs.get('is_ready')[1], cog.docattrs.get('is_ready')[2]]
+                              "state": [' | '.join(map(str, CogState.split(cog.docattrs.get('is_ready')[0]))), cog.docattrs.get('is_ready')[1]]
                               }
 
     for command in cog.get_commands():

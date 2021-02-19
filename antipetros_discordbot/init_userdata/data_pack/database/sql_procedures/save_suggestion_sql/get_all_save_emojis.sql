@@ -1,0 +1,1 @@
+SELECT "name", "save_emoji" FROM "team_tbl"

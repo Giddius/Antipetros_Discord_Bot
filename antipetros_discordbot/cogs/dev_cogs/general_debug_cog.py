@@ -34,7 +34,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
-from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name
+from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name, normalize_emoji
 # endregion [Imports]
 
 # region [Logging]
@@ -123,7 +123,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     @commands.Cog.listener(name="on_raw_reaction_add")
     async def emoji_tester(self, payload):
-        disable = True
+        disable = False
 
         if disable is True:
             return
@@ -135,6 +135,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             log.debug("custom emoji name: '%s'", emoji.name)
             log.debug("custom emoji demojized: '%s'", demojize(str(emoji)))
             log.debug("custom emoji hash: '%s'", hash(emoji))
+            log.debug("custom emoji normalized: '%s'", normalize_emoji(emoji.name))
         elif emoji.is_unicode_emoji():
             log.debug("unicode emoji as str(): '%s'", str(emoji))
             log.debug("unicode emoji id: '%s'", emoji.id)
@@ -142,6 +143,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             log.debug("unicode emoji demojized: '%s'", demojize(emoji.name))
             log.debug("unicode emoji hash: '%s'", hash(emoji))
             log.debug("unicode emoji customized name: '%s'", create_emoji_custom_name(str(emoji)))
+            log.debug("unicode emoji normalized: '%s'", normalize_emoji(emoji.name))
 
     @auto_meta_info_command(enabled=get_command_enabled('roll'))
     @allowed_channel_and_allowed_role_2()

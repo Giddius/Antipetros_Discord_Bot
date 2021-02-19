@@ -152,6 +152,7 @@ def command_info_run(output_file, verbose):
     collected in `/docs/resources/data` as `commands.json`, `command_help.json`
 
     """
+    os.environ['INFO_RUN'] = "1"
     if verbose is False:
         logging.disable(logging.CRITICAL)
     anti_petros_bot = AntiPetrosBot()
@@ -171,6 +172,7 @@ def config_data_run(output_file, verbose):
     collected in `/docs/resources/prototype_files` as `standard_cogs_config.ini`, `standard_base_config.ini`
 
     """
+    os.environ['INFO_RUN'] = "1"
     if verbose is False:
         logging.disable(logging.CRITICAL)
     anti_petros_bot = AntiPetrosBot()
@@ -189,6 +191,7 @@ def bot_help_data_run(output_file, verbose):
     collected in `/docs/resources/data` as `command_help.json`
 
     """
+    os.environ['INFO_RUN'] = "1"
     if verbose is False:
         logging.disable(logging.CRITICAL)
     anti_petros_bot = AntiPetrosBot()
