@@ -16,7 +16,7 @@ if os.path.islink(MAIN_DIR) is True:
 def set_env():
     """
     Sets some enviroment variables to be available everywhere.
-    Checks if it is being launched from the development environment or not and set the env variable 'IS_DEV' accordingly.
+    Checks if it is being launched from the development environment or not and set the env variable 'IS_DEV' and `PYTHONASYNCIODEBUG` accordingly.
 
     """
     old_cd = os.getcwd()
@@ -26,6 +26,7 @@ def set_env():
     if os.path.isfile(dev_indicator_env_path):
         load_dotenv(dev_indicator_env_path)
         os.environ['IS_DEV'] = 'true'
+        os.environ['PYTHONASYNCIODEBUG'] = "1"
 
     else:
         os.environ['IS_DEV'] = 'false'

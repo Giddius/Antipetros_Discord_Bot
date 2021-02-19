@@ -155,7 +155,7 @@ def allowed_channel_and_allowed_role_2(in_dm_allowed: bool = False):
         author = ctx.author
         channel = ctx.channel
         bot = ctx.bot
-
+        log.debug("in_dm_allowed for '%s': %s", command.name, str(in_dm_allowed))
         if channel.type is discord.ChannelType.private:
             if in_dm_allowed is False:
                 raise IsNotTextChannelError(ctx, channel.type)
@@ -167,13 +167,16 @@ def allowed_channel_and_allowed_role_2(in_dm_allowed: bool = False):
             allowed_dm_ids = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('dm_ids'))
             if callable(allowed_dm_ids):
                 allowed_dm_ids = allowed_dm_ids(command)
+            log.debug("allowed_dm_ids for '%s': %s", command.name, str(allowed_dm_ids))
             if allowed_dm_ids != ["all"] and author.id not in allowed_dm_ids:
                 raise NotNecessaryDmId(ctx)
         else:
             allowed_channel_names = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('channels'))
             if callable(allowed_channel_names):
                 allowed_channel_names = allowed_channel_names(command)
-            if allowed_channel_names != ['all'] and channel.name.casefold() not in allowed_channel_names + ['bot-testing']:
+            allowed_channel_names = allowed_channel_names + ['bot-testing']
+            log.debug("allowed_channel_names for '%s': %s", command.name, str(allowed_channel_names))
+            if allowed_channel_names != ['all'] and channel.name.casefold() not in allowed_channel_names:
                 raise NotAllowedChannelError(ctx, allowed_channel_names)
 
             if await bot.is_owner(author):
@@ -183,6 +186,7 @@ def allowed_channel_and_allowed_role_2(in_dm_allowed: bool = False):
             allowed_role_names = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('roles'))
             if callable(allowed_role_names):
                 allowed_role_names = allowed_role_names(command)
+            log.debug("allowed_role_names for '%s': %s", command.name, str(allowed_role_names))
             if allowed_role_names != 'all' and all(role.name.casefold() not in allowed_role_names for role in author.roles):
                 raise NotNecessaryRole(ctx, allowed_role_names)
 

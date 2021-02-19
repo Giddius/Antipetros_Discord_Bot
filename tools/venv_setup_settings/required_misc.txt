@@ -2,7 +2,6 @@
 Jinja2
 Pillow
 PyGithub
-TextBlob
 WeasyPrint
 aioftp
 aiosqlite
@@ -13,7 +12,6 @@ asyncstdlib
 beautifulsoup4
 click
 colormap
-commonmark
 cryptography
 dateparser
 discord-flags
@@ -26,19 +24,15 @@ google-auth-httplib2
 google_auth_oauthlib
 googletrans==4.0.0-rc1
 graphviz
-gspread
 humanize
 icecream
 invoke
 lxml
-marshmallow
-networkx
 paramiko[all]
 pendulum
 psutil
 pydot
 pyfiglet
-pyperclip
 python-Levenshtein
 python-benedict
 python-dateutil
@@ -50,4 +44,3 @@ tldextract
 udpy
 url-normalize
 watchgod
-wikipedia

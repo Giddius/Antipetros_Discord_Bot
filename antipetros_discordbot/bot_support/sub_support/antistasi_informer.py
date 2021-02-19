@@ -61,6 +61,30 @@ class AntistasiInformer(SubSupportBase):
 
         glog.class_init_notification(log, self)
 
+    def check_member_has_any_role(self, role_names: list, member):
+        for role_name in role_names:
+            if role_name.casefold() in [role.name.casefold() for role in member.roles]:
+                return True
+        return False
+
+    @property
+    def dev_members(self):
+
+        return [member for member in self.antistasi_guild.members if self.check_member_has_any_role(["dev helper", "dev team", "dev team lead"], member) is True]
+
+    @property
+    def dev_member_by_role(self):
+        _out = {"dev team lead": [], "dev team": [], "dev helper": []}
+        for member in self.dev_members:
+            if member.bot is False:
+                if self.check_member_has_any_role(['dev team lead'], member) is True:
+                    _out['dev team lead'].append(member)
+                elif self.check_member_has_any_role(['dev team'], member) is True:
+                    _out['dev team'].append(member)
+                elif self.check_member_has_any_role(['dev helper'], member) is True:
+                    _out['dev helper'].append(member)
+        return _out
+
     @property
     def general_data(self):
         return loadjson(self.general_data_file)

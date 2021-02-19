@@ -58,7 +58,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
     # region [ClassAttributes]
     config_name = "absolute_time"
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY,
+                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
                              "2021-02-06 05:16:51",
                              "ed8f3b4d66db18f01a1d7c0fefd24434c07a0035c5582fd79b75782ab28498170967dc42582d2ac10b208f662a03302532bad1c128c1b82a7b1edec96447f8a4")}
 # endregion [ClassAttributes]

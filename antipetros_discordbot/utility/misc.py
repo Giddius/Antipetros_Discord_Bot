@@ -149,15 +149,14 @@ def sync_to_async(_func):
     return wrapped
 
 
-def save_commands(cog):
-    command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/commands.json')
-    command_help_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/command_help.json')
+def save_commands(cog, output_file=None):
+    command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/data/commands.json') if output_file is None else pathmaker(output_file)
+
     if os.path.isfile(command_json_file) is False:
         writejson({}, command_json_file)
-    if os.path.isfile(command_help_file) is False:
-        writejson({}, command_help_file)
+
     command_json = loadjson(command_json_file)
-    command_help = loadjson(command_help_file)
+
     command_json[str(cog)] = {'file_path': pathmaker(os.path.abspath(inspect.getfile(cog.__class__))),
                               'description': dedent(str(inspect.getdoc(cog.__class__))),
                               "commands": {},
@@ -176,11 +175,6 @@ def save_commands(cog):
                                                                     'is_enabled': command.enabled,
                                                                     'qualified_name': command.qualified_name}
 
-        command_help[command.name.strip()] = {'brief': command.brief,
-                                              'description': command.description,
-                                              'usage': command.usage,
-                                              'help': command.help}
-    writejson(command_help, command_help_file)
     writejson(command_json, command_json_file, indent=4)
     log.debug("commands for %s saved to %s", cog, command_json_file)
 
@@ -190,8 +184,8 @@ def make_command_subsection_seperator(command_name):
     return f'# {command_name.upper().center(75, "-")}'
 
 
-def generate_base_cogs_config(bot: commands.Bot):
-    out_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/standard_cogs_config.ini')
+def generate_base_cogs_config(bot: commands.Bot, output_file=None):
+    out_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/prototype_files/standard_cogs_config.ini') if output_file is None else pathmaker(output_file)
     sub_section_seperator = f'# {"_"*75}'
     command_section_seperator = f'# {"COMMANDS".center(75, "-")}'
     listener_section_seperator = f'# {"LISTENER".center(75, "+")}'
@@ -210,11 +204,31 @@ def generate_base_cogs_config(bot: commands.Bot):
             out_lines.append(make_command_subsection_seperator(command.name))
             out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('enabled')[0]} = {COMMAND_CONFIG_SUFFIXES.get('enabled')[1]}")
             out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('channels')[0]} = {COMMAND_CONFIG_SUFFIXES.get('channels')[1]}")
-            if all(isinstance(check, type(owner_or_admin)) is False for check in command.checks):
-                out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('roles')[0]} = {COMMAND_CONFIG_SUFFIXES.get('roles')[1]}")
+
+            out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('roles')[0]} = {COMMAND_CONFIG_SUFFIXES.get('roles')[1]}")
             if any(getclosurevars(check).nonlocals.get('in_dm_allowed', False) is True for check in command.checks):
                 out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('dm_ids')[0]} = {COMMAND_CONFIG_SUFFIXES.get('dm_ids')[1]}")
     writeit(out_file, '\n\n'.join(out_lines))
+
+
+def generate_help_data(cog: commands.Cog, output_file=None):
+    help_data_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/data/command_help.json') if output_file is None else pathmaker(output_file)
+    if os.path.isfile(help_data_file) is False:
+        writejson({}, help_data_file)
+    help_data = loadjson(help_data_file)
+    cog_name = cog.qualified_name
+    if cog_name not in help_data:
+        help_data[cog_name] = {}
+    help_data[cog_name] = {'description': cog.description,
+                           'config_name': cog.config_name,
+                           'file_path': pathmaker(os.path.abspath(inspect.getfile(cog.__class__))),
+                           'commands': {}}
+    for command in cog.get_commands():
+        help_data[cog_name]['commands'][command.name.strip()] = {'brief': command.brief,
+                                                                 'description': command.description,
+                                                                 'usage': command.usage,
+                                                                 'help': command.help}
+    writejson(help_data, help_data_file)
 
 
 async def async_load_json(json_file):

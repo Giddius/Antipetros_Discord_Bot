@@ -83,6 +83,7 @@ class CogState(Flag):
     NEEDS_REFRACTORING = auto()
     OUTDATED = auto()
     CRASHING = auto()
+    DOCUMENTATION_MISSING = auto()
     EMPTY = auto()
 
     @classmethod

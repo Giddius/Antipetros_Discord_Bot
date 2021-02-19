@@ -61,7 +61,7 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": COG_
     """
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.FEATURE_MISSING,
+                'is_ready': (CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
                              "2021-02-06 05:19:50",
                              "b0fabfbd25ed7b45a009737879c2ef61262acce2c3e9043d7b2b27e51f6cd8de27fea94d52e1f97739765b4629d534de76bf28b241c5f27bd96917f3eb8c7e6e")}
 

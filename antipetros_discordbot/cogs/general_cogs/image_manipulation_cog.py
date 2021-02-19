@@ -4,11 +4,12 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
+import asyncio
 from io import BytesIO
 from pathlib import Path
 from datetime import datetime
 from tempfile import TemporaryDirectory
-
+from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from PIL import Image, ImageEnhance, ImageFont, ImageDraw
@@ -64,10 +65,13 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
     allowed_stamp_formats = set(loadjson(APPDATA["image_file_extensions.json"]))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
+                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
                              "2021-02-06 05:09:20",
                              "f166431cb83ae36c91d70d7d09020e274a7ebea84d5a0c724819a3ecd2230b9eca0b3e14c2d473563d005671b7a2bf9d87f5449544eb9b57bcab615035b0f83d")}
-    required_config_data = """"""
+    required_config_data = dedent("""  avatar_stamp = ASLOGO1
+                                avatar_stamp_fraction = 0.2
+                                stamps_margin = 5
+                                stamp_fraction = 0.3""")
 # endregion[ClassAttributes]
 
 # region [Init]
@@ -102,7 +106,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         self._get_stamps()
         log.debug('setup for cog "%s" finished', str(self))
@@ -131,7 +134,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
 
     @property
     def avatar_stamp(self):
-        return self._get_stamp_image(COGS_CONFIG.get(CONFIG_NAME, 'avatar_stamp').upper())
+        return self._get_stamp_image(COGS_CONFIG.get(CONFIG_NAME, 'avatar_stamp').upper(), 1)
 
 # endregion[Properties]
 
@@ -312,6 +315,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
             thumb_image = Image.open(image_path)
             thumb_image.thumbnail((128, 128))
             with BytesIO() as image_binary:
+                await asyncio.sleep(0)
                 thumb_image.save(image_binary, 'PNG', optimize=True)
                 image_binary.seek(0)
                 _file = discord.File(image_binary, filename=name + '.png')
@@ -384,6 +388,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
 
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

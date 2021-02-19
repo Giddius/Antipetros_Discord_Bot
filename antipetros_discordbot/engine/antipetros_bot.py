@@ -1,3 +1,8 @@
+"""
+Actual Bot class.
+
+"""
+
 # region [Imports]
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
@@ -9,19 +14,18 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from typing import Union, TYPE_CHECKING, List, Set, Tuple
 import random
+from webdav3.client import Client
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
-from steamy import SteamAPI
 from udpy import AsyncUrbanClient
 from watchgod import Change, awatch
 from discord.ext import tasks, commands
 import arrow
 from humanize import naturaltime
-try:
-    from icecream import ic
-except ImportError:  # Graceful fallback if IceCream isn't installed.
-    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+
+from icecream import ic
+
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -36,6 +40,7 @@ from antipetros_discordbot.utility.gidtools_functions import readit, loadjson, p
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
+from antipetros_discordbot.cogs import BOT_ADMIN_COG_PATHS, DISCORD_ADMIN_COG_PATHS, DEV_COG_PATHS
 # endregion[Imports]
 
 
@@ -64,13 +69,22 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class AntiPetrosBot(commands.Bot):
+
+    # region [ClassAttributes]
+
     creator = CreatorMember('Giddi', 576522029470056450, None, None)
     executor = ThreadPoolExecutor(6, thread_name_prefix='Bot_Thread')
     discord_admin_cog_import_path = "antipetros_discordbot.cogs.discord_admin_cogs.discord_admin_cog"
     bot_feature_suggestion_folder = APPDATA["bot_feature_suggestion_data"]
     bot_feature_suggestion_json_file = APPDATA['bot_feature_suggestions.json']
+    essential_cog_paths = BOT_ADMIN_COG_PATHS + DISCORD_ADMIN_COG_PATHS
+    dev_cog_paths = DEV_COG_PATHS
+
+# endregion[ClassAttributes]
 
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
+
+        # region [Init]
         super().__init__(owner_ids={self.creator.id, 413109712695984130, 122348088319803392},
                          case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'),
                          self_bot=False,
@@ -99,6 +113,8 @@ class AntiPetrosBot(commands.Bot):
             self._setup()
 
         glog.class_init_notification(log, self)
+
+        # endregion[Init]
 
     def get_intents(self):
 
@@ -163,6 +179,7 @@ class AntiPetrosBot(commands.Bot):
         self._watch_for_shutdown_trigger.start()
         self._watch_for_config_changes.start()
         self._watch_for_alias_changes.start()
+        log.info("Bot is ready")
 
     async def handle_previous_shutdown_msg(self):
         if os.path.isfile(self.shutdown_message_pickle_file):
@@ -254,7 +271,25 @@ class AntiPetrosBot(commands.Bot):
             log.debug("'%s' was started", str(self.aio_request_session))
 
     def _get_initial_cogs(self):
+        """
+        Loads `Cogs` that are enabled.
 
+        If a Cog is enabled is determined, by:
+            - `bot_admin_cogs` are always enabled
+            - `discord_admin_cogs are also always enabled
+            - `dev_cogs` are only enabled when running locally under `AntiDEVtros`
+            - all other cogs are looked up in `base_config.ini` under the section `extensions` if they are set to enabled (checks bool value)
+
+        New Cogs need to be added to `base_config.ini` section `extensions` in the format `[folder_name].[file_name without '.py']=[yes | no]`
+            example: `general_cogs.klimbim_cog=yes`
+        """
+        for essential_cog_path in self.essential_cog_paths:
+            self.load_extension(f"{self.cog_import_base_path}.{essential_cog_path}")
+            log.debug("loaded Essential-Cog: '%s' from '%s'", essential_cog_path.split('.')[-1], f"{self.cog_import_base_path}.{essential_cog_path}")
+        if self.is_debug is True:
+            for dev_cog_path in self.dev_cog_paths:
+                self.load_extension(f"{self.cog_import_base_path}.{dev_cog_path}")
+                log.debug("loaded Development-Cog: '%s' from '%s'", dev_cog_path.split('.')[-1], f"{self.cog_import_base_path}.{dev_cog_path}")
         for _cog in BASE_CONFIG.options('extensions'):
             if BASE_CONFIG.getboolean('extensions', _cog) is True:
                 name = _cog.split('.')[-1]
@@ -428,6 +463,8 @@ class AntiPetrosBot(commands.Bot):
         writejson(role_data, 'all_roles.json', sort_keys=False)
         log.debug("debug function finished")
 
+# region [SpecialMethods]
+
     def __repr__(self):
         return f"{self.__class__.__name__}()"
 
@@ -437,4 +474,6 @@ class AntiPetrosBot(commands.Bot):
     def __getattr__(self, attr_name):
         if hasattr(self.support, attr_name) is True:
             return getattr(self.support, attr_name)
-        return super().__getattr__(attr_name)
+        return getattr(super(), attr_name)
+
+# endregion[SpecialMethods]

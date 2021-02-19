@@ -89,7 +89,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     auto_accept_user_file = APPDATA["auto_accept_suggestion_users.json"]
 
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
+                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
                              "2021-02-06 03:41:58",
                              "82a2afc155a40808a8e2dcf7385bb5db0769ff2bf8e08f1829b97bfc58551531ebc0deeb178e850b3fb89cbe55522812226865fac0b389a082992130de175fcb")}
 
@@ -119,6 +119,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 # endregion [Init]
 # region [Setup]
 
+
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -130,6 +131,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
 # endregion[Setup]
 # region [Properties]
+
 
     @property
     def command_emojis(self):
@@ -175,9 +177,11 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         command_name = "suggestion_reaction_listener"
         channel = self.bot.get_channel(payload.channel_id)
         emoji = payload.emoji
+        message = await channel.fetch_message(payload.message_id)
+        if message.author.bot is True:
+            return False
 
         reaction_member = payload.member
-
         if get_command_enabled(command_name) is False:
             return False
 
@@ -435,7 +439,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
 # region [Embeds]
 
-
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -483,7 +486,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 # endregion [Embeds]
 
 # region [HelperMethods]
-
 
     async def _collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)
