@@ -65,7 +65,7 @@ def run_command(command: str):
 
 
 if __name__ == '__main__':
-    copy_script()
+    # copy_script()
     run_command("python3.9 -m pip install --upgrade pip")
     run_command(ANTIPETROS_UPDATE_CMD_VERSION)
     sleep(10)
