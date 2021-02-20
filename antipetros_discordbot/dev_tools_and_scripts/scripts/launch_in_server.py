@@ -18,7 +18,7 @@ def get_version():
 
 
 ANTIPETROS_START_CMD = f"nohup antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NX_USERNAME')} -np {os.getenv('NX_PASSWORD')} &"
-ANTIPETROS_UPDATE_CMD = "python3.9 -m pipx install --no-cache-dir --force-reinstall antipetros_discordbot"
+ANTIPETROS_UPDATE_CMD = "python3.9 -m pip install --force-reinstall antipetros_discordbot"
 ANTIPETROS_UPDATE_CMD_VERSION = ANTIPETROS_UPDATE_CMD + '==' + get_version()
 
 USERNAME = 'root'
@@ -55,18 +55,19 @@ def copy_script():
 
 def run_command(command: str):
     with start_client() as client:
-        stdin, stdout, stderr = client.exec_command(command)
+        stdin, stdout, stderr = client.exec_command(command + ' 2>&1')
         if command != ANTIPETROS_START_CMD:
-            print('##### STDOUT #####')
-            print(stdout.read().decode())
-            print('##### STDERR #####')
-            print(stderr.read().decode())
+            while True:
+                stdout_line = stdout.readline()
+                if not stdout_line:
+                    break
+                print(stdout_line, end="")
 
 
 if __name__ == '__main__':
-    # run_command("python3.9 -m pip install --upgrade pip")
-    # run_command(ANTIPETROS_UPDATE_CMD_VERSION)
-    # sleep(10)
-    # run_command(f"antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NX_USERNAME')} -np {os.getenv('NX_PASSWORD')}")
-    # run_command(ANTIPETROS_START_CMD)
     copy_script()
+    run_command("python3.9 -m pip install --upgrade pip")
+    run_command(ANTIPETROS_UPDATE_CMD_VERSION)
+    sleep(10)
+    run_command(f"antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NX_USERNAME')} -np {os.getenv('NX_PASSWORD')}")
+    run_command(ANTIPETROS_START_CMD)
