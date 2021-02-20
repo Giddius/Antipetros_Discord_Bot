@@ -32,7 +32,7 @@ requires = [
     "fuzzywuzzy==0.18.0",
     "gidappdata==0.1.13",
     "gidconfig==0.1.16",
-    "gidlogger==0.1.8",
+    "gidlogger==0.1.9",
     "googletrans==4.0.0rc1",
     "humanize==3.2.0",
     "icecream==2.0.0",
