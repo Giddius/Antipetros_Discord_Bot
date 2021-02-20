@@ -22,3 +22,5 @@ pyspellchecker
 python-magic
 stdlib-list
 optimize-images
+pigar
+tomlkit

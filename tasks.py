@@ -6,6 +6,9 @@ from pprint import pprint
 from time import sleep
 import json
 from PIL import Image, ImageFilter, ImageOps
+import tomlkit
+from dotenv import load_dotenv
+load_dotenv('tools/_project_devmeta.env')
 
 
 def bytes2human(n, annotate=False):
@@ -331,3 +334,30 @@ def optimize_art(c, quality=100):
             print('#' * 50 + "\n")
             if file.name.endswith('.jpg'):
                 os.rename(file.path, file.path.replace('.jpg', '.png'))
+
+
+REQUIREMENT_EXTRAS = ['discord-flags==2.1.1']
+
+
+@task
+def set_requirements(c):
+    old_cwd = os.getcwd()
+    os.chdir(os.getenv('TOPLEVELMODULE'))
+    activator_run(c, 'pigar --without-referenced-comments')
+    pigar_req_file = pathmaker(os.getenv('TOPLEVELMODULE'), 'requirements.txt')
+    with open(pigar_req_file, 'r') as f:
+        req_content = f.read()
+    _requirements = []
+    for line in req_content.splitlines():
+        if not line.startswith('#') and line != '' and 'antipetros_discordbot' not in line:
+            line = line.replace(' ', '')
+            _requirements.append(line)
+    _requirements += REQUIREMENT_EXTRAS
+    os.remove(pigar_req_file)
+    os.chdir(old_cwd)
+    with open('pyproject.toml', 'r') as f:
+
+        pyproject = tomlkit.parse(f.read())
+    pyproject["tool"]["flit"]["metadata"]['requires'] = _requirements
+    with open('pyproject.toml', 'w') as f:
+        f.write(tomlkit.dumps(pyproject))
