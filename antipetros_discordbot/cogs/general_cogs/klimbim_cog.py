@@ -140,20 +140,23 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
     @ auto_meta_info_command(enabled=get_command_enabled('flip_coin'))
     @allowed_channel_and_allowed_role_2()
-    @commands.cooldown(1, 30, commands.BucketType.channel)
+    @commands.cooldown(1, 15, commands.BucketType.channel)
     async def flip_coin(self, ctx: commands.Context):
         """
         Simulates a coin flip and posts the result as an image of a Petros Dollar.
 
         """
         with ctx.typing():
+
             result = (secrets.randbelow(2) + 1)
             coin = "heads" if is_even(result) is True else 'tails'
 
             await asyncio.sleep(random.random() * random.randint(1, 2))
 
             coin_image = COGS_CONFIG.retrieve(self.config_name, f"coin_image_{coin}", typus=str)
-
+            if random.randint(1, 100) <= 1:
+                coin = 'nato, you lose!'
+                coin_image = "https://i.postimg.cc/cdL5Z0BH/nato-coin.png"
             embed = await self.bot.make_generic_embed(title=coin.title(), description=ZERO_WIDTH, image=coin_image, thumbnail='no_thumbnail')
 
             await ctx.reply(**embed, allowed_mentions=AllowedMentions.none())

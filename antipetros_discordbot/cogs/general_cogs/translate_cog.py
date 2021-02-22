@@ -56,7 +56,7 @@ log = glog.aux_logger(__name__)
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
-THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))# location of this file, does not work if app gets compiled to exe with pyinstaller
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))  # location of this file, does not work if app gets compiled to exe with pyinstaller
 COG_NAME = "TranslateCog"
 CONFIG_NAME = make_config_name(COG_NAME)
 get_command_enabled = command_enabled_checker(CONFIG_NAME)
@@ -137,7 +137,6 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -154,7 +153,6 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 # endregion [Loops]
 
 # region [Listener]
-
 
     async def _emoji_translate_checks(self, payload):
         command_name = "emoji_translate_listener"
@@ -231,7 +229,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
     @commands.command(aliases=get_aliases('translate'), **get_doc_data('translate'))
     @allowed_channel_and_allowed_role_2()
-    @commands.cooldown(1, 10, commands.BucketType.channel)
+    @commands.cooldown(1, 60, commands.BucketType.channel)
     async def translate(self, ctx, to_language_id: Optional[LanguageConverter] = "english", *, text_to_translate: str):
         """
         Translates text into multiple different languages.
@@ -259,6 +257,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
 # region [HelperMethods]
 
+
     @staticmethod
     def get_emoji_name(s):
         return s.encode('ascii', 'namereplace').decode('utf-8', 'namereplace')
@@ -267,6 +266,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

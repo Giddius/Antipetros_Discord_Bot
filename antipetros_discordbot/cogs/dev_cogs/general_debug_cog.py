@@ -26,7 +26,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import save_commands, color_hex_embed, async_seconds_to_pretty_normal, make_config_name
-from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester
+from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, check_after_invoke
 from antipetros_discordbot.utility.named_tuples import MovieQuoteItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, bytes2human
@@ -35,6 +35,7 @@ from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name, normalize_emoji
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 # endregion [Imports]
 
 # region [Logging]
@@ -310,6 +311,38 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     async def check_embed_gif(self, ctx: commands.Context):
         embed_data = await self.bot.make_generic_embed(title="check embed gif", image=APPDATA['COMMAND_the_dragon.gif'])
         await ctx.send(**embed_data)
+
+    @ commands.command()
+    @ commands.is_owner()
+    async def get_prefixes(self, ctx: commands.Context, message: discord.Message):
+        prefixes = await self.bot.get_prefix(message)
+        await ctx.send(str(prefixes))
+
+    # @ commands.command()
+    # @ commands.is_owner()
+    # async def send_the_configs(self, ctx: commands.Context):
+    #     data = loadjson(APPDATA['Admin Lead_members.json'])
+    #     for item in data:
+    #         admin_lead_member = await self.bot.retrieve_antistasi_member(item.get('id'))
+    #         cogs_config_file = discord.File(APPDATA['cogs_config.ini'])
+    #         base_config_file = discord.File(APPDATA['base_config.ini'])
+    #         await admin_lead_member.send('**From Giddi**:\nAttached are the bot configs, they are commented as best I can right now, but I am always available for questions. You can change them directly and send them back to me(giddi).\n\n*I use the bot to send this message to not have to write it 3 times*', files=[base_config_file, cogs_config_file])
+
+    @ commands.command()
+    @ commands.is_owner()
+    async def the_bots_new_clothes(self, ctx: commands.Context):
+        msg = ZERO_WIDTH * 20 + '\n'
+        await ctx.send('```python\nTHE BOTS NEW CLOTHES:\n' + (msg * 40) + '\n```')
+        await ctx.send(msg * 60)
+        await ctx.message.delete()
+
+    @commands.after_invoke(check_after_invoke)
+    @auto_meta_info_command()
+    @ commands.is_owner()
+    async def check_a_hook(self, ctx: commands.Context):
+        await asyncio.sleep(5)
+        await ctx.send("this is inside the command")
+        await asyncio.sleep(5)
 
 
 def setup(bot):

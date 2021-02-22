@@ -68,4 +68,4 @@ def get_cog_paths_from_folder(folder_name: str, files_to_exclude: list = None):
 
 BOT_ADMIN_COG_PATHS = get_cog_paths_from_folder(folder_name='bot_admin_cogs', files_to_exclude=["performance_cog.py"])
 DEV_COG_PATHS = get_cog_paths_from_folder(folder_name='dev_cogs', files_to_exclude=['test_playground_cog.py'])
-DISCORD_ADMIN_COG_PATHS = get_cog_paths_from_folder(folder_name='discord_admin_cogs', files_to_exclude=['discord_admin_cog.py'])
+DISCORD_ADMIN_COG_PATHS = get_cog_paths_from_folder(folder_name='discord_admin_cogs', files_to_exclude=['discord_admin_cog.py', 'security_cog.py'])

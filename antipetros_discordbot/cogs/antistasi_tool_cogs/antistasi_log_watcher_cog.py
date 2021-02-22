@@ -64,7 +64,8 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
-from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogFile
+from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogFile, LogServer
+from antipetros_discordbot.utility.nextcloud import NEXTCLOUD_OPTIONS
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -119,12 +120,14 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
 # region [ClassAttributes]
 
     config_name = CONFIG_NAME
-    allready_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
+    already_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
     docattrs = {'show_in_readme': True,
                 'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
                              "2021-02-18 11:00:11")}
 
     required_config_data = dedent("""
+                                  log_file_warning_size_threshold = 200mb,
+                                  max_amount_get_files = 5
                                     """).strip('\n')
 # endregion [ClassAttributes]
 
@@ -136,11 +139,11 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-        if os.getenv('INFO_RUN') != "1":
-            self.nextcloud_client = Client(self.nextcloud_options)
+
         self.nextcloud_base_folder = "Antistasi_Community_Logs"
-        self.server_folder = {}
-        self.log_files = []
+        self.server = {}
+        self.update_log_file_data_loop_is_first_loop = True
+        self.check_oversized_logs_loop_is_first_loop = True
 
         glog.class_init_notification(log, self)
 
@@ -149,22 +152,10 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
 # region [Properties]
 
     @property
-    def nextcloud_options(self):
-        _options = {}
-        if os.getenv('NEXTCLOUD_USERNAME') is not None:
-            _options['webdav_hostname'] = f"https://antistasi.de/dev_drive/remote.php/dav/files/{os.getenv('NEXTCLOUD_USERNAME')}/"
-            _options['webdav_login'] = os.getenv('NEXTCLOUD_USERNAME')
-        else:
-            raise RuntimeError('no nextcloud Username set')
-        if os.getenv('NEXTCLOUD_PASSWORD') is not None:
-            _options['webdav_password'] = os.getenv('NEXTCLOUD_PASSWORD')
-        else:
-            raise RuntimeError('no nextcloud Password set')
-        return _options
-
-    @property
     def already_notified(self):
-        return loadjson(self.allready_notified_savefile)
+        if os.path.exists(self.already_notified_savefile) is False:
+            writejson([], self.already_notified_savefile)
+        return loadjson(self.already_notified_savefile)
 
 
 # endregion [Properties]
@@ -172,10 +163,9 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
 # region [Setup]
 
     async def on_ready_setup(self):
-        if os.path.isfile(self.allready_notified_savefile) is False:
-            writejson({}, self.allready_notified_savefile)
-        writejson(await self.get_base_structure(), self.allready_notified_savefile)
-        await self.get_files_info('Mainserver_1', 'Server')
+        await self.get_base_structure()
+        self.update_log_file_data_loop.start()
+        self.check_oversized_logs_loop.start()
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -185,6 +175,30 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
 # endregion [Setup]
 
 # region [Loops]
+
+    @tasks.loop(minutes=5)
+    async def update_log_file_data_loop(self):
+        if self.update_log_file_data_loop_is_first_loop is True:
+            log.debug('postponing loop "update_log_file_data_loop", as it should not run directly at the beginning')
+            self.update_log_file_data_loop_is_first_loop = False
+            return
+
+        for folder_name, folder_item in self.server.items():
+            log.debug("updating log files for '%s'", folder_name)
+            await folder_item.update()
+            await asyncio.sleep(5)
+
+    @tasks.loop(minutes=8)
+    async def check_oversized_logs_loop(self):
+        if self.check_oversized_logs_loop_is_first_loop is True:
+            log.debug('postponing loop "check_oversized_logs_loop", as it should not run directly at the beginning')
+            self.check_oversized_logs_loop_is_first_loop = False
+            return
+
+        for folder_name, folder_item in self.server.items():
+            log.debug("checking log files of '%s', for oversize", folder_name)
+            oversize_items = await folder_item.get_oversized_items()
+            oversize_items = [log_item for log_item in oversize_items if log_item.etag not in self.already_notified]
 
 
 # endregion [Loops]
@@ -196,24 +210,17 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
 
 # region [Commands]
 
-    @auto_meta_info_command()
-    @commands.is_owner()
-    async def list_dev_members(self, ctx):
-        msg = ""
-        for role_name, members in self.bot.dev_member_by_role.items():
-            msg += "\n---\n***__" + role_name.title() + '__***\n'
-            msg += '\n'.join(member.name for member in members)
-        await ctx.send(msg)
 
     @auto_meta_info_command()
     @commands.is_owner()
-    async def check_file(self, ctx, name: str):
-        file = None
-        for file_item in self.log_files:
-            if file_item.name.casefold() == name.casefold():
-                file = file_item
-                break
-        await self.bot.split_to_messages(ctx, message=await file.content(), syntax_highlighting='python', in_codeblock=True)
+    async def check_newest_files(self, ctx, server: str, sub_folder: str, amount: int = 1):
+        max_amount = COGS_CONFIG.retrieve(self.config_name, 'max_amount_get_files', typus=int, direct_fallback=5)
+        if amount > max_amount:
+            await ctx.send(f'You requested more files than the max allowed amount of {max_amount}, aborting!')
+            return
+        server = server.casefold()
+        folder_item = self.server[server]
+        await folder_item.newest_log_file(ctx, sub_folder, amount)
 
 
 # endregion [Commands]
@@ -226,35 +233,21 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
 # region [HelperMethods]
 
     async def get_base_structure(self):
-        base_structure = loadjson(self.allready_notified_savefile)
-        for folder in await self.bot.execute_in_thread(self.nextcloud_client.list, self.nextcloud_base_folder):
+        nextcloud_client = Client(NEXTCLOUD_OPTIONS)
+        for folder in await self.bot.execute_in_thread(nextcloud_client.list, self.nextcloud_base_folder):
             folder = folder.strip('/')
-            if not folder.endswith('.md') and folder != self.nextcloud_base_folder:
-                if folder not in base_structure:
-                    base_structure[folder] = {}
-                if folder not in self.server_folder:
-                    self.server_folder[folder] = []
-                for subfolder in await self.bot.execute_in_thread(self.nextcloud_client.list, f"{self.nextcloud_base_folder}/{folder}"):
-                    subfolder = subfolder.strip('/')
-                    if subfolder != folder:
-                        if subfolder not in base_structure[folder]:
-                            base_structure[folder][subfolder] = []
-                        if subfolder not in self.server_folder[folder]:
-                            self.server_folder[folder].append(subfolder)
-        return base_structure
+            if folder != self.nextcloud_base_folder and '.' not in folder:
+                folder_item = LogServer(self.nextcloud_base_folder, folder)
+                await folder_item.get_data()
+                self.server[folder.casefold()] = folder_item
+            await asyncio.sleep(1)
+        log.info(str(self) + ' collected server names: ' + ', '.join([key for key in self.server]))
 
-    async def get_files_info(self, server: str, folder: str):
-        for file_item in await self.bot.execute_in_thread(partial(self.nextcloud_client.list, f"{self.nextcloud_base_folder}/{server}/{folder}", get_info=True)):
-            try:
-                instance = LogFile(**file_item, client=self.nextcloud_client)
-                if instance not in self.log_files:
-                    self.log_files.append(instance)
-            except TypeError as error:
-                log.error(f"{error} with file {file_item.get('path')}")
-        writejson([item.name for item in self.log_files], 'log_file_items.json')
+
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True
@@ -269,8 +262,8 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
         pass
 
     def cog_unload(self):
-
-        pass
+        self.update_log_file_data_loop.stop()
+        self.check_oversized_logs_loop.stop()
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

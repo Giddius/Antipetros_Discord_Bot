@@ -99,7 +99,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
                                         suggestion_reaction_listener_enabled = yes
                                         suggestion_reaction_listener_allowed_channels = suggestions, bot-testing
                                         suggestion_reaction_listener_allowed_roles = Dev Helper, Admin
-                                        save_emoji = 💾
                                         downvote_emoji = 👎
                                         upvote_emoji = 👍
                                         add_success_embed_verbose = yes""")

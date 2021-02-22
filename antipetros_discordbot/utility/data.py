@@ -1,3 +1,5 @@
+import os
+
 COMMAND_CONFIG_SUFFIXES = {'enabled': ('_enabled', True), 'channels': ('_allowed_channels', ''), 'roles': ('_allowed_roles', ''), 'dm_ids': ('_allowed_dm_ids', '')}
 
 

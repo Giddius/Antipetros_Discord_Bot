@@ -6,8 +6,8 @@ from dotenv import find_dotenv, load_dotenv
 # * Third Party Imports --------------------------------------------------------------------------------->
 from paramiko import SSHClient, AutoAddPolicy
 from ftplib import FTP
-load_dotenv("nextcloud.env")
-load_dotenv("token.env")
+load_dotenv(find_dotenv("nextcloud.env"))
+load_dotenv(find_dotenv("token.env"))
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -66,8 +66,10 @@ def run_command(command: str):
 
 if __name__ == '__main__':
     # copy_script()
-    run_command("python3.9 -m pip install --upgrade pip")
-    run_command(ANTIPETROS_UPDATE_CMD_VERSION)
-    sleep(10)
-    run_command(f"antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NX_USERNAME')} -np {os.getenv('NX_PASSWORD')}")
+    # run_command("python3.9 -m pip install --upgrade pip")
+    # run_command(ANTIPETROS_UPDATE_CMD_VERSION)
+    # sleep(10)
+    # run_command("sudo apt-get install -y libsdl-pango-dev")
+    # run_command(f"antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NX_USERNAME')} -np {os.getenv('NX_PASSWORD')}")
+    run_command('antipetrosbot stop')
     run_command(ANTIPETROS_START_CMD)

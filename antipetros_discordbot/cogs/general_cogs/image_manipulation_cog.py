@@ -29,6 +29,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 # endregion[Imports]
 
 # region [TODO]
@@ -252,9 +253,9 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
     @flags.add_flag("--second-pos", '-sp', type=str, default="right")
     @flags.add_flag("--stamp-opacity", '-so', type=float, default=1.0)
     @flags.add_flag('--factor', '-f', type=float, default=None)
-    @commands.command(aliases=get_aliases("stamp_image"), enabled=get_command_enabled("stamp_image"), cls=flags.FlagCommand)
+    @auto_meta_info_command(enabled=get_command_enabled("stamp_image"), cls=flags.FlagCommand)
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
-    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
+    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def stamp_image(self, ctx, **flags):
         """
         Stamps an image with a small image from the available stamps.
@@ -301,7 +302,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
                     # TODO: make as embed
                     await self._send_image(ctx, in_image, name, f"__**{name}**__")
 
-    @commands.command(aliases=get_aliases("available_stamps"), enabled=get_command_enabled("available_stamps"))
+    @auto_meta_info_command(enabled=get_command_enabled("available_stamps"))
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_stamps(self, ctx):
@@ -325,9 +326,9 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": C
                 embed.set_image(url=f"attachment://{name}.png")
                 await ctx.send(embed=embed, file=_file, delete_after=120)
 
-    @commands.command(aliases=get_aliases("member_avatar"), enabled=get_command_enabled("member_avatar"))
+    @auto_meta_info_command(enabled=get_command_enabled("member_avatar"))
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
-    @commands.cooldown(1, 120, commands.BucketType.member)
+    @commands.cooldown(1, 300, commands.BucketType.member)
     async def member_avatar(self, ctx):
         """
         Stamps the avatar of a Member with the Antistasi Crest.

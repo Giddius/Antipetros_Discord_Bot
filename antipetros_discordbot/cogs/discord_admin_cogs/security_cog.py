@@ -50,6 +50,7 @@ from async_property import async_property
 import magic
 import tldextract
 from textwrap import dedent
+from icecream import ic
 # * Gid Imports -->
 import gidlogger as glog
 
@@ -188,6 +189,7 @@ class SecurityCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         await self._create_forbidden_link_list()
         log.debug('setup for cog "%s" finished', str(self))
@@ -209,12 +211,9 @@ class SecurityCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
 # region [Listener]
 
-
     @ commands.Cog.listener(name="on_message")
     async def attachment_scanner_listener(self, message: discord.Message):
         if message.channel.type is not ChannelType.text:
-            return
-        if message.channel.name.casefold() != 'bot-testing':
             return
         if get_command_enabled("attachment_scanner_listener") is False or len(message.attachments) == 0 or await self._attachment_scanner_exclusion_check(message) is True:
             return
@@ -229,6 +228,7 @@ class SecurityCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
         for attachment in listener_context.attachments:
             filename = attachment.filename
             extension = filename.split('.')[-1]
+            ic(extension)
             if extension.casefold() in self.forbidden_extensions:
                 await self._handle_forbidden_attachment(listener_context, filename)
                 return
@@ -292,12 +292,10 @@ class SecurityCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
         await listener_context.channel.send(listener_context.author.mention + ' Your message was deleted as you tried to send a forbidden type of attachment')
 
     async def _attachment_scanner_exclusion_check(self, msg):
-        if msg.author.name.casefold() in [name.casefold() for name in _from_cog_config('attachment_scanner_exclude_user', list)]:
-            return True
-        allowed_roles = [role_name.casefold() for role_name in _from_cog_config('attachment_scanner_exclude_roles', list)]
+        allowed_roles = [role_name.casefold() for role_name in COGS_CONFIG.retrieve("security", 'attachment_scanner_listener_exclude_roles', typus=list, direct_fallback=[])]
         if any(role.name.casefold() in allowed_roles for role in msg.author.roles):
             return True
-        if msg.channel.name.casefold in [channel_name.casefold() for channel_name in _from_cog_config('attachment_scanner_exclude_channels', list)]:
+        if msg.channel.name.casefold() not in [channel_name.casefold() for channel_name in COGS_CONFIG.retrieve("security", 'attachment_scanner_listener_allowed_channels', typus=list, direct_fallback=[])]:
             return True
         return False
 

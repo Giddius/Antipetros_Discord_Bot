@@ -26,7 +26,7 @@ def set_env():
     if os.path.isfile(dev_indicator_env_path):
         load_dotenv(dev_indicator_env_path)
         os.environ['IS_DEV'] = 'true'
-        os.environ['PYTHONASYNCIODEBUG'] = "1"
+        # os.environ['PYTHONASYNCIODEBUG'] = "1"
 
     else:
         os.environ['IS_DEV'] = 'false'

@@ -236,8 +236,8 @@ def stop():
 
 @cli.command(name='run')
 @click.option('--token', '-t')
-@click.option('--nextcloud-username', '-nu')
-@click.option('--nextcloud-password', '-np')
+@click.option('--nextcloud-username', '-nu', default=None)
+@click.option('--nextcloud-password', '-np', default=None)
 def run(token, nextcloud_username, nextcloud_password):
     """
     Standard way to start the bot and connect it to discord.
@@ -246,10 +246,11 @@ def run(token, nextcloud_username, nextcloud_password):
 
     Args:
         token_file ([str]): discord token
-        save_token_file ([str]): key to decrypt the db's
+        nextcloud_username([str]): username for dev_drive on nextcloud
+        nexctcloud_password([str]): password for dev_drive on nextcloud
     """
     os.environ['INFO_RUN'] = "0"
-    main(token=token, nextcloud_username=nextcloud_username, nextcloud_password=nextcloud_password)
+    main(token=str(token), nextcloud_username=nextcloud_username, nextcloud_password=nextcloud_password)
 
 
 def main(token: str, nextcloud_username: str = None, nextcloud_password: str = None):
@@ -261,7 +262,8 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
 
     Args:
         token_file ([str]): discord token
-        save_token_file ([str]): key to decrypt the db's
+        nextcloud_username([str]): username for dev_drive on nextcloud
+        nexctcloud_password([str]): password for dev_drive on nextcloud
     """
     log.info(glog.NEWRUN())
     if nextcloud_username is not None:

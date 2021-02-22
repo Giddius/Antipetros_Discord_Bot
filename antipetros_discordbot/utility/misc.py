@@ -41,6 +41,11 @@ SIZE_CONV = {'byte': {'factor': SGF**0, 'short_name': 'b'},
              'gigabyte': {'factor': SGF**3, 'short_name': 'gb'},
              'terrabyte': {'factor': SGF**4, 'short_name': 'tb'}}
 
+SIZE_CONV_BY_SHORT_NAME = {'b': 1,
+                           'gb': 1073741824,
+                           'kb': 1024,
+                           'mb': 1048576,
+                           'tb': 1099511627776}
 
 STANDARD_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 

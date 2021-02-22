@@ -457,10 +457,16 @@ class AntiPetrosBot(commands.Bot):
         role_data = []
         for role in self.antistasi_guild.roles:
             if role.name != '@everyone':
-                role_members = [member.name for member in role.members]
+                role_members = [{"name": member.name, "id": member.id} for member in role.members]
                 role_data.append({'name': role.name, 'position': role.position, 'tags': str(role.tags), 'members': role_members, 'managed': role.managed, 'hoist': role.hoist, 'created_at': role.created_at.strftime(self.std_date_time_format)})
+                writejson(role_members, pathmaker(APPDATA['role_data'], role.name + '_members.json'))
+
         role_data = sorted(role_data, key=lambda x: x.get('position'))
         writejson(role_data, 'all_roles.json', sort_keys=False)
+
+        writejson([{"name": channel.name, 'id': channel.id, "category": channel.category.name, "mention": channel.mention, "position": channel.position, 'topic': channel.topic}
+                   for channel in self.antistasi_guild.channels if channel.type is discord.ChannelType.text], pathmaker(APPDATA['channel_data'], 'general_channel_data.json'))
+        print(self.command_prefix)
         log.debug("debug function finished")
 
 # region [SpecialMethods]
