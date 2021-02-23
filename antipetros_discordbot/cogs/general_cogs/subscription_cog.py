@@ -4,29 +4,21 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-import random
+from typing import Optional
 from datetime import datetime
 from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
-import arrow
 import discord
-from discord import DiscordException
-from humanize import naturaltime
-from fuzzywuzzy import process as fuzzprocess
-from discord.ext import commands
+from discord.ext import flags, tasks, commands
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import save_commands, seconds_to_pretty, async_seconds_to_pretty_normal, make_config_name
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
-from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.data_gathering import gather_data
-from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
-from antipetros_discordbot.utility.gidtools_functions import loadjson, pickleit, pathmaker, writejson, get_pickled
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, is_even, seconds_to_pretty
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, in_allowed_channels, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.converters import DateOnlyConverter
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
@@ -34,10 +26,6 @@ from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 # endregion[Imports]
 
 # region [TODO]
-
-
-# TODO: get_logs command
-# TODO: get_appdata_location command
 
 
 # endregion [TODO]
@@ -60,30 +48,25 @@ APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-COG_NAME = "AdministrationCog"
-CONFIG_NAME = make_config_name(COG_NAME)
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
+COG_NAME = "SubscriptionCog"
 
+CONFIG_NAME = make_config_name(COG_NAME)
+
+get_command_enabled = command_enabled_checker(CONFIG_NAME)
 # endregion[Constants]
 
 
-class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
+class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     """
     Soon
     """
-    # region [ClassAttributes]
-
     config_name = CONFIG_NAME
-
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-06 05:21:10",
-                             "8f8fac3c998a0c078515c34712eff238644084f8de06831e9aa13dc36d42978885790242db11e078f4b8f3aa576af177c5143144351d807347e58797eb614027")}
+                'is_ready': (CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
+                             "2021-02-06 05:19:50")}
+
     required_config_data = dedent("""
                                   """)
-    # endregion[ClassAttributes]
-
-# region [Init]
 
     def __init__(self, bot):
         self.bot = bot
@@ -91,16 +74,8 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+
         glog.class_init_notification(log, self)
-
-
-# endregion[Init]
-
-# region [Properties]
-
-
-# endregion[Properties]
-
 # region [Setup]
 
     async def on_ready_setup(self):
@@ -111,27 +86,24 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         return
         log.debug('cog "%s" was updated', str(self))
 
+
 # endregion [Setup]
 
-    @ auto_meta_info_command(enabled=True)
-    @owner_or_admin()
-    @log_invoker(log, "critical")
-    async def delete_msg(self, ctx, msg_id: int):
-
-        channel = ctx.channel
-        message = await channel.fetch_message(msg_id)
-        await message.delete()
-        await ctx.message.delete()
 
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"
 
     def __str__(self):
-        return self.__class__.__name__
+        return self.qualified_name
+
+
+# region[Main_Exec]
 
 
 def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(AdministrationCog(bot)))
+    bot.add_cog(attribute_checker(SubscriptionCog(bot)))
+
+# endregion[Main_Exec]

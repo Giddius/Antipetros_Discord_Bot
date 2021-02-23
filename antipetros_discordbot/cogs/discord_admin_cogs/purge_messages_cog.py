@@ -91,7 +91,7 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": COG_
         glog.class_init_notification(log, self)
 
     @flags.add_flag("--and-giddi", '-gid', type=bool, default=False)
-    @flags.add_flag("--number-of-messages", '-n', type=int, default=1000)
+    @flags.add_flag("--number-of-messages", '-n', type=int, default=99999999999)
     @auto_meta_info_command(enabled=get_command_enabled("purge_antipetros"), cls=flags.FlagCommand)
     @commands.is_owner()
     @in_allowed_channels()

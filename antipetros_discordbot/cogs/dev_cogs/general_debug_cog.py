@@ -12,6 +12,11 @@ from io import BytesIO
 from textwrap import dedent
 from typing import Optional
 from dotenv import load_dotenv
+import lzma
+from datetime import datetime
+import shutil
+from zipfile import ZipFile, ZIP_LZMA
+from functools import partial
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext.commands import Greedy
@@ -20,6 +25,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from emoji import demojize
 from webdav3.client import Client
+
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -36,6 +42,8 @@ from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name, normalize_emoji
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.nextcloud import NEXTCLOUD_OPTIONS
+from antipetros_discordbot.utility.data_gathering import gather_data
 # endregion [Imports]
 
 # region [Logging]
@@ -343,6 +351,81 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await asyncio.sleep(5)
         await ctx.send("this is inside the command")
         await asyncio.sleep(5)
+
+    async def get_save_path(self, save_folder, name, in_round=0):
+        if in_round == 0:
+            path = pathmaker(save_folder, name)
+        else:
+            path = pathmaker(save_folder, f"{name.split('.')[0]}_{in_round}.{name.split('.')[-1]}")
+        if os.path.exists(path) is False:
+            return path
+        return await self.get_save_path(save_folder, name, in_round + 1)
+
+    @commands.after_invoke(check_after_invoke)
+    @auto_meta_info_command()
+    async def get_all_attachments(self, ctx: commands.Context, channel: discord.TextChannel, amount_to_scan: int = None):
+        if ctx.author.id not in [152532555600494593, 576522029470056450, 346595708180103170]:
+            return
+        to_large = False
+        delete_after = 300
+        wanted_extensions = ['jpg', 'png', 'svg', 'jpeg', 'psd', 'xcf']
+        msg = f'...try to collect all images from `{channel.name}`'
+        if amount_to_scan is not None:
+            msg += f' in the last `{amount_to_scan}` messages'
+        await ctx.send(msg, delete_after=delete_after)
+        save_folder = pathmaker(APPDATA['temp_files'], f"attachments_from_channel_{channel.name.replace(' ','_').lower()}")
+        if os.path.exists(save_folder) is False:
+            os.makedirs(save_folder)
+        await ctx.send(f'...scraping all attachments from `{channel.name}`', delete_after=delete_after)
+        async for message in channel.history(limit=amount_to_scan):
+            if len(message.attachments) != 0:
+                for attachment in message.attachments:
+                    # if any(attachment.filename.casefold().endswith('.' + wanted_ext.casefold()) for wanted_ext in wanted_extensions):
+                    save_path = await self.get_save_path(save_folder, attachment.filename)
+                    log.debug('SAVING image "%s"', os.path.basename(save_path))
+                    with open(save_path, 'wb') as f:
+                        await attachment.save(f)
+        await ctx.send(f"...I have collected `{len(os.listdir(save_folder))}` attachments from `{channel.name}`", delete_after=delete_after)
+        timestamp = datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S')
+        zip_path = await self.get_save_path(APPDATA['temp_files'], f"attachments_from_channel_{channel.name.replace(' ','_').lower()}_{timestamp}.zip")
+        await ctx.send('...compressing collected attachments', delete_after=delete_after)
+        with ZipFile(zip_path, 'w', compression=ZIP_LZMA) as zippy:
+            for file_item in os.scandir(save_folder):
+                if file_item.is_file():
+                    log.debug('COMPRESSING image "%s"', file_item.name)
+                    zippy.write(file_item.path, file_item.name)
+                    await asyncio.sleep(0)
+        await ctx.send(f"...zip file has a size of `{bytes2human(os.stat(zip_path).st_size,annotate=True)}`", delete_after=delete_after)
+
+        client = Client(NEXTCLOUD_OPTIONS)
+        await ctx.send("...Starting upload to Dev-Drive", delete_after=delete_after)
+        async with ctx.typing():
+            await self.bot.execute_in_thread(client.upload_sync, f"collected_attachments_discord/{os.path.basename(zip_path)}", zip_path)
+            await ctx.send(f"...uploaded to Dev-drive as `collected_attachments_discord/{os.path.basename(zip_path)}`", delete_after=delete_after)
+
+        log.debug("cleaning up '%s'", zip_path)
+        os.remove(zip_path)
+        log.debug('cleaning up "%s"', save_folder)
+        shutil.rmtree(save_folder)
+        if os.path.isdir(save_folder) is True:
+            os.remove(save_folder)
+
+    @ auto_meta_info_command(enabled=True)
+    @ commands.is_owner()
+    async def write_data(self, ctx):
+        await gather_data(self.bot)
+        await ctx.send(embed=await make_basic_embed(title='Data Collected', text='Data was gathered and written to the assigned files', symbol='save', collected_data='This command only collected fixed data like role_ids, channel_ids,...\n', reason='Data is collected and saved to a json file so to not relying on getting it at runtime, as this kind of data is unchanging', if_it_changes='then this command can just be run again'))
+
+    @ auto_meta_info_command(enabled=True)
+    @ commands.is_owner()
+    async def show_command_names(self, ctx):
+
+        _out = []
+
+        for cog_name, cog_object in self.bot.cogs.items():
+            for command in cog_object.get_commands():
+                _out.append('__**' + str(command.name) + '**__' + ': ```\n' + str(command.help).split('\n')[0] + '\n```')
+        await self.bot.split_to_messages(ctx, '\n---\n'.join(_out), split_on='\n---\n')
 
 
 def setup(bot):
