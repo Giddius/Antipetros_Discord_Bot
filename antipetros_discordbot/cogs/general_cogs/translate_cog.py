@@ -275,8 +275,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
         return self.qualified_name
 
     def cog_unload(self):
-
-        pass
+        log.debug("Cog '%s' UNLOADED!", str(self))
 
 
 # endregion [SpecialMethods]

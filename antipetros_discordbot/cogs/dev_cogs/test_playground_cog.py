@@ -297,6 +297,8 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
     def __str__(self):
         return self.qualified_name
 
+    def cog_unload(self):
+        log.debug("Cog '%s' UNLOADED!", str(self))
 # endregion [SpecialMethods]
 
 

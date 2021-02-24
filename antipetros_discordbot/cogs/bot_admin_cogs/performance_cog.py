@@ -98,11 +98,6 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.memory_measure_loop.start()
         self.report_data_loop.start()
 
-    def cog_unload(self):
-        self.latency_measure_loop.stop()
-        self.memory_measure_loop.stop()
-        self.report_data_loop.stop()
-
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def latency_measure_loop(self):
         start_time = time.time()
@@ -313,8 +308,15 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     def __str__(self) -> str:
         return self.qualified_name
 
+    def cog_unload(self):
+        self.latency_measure_loop.stop()
+        self.memory_measure_loop.stop()
+        self.report_data_loop.stop()
+        log.debug("Cog '%s' UNLOADED!", str(self))
+
 
 def setup(bot):
+
     bot.add_cog(PerformanceCog(bot))
 
 

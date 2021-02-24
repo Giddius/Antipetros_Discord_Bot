@@ -108,31 +108,16 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     async def on_ready_setup(self):
         self.bob_user = await self.bot.retrieve_antistasi_member(346595708180103170)
-        self.query_nextcloud_loop.start()
+
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
         return
         log.debug('cog "%s" was updated', str(self))
 
-    @tasks.loop(minutes=5)
-    async def query_nextcloud_loop(self):
-        pass
-        # base_folder = "Antistasi_Community_Logs"
-        # servers = ["Testserver_2", "Testserver_1", "Testserver_3", "Eventserver", "Mainserver_1", "Mainserver_2"]
-        # for server in servers:
-        #     path = f"{base_folder}/{server}/Server"
-        #     file_data = self.next_cloud_client.list(path, get_info=True)
-        #     for file_item in file_data:
-
-        #         if file_item.get('size') is not None and int(file_item.get("size")) > (250 * (1024**2)) and file_item.get('path') not in self.notified_nextcloud_files:
-        #             await self.bob_user.send(f"Warning the file '{os.path.basename(file_item.get('path'))}' exceeded 250mb in size.\n Current Size= {bytes2human(int(file_item.get('size')), annotate=True)}, \n Server= {os.path.basename(os.path.dirname(os.path.dirname(file_item.get('path'))))}")
-        #             await self.bot.creator.member_object.send(f"Warning the file '{os.path.basename(file_item.get('path'))}' exceeded 250mb in size.\n Current Size= {bytes2human(int(file_item.get('size')), annotate=True)}, \n Server= {os.path.basename(os.path.dirname(os.path.dirname(file_item.get('path'))))}")
-        #             self.notified_nextcloud_files.append(file_item.get('path'))
-
     @commands.Cog.listener(name="on_raw_reaction_add")
     async def emoji_tester(self, payload):
-        disable = False
+        disable = True
 
         if disable is True:
             return
@@ -305,15 +290,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         embed_data = await self.bot.make_generic_embed(title=f'Permissions for **__{self.bot.display_name.upper()}__** in **__{channel.name.upper()}__**', description=description, thumbnail=None, footer='not_set')
         await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
-    @ commands.command(aliases=get_aliases("delete_msg"))
-    @ commands.is_owner()
-    async def delete_msg(self, ctx, msg_id: int):
-
-        channel = ctx.channel
-        message = await channel.fetch_message(msg_id)
-        await message.delete()
-        await ctx.message.delete()
-
     @ commands.command()
     @ commands.is_owner()
     async def check_embed_gif(self, ctx: commands.Context):
@@ -426,6 +402,9 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             for command in cog_object.get_commands():
                 _out.append('__**' + str(command.name) + '**__' + ': ```\n' + str(command.help).split('\n')[0] + '\n```')
         await self.bot.split_to_messages(ctx, '\n---\n'.join(_out), split_on='\n---\n')
+
+    def cog_unload(self):
+        log.debug("Cog '%s' UNLOADED!", str(self))
 
 
 def setup(bot):

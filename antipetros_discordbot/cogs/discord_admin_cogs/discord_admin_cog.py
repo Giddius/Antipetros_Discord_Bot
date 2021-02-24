@@ -25,7 +25,6 @@ from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_rol
 from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.data_gathering import gather_data
-from antipetros_discordbot.utility.message_helper import add_to_embed_listfield
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pickleit, pathmaker, writejson, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState
@@ -103,6 +102,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -128,6 +128,9 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
     def __str__(self):
         return self.__class__.__name__
+
+    def cog_unload(self):
+        log.debug("Cog '%s' UNLOADED!", str(self))
 
 
 def setup(bot):

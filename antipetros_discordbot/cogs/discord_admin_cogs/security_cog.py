@@ -324,8 +324,7 @@ class SecurityCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
         pass
 
     def cog_unload(self):
-
-        pass
+        log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

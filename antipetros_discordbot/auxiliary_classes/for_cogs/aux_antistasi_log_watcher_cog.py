@@ -173,6 +173,14 @@ class LogFile:
         return bytes2human(self.size, annotate=True)
 
     @property
+    def created_pretty(self):
+        return self.created.strftime("%Y-%m-%d %H:%M:%S")
+
+    @property
+    def modified_pretty(self):
+        return self.modified.strftime("%Y-%m-%d %H:%M:%S")
+
+    @property
     def is_over_threshold(self):
         if self.size >= self.warning_size_threshold:
             return True
@@ -195,30 +203,16 @@ class LogFile:
             await loop.run_in_executor(THREADPOOL, client.download_sync, self.path, new_path)
 
             content = await loop.run_in_executor(THREADPOOL, readit, new_path)
-            await asyncio.sleep(0)
+
             return content
 
-    async def file(self, ctx):
+    async def download(self, save_dir):
         client = Client(NEXTCLOUD_OPTIONS)
-        async with ctx.typing():
-            with TemporaryDirectory() as tempdir:
-                new_path = pathmaker(tempdir, os.path.basename(self.path))
-                loop = get_event_loop()
-                await loop.run_in_executor(THREADPOOL, client.download_sync, self.path, new_path)
-                await asyncio.sleep(0)
-                if self.size >= (50 * (1024**2)):
-                    zip_path = pathmaker(tempdir, os.path.basename(self.path).split('.')[0] + '.zip')
-                    with ZipFile(zip_path, mode='w', compression=ZIP_LZMA) as zippy:
-                        zippy.write(new_path, os.path.basename(new_path))
-                    file = discord.File(zip_path)
-                else:
-                    file = discord.File(new_path)
-                embed = discord.Embed(title=self.name, description=self.path, timestamp=self.modified)
-                embed.add_field(name="__**Last Modified**__", value="SEE TIMESTAMP", inline=False)
-                embed.add_field(name="__**Size**__", value=self.size_pretty, inline=False)
-                embed.add_field(name='__**Over Size Threshold**__', value='No' if self.is_over_threshold is False else 'Yes', inline=False)
-                embed.set_thumbnail(url="https://i.postimg.cc/jRWVNcY4/log-file-card.png")
-                await ctx.send(embed=embed, file=file, delete_after=300)
+        new_path = pathmaker(save_dir, os.path.basename(self.path))
+        loop = get_event_loop()
+        await loop.run_in_executor(THREADPOOL, client.download_sync, self.path, new_path)
+
+        return new_path
 
     async def update(self, size: Union[str, int], modified: Union[datetime, str], first: bool = False):
         if isinstance(size, str):
@@ -238,7 +232,7 @@ class LogFile:
         if self.size != size or self.modified < modified:
             self.size = size
             self.modified = modified
-            log.info("&&@@&& log_item '%s' with path '%s' was updated", self.name, self.path)
+            log.info("!LOG_ITEM_UPDATED! log_item '%s' with path '%s' was updated", self.name, self.path)
 
     async def dump(self):
         return {"etag": self.etag,
@@ -291,24 +285,27 @@ class LogServer:
                     _out.append(item)
         return _out
 
-    async def newest_log_file(self, ctx, sub_folder, amount):
+    async def get_newest_log_file(self, sub_folder, amount):
+        _out = []
         mod_sub_folder = sub_folder.casefold()
+        if mod_sub_folder not in map(lambda x: x.casefold(), self.sub_folder):
+            raise KeyError(f'Unable to find a subfolder with the name of "{sub_folder}"')
         for sub_folder_name in self.sub_folder:
             if sub_folder_name.casefold() == mod_sub_folder:
                 for i in range(amount):
                     newest_file = self.sub_folder[sub_folder_name][i]
-                    await newest_file.file(ctx)
-                return
-        await ctx.send(f'Unable to find a subfolder with the name of "{sub_folder}"')
+                    _out.append(newest_file)
+        return _out
 
     async def update(self):
         _temp_holder = {}
         for sub_folder_name in self.sub_folder:
             _temp_holder[sub_folder_name] = await self.get_file_infos(sub_folder_name, raw=True)
+            await asyncio.sleep(random.randint(0, 1))
         for sub_folder_name in self.sub_folder:
             for new_log_item_data in _temp_holder[sub_folder_name]:
                 await self.update_log_items(sub_folder_name, **new_log_item_data)
-                await asyncio.sleep(0)
+
             self.sub_folder[sub_folder_name] = sorted(self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True)
             await asyncio.sleep(random.randint(0, 1))
 
@@ -329,7 +326,11 @@ class LogServer:
             new_log_item = self.log_item(**data_kwargs)
             self.sub_folder[sub_folder_name].append(new_log_item)
             self.sub_folder[sub_folder_name] = sorted(self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True)
-            log.info("&&@@&& added new log_item '%s' to LogServer('%s', '%s')", new_log_item.name, self.name, sub_folder_name)
+            log.info("!NEW LOG ITEM! added new log_item '%s' to LogServer('%s', '%s')", new_log_item.name, self.name, sub_folder_name)
+
+    async def sort(self):
+        for sub_folder_name in self.sub_folder:
+            self.sub_folder[sub_folder_name] = sorted(self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True)
 
     async def get_oversized_items(self):
         oversized_items = []

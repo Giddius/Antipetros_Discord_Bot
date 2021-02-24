@@ -12,6 +12,7 @@ import random
 from datetime import datetime
 from typing import Union, TYPE_CHECKING, List, Set, Tuple
 import random
+import asyncio
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord import Color
 import discord
@@ -77,7 +78,7 @@ class EssentialCommandsKeeper(SubSupportBase):
 
     def add_commands(self):
         self.bot.add_command(commands.Command(self.reload_all_ext, aliases=['reload', 'refresh']))
-        self.bot.add_command(commands.Command(self.shutdown, aliases=['die', 'rip', 'go-away', 'go_away', 'go.away', 'goaway']))
+        self.bot.add_command(commands.Command(self.shutdown, aliases=['die', 'rip', 'go-away', 'go_away', 'go.away', 'goaway', 'get_banned']))
         self.bot.add_listener(self.stop_the_reaction_petros, 'on_reaction_add')
 
     async def stop_the_reaction_petros(self, reaction: discord.Reaction, user):
@@ -92,23 +93,29 @@ class EssentialCommandsKeeper(SubSupportBase):
         COGS_CONFIG.read()
         reloaded_extensions = []
         do_not_reload_cogs = BASE_CONFIG.retrieve('extension_loading', 'do_not_reload_cogs', typus=List[str], direct_fallback=[])
-        for _extension in BASE_CONFIG.options('extensions'):
-            if _extension not in do_not_reload_cogs and BASE_CONFIG.retrieve('extensions', _extension, typus=bool, direct_fallback=False) is True:
-                _location = self.cog_import_base_path + '.' + _extension
-                try:
-                    self.bot.unload_extension(_location)
-                    self.bot.load_extension(_location)
-                    log.debug('Extension Cog "%s" was successfully reloaded from "%s"', _extension.split('.')[-1], _location)
-                    _category, _extension = _extension.split('.')
+        async with ctx.typing():
+            for _extension in BASE_CONFIG.options('extensions'):
+                if _extension not in do_not_reload_cogs and BASE_CONFIG.retrieve('extensions', _extension, typus=bool, direct_fallback=False) is True:
+                    _location = self.cog_import_base_path + '.' + _extension
+                    try:
+                        self.bot.unload_extension(_location)
 
-                    reloaded_extensions.append(self.support.field_item(name=_extension, value=f"{ZERO_WIDTH}\n:white_check_mark:\n{ZERO_WIDTH}", inline=False))
-                except commands.DiscordException as error:
-                    log.error(error)
-        await self.bot.to_all_cogs('on_ready_setup')
-        _delete_time = 15 if self.is_debug is True else 60
-        _embed_data = await self.support.make_generic_embed(title="**successfully reloaded the following extensions**", author='bot_author', thumbnail="update", fields=reloaded_extensions)
-        await ctx.send(**_embed_data, delete_after=_delete_time)
-        await ctx.message.delete(delay=float(_delete_time))
+                        self.bot.load_extension(_location)
+                        log.debug('Extension Cog "%s" was successfully reloaded from "%s"', _extension.split('.')[-1], _location)
+                        _category, _extension = _extension.split('.')
+                        for cog_name, cog_object in self.bot.cogs.items():
+                            if cog_name.casefold() == _extension.split('.')[-1].replace('_', '').casefold():
+                                await cog_object.on_ready_setup()
+                                break
+
+                        reloaded_extensions.append(self.support.field_item(name=_extension, value=f"{ZERO_WIDTH}\n:white_check_mark:\n{ZERO_WIDTH}", inline=False))
+                    except commands.DiscordException as error:
+                        log.error(error)
+            # await self.bot.to_all_cogs('on_ready_setup')
+            _delete_time = 15 if self.is_debug is True else 60
+            _embed_data = await self.support.make_generic_embed(title="**successfully reloaded the following extensions**", author='bot_author', thumbnail="update", fields=reloaded_extensions)
+            await ctx.send(**_embed_data, delete_after=_delete_time)
+            await ctx.message.delete(delay=float(_delete_time))
 
     @owner_or_admin()
     async def shutdown(self, ctx):
@@ -127,12 +134,7 @@ class EssentialCommandsKeeper(SubSupportBase):
 
             last_shutdown_message = await ctx.send(**embed)
             pickleit({"message_id": last_shutdown_message.id, "channel_id": last_shutdown_message.channel.id}, self.shutdown_message_pickle_file)
-            try:
-                log.debug('deleting shutdown command message')
 
-                await ctx.message.delete()
-            except discord.NotFound:
-                log.debug("shutdown Message was not found")
         except Exception as error:
             log.error(error, exc_info=False)
         finally:

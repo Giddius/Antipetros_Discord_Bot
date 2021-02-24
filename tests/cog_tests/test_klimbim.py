@@ -1,17 +1,17 @@
 import discord.ext.test as dpytest
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 import pytest
+from dotenv import load_dotenv
+import os
+import asyncio
 
-
-@pytest.fixture
-def klimbim_loaded_bot(test_bot, base_import_path):
-    klimbim_import_path = '.'.join([base_import_path, 'general_cogs', 'klimbim_cog'])
-    test_bot
-    return test_bot
+load_dotenv(os.path.join(os.getenv('BASE_FOLDER'), 'nextcloud.env'))
+load_dotenv(os.path.join(os.getenv('BASE_FOLDER'), 'token.env'))
 
 
 @pytest.mark.asyncio
 async def test_flip_coin():
-    bot = AntiPetrosBot()
+    bot = AntiPetrosBot(token=os.getenv('ANTIDEVTROS_TOKEN'))
     dpytest.configure(bot)
-    await dpytest.message("$$ flip_coin")
+    await asyncio.sleep(45)
+    await dpytest.message("@AntiDEVtros help")

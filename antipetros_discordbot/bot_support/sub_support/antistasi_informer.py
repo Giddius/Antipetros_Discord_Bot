@@ -68,6 +68,10 @@ class AntistasiInformer(SubSupportBase):
         return False
 
     @property
+    def filesize_limit(self):
+        return self.antistasi_guild.filesize_limit
+
+    @property
     def dev_members(self):
 
         return [member for member in self.antistasi_guild.members if self.check_member_has_any_role(["dev helper", "dev team", "dev team lead"], member) is True]

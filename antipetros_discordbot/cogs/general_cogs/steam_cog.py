@@ -305,8 +305,8 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
         return self.qualified_name
 
     def cog_unload(self):
-
         self.check_for_updates.stop()
+        log.debug("Cog '%s' UNLOADED!", str(self))
 
 
 # endregion [SpecialMethods]

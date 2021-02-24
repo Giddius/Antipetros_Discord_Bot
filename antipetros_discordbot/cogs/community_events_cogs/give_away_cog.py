@@ -135,7 +135,8 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
 # region [Loops]
 
-    @tasks.loop(seconds=15, reconnect=True)
+
+    @tasks.loop(seconds=30, reconnect=True)
     async def check_give_away_ended_loop(self):
         for give_away_event in await self.give_aways:
             if datetime.utcnow() >= give_away_event.end_date_time:
@@ -170,6 +171,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 # endregion [Listener]
 
 # region [Commands]
+
 
     async def give_away_finished(self, event_item):
 
@@ -313,7 +315,6 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
 # region [HelperMethods]
 
-
     async def add_give_away(self, give_away_event):
         data = loadjson(self.give_away_data_file)
         data.append(await give_away_event.to_dict())
@@ -342,6 +343,8 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
     def cog_unload(self):
         self.check_give_away_ended_loop.stop()
+        self.clean_emojis_from_reaction.stop()
+        log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

@@ -194,7 +194,10 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
         channel = self.bot.get_channel(payload.channel_id)
         emoji = payload.emoji
-        message = await channel.fetch_message(payload.message_id)
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except discord.errors.NotFound:
+            return False
         if message.author.bot is True:
             return False
 
@@ -589,6 +592,8 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     def __str__(self):
         return self.qualified_name
 
+    def cog_unload(self):
+        log.debug("Cog '%s' UNLOADED!", str(self))
 # endregion [SpecialMethods]
 
 

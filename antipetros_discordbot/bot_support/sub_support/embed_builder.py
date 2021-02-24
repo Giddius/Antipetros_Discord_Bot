@@ -244,6 +244,9 @@ class EmbedBuilder(SubSupportBase):
                 field = self._fix_field_item(field)
                 generic_embed.add_field(name=field.name, value=field.value, inline=field.inline)
         self.default_field_name_num = 1
+        if self.bot.is_debug:
+            await self.save_embed_as_json(embed=generic_embed, save_name=kwargs.get('save_name', None))
+
         _out = {"embed": generic_embed}
         files = [file_item for file_item in files if file_item is not None]
         if len(files) == 1:
@@ -252,6 +255,12 @@ class EmbedBuilder(SubSupportBase):
             _out['files'] = files
 
         return _out
+
+    async def save_embed_as_json(self, embed, save_name: str = None):
+        save_name = embed.title if save_name is None else save_name
+        file_name = save_name.replace(' ', '_').replace('?', '').replace('!', '').replace('/', '').replace('"', '').replace("'", "").replace('*', '') + '.json'
+        file_path = pathmaker(APPDATA["saved_embeds"], file_name)
+        writejson(embed.to_dict(), file_path)
 
     async def make_static_embed(self, category, name):
         pass

@@ -108,10 +108,13 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         if channel.name.casefold() not in self.allowed_channels(command_name):
             return False
         if any(trigger_phrase in msg.content.casefold() for trigger_phrase in self.who_is_trigger_phrases):
+            image = "https://i.postimg.cc/Fhm9NJfX/Anti-DEVtros.png" if self.bot.display_name.casefold() == "antidevtros" else "https://i.postimg.cc/WjBNYyT3/Anti-Petros.png"
             embed_data = await self.bot.make_generic_embed(title=f'WHO IS {self.bot.display_name.upper()}', description='I am an custom made Bot for this community!',
                                                            fields=[self.bot.field_item(name='What I can do', value=f'Get a description of my features by using `@{self.bot.display_name} help`', inline=False),
-                                                                   self.bot.field_item(name='Who created me', value='I was created by __**Giddi**__, for the Antistasi Community')])
-            await msg.reply(**embed_data, delete_after=150)
+                                                                   self.bot.field_item(name='Who created me', value='I was created by __**Giddi**__, for the Antistasi Community')],
+                                                           image=image,
+                                                           thumbnail=None)
+            await msg.reply(**embed_data, delete_after=120)
 
     @ auto_meta_info_command(enabled=True)
     @owner_or_admin()
@@ -140,10 +143,10 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
     async def tell_uptime(self, ctx):
 
         now_time = datetime.utcnow()
-        delta_time = now_time - await self.bot.support.start_time
+        delta_time = now_time - self.bot.start_time
         seconds = round(delta_time.total_seconds())
         # TODO: make as embed
-        await ctx.send(f"__Uptime__ -->\n\t\t| {str(seconds_to_pretty(seconds))}")
+        await ctx.send(f"__Uptime__ -->\n| {str(seconds_to_pretty(seconds))}")
 
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"
@@ -151,6 +154,8 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
     def __str__(self):
         return self.qualified_name
 
+    def cog_unload(self):
+        log.debug("Cog '%s' UNLOADED!", str(self))
 
 # region[Main_Exec]
 

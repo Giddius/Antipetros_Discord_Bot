@@ -23,6 +23,8 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 # endregion[Imports]
 
 # region [TODO]
@@ -89,6 +91,11 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
 # endregion [Setup]
 
+# region [Properties]
+
+
+# endregion[Properties]
+
 
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"
@@ -96,6 +103,8 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     def __str__(self):
         return self.qualified_name
 
+    def cog_unload(self):
+        log.debug("Cog '%s' UNLOADED!", str(self))
 
 # region[Main_Exec]
 

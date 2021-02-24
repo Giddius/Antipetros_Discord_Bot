@@ -8,7 +8,8 @@ INSERT
         "utc_saved_time",
         "content",
         "link_to_message",
-        "team_id" "extra_data_id"
+        "team_id",
+        "extra_data_id"
     )
 VALUES (
         ?,

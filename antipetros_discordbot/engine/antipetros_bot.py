@@ -180,6 +180,7 @@ class AntiPetrosBot(commands.Bot):
         self._watch_for_config_changes.start()
         self._watch_for_alias_changes.start()
         log.info("Bot is ready")
+        log.info("Debug Session: %s", self.is_debug)
 
     async def handle_previous_shutdown_msg(self):
         if os.path.isfile(self.shutdown_message_pickle_file):
