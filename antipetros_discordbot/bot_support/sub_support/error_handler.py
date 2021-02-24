@@ -17,6 +17,7 @@ from discord import Embed, ChannelType
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process as fuzzprocess
 from discord.ext import commands
+import discord
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
@@ -123,10 +124,11 @@ class ErrorHandler(SubSupportBase):
             if self.delete_invoking_messages is True:
                 await ctx.message.delete()
 
-    async def _default_handle_error(self, ctx, error, error_traceback):
+    async def _default_handle_error(self, ctx: commands.Context, error, error_traceback):
         log.error('Ignoring exception in command {}:'.format(ctx.command))
         log.exception(error, exc_info=True, stack_info=False)
         if ctx.channel.type is ChannelType.text:
+            await ctx.reply(f'The command had an unspecified __**ERROR**__\n please send {self.bot.creator.member_object.mention} a DM of what exactly you did when the error occured.', delete_after=120, allowed_mentions=discord.AllowedMentions.none())
             await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error), error_traceback=error_traceback))
 
     async def _handle_not_necessary_role(self, ctx, error, error_traceback):

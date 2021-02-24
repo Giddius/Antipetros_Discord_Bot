@@ -43,7 +43,7 @@ from textwrap import dedent
 # from github import Github, GithubException
 # from jinja2 import BaseLoader, Environment
 # from natsort import natsorted
-# from fuzzywuzzy import fuzz, process
+from fuzzywuzzy import fuzz, process as fuzzprocess
 import aiohttp
 import discord
 from discord.ext import tasks, commands, flags
@@ -195,14 +195,14 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
             log.debug("updating log files for '%s'", folder_name)
             await folder_item.update()
             await folder_item.sort()
-            await asyncio.sleep(30)
+            await asyncio.sleep(10)
 
     async def check_oversized_logs(self):
         for folder_name, folder_item in self.server.items():
             log.debug("checking log files of '%s', for oversize", folder_name)
             oversize_items = await folder_item.get_oversized_items()
             oversize_items = [log_item for log_item in oversize_items if log_item.etag not in self.already_notified]
-            await asyncio.sleep(30)
+            await asyncio.sleep(10)
 
 # endregion [Loops]
 
@@ -221,7 +221,11 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
             await ctx.send(f'You requested more files than the max allowed amount of {max_amount}, aborting!')
             return
         server = server.casefold()
+        server = server if server in self.server else fuzzprocess.extractOne(server, list(self.server))[0]
+        ic(server)
         folder_item = self.server[server]
+        sub_folder = sub_folder if sub_folder in folder_item.sub_folder else fuzzprocess.extractOne(sub_folder, list(folder_item.sub_folder))[0]
+        ic(sub_folder)
         try:
             for log_item in await folder_item.get_newest_log_file(sub_folder, amount):
                 with TemporaryDirectory() as tempdir:
@@ -237,7 +241,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
                                                                    timestamp=log_item.modified)
                     await ctx.send(**embed_data, file=file)
         except KeyError as error:
-            await ctx.send(error.message)
+            await ctx.send(str(error))
 # endregion [Commands]
 
 # region [DataStorage]

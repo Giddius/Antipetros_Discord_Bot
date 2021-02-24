@@ -412,6 +412,12 @@ class AntiPetrosBot(commands.Bot):
     def shutdown_command(self):
         return self.get_command('shutdown')
 
+    @property
+    def portrait_url(self):
+        if self.display_name.casefold() == 'antidevtros':
+            return "https://i.postimg.cc/Fhm9NJfX/Anti-DEVtros.png"
+        return "https://i.postimg.cc/WjBNYyT3/Anti-Petros.png"
+
     def blacklisted_user_ids(self):
         for user_item in self.blacklisted_users:
             yield user_item.get('id')

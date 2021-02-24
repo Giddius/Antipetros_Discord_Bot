@@ -7,6 +7,8 @@ import os
 from typing import Optional
 from datetime import datetime
 from textwrap import dedent
+import random
+import asyncio
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import flags, tasks, commands
@@ -23,6 +25,8 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 # endregion[Imports]
 
 # region [TODO]
@@ -68,6 +72,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
     required_config_data = dedent("""
                                   """)
+    alive_phrases_file = pathmaker(APPDATA['fixed_data'], 'alive_phrases.json')
 
     def __init__(self, bot):
         self.bot = bot
@@ -90,6 +95,13 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
 # endregion [Setup]
 
+
+    @property
+    def alive_phrases(self):
+        if os.path.isfile(self.alive_phrases_file) is False:
+            writejson(['I am alive!'], self.alive_phrases_file)
+        return loadjson(self.alive_phrases_file)
+
     @property
     def who_is_trigger_phrases(self):
         return [f'who is {self.bot.display_name.casefold()}',
@@ -108,13 +120,21 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         if channel.name.casefold() not in self.allowed_channels(command_name):
             return False
         if any(trigger_phrase in msg.content.casefold() for trigger_phrase in self.who_is_trigger_phrases):
-            image = "https://i.postimg.cc/Fhm9NJfX/Anti-DEVtros.png" if self.bot.display_name.casefold() == "antidevtros" else "https://i.postimg.cc/WjBNYyT3/Anti-Petros.png"
+            image = self.bot.portrait_url
             embed_data = await self.bot.make_generic_embed(title=f'WHO IS {self.bot.display_name.upper()}', description='I am an custom made Bot for this community!',
                                                            fields=[self.bot.field_item(name='What I can do', value=f'Get a description of my features by using `@{self.bot.display_name} help`', inline=False),
                                                                    self.bot.field_item(name='Who created me', value='I was created by __**Giddi**__, for the Antistasi Community')],
                                                            image=image,
                                                            thumbnail=None)
             await msg.reply(**embed_data, delete_after=120)
+
+    @ auto_meta_info_command(enabled=True, aliases=['you_dead?', 'are-you-there', 'poke-with-stick'])
+    async def life_check(self, ctx: commands.Context):
+        if random.randint(0, len(self.alive_phrases)) == 0:
+            file = discord.File(APPDATA['bertha.png'])
+            await ctx.reply('My assistent will record your command for me, please speak into her Banhammer', file=file)
+            return
+        await ctx.reply(random.choice(self.alive_phrases))
 
     @ auto_meta_info_command(enabled=True)
     @owner_or_admin()
@@ -147,6 +167,55 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         seconds = round(delta_time.total_seconds())
         # TODO: make as embed
         await ctx.send(f"__Uptime__ -->\n| {str(seconds_to_pretty(seconds))}")
+
+    @auto_meta_info_command(enabled=True)
+    @commands.is_owner()
+    async def self_announcement(self, ctx: commands.Context, channel: discord.TextChannel, test: bool = False):
+
+        if COGS_CONFIG.retrieve(self.config_name, 'self_announcement_made', typus=bool, direct_fallback=True) is True:
+            return
+
+        creator_mention = self.bot.creator.member_object.mention
+        seperator = '━' * 25
+        pre_embed = await self.bot.make_generic_embed(title='ANNOUNCEMENT\nfrom\n~~ the Party Leadership ~~\nthe Antistasi Leadership',
+                                                      description="\n***Please direct your eyes to the mandatory Telescreens and await the announcement***",
+                                                      image="https://i.postimg.cc/nLbFhWS8/bot-announcement.png",
+                                                      footer=None)
+
+        embed_data = await self.bot.make_generic_embed(title=f"LET THIS DATE LIVE IN INFAMY\n{ZERO_WIDTH}",
+                                                       description="**There is a new Bot in Town".center(75, '$').replace('$', f" {ZERO_WIDTH} ") +
+                                                       "\n" + "made from all the Petroses you ever killed".center(75, '$').replace('$', f" {ZERO_WIDTH} ") +
+                                                       "\n" + "accidentaly, on purpose or otherwise".center(75, '$').replace('$', f" {ZERO_WIDTH} ") + "\n\n" +
+                                                       "He and his Assistent Bertha are here to clean this place up**".center(75, '$').replace('$', f" {ZERO_WIDTH} "),
+                                                       image=self.bot.portrait_url,
+                                                       thumbnail=None,
+                                                       fields=[self.bot.field_item(name=ZERO_WIDTH, value=ZERO_WIDTH, inline=False),
+                                                               self.bot.field_item(name=f'**USER HAS JOINED YOUR CHANNEL**\n{ZERO_WIDTH}', value=f'Just call me {self.bot.user.mention}\n{ZERO_WIDTH}', inline=False),
+                                                               self.bot.field_item(
+                                                                   name=f'**NEW RULES**\n{ZERO_WIDTH}', value=f"**⍟** No more pro or contra Furry fighting, or Bertha puts on her BanBear Fursuite\n{seperator}\n**⍟** If you spam my commands you get Blacklisted!\n{seperator}\n**⍟** Try to break me, but if you succede, let {creator_mention} know\n{seperator}\n**⍟** Not everything in this announcement is serious, but you don't know what is and what is not\n{seperator}\n{ZERO_WIDTH}", inline=False),
+                                                               self.bot.field_item(name=f'**WHO CREATED THIS CRIME AGAINST HUMANITY?**\n{ZERO_WIDTH}',
+                                                                                   value=f"Direct the Mob to {creator_mention}" + f"\n{ZERO_WIDTH}", inline=False),
+                                                               self.bot.field_item(name=f"**YOU HAVE SOMETHING TO SAY ABOUT ME?**\n{ZERO_WIDTH}",
+                                                                                   value=f"Send {creator_mention} a DM or ping him\n*(he is completely ok with getting pinged)*\ndon't hesitate, you are helping!\n{ZERO_WIDTH}", inline=False),
+                                                               self.bot.field_item(name=f'**HOW CAN WE INTERACT WITH YOU?**\n{ZERO_WIDTH}',
+                                                                                   value=f'Just use\n\n```fix\n@{self.bot.display_name} [COMMAND]\n```\n\nand\n\n```fix\n@{self.bot.display_name} help\n```\nfor info.\n{ZERO_WIDTH}'),
+                                                               self.bot.field_item(name=f"**CAN I SEE THE CODE?**\n{ZERO_WIDTH}", value=f"{self.bot.github_url}\n{ZERO_WIDTH}", inline=False),
+                                                               self.bot.field_item(name=f"**I WANT TO ALSO WORK ON THIS BOT**\n{ZERO_WIDTH}", value=f"Again, {creator_mention}\n{ZERO_WIDTH}", inline=False),
+                                                               self.bot.field_item(name=ZERO_WIDTH, value=ZERO_WIDTH, inline=False)],
+                                                       footer=None,
+                                                       timestamp=datetime.strptime("6666.06.06 06:06", "%Y.%m.%d %H:%M"))
+        file = discord.File(APPDATA['announcement.mp3'])
+        await channel.send(**pre_embed)
+        async with ctx.typing():
+            await asyncio.sleep(60)
+        await channel.send(file=file)
+        async with ctx.typing():
+            await asyncio.sleep(20)
+        await channel.send(**embed_data)
+        if not test:
+            COGS_CONFIG.set(self.config_name, 'self_announcement_made', 'yes')
+            COGS_CONFIG.save()
+        await ctx.message.delete()
 
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"

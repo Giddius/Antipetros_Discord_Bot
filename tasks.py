@@ -361,3 +361,8 @@ def set_requirements(c):
     pyproject["tool"]["flit"]["metadata"]['requires'] = _requirements
     with open('pyproject.toml', 'w') as f:
         f.write(tomlkit.dumps(pyproject))
+
+
+@task(pre=[store_userdata, collect_data])
+def build(c):
+    print('finished building')

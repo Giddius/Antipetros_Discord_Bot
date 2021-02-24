@@ -258,7 +258,7 @@ class EmbedBuilder(SubSupportBase):
 
     async def save_embed_as_json(self, embed, save_name: str = None):
         save_name = embed.title if save_name is None else save_name
-        file_name = save_name.replace(' ', '_').replace('?', '').replace('!', '').replace('/', '').replace('"', '').replace("'", "").replace('*', '') + '.json'
+        file_name = save_name.replace(' ', '_').replace('?', '').replace('!', '').replace('/', '').replace('"', '').replace("'", "").replace('*', '').replace('~', '').replace(ZERO_WIDTH, '').replace('\n', '').strip() + '.json'
         file_path = pathmaker(APPDATA["saved_embeds"], file_name)
         writejson(embed.to_dict(), file_path)
 

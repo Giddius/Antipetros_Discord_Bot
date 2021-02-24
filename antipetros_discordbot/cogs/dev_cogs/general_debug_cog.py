@@ -25,7 +25,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from emoji import demojize
 from webdav3.client import Client
-
+from icecream import ic
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -263,21 +263,30 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await ctx.send(f'UNpinned message {message.id}', delete_after=60)
         await ctx.message.delete()
 
-    async def _apply_overwrites(self, channel: discord.TextChannel, permissions: dict, selector):
-        for name, value in list(channel.overwrites_for(selector)):
+    async def _apply_overwrites(self, channel: discord.TextChannel, permissions: dict, selector: discord.Role):
+        for name, value in channel.overwrites_for(selector):
             if value is not None:
                 permissions[name] = value
         return permissions
 
     @auto_meta_info_command(aliases=['channel_permissions'])
     @commands.is_owner()
-    async def check_bot_channel_permissions(self, ctx: commands.Context, channel: Optional[discord.TextChannel] = None, display_mode: Optional[str] = 'only_true'):
+    async def check_bot_channel_permissions(self, ctx: commands.Context, channel: discord.TextChannel = None, member: discord.Member = None, display_mode: str = 'only_true'):
         channel = ctx.channel if channel is None else channel
-        bot_member = self.bot.bot_member
+        member = self.bot.bot_member if member is None else member
+        roles = member.roles
+        role_names = ', '.join(map(lambda x: x.name, roles))
+        role_ids = ', '.join(map(lambda x: str(x.id), roles))
+        ic(role_names)
+        ic(role_ids)
+        ic(member.id)
+        y = roles.pop(0)
+
         permissions = {}
-        for name, value in channel.permissions_for(bot_member):
+        for name, value in channel.permissions_for(member):
             permissions[name] = value
-        for selector in [self.bot.bot_member] + self.bot.all_bot_roles:
+        for selector in roles:
+
             permissions = await self._apply_overwrites(channel=channel, permissions=permissions, selector=selector)
         if display_mode.casefold() == 'only_true':
             description = '```ini\n' + f'\n{"-"*35}\n'.join(f"{permission_name} = {' '*(25-len(permission_name))} {permission_bool}" for permission_name, permission_bool in permissions.items() if permission_bool is True) + '\n```'
@@ -286,8 +295,9 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             description = '```diff\n' + '\n'.join(sorted(permission_list, key=lambda x: x.endswith('True'), reverse=True)) + '\n```'
         elif display_mode.casefold() == 'only_false':
             description = '```ini\n' + f'\n{"-"*35}\n'.join(f"{permission_name} = {' '*(25-len(permission_name))} {permission_bool}" for permission_name, permission_bool in permissions.items() if permission_bool is False) + '\n```'
-
-        embed_data = await self.bot.make_generic_embed(title=f'Permissions for **__{self.bot.display_name.upper()}__** in **__{channel.name.upper()}__**', description=description, thumbnail=None, footer='not_set')
+        else:
+            raise AttributeError(f'no such displaymode - "{display_mode}"')
+        embed_data = await self.bot.make_generic_embed(title=f'Permissions for **__{member.name}__** in **__{channel.name.upper()}__**', description=description, thumbnail=None, footer='not_set')
         await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @ commands.command()
@@ -320,8 +330,8 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await ctx.send(msg * 60)
         await ctx.message.delete()
 
-    @commands.after_invoke(check_after_invoke)
-    @auto_meta_info_command()
+    @ commands.after_invoke(check_after_invoke)
+    @ auto_meta_info_command()
     @ commands.is_owner()
     async def check_a_hook(self, ctx: commands.Context):
         await asyncio.sleep(5)
@@ -337,8 +347,8 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             return path
         return await self.get_save_path(save_folder, name, in_round + 1)
 
-    @commands.after_invoke(check_after_invoke)
-    @auto_meta_info_command()
+    @ commands.after_invoke(check_after_invoke)
+    @ auto_meta_info_command()
     async def get_all_attachments(self, ctx: commands.Context, channel: discord.TextChannel, amount_to_scan: int = None):
         if ctx.author.id not in [152532555600494593, 576522029470056450, 346595708180103170]:
             return

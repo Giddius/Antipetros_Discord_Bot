@@ -10,11 +10,13 @@ def get_nextcloud_options():
         _options['webdav_login'] = os.getenv('NEXTCLOUD_USERNAME')
         _options["webdav_timeout"] = 120
     else:
-        raise RuntimeError('no nextcloud Username set')
+        if os.getenv('INFO_RUN') != "1":
+            raise RuntimeError('no nextcloud Username set')
     if os.getenv('NEXTCLOUD_PASSWORD') is not None:
         _options['webdav_password'] = os.getenv('NEXTCLOUD_PASSWORD')
     else:
-        raise RuntimeError('no nextcloud Password set')
+        if os.getenv('INFO_RUN') != "1":
+            raise RuntimeError('no nextcloud Password set')
     return _options
 
 
