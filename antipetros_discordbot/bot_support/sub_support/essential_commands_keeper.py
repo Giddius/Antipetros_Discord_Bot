@@ -10,27 +10,20 @@
 import os
 import random
 from datetime import datetime
-from typing import Union, TYPE_CHECKING, List, Set, Tuple
+from typing import List
 import random
-import asyncio
 # * Third Party Imports --------------------------------------------------------------------------------->
-from discord import Color
 import discord
-from discord.ext import commands, tasks
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process as fuzzprocess
+from discord.ext import commands
 import arrow
 from humanize import naturaltime
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.exceptions import FuzzyMatchError
-from antipetros_discordbot.utility.named_tuples import ColorItem
-from antipetros_discordbot.utility.gidtools_functions import readit, loadjson, pathmaker, writejson, pickleit, get_pickled
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, pickleit
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from typing import TYPE_CHECKING
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.checks import owner_or_admin
 # endregion[Imports]

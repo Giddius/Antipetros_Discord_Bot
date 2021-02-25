@@ -2,37 +2,25 @@
 # region [Imports]
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
-import gc
 import os
 import asyncio
-import unicodedata
 from datetime import datetime
-import re
-from typing import List, Tuple, Set, Union, Optional
+from typing import List, Optional, Tuple
 
 import random
-from io import BytesIO
-from textwrap import indent, dedent
+from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
-import aiohttp
 from jinja2 import BaseLoader, Environment
 import discord
-from discord import File, Embed, DiscordException
-from discord.ext import tasks, commands
-from async_property import async_property
+from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-from icecream import ic
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, day_to_second, save_commands, hour_to_second, minute_to_second, make_config_name
-from antipetros_discordbot.utility.enums import RequestStatus
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, minute_to_second
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, owner_or_admin
-from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM
-from antipetros_discordbot.utility.embed_helpers import EMBED_SYMBOLS, make_basic_embed
 
-from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson, clearit, appendwriteit
+from antipetros_discordbot.utility.gidtools_functions import appendwriteit, clearit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker

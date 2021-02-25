@@ -4,20 +4,16 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from typing import Optional
 from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
-import discord
-from discord.ext import flags, tasks, commands
+from discord.ext import commands, flags
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, is_even
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, in_allowed_channels
-from antipetros_discordbot.utility.converters import DateOnlyConverter
+from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, in_allowed_channels
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command

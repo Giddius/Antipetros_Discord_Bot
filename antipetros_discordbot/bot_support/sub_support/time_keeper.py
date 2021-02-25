@@ -16,7 +16,6 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from typing import TYPE_CHECKING
 
 # endregion[Imports]
 

@@ -12,16 +12,14 @@ from tempfile import TemporaryDirectory
 from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
-from PIL import Image, ImageEnhance, ImageFont, ImageDraw
+from PIL import Image, ImageEnhance
 from pytz import timezone
-from discord.ext import flags, tasks, commands
-from fuzzywuzzy import fuzz, process as fuzzprocess
+from discord.ext import commands, flags
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import save_commands, make_config_name
+from antipetros_discordbot.utility.misc import make_config_name
 from antipetros_discordbot.utility.enums import WatermarkPosition
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed

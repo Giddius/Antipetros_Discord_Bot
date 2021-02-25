@@ -20,7 +20,6 @@ from antipetros_discordbot.utility.misc import async_date_today
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from typing import TYPE_CHECKING
 
 # endregion[Imports]
 

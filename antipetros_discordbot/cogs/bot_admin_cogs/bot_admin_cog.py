@@ -4,23 +4,20 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from typing import Optional
 from datetime import datetime
 from textwrap import dedent
 import random
 import asyncio
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
-from discord.ext import flags, tasks, commands
+from discord.ext import commands
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, is_even, seconds_to_pretty
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, in_allowed_channels, owner_or_admin, log_invoker
-from antipetros_discordbot.utility.converters import DateOnlyConverter
+from antipetros_discordbot.utility.misc import make_config_name, seconds_to_pretty
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
@@ -123,10 +120,10 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
             image = self.bot.portrait_url
             embed_data = await self.bot.make_generic_embed(title=f'WHO IS {self.bot.display_name.upper()}', description='I am an custom made Bot for this community!',
                                                            fields=[self.bot.field_item(name='What I can do', value=f'Get a description of my features by using `@{self.bot.display_name} help`', inline=False),
-                                                                   self.bot.field_item(name='Who created me', value='I was created by __**Giddi**__, for the Antistasi Community')],
+                                                                   self.bot.field_item(name='Who created me', value=f'I was created by {self.bot.creator.member_object.mention}, for the Antistasi Community')],
                                                            image=image,
                                                            thumbnail=None)
-            await msg.reply(**embed_data, delete_after=120)
+            await msg.reply(**embed_data, delete_after=60)
 
     @ auto_meta_info_command(enabled=True, aliases=['you_dead?', 'are-you-there', 'poke-with-stick'])
     async def life_check(self, ctx: commands.Context):

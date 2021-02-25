@@ -2,7 +2,6 @@ from collections import UserDict
 from asyncio import sleep, create_task
 from discord.ext import commands
 from discord.ext.commands import BucketType
-from hashlib import md5
 from random import seed, randint
 
 

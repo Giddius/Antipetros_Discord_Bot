@@ -15,7 +15,8 @@ REQUIRED_FILES = ["post_setup_scripts.txt",
                   "required_personal_packages.txt",
                   "required_qt.txt",
                   "required_test.txt",
-                  "required_experimental.txt"]
+                  "required_experimental.txt",
+                  "required_production.txt"]
 
 SETTINGS_FOLDER = Path(os.path.abspath(os.path.dirname(__file__))).joinpath('venv_setup_settings')
 if SETTINGS_FOLDER.exists() is False:

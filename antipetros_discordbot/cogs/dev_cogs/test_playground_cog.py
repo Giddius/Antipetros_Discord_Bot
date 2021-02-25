@@ -3,9 +3,8 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import asyncio
-import platform
 import subprocess
-from io import BytesIO, StringIO
+from io import StringIO
 from pprint import pformat
 from datetime import datetime
 from tempfile import TemporaryDirectory
@@ -14,13 +13,9 @@ from functools import partial
 # * Third Party Imports --------------------------------------------------------------------------------->
 
 import discord
-from PIL import Image, ImageDraw, ImageFont
 from pytz import timezone
-from pyfiglet import Figlet
-from fuzzywuzzy import process as fuzzprocess
 from discord.ext import commands
 from googletrans import LANGUAGES, Translator
-from discord.utils import parse_time
 from discord.ext.commands import Greedy
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
 
@@ -31,12 +26,10 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import save_commands, datetime_isoformat_to_discord_format
 from antipetros_discordbot.utility.checks import log_invoker, has_attachments, in_allowed_channels
 from antipetros_discordbot.utility.converters import FlagArg, DateOnlyConverter
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.enums import CogState
 # endregion [Imports]

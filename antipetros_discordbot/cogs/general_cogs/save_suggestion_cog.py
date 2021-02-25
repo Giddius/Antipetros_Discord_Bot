@@ -8,26 +8,20 @@ import re
 import shutil
 import asyncio
 import sqlite3 as sqlite
-import unicodedata
-from pprint import pprint, pformat
 from datetime import datetime
 from tempfile import TemporaryDirectory
-from urllib.parse import urlparse
 from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
 from discord.ext import commands
-from icecream import ic
-import emoji as pyemoji
-from async_property import async_property
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import save_commands, make_config_name
+from antipetros_discordbot.utility.misc import make_config_name
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, allowed_requester
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
@@ -36,8 +30,8 @@ from antipetros_discordbot.utility.sqldata_storager import AioSuggestionDataStor
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.enums import CogState, RequestStatus
-from antipetros_discordbot.utility.emoji_handling import normalize_emoji, get_emoji_unicode
+from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 # endregion[Imports]
 
 # region [Logging]

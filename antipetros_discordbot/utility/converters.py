@@ -13,7 +13,7 @@ from datetime import datetime
 
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands import Converter, CommandError
-from googletrans import LANGUAGES, Translator
+from googletrans import LANGUAGES
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 

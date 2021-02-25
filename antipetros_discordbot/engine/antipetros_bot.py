@@ -12,34 +12,24 @@ import time
 import asyncio
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-from typing import Union, TYPE_CHECKING, List, Set, Tuple
-import random
-from webdav3.client import Client
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
-from udpy import AsyncUrbanClient
 from watchgod import Change, awatch
 from discord.ext import tasks, commands
-import arrow
-from humanize import naturaltime
 
-from icecream import ic
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import save_bin_file, sync_to_async
+from antipetros_discordbot.utility.misc import save_bin_file
 from antipetros_discordbot.engine.global_checks import user_not_blacklisted
-from antipetros_discordbot.utility.checks import owner_or_admin
 from antipetros_discordbot.utility.named_tuples import CreatorMember
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
-from antipetros_discordbot.utility.gidtools_functions import readit, loadjson, pathmaker, writejson, pickleit, get_pickled
+from antipetros_discordbot.utility.gidtools_functions import get_pickled, loadjson, pathmaker, readit, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.cogs import BOT_ADMIN_COG_PATHS, DISCORD_ADMIN_COG_PATHS, DEV_COG_PATHS
 # endregion[Imports]
 
@@ -459,22 +449,26 @@ class AntiPetrosBot(commands.Bot):
         feat_suggest_json.append(item._asdict())
         writejson(feat_suggest_json, self.bot_feature_suggestion_json_file)
 
+    async def reload_cog_from_command_name(self, command_name: str):
+        _command = {command.name.casefold(): command for command in self.commands}.get(command_name.casefold())
+        cog_name = _command.cog_name
+        cog = _command.cog
+        file_name = f"{cog.config_name}_cog"
+        for option in BASE_CONFIG.options('extensions'):
+            if option.split('.')[-1].casefold() == file_name.casefold():
+                import_path = self.cog_import_base_path + '.' + option
+                self.unload_extension(import_path)
+                self.load_extension(import_path)
+                for _cog_name, cog_object in self.cogs.items():
+                    if _cog_name.casefold() == cog_name.casefold():
+                        await cog_object.on_ready_setup()
+                        break
+                break
+
     async def debug_function(self):
         log.debug("debug function triggered")
-        role_data = []
-        for role in self.antistasi_guild.roles:
-            if role.name != '@everyone':
-                role_members = [{"name": member.name, "id": member.id} for member in role.members]
-                role_data.append({'name': role.name, 'position': role.position, 'tags': str(role.tags), 'members': role_members, 'managed': role.managed, 'hoist': role.hoist, 'created_at': role.created_at.strftime(self.std_date_time_format)})
-                writejson(role_members, pathmaker(APPDATA['role_data'], role.name + '_members.json'))
-
-        role_data = sorted(role_data, key=lambda x: x.get('position'))
-        writejson(role_data, 'all_roles.json', sort_keys=False)
-
-        writejson([{"name": channel.name, 'id': channel.id, "category": channel.category.name, "mention": channel.mention, "position": channel.position, 'topic': channel.topic}
-                   for channel in self.antistasi_guild.channels if channel.type is discord.ChannelType.text], pathmaker(APPDATA['channel_data'], 'general_channel_data.json'))
-        print(self.command_prefix)
-        log.debug("debug function finished")
+        log.info('no debug function set')
+        # log.debug("debug function finished")
 
 # region [SpecialMethods]
 

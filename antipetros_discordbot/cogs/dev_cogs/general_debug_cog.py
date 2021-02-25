@@ -8,21 +8,14 @@ import random
 from time import time
 from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
 import asyncio
-from io import BytesIO
 from textwrap import dedent
-from typing import Optional
 from dotenv import load_dotenv
-import lzma
 from datetime import datetime
 import shutil
 from zipfile import ZipFile, ZIP_LZMA
-from functools import partial
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
-from discord.ext.commands import Greedy
-from discord.ext import commands, tasks
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
+from discord.ext import commands
 from emoji import demojize
 from webdav3.client import Client
 from icecream import ic
@@ -30,19 +23,17 @@ from icecream import ic
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import save_commands, color_hex_embed, async_seconds_to_pretty_normal, make_config_name
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, check_after_invoke
-from antipetros_discordbot.utility.named_tuples import MovieQuoteItem
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, bytes2human
+from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name, normalize_emoji
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.nextcloud import NEXTCLOUD_OPTIONS
+from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.data_gathering import gather_data
 # endregion [Imports]
 
@@ -269,6 +260,19 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                 permissions[name] = value
         return permissions
 
+    @auto_meta_info_command()
+    @commands.is_owner()
+    async def all_channel_permissions(self, ctx: commands.Context, member: discord.Member = None, filter_category: str = None, display_mode: str = 'only_true'):
+        for channel in self.bot.antistasi_guild.channels:
+            if filter_category is None:
+                if channel.category is not None and channel.category.name not in ["Admin Info", "Staff Rooms", "Voice Channels"]:
+                    await self.check_bot_channel_permissions(ctx, channel, member, display_mode)
+                    await asyncio.sleep(5)
+            else:
+                if channel.category is not None and channel.category.name.casefold() == filter_category.casefold():
+                    await self.check_bot_channel_permissions(ctx, channel, member, display_mode)
+                    await asyncio.sleep(5)
+
     @auto_meta_info_command(aliases=['channel_permissions'])
     @commands.is_owner()
     async def check_bot_channel_permissions(self, ctx: commands.Context, channel: discord.TextChannel = None, member: discord.Member = None, display_mode: str = 'only_true'):
@@ -277,9 +281,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         roles = member.roles
         role_names = ', '.join(map(lambda x: x.name, roles))
         role_ids = ', '.join(map(lambda x: str(x.id), roles))
-        ic(role_names)
-        ic(role_ids)
-        ic(member.id)
         y = roles.pop(0)
 
         permissions = {}
@@ -383,7 +384,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                     await asyncio.sleep(0)
         await ctx.send(f"...zip file has a size of `{bytes2human(os.stat(zip_path).st_size,annotate=True)}`", delete_after=delete_after)
 
-        client = Client(NEXTCLOUD_OPTIONS)
+        client = Client(get_nextcloud_options())
         await ctx.send("...Starting upload to Dev-Drive", delete_after=delete_after)
         async with ctx.typing():
             await self.bot.execute_in_thread(client.upload_sync, f"collected_attachments_discord/{os.path.basename(zip_path)}", zip_path)
@@ -412,6 +413,11 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             for command in cog_object.get_commands():
                 _out.append('__**' + str(command.name) + '**__' + ': ```\n' + str(command.help).split('\n')[0] + '\n```')
         await self.bot.split_to_messages(ctx, '\n---\n'.join(_out), split_on='\n---\n')
+
+    @ auto_meta_info_command(enabled=True)
+    @ commands.is_owner()
+    async def check_reload_mech(self, ctx):
+        await self.bot.reload_cog_from_command_name("flip_coin")
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))

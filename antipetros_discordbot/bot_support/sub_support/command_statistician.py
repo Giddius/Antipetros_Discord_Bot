@@ -19,7 +19,6 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.bot_support.sub_support.sub_support_helper.command_stats_dict import CommandStatDict
-from typing import TYPE_CHECKING
 
 # endregion[Imports]
 

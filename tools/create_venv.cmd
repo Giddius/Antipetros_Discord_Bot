@@ -170,7 +170,7 @@ ECHO.
 ECHO.
 ECHO.
 
-Echo +++++++++++++++++++++++++++++ Misc Packages +++++++++++++++++++++++++++++
+Echo +++++++++++++++++++++++++++++ misc Packages +++++++++++++++++++++++++++++
 ECHO.
 FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_misc.txt) do (
 ECHO.

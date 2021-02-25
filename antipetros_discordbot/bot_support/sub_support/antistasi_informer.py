@@ -8,18 +8,14 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-import re
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.exceptions import DuplicateNameError
-from antipetros_discordbot.utility.named_tuples import RegexItem
-from antipetros_discordbot.utility.gidtools_functions import readit, loadjson, writejson, writeit, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from typing import TYPE_CHECKING
 
 # endregion[Imports]
 

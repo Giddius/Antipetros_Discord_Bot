@@ -7,27 +7,18 @@
 # region [Imports]
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
-import gc
 import os
-import unicodedata
 
 # * Third Party Imports --------------------------------------------------------------------------------->
-import aiohttp
-import discord
-from discord import File, Embed, DiscordException
-from discord.ext import tasks, commands
-from async_property import async_property
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson, dir_change,
-                                                              linereadit, create_file, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
+from antipetros_discordbot.utility.gidtools_functions import (loadjson, pathmaker, writejson)
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.bot_support.sub_support.sub_support_helper.blacklisted_user_item import BlacklistedUserItem
-from typing import TYPE_CHECKING
 
 # endregion[Imports]
 

@@ -2,36 +2,25 @@
 # region [Imports]
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
-import gc
 import os
-import unicodedata
 from datetime import datetime, timezone
-from collections import namedtuple
 import asyncio
 import secrets
 from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
-import aiohttp
 import discord
-from discord import File, Embed, DiscordException
 from dateparser import parse as date_parse
 from discord.ext import flags, tasks, commands
 from async_property import async_property
-import pytz
-import random
-import arrow
 from async_property import async_property
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, save_commands, make_config_name
-from antipetros_discordbot.utility.enums import RequestStatus, CogState
-from antipetros_discordbot.utility.checks import log_invoker, in_allowed_channels, allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker
-from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM, GiveAwayEventItem
-from antipetros_discordbot.utility.embed_helpers import EMBED_SYMBOLS, make_basic_embed
-from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson, create_file, create_folder
+from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker, log_invoker
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji

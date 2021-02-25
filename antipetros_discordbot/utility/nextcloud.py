@@ -18,6 +18,3 @@ def get_nextcloud_options():
         if os.getenv('INFO_RUN') != "1":
             raise RuntimeError('no nextcloud Password set')
     return _options
-
-
-NEXTCLOUD_OPTIONS = get_nextcloud_options()

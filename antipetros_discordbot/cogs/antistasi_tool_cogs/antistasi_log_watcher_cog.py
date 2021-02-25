@@ -2,38 +2,14 @@
 # region [Imports]
 
 # * Standard Library Imports -->
-import gc
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import logging
-import platform
-import lzma
-import subprocess
-from enum import Enum, Flag, auto
-from time import sleep
-from pprint import pprint, pformat
-from typing import Union, TYPE_CHECKING
-from datetime import tzinfo, datetime, timezone, timedelta
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial
-from contextlib import contextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from typing import TYPE_CHECKING
 from tempfile import TemporaryDirectory
-from urllib.parse import urlparse
 import asyncio
 from zipfile import ZipFile, ZIP_LZMA
 from tempfile import TemporaryDirectory
-from concurrent.futures import ThreadPoolExecutor
-import unicodedata
-from io import BytesIO
 from textwrap import dedent
-
+from typing import Iterable, Union, List
 # * Third Party Imports -->
 # import requests
 # import pyperclip
@@ -43,32 +19,26 @@ from textwrap import dedent
 # from github import Github, GithubException
 # from jinja2 import BaseLoader, Environment
 # from natsort import natsorted
-from fuzzywuzzy import fuzz, process as fuzzprocess
-import aiohttp
+from fuzzywuzzy import process as fuzzprocess
 import discord
-from discord.ext import tasks, commands, flags
-from discord import DiscordException, Embed, File
+from discord.ext import commands, tasks
+from webdav3.client import Client
 from async_property import async_property
 from dateparser import parse as date_parse
-from webdav3.client import Client
-from icecream import ic
+import pytz
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, is_even, owner_or_admin
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2
-from antipetros_discordbot.utility.named_tuples import CITY_ITEM, COUNTRY_ITEM
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogState
+from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
-from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogFile, LogServer
-from antipetros_discordbot.utility.nextcloud import NEXTCLOUD_OPTIONS
+from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
+from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -160,11 +130,34 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
             writejson([], self.already_notified_savefile)
         return loadjson(self.already_notified_savefile)
 
+    async def add_to_already_notified(self, data: Union[str, list, set, tuple], overwrite=False):
+        if overwrite is True:
+            write_data = data
+        elif isinstance(data, (list, set, tuple)):
+            data = list(data)
+            write_data = self.already_notified + data
+        elif isinstance(data, str):
+            write_data = self.already_notified
+            write_data.append(data)
+        writejson(write_data, self.already_notified_savefile)
+
+    @property
+    def old_logfile_cutoff_date(self):
+        time_text = COGS_CONFIG.retrieve(self.config_name, 'log_file_cutoff', typus=str, direct_fallback='5 days')
+        return date_parse(time_text, settings={'TIMEZONE': 'UTC'})
+
+    @async_property
+    async def member_to_notify(self):
+        member_ids = COGS_CONFIG.retrieve(self.config_name, 'member_id_to_notify_oversized', typus=List[int], direct_fallback=[])
+        return [await self.bot.retrieve_antistasi_member(member_id) for member_id in member_ids]
+
+    @property
+    def size_limit(self):
+        return COGS_CONFIG.retrieve(self.config_name, 'log_file_warning_size_threshold', typus=str, direct_fallback='200mb')
 
 # endregion [Properties]
 
 # region [Setup]
-
 
     async def on_ready_setup(self):
         await self.get_base_structure()
@@ -195,13 +188,21 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
             log.debug("updating log files for '%s'", folder_name)
             await folder_item.update()
             await folder_item.sort()
-            await asyncio.sleep(10)
+            await asyncio.sleep(5)
 
     async def check_oversized_logs(self):
         for folder_name, folder_item in self.server.items():
             log.debug("checking log files of '%s', for oversize", folder_name)
             oversize_items = await folder_item.get_oversized_items()
+
             oversize_items = [log_item for log_item in oversize_items if log_item.etag not in self.already_notified]
+            for item in oversize_items:
+                if item.modified.replace(tzinfo=pytz.UTC) <= self.old_logfile_cutoff_date.replace(tzinfo=pytz.UTC):
+                    await self.add_to_already_notified(item.etag)
+                else:
+                    await self.notify_oversized_log(item)
+                    await self.add_to_already_notified(item.etag)
+
             await asyncio.sleep(10)
 
 # endregion [Loops]
@@ -213,6 +214,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
 
 # region [Commands]
 
+
     @auto_meta_info_command()
     @commands.is_owner()
     async def check_newest_files(self, ctx, server: str, sub_folder: str, amount: int = 1):
@@ -222,10 +224,8 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
             return
         server = server.casefold()
         server = server if server in self.server else fuzzprocess.extractOne(server, list(self.server))[0]
-        ic(server)
         folder_item = self.server[server]
         sub_folder = sub_folder if sub_folder in folder_item.sub_folder else fuzzprocess.extractOne(sub_folder, list(folder_item.sub_folder))[0]
-        ic(sub_folder)
         try:
             for log_item in await folder_item.get_newest_log_file(sub_folder, amount):
                 with TemporaryDirectory() as tempdir:
@@ -257,7 +257,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
         return zip_path
 
     async def get_base_structure(self):
-        nextcloud_client = Client(NEXTCLOUD_OPTIONS)
+        nextcloud_client = Client(get_nextcloud_options())
         for folder in await self.bot.execute_in_thread(nextcloud_client.list, self.nextcloud_base_folder):
             folder = folder.strip('/')
             if folder != self.nextcloud_base_folder and '.' not in folder:
@@ -267,6 +267,15 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
             await asyncio.sleep(1)
         log.info(str(self) + ' collected server names: ' + ', '.join([key for key in self.server]))
 
+    async def notify_oversized_log(self, log_item):
+        for member in await self.member_to_notify:
+            embed_data = await self.bot.make_generic_embed(title="Warning Oversized Log File",
+                                                           description=f"Log file `{log_item.name}` from server `{log_item.server_name}` and subfolder `{log_item.sub_folder_name}`, is over the size limit of `{self.size_limit}`",
+                                                           fields=[self.bot.field_item(name="__**Current Size**__", value=log_item.size_pretty),
+                                                                   self.bot.field_item(name="__**Last modified**__", value=log_item.modified_pretty)],
+                                                           thumbnail="warning",
+                                                           footer=None)
+            await member.send(**embed_data)
 
 # endregion [HelperMethods]
 

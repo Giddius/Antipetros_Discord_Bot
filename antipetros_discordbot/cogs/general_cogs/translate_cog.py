@@ -3,35 +3,26 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from datetime import datetime
 import re
 # * Third Party Imports --------------------------------------------------------------------------------->
-from pytz import timezone, country_timezones
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process as fuzzprocess
 from discord.ext import commands
 from googletrans import LANGUAGES, Translator
 from typing import Optional
-import unicodedata
 from textwrap import dedent
-import emoji
 import discord
-from icecream import ic
 from discord import AllowedMentions
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, day_to_second, save_commands, hour_to_second, minute_to_second, make_config_name
+from antipetros_discordbot.utility.misc import make_config_name
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker
-from antipetros_discordbot.utility.named_tuples import CITY_ITEM, COUNTRY_ITEM
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.converters import LanguageConverter
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogState
+from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 # endregion[Imports]
 

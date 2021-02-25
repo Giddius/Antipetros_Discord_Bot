@@ -12,7 +12,9 @@ language_tool_python
 matplotlib
 memory-profiler
 objectgraph
+optimize-images
 pep517
+pigar
 pipdeptree
 pipreqs
 pydeps
@@ -21,6 +23,5 @@ pyqt5-tools
 pyspellchecker
 python-magic
 stdlib-list
-optimize-images
-pigar
 tomlkit
+fabric

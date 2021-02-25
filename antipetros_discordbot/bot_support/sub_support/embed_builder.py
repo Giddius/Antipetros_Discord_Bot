@@ -18,7 +18,6 @@ from datetime import datetime, timezone
 import arrow
 import PIL.Image
 from pytz import timezone
-from jinja2 import BaseLoader, Environment
 from discord import File
 from discord import Color as DiscordColor
 from discord import Embed
@@ -28,18 +27,13 @@ from dateparser import parse as date_parse
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import datetime_isoformat_to_discord_format
 from antipetros_discordbot.utility.enums import EmbedType
 from antipetros_discordbot.utility.exceptions import FuzzyMatchError
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
-from antipetros_discordbot.utility.gidtools_functions import (readit, clearit, readbin, work_in, writeit, loadjson, pickleit, splitoff, writebin, pathmaker, writejson, dir_change,
-                                                              linereadit, bytes2human, create_file, file_walker, get_pickled, ishash_same, ext_splitter, appendwriteit, create_folder,
-                                                              number_rename, timenamemaker, cascade_rename, file_name_time, absolute_listdir, hash_to_solidcfg, path_part_remove,
-                                                              from_dict_to_file, get_absolute_path, file_name_modifier, limit_amount_of_files, limit_amount_files_absolute)
+from antipetros_discordbot.utility.gidtools_functions import (loadjson, pathmaker, writejson, create_file, create_folder)
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from typing import TYPE_CHECKING
 
 # endregion[Imports]
 
@@ -244,8 +238,8 @@ class EmbedBuilder(SubSupportBase):
                 field = self._fix_field_item(field)
                 generic_embed.add_field(name=field.name, value=field.value, inline=field.inline)
         self.default_field_name_num = 1
-        if self.bot.is_debug:
-            await self.save_embed_as_json(embed=generic_embed, save_name=kwargs.get('save_name', None))
+        # if self.bot.is_debug:
+        #     await self.save_embed_as_json(embed=generic_embed, save_name=kwargs.get('save_name', None))
 
         _out = {"embed": generic_embed}
         files = [file_item for file_item in files if file_item is not None]

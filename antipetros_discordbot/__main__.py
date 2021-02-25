@@ -17,14 +17,11 @@ import logging
 from time import sleep
 from datetime import datetime
 import click
-import discord
-from dotenv import find_dotenv, load_dotenv
+from dotenv import load_dotenv
 import gidlogger as glog
-from antipetros_discordbot import MAIN_DIR
-from antipetros_discordbot.utility.misc import check_if_int, generate_base_cogs_config, save_commands, generate_help_data
-from antipetros_discordbot.utility.crypt import decrypt_db, encrypt_db
+from antipetros_discordbot.utility.misc import generate_base_cogs_config, generate_help_data, save_commands
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from antipetros_discordbot.utility.gidtools_functions import writeit, pathmaker, writejson
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
 # endregion[Imports]

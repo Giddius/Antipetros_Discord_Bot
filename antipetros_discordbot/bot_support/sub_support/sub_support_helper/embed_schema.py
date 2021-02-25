@@ -7,17 +7,11 @@
 # region [Imports]
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
-import gc
 import os
-import unicodedata
 from datetime import datetime, timezone
 
 # * Third Party Imports --------------------------------------------------------------------------------->
-import discord
-from PIL import Image
 from pytz import timezone
-from discord import File, Embed
-from discord.ext import tasks, commands
 from marshmallow import Schema, fields
 
 # * Gid Imports ----------------------------------------------------------------------------------------->

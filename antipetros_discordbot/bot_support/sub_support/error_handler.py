@@ -10,7 +10,7 @@
 import os
 import traceback
 from datetime import datetime
-from typing import Tuple, List, Set
+from typing import Tuple
 import re
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord import Embed, ChannelType
@@ -23,13 +23,12 @@ import discord
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import async_split_camel_case_string, seconds_to_pretty, async_seconds_to_pretty_normal
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, async_split_camel_case_string
 from antipetros_discordbot.utility.exceptions import MissingAttachmentError, NotNecessaryRole, IsNotTextChannelError, NotNecessaryDmId, NotAllowedChannelError, NotNecessaryRole
 from antipetros_discordbot.utility.gidtools_functions import loadjson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from typing import TYPE_CHECKING
 from antipetros_discordbot.bot_support.sub_support.sub_support_helper.cooldown_dict import CoolDownDict
 
 # endregion[Imports]

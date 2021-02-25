@@ -4,11 +4,7 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from typing import Iterable
-from configparser import NoOptionError, NoSectionError
-from functools import partial, lru_cache
-from typing import List, Set, Tuple
-from pprint import pprint
+from typing import List, Set
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands

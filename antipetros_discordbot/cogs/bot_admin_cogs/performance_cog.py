@@ -24,7 +24,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import date_today, save_commands, async_seconds_to_pretty_normal
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, date_today
 from antipetros_discordbot.utility.enums import DataSize, CogState
 from antipetros_discordbot.utility.checks import in_allowed_channels
 from antipetros_discordbot.utility.named_tuples import LatencyMeasurement, MemoryUsageMeasurement

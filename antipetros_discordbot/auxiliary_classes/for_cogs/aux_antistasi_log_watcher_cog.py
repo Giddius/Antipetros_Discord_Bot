@@ -8,56 +8,19 @@
 
 # * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
 
-import gc
 import os
 import re
-import sys
-import json
-import lzma
-import time
-import queue
-import base64
-import pickle
 import random
-import shelve
-import shutil
 import asyncio
-import logging
-import sqlite3
-import platform
-import importlib
-import subprocess
-import unicodedata
-import zlib
-import lzma
 import asyncio
 import random
-from io import BytesIO
-from abc import ABC, abstractmethod
-from copy import copy, deepcopy
-from enum import Enum, Flag, auto
-from time import time, sleep, gmtime, strftime
-from pprint import pprint, pformat
-from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
-from timeit import Timer
-from typing import Union, Callable, Iterable
-from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
-from zipfile import ZipFile, ZIP_LZMA, ZIP_DEFLATED
-from datetime import tzinfo, datetime, timezone, timedelta
+from typing import Union
+from datetime import datetime
 from tempfile import TemporaryDirectory
-from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
-from functools import wraps, partial, lru_cache, singledispatch, total_ordering
-from importlib import import_module, invalidate_caches
-from contextlib import contextmanager
-from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
+from functools import partial
+from concurrent.futures import ThreadPoolExecutor
 from dateparser import parse as date_parse
 from asyncio import get_event_loop
-from contextlib import asynccontextmanager
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
 # import discord
@@ -85,8 +48,6 @@ from contextlib import asynccontextmanager
 # from fuzzywuzzy import fuzz, process
 
 from webdav3.client import Client
-import discord
-from icecream import ic
 # * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
 # from PyQt5.QtGui import QFont, QIcon, QBrush, QColor, QCursor, QPixmap, QStandardItem, QRegExpValidator
@@ -110,10 +71,10 @@ import gidlogger as glog
 
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, readit, writeit, writejson, loadjson, get_pickled, pickleit
+from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, readit, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.regexes import LOG_NAME_DATE_TIME_REGEX
-from antipetros_discordbot.utility.nextcloud import NEXTCLOUD_OPTIONS
+from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.misc import SIZE_CONV_BY_SHORT_NAME
 # endregion[Imports]
 
@@ -151,18 +112,18 @@ class LogFile:
 
         self.etag = etag.strip('"')
         self.isdir = isdir
-        self.modified = date_parse(modified)
+        self.modified = date_parse(modified, settings={'TIMEZONE': 'UTC'})
         self.name = name if name is not None else os.path.basename(path)
         self.full_path = path
         self.path = '/'.join(path.split('/')[6:])
-        self.created = date_parse(created) if created is not None else self._date_time_from_name()
+        self.created = date_parse(created, settings={'TIMEZONE': 'UTC'}) if created is not None else self._date_time_from_name()
         self.size = int(size)
         self.server_name = self.path.split('/')[1]
         self.sub_folder_name = self.path.split('/')[2]
 
     @property
     def warning_size_threshold(self):
-        limit = COGS_CONFIG.retrieve('antistasi_log_watcher', 'warning_size_threshold', typus=str, direct_fallback='200mb')
+        limit = COGS_CONFIG.retrieve('antistasi_log_watcher', 'log_file_warning_size_threshold', typus=str, direct_fallback='200mb')
         match_result = self.size_string_regex.search(limit)
         relative_size = int(match_result.group('number'))
         unit = match_result.group('unit').casefold()
@@ -196,7 +157,7 @@ class LogFile:
             raise RuntimeError(f'unable to find date_time_string in {os.path.basename(self.full_path)}')
 
     async def content(self):
-        client = Client(NEXTCLOUD_OPTIONS)
+        client = Client(get_nextcloud_options())
         with TemporaryDirectory() as tempdir:
             new_path = pathmaker(tempdir, os.path.basename(self.path))
             loop = get_event_loop()
@@ -207,7 +168,7 @@ class LogFile:
             return content
 
     async def download(self, save_dir):
-        client = Client(NEXTCLOUD_OPTIONS)
+        client = Client(get_nextcloud_options())
         new_path = pathmaker(save_dir, os.path.basename(self.path))
         loop = get_event_loop()
         await loop.run_in_executor(THREADPOOL, client.download_sync, self.path, new_path)
@@ -263,7 +224,7 @@ class LogServer:
         self.path = f"{self.base_folder}/{self.name}"
 
     async def get_data(self):
-        client = Client(NEXTCLOUD_OPTIONS)
+        client = Client(get_nextcloud_options())
         log.debug("collecting initial data for LogServer '%s'", self.name)
         self.sub_folder = {}
         sub_folder_names = await self.loop.run_in_executor(THREADPOOL, client.list, self.path)
@@ -274,7 +235,7 @@ class LogServer:
         log.info(self.path + ' collected subfolder: ' + ', '.join([key for key in self.sub_folder]))
 
     async def get_file_infos(self, sub_folder_name, raw=False):
-        client = Client(NEXTCLOUD_OPTIONS)
+        client = Client(get_nextcloud_options())
         _out = []
         for file_data in await self.loop.run_in_executor(THREADPOOL, partial(client.list, f"{self.path}/{sub_folder_name}", get_info=True)):
             if not file_data.get('path').endswith('/'):

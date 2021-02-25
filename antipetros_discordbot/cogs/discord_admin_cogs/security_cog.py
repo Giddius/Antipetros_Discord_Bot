@@ -3,34 +3,9 @@
 # region [Imports]
 
 # * Standard Library Imports -->
-import gc
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import logging
-import platform
-import subprocess
-from typing import List, Tuple, Set, Optional
-from enum import Enum, Flag, auto
-from time import sleep
-from pprint import pprint, pformat
-from typing import Union, TYPE_CHECKING
-from datetime import tzinfo, datetime, timezone, timedelta
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial
-from contextlib import contextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from tempfile import TemporaryDirectory
-from urllib.parse import urlparse
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-import unicodedata
-from io import BytesIO
+from typing import List
+from typing import TYPE_CHECKING
 
 # * Third Party Imports -->
 # import requests
@@ -42,11 +17,9 @@ from io import BytesIO
 # from jinja2 import BaseLoader, Environment
 # from natsort import natsorted
 # from fuzzywuzzy import fuzz, process
-import aiohttp
 import discord
-from discord.ext import tasks, commands
-from discord import DiscordException, Embed, File, ChannelType
-from async_property import async_property
+from discord.ext import commands
+from discord import ChannelType
 import magic
 import tldextract
 from textwrap import dedent
@@ -56,14 +29,12 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.enums import RequestStatus
-from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM, ListenerContext
+from antipetros_discordbot.utility.named_tuples import ListenerContext
 
-from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, is_even
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, allowed_requester
-from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 if TYPE_CHECKING:

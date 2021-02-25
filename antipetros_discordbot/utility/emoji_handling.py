@@ -1,6 +1,5 @@
 from emoji.unicode_codes.en import EMOJI_ALIAS_UNICODE_ENGLISH
 from emoji import demojize
-from antipetros_discordbot.utility.gidtools_functions import writejson
 from contextlib import contextmanager
 import random
 

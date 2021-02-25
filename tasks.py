@@ -1,14 +1,25 @@
 from invoke import task
 import sys
 import os
-import toml
+
 from pprint import pprint
 from time import sleep
 import json
 from PIL import Image, ImageFilter, ImageOps
+import toml
 import tomlkit
 from dotenv import load_dotenv
 load_dotenv('tools/_project_devmeta.env')
+
+
+def readit(in_file, per_lines=False, in_encoding='utf-8', in_errors=None):
+
+    with open(in_file, 'r', encoding=in_encoding, errors=in_errors) as _rfile:
+        _content = _rfile.read()
+    if per_lines is True:
+        _content = _content.splitlines()
+
+    return _content
 
 
 def bytes2human(n, annotate=False):
@@ -102,9 +113,10 @@ PROJECT_NAME = flit_data('project_name')
 PROJECT_AUTHOR = flit_data('author_name')
 
 
-def activator_run(c, command):
+def activator_run(c, command, echo=False, **kwargs):
     with c.prefix(VENV_ACTIVATOR_PATH):
-        c.run(command, echo=True)
+        result = c.run(command, echo=echo, **kwargs)
+        return result
 
 
 @task(help={'output_file': 'alternative output file, defaults to /docs/resources/data'})
@@ -158,7 +170,7 @@ def clean_userdata(c, dry_run=False):
     data_pack_path = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "init_userdata\data_pack")
 
     folder_to_clear = ['archive', 'user_env_files', 'env_files', 'performance_data', 'stats', 'database', 'debug', 'temp_files']
-    files_to_clear = ["blacklist.json", "give_aways.json", "registered_steam_workshop_items.json"]
+    files_to_clear = ["blacklist.json", "give_aways.json", "registered_steam_workshop_items.json", "notified_log_files.json", "blacklist.json", "registered_timezones.json"]
 
     if dry_run is True:
         print('')
@@ -336,7 +348,16 @@ def optimize_art(c, quality=100):
                 os.rename(file.path, file.path.replace('.jpg', '.png'))
 
 
-REQUIREMENT_EXTRAS = ['discord-flags==2.1.1']
+REQUIREMENT_EXTRAS = ['discord-flags', "PyQt5", "python-Levenshtein"]
+
+
+def _get_version_from_freeze(context, package_name):
+    result = activator_run(context, "pip freeze", echo=False, hide=True).stdout.strip()
+    for req_line in result.splitlines():
+        req_line = req_line.strip()
+        req_name = req_line.split('==')[0]
+        if req_name.casefold() == package_name.casefold():
+            return req_line
 
 
 @task
@@ -349,20 +370,24 @@ def set_requirements(c):
         req_content = f.read()
     _requirements = []
     for line in req_content.splitlines():
-        if not line.startswith('#') and line != '' and 'antipetros_discordbot' not in line:
+        if not line.startswith('#') and line != '' and 'antipetros_discordbot' not in line and "pyqt5_sip" not in line.casefold():
             line = line.replace(' ', '')
             _requirements.append(line)
-    _requirements += REQUIREMENT_EXTRAS
+    for req in REQUIREMENT_EXTRAS:
+        _requirements.append(_get_version_from_freeze(c, req))
     os.remove(pigar_req_file)
-    os.chdir(old_cwd)
+    os.chdir(os.getenv('WORKSPACEDIR'))
     with open('pyproject.toml', 'r') as f:
 
         pyproject = tomlkit.parse(f.read())
     pyproject["tool"]["flit"]["metadata"]['requires'] = _requirements
     with open('pyproject.toml', 'w') as f:
         f.write(tomlkit.dumps(pyproject))
+    prod_file = pathmaker('tools', 'venv_setup_settings', 'required_production.txt')
+    with open(prod_file, 'w') as fprod:
+        fprod.write('\n'.join(_requirements))
 
 
-@task(pre=[store_userdata, collect_data])
+@task(pre=[store_userdata, set_requirements, collect_data])
 def build(c):
     print('finished building')

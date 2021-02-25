@@ -4,19 +4,14 @@ from __future__ import annotations
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-import random
-from datetime import datetime
 import asyncio
 from configparser import ConfigParser, NoOptionError, NoSectionError
 from collections import namedtuple
-from typing import List, Set, Tuple
+from typing import List
 from textwrap import dedent
-from pprint import pprint, pformat
+from pprint import pformat
 # * Third Party Imports --------------------------------------------------------------------------------->
-import arrow
 import discord
-from discord import DiscordException
-from humanize import naturaltime
 from fuzzywuzzy import process as fuzzprocess
 from discord.ext import commands
 from typing import TYPE_CHECKING
@@ -27,12 +22,9 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, day_to_second, save_commands, hour_to_second, minute_to_second, make_config_name
-from antipetros_discordbot.utility.checks import only_dm_only_allowed_id, log_invoker, owner_or_admin, allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker
-from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.data_gathering import gather_data
-from antipetros_discordbot.utility.gidtools_functions import loadjson, pickleit, pathmaker, writejson, get_pickled, readit
+from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.enums import CogState
@@ -456,7 +448,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     @log_invoker(log, 'critical')
     async def add_alias(self, ctx: commands.Context, command_name: str, alias: str):
 
-        self.refresh_command_aliases()
+        await self.refresh_command_aliases()
         if command_name not in self.aliases:
             await ctx.send(f"I was not able to find the command with the name '{command_name}'")
             return
@@ -464,10 +456,9 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
             await ctx.send(f'Alias {alias} is already in use, either on this command or any other. Cannot be set as alias, aborting!')
             return
         self.aliases[command_name].append(alias)
-        log.debug(pformat(self.aliases))
         await self.save_command_aliases()
         await ctx.send(f"successfully added '{alias}' to the command aliases of '{command_name}'")
-        await ctx.invoke(self.bot.get_command('reload_all_ext'))
+        await self.bot.reload_cog_from_command_name(command_name)
         if self.notify_when_changed is True:
             await self.notify(AddedAliasChangeEvent(ctx, command_name, alias))
 
@@ -494,7 +485,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 
 
     def __repr__(self):
-        return f"{self.name}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.user.name})"
 
     def __str__(self):
         return self.__class__.__name__

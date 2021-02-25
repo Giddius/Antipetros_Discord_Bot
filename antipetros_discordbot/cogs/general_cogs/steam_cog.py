@@ -4,36 +4,20 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from datetime import datetime
-import random
-import secrets
-import typing
-import asyncio
-from urllib.parse import quote as urlquote
 from textwrap import dedent
 from collections import namedtuple
 import re
 # * Third Party Imports --------------------------------------------------------------------------------->
-from pytz import timezone, country_timezones
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process as fuzzprocess
-from discord.ext import flags, tasks, commands
-from discord import AllowedMentions
-import discord
+from discord.ext import commands, tasks
 
-from pyfiglet import Figlet
 from bs4 import BeautifulSoup
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-import aiohttp
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, is_even
+from antipetros_discordbot.utility.misc import make_config_name
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2
-from antipetros_discordbot.utility.named_tuples import CITY_ITEM, COUNTRY_ITEM
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command

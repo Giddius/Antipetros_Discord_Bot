@@ -4,28 +4,16 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-import random
-from datetime import datetime
 from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
-import arrow
-import discord
-from discord import DiscordException
-from humanize import naturaltime
-from fuzzywuzzy import process as fuzzprocess
 from discord.ext import commands
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import save_commands, seconds_to_pretty, async_seconds_to_pretty_normal, make_config_name
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
-from antipetros_discordbot.utility.named_tuples import FeatureSuggestionItem
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.data_gathering import gather_data
-from antipetros_discordbot.utility.gidtools_functions import loadjson, pickleit, pathmaker, writejson, get_pickled
+from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
