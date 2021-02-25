@@ -599,7 +599,7 @@ icons/
 shebang.txt
 .env_tools
 .env_main
-*.env
+**/*.env
 *.json
 private_quick_scripts/
 create_venv_logs/
@@ -631,3 +631,4 @@ art/WiP
 /docs/proposals.md
 /tools/scratches
 /antipetros_discordbot/nextcloud.env
+/tools/_project_devmeta.env
