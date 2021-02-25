@@ -47,8 +47,6 @@ requires = [
     "watchgod==0.6",
     "webdavclient3==3.14.5",
     "discord-flags==2.1.1",
-    "PyQt5==5.15.2",
-    "python-Levenshtein==0.12.2",
 ]
 
 [tool.flit.scripts]
