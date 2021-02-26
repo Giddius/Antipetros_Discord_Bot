@@ -1,5 +1,6 @@
 Jinja2==2.11.2
 Pillow==8.1.0
+PyQt5==5.15.2
 WeasyPrint==52.2
 aiohttp==3.7.3
 aiosqlite==0.16.1
@@ -12,6 +13,7 @@ beautifulsoup4==4.9.3
 click==7.1.2
 cryptography==3.3.1
 dateparser==1.0.0
+discord-flags==2.1.1
 dpytest==0.0.22
 emoji==1.1.0
 fuzzywuzzy==0.18.0
@@ -26,12 +28,10 @@ matplotlib==3.3.3
 paramiko==2.7.2
 psutil==5.8.0
 pyfiglet==0.8.post1
+python-Levenshtein==0.12.2
 python_dotenv==0.15.0
 python_magic_bin==0.4.14
 pytz==2020.5
 tldextract==3.1.0
 watchgod==0.6
 webdavclient3==3.14.5
-discord-flags==2.1.1
-PyQt5==5.15.2
-python-Levenshtein==0.12.2

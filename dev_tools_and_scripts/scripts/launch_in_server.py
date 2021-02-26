@@ -6,8 +6,17 @@ from dotenv import find_dotenv, load_dotenv
 # * Third Party Imports --------------------------------------------------------------------------------->
 from paramiko import SSHClient, AutoAddPolicy
 from ftplib import FTP
-load_dotenv(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\nextcloud.env")
-load_dotenv(find_dotenv("token.env"))
+import subprocess
+
+
+def get_base_path():
+    cmd = subprocess.run("git rev-parse --show-toplevel".split(), shell=True, check=True, capture_output=True, text=True)
+    return cmd.stdout.strip()
+
+
+MAIN_DIR = get_base_path()
+load_dotenv(os.path.join(MAIN_DIR, 'antipetros_discordbot', "nextcloud.env"))
+load_dotenv(os.path.join(MAIN_DIR, 'antipetros_discordbot', "token.env"))
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -72,7 +81,7 @@ if __name__ == '__main__':
     # run_command(ANTIPETROS_UPDATE_CMD_VERSION)
     # sleep(10)
 
-    run_command(f"antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NEXTCLOUD_USERNAME')} -np {os.getenv('NEXTCLOUD_PASSWORD')}")
-    sleep(30)
-    run_command('antipetrosbot stop')
-    # run_command(ANTIPETROS_START_CMD)
+    # run_command(f"antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NEXTCLOUD_USERNAME')} -np {os.getenv('NEXTCLOUD_PASSWORD')}")
+    # sleep(30)
+    # run_command('antipetrosbot stop')
+    run_command(ANTIPETROS_START_CMD)

@@ -183,7 +183,7 @@ def allowed_channel_and_allowed_role_2(in_dm_allowed: bool = False):
             if callable(allowed_role_names):
                 allowed_role_names = allowed_role_names(command)
             log.debug("allowed_role_names for '%s': %s", command.name, str(allowed_role_names))
-            if allowed_role_names != 'all' and all(role.name.casefold() not in allowed_role_names for role in author.roles):
+            if allowed_role_names != ['all'] and all(role.name.casefold() not in allowed_role_names for role in author.roles):
                 raise NotNecessaryRole(ctx, allowed_role_names)
 
         return True

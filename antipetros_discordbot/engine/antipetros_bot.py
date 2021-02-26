@@ -147,8 +147,6 @@ class AntiPetrosBot(commands.Bot):
                     'owner': {key: value for key, value in self.creator._asdict().items() if key not in ['member_object', 'user_object']}}
         if os.path.isfile(pathmaker(APPDATA['debug'], 'general_debug')):
             bot_info = bot_info | loadjson(pathmaker(APPDATA['debug'], 'general_debug'))
-        writejson(bot_info, pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/bot_info.json'))
-        log.debug('bot doc info save to ' + pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/bot_info.json'))
 
     async def on_ready(self):
         log.info('%s has connected to Discord!', self.user.name)

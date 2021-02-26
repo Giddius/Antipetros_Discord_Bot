@@ -176,7 +176,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         seperator = '━' * 25
         pre_embed = await self.bot.make_generic_embed(title='ANNOUNCEMENT\nfrom\n~~ the Party Leadership ~~\nthe Antistasi Leadership',
                                                       description="\n***Please direct your eyes to the mandatory Telescreens and await the announcement***",
-                                                      image="https://i.postimg.cc/nLbFhWS8/bot-announcement.png",
+                                                      image="https://i.postimg.cc/zJWWVMBj/bot-announcement.png",
                                                       footer=None)
 
         embed_data = await self.bot.make_generic_embed(title=f"LET THIS DATE LIVE IN INFAMY\n{ZERO_WIDTH}",

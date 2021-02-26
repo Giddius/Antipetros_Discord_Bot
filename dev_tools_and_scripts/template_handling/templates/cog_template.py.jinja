@@ -45,7 +45,6 @@ from textwrap import dedent
 import aiohttp
 import discord
 from discord.ext import tasks, commands, flags
-from discord import DiscordException, Embed, File
 from async_property import async_property
 from dateparser import parse as date_parse
 
@@ -210,8 +209,7 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}'name': COG_NAME,
 
 
     def cog_unload(self):
-
-        pass
+        log.debug("Cog '%s' UNLOADED!", str(self))
 
 
 
