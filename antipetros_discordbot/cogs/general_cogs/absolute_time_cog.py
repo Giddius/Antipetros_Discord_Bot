@@ -1,36 +1,27 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from datetime import datetime
 
-# * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 from pytz import timezone, country_timezones
-
-# import requests
-# import pyperclip
-# import matplotlib.pyplot as plt
-# from bs4 import BeautifulSoup
-# from dotenv import load_dotenv
-# from github import Github, GithubException
-# from jinja2 import BaseLoader, Environment
-# from natsort import natsorted
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process as fuzzprocess
 from discord.ext import commands
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands
 from antipetros_discordbot.utility.checks import in_allowed_channels
 from antipetros_discordbot.utility.named_tuples import CITY_ITEM, COUNTRY_ITEM
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.enums import CogState
 # endregion[Imports]
 
 # region [TODO]
@@ -61,9 +52,15 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "AbsoluteTimeCog"}):
-
+    """
+    Soon
+    """
     # region [ClassAttributes]
     config_name = "absolute_time"
+    docattrs = {'show_in_readme': True,
+                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
+                             "2021-02-06 05:16:51",
+                             "ed8f3b4d66db18f01a1d7c0fefd24434c07a0035c5582fd79b75782ab28498170967dc42582d2ac10b208f662a03302532bad1c128c1b82a7b1edec96447f8a4")}
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -75,7 +72,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
         self._item_id = 0
         self.country_items = self.all_country_as_items()
         self.city_items = self.all_cities_as_item()
-        if os.environ['INFO_RUN'] == "1":
+        if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
@@ -220,7 +217,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
 # region [SpecialMethods]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.qualified_name

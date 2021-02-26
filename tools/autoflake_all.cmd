@@ -26,4 +26,4 @@ SET _TIMEBLOCK_DATE=%_years%-%_months%-%_days%
 
 for /f %%i in (%_THIS_FILE_DIR%_project_devmeta.env) do set %%i
 
-autoflake.exe -i --remove-all-unused-imports --expand-star-imports -r %TOPLEVELMODULE%
+autoflake.exe -i --imports=googletrans,Jinja2,checksumdir,click,regex,parce,fuzzywuzzy,python-Levenshtein,Pillow,PyGithub,WeasyPrint,discord.py,url-normalize,async-property,watchgod,pdfkit,pytz,google-auth,google_api_python_client,google_auth_oauthlib,psutil,cchardet,python-benedict,udpy,commonmark,pyfiglet,graphviz,pydot,lxml,networkx,pyowm,colormap,aiosqlite,discord-flags,paramiko,antistasi_template_checker,cryptography,humanize,marshmallow,parse,invoke,arrow,pendulum,python-dateutil,dateparser --expand-star-imports --ignore-init-module-imports --exclude=**/dev_tools_and_scripts -r %TOPLEVELMODULE%

@@ -7,7 +7,8 @@ INSERT
         "utc_posted_time",
         "utc_saved_time",
         "content",
-        "link_to_message"
+        "link_to_message",
+        "team_id"
     )
 VALUES (
         ?,
@@ -25,5 +26,10 @@ VALUES (
         ?,
         ?,
         ?,
-        ?
+        ?,
+        (
+        SELECT "id"
+        FROM "team_tbl"
+        WHERE "name" = ?
+        )
     )

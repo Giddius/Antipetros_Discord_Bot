@@ -6,50 +6,16 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from datetime import datetime
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
-
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
-
-
-
-# * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
 
 # endregion[Imports]
 
@@ -94,7 +60,8 @@ class TimeKeeper(SubSupportBase):
         self.start_time = datetime.utcnow()
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self):
+    async def update(self, typus):
+        return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):

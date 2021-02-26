@@ -6,65 +6,12 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import sys
 import shutil
 from typing import Union, Iterable
 from collections import namedtuple
-
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
-# import discord
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-# from discord import Embed, File
-
-# from discord.ext import commands, tasks
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
-
-# * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
-# from PyQt5.QtGui import QFont, QIcon, QBrush, QColor, QCursor, QPixmap, QStandardItem, QRegExpValidator
-
-# from PyQt5.QtCore import (Qt, QRect, QSize, QObject, QRegExp, QThread, QMetaObject, QCoreApplication,
-#                           QFileSystemWatcher, QPropertyAnimation, QAbstractTableModel, pyqtSlot, pyqtSignal)
-
-# from PyQt5.QtWidgets import (QMenu, QFrame, QLabel, QAction, QDialog, QLayout, QWidget, QWizard, QMenuBar, QSpinBox, QCheckBox, QComboBox, QGroupBox, QLineEdit,
-#                              QListView, QCompleter, QStatusBar, QTableView, QTabWidget, QDockWidget, QFileDialog, QFormLayout, QGridLayout, QHBoxLayout,
-#                              QHeaderView, QListWidget, QMainWindow, QMessageBox, QPushButton, QSizePolicy, QSpacerItem, QToolButton, QVBoxLayout, QWizardPage,
-#                              QApplication, QButtonGroup, QRadioButton, QFontComboBox, QStackedWidget, QListWidgetItem, QSystemTrayIcon, QTreeWidgetItem,
-#                              QDialogButtonBox, QAbstractItemView, QCommandLinkButton, QAbstractScrollArea, QGraphicsOpacityEffect, QTreeWidgetItemIterator)
-
-
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
-
-# from antipetros_discordbot.utility.gidtools_functions import ( readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-#                                dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
-
-
-# * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
 
 # endregion[Imports]
 
@@ -221,19 +168,19 @@ class FileSystemWalkerItem(namedtuple('WalkerItem', ['name', 'path'])):
 
 
 def _input_handle_excludes(value, typus="folder"):
-    _standard_exclude_folders = ['.git', '.venv', '__pychache__', '.vscode']
+    _standard_exclude_folders = ['.git', '.venv', '__pycache__', '.vscode']
     _standard_exclude_files = []
     _standard_exludes = _standard_exclude_folders if typus == 'folder' else _standard_exclude_files
     to_exclude = [] if value is None else value
-    if to_exclude == 'standard':
+    if to_exclude == 'exclusion_standard':
         to_exclude = _standard_exludes
-    if 'standard' in to_exclude:
-        to_exclude.remove('standard')
+    if 'exclusion_standard' in to_exclude:
+        to_exclude.remove('exclusion_standard')
         to_exclude += _standard_exludes
     return list(set(map(lambda x: x.casefold(), to_exclude)))
 
 
-def filesystem_walker(start_folder, exclude_folder: Union[str, Iterable] = 'standard', exclude_files: Union[str, Iterable] = 'standard'):
+def filesystem_walker(start_folder, exclude_folder: Union[str, Iterable] = 'exclusion_standard', exclude_files: Union[str, Iterable] = 'exclusion_standard'):
     folders_to_exclude = _input_handle_excludes(exclude_folder, typus='folder')
     files_to_exclude = _input_handle_excludes(exclude_files, typus='files')
 
@@ -249,13 +196,13 @@ def filesystem_walker(start_folder, exclude_folder: Union[str, Iterable] = 'stan
                     yield FileSystemWalkerItem(folder, folder_path)
 
 
-def filesystem_walker_files(start_folder, exclude_folder: Union[str, Iterable] = 'standard', exclude_files: Union[str, Iterable] = 'standard'):
+def filesystem_walker_files(start_folder, exclude_folder: Union[str, Iterable] = 'exclusion_standard', exclude_files: Union[str, Iterable] = 'exclusion_standard'):
     for item in filesystem_walker(start_folder, exclude_folder, exclude_files):
         if item.is_file() is True:
             yield item
 
 
-def filesystem_walker_folders(start_folder, exclude_folder: Union[str, Iterable] = 'standard', exclude_files: Union[str, Iterable] = 'standard'):
+def filesystem_walker_folders(start_folder, exclude_folder: Union[str, Iterable] = 'exclusion_standard', exclude_files: Union[str, Iterable] = 'exclusion_standard'):
     for item in filesystem_walker(start_folder, exclude_folder, exclude_files):
         if item.is_dir() is True:
             yield item

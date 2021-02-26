@@ -1,36 +1,38 @@
-# * Standard Library Imports -->
+# region [Imports]
+
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import asyncio
-import platform
 import subprocess
-from io import BytesIO, StringIO
+from io import StringIO
+from pprint import pformat
 from datetime import datetime
 from tempfile import TemporaryDirectory
 from functools import partial
-from pprint import pformat
-# * Third Party Imports -->
+
+# * Third Party Imports --------------------------------------------------------------------------------->
+
 import discord
-from PIL import Image, ImageDraw, ImageFont
 from pytz import timezone
-from pyfiglet import Figlet
-from fuzzywuzzy import fuzz, process as fuzzprocess
 from discord.ext import commands
 from googletrans import LANGUAGES, Translator
 from discord.ext.commands import Greedy
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
+
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
+
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import save_commands
-from antipetros_discordbot.utility.checks import has_attachments, in_allowed_channels, allowed_channel_and_allowed_role, log_invoker
+from antipetros_discordbot.utility.checks import log_invoker, has_attachments, in_allowed_channels
 from antipetros_discordbot.utility.converters import FlagArg, DateOnlyConverter
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.enums import CogState
+# endregion [Imports]
 
 # region [Logging]
 
@@ -62,94 +64,22 @@ Your contribution and participation to this community will determine how long th
 
 
 class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "TestPlayground"}):
+    """
+    Soon
+    """
     config_name = "test_playground"
     language_dict = {value: key for key, value in LANGUAGES.items()}
+    docattrs = {'show_in_readme': False,
+                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING | CogState.DOCUMENTATION_MISSING,
+                             "2021-02-06 05:27:52",
+                             "206141b64e3688eedda4d196dada700bdff9a22170c5557515d8cfd99706d56e42771c27e121dfddbbfb093a1edcdf7bde66fada427201e47ef72a40d7b4f2b1")}
 
     def __init__(self, bot):
         self.bot = bot
         self.support = self.bot.support
         self.allowed_channels = set(COGS_CONFIG.getlist('test_playground', 'allowed_channels'))
         self.translator = Translator()
-        if os.environ['INFO_RUN'] == "1":
-            save_commands(self)
         glog.class_init_notification(log, self)
-
-    @commands.command(aliases=get_aliases("make_figlet"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
-    async def make_figlet(self, ctx, *, text: str):
-
-        figlet = Figlet(font='gothic', width=300)
-        new_text = figlet.renderText(text.upper())
-        await ctx.send(f"```fix\n{new_text}\n```")
-
-    async def get_text_dimensions(self, text_string, font_name, image_size):
-        # https://stackoverflow.com/a/46220683/9263761
-        font_size = 500
-        buffer = 50
-        image_width, image_height = image_size
-        image_width = image_width - (buffer * 2)
-        image_height = image_height - (buffer * 2)
-
-        text_width = 999999999
-        text_height = 99999999
-        while text_width > image_width or text_height > image_height:
-            font = ImageFont.truetype(font_name, font_size)
-            ascent, descent = font.getmetrics()
-
-            text_width = font.getmask(text_string).getbbox()[2]
-            text_height = font.getmask(text_string).getbbox()[3] + descent
-            font_size -= 1
-        return font, text_width, text_height, font_size
-
-    async def get_smalle_text_dimensions(self, text_string, font):
-        # https://stackoverflow.com/a/46220683/9263761
-        ascent, descent = font.getmetrics()
-
-        text_width = font.getmask(text_string).getbbox()[2]
-        text_height = font.getmask(text_string).getbbox()[3] + descent
-
-        return (text_width, text_height)
-
-    async def get_font_path(self, font_name):
-        _font_dict = {}
-        font_folder = pathmaker() if platform.system() == 'Windows' else None
-        if font_folder is None:
-            raise FileNotFoundError("could not locate font folder")
-        for file in os.scandir(font_folder):
-            if file.is_file() and file.name.endswith('.ttf'):
-                _font_dict[os.path.splitext(file.name)[0].casefold()] = pathmaker(file.path)
-        if font_name.casefold() in _font_dict:
-            return _font_dict.get(font_name.casefold())
-        new_font_name = fuzzprocess.extractOne(font_name.casefold(), _font_dict.keys())
-        return _font_dict.get(new_font_name)
-
-    @commands.command(aliases=get_aliases("text_to_image"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
-    async def text_to_image(self, ctx, *, text: str):
-        font_path = 'stencilla.ttf'
-        image_path = APPDATA['armaimage.png']
-        print(image_path)
-
-        image = Image.open(APPDATA['armaimage.png'])
-        font, text_width, text_height, font_size = await self.get_text_dimensions(text, font_path, image.size)
-        second_font = ImageFont.truetype(font_path, size=font_size - (font_size // 35))
-        second_width, second_height = await self.get_smalle_text_dimensions(text, second_font)
-        draw_interface = ImageDraw.Draw(image, mode='RGBA')
-        draw_interface.text((((image.size[0] - text_width) // 2), 50), text, fill=(1, 1, 1), font=font)
-        draw_interface.text((((image.size[0] - second_width) // 2), 50 + 10), text, fill=(255, 226, 0), font=second_font, stroke_fill=(0, 176, 172), stroke_width=(font_size // 50))
-        await self._send_image(ctx, image, 'test', 'TEST', 'PNG')
-
-    async def _send_image(self, ctx, image, name, message_title, image_format=None, delete_after=None):
-        image_format = 'png' if image_format is None else image_format
-        with BytesIO() as image_binary:
-            image.save(image_binary, image_format.upper(), optimize=True)
-            image_binary.seek(0)
-            out_file = discord.File(image_binary, filename=name + '.' + image_format)
-            embed = discord.Embed(title=message_title)
-            embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
-            await ctx.send(embed=embed, file=out_file, delete_after=delete_after)
 
     @commands.command(aliases=get_aliases("check_date_converter"))
     @ commands.has_any_role(*COGS_CONFIG.getlist("test_playground", 'allowed_roles'))
@@ -247,11 +177,6 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
                         await ctx.send(file=_all_item_file)
                         await asyncio.sleep(5)
 
-    @ commands.command(aliases=get_aliases("the_dragon") + ['the_wyvern'])
-    @ allowed_channel_and_allowed_role("test_playground")
-    async def the_dragon(self, ctx):
-        await ctx.send(THE_DRAGON)
-
     @ commands.command(aliases=get_aliases("random_embed_color"))
     @ allowed_channel_and_allowed_role("test_playground")
     async def random_embed_color(self, ctx):
@@ -265,7 +190,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         _file = discord.File(str(self.bot.support.all_colors_json_file), os.path.basename(str(self.bot.support.all_colors_json_file)))
         await ctx.send('here', file=_file)
 
-    @ commands.command(aliases=get_aliases("send_all_colors_file"))
+    @ commands.command(aliases=get_aliases("check_flags"))
     @ allowed_channel_and_allowed_role("test_playground")
     async def check_flags(self, ctx, flags: Greedy[FlagArg(['make_embed', 'random_color'])], ending: str):
         print(flags)
@@ -317,24 +242,6 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
                     _new_file = discord.File(new_file_path, new_file_name)
                     await ctx.send('The Corrected File', file=_new_file)
 
-    async def _translate(self, text, out_language, in_language=None):
-        in_lang_code = self.language_dict.get(in_language.casefold()) if in_language is not None else 'auto'
-        out_lang_code = self.language_dict.get(out_language.casefold())
-
-        x = self.translator.translate(text=text, dest=out_lang_code, src=in_lang_code)
-        return x.text
-
-    @ commands.command(hidden=False, aliases=get_aliases("translate"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('test_playground', 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist("test_playground", 'allowed_channels')))
-    async def translate(self, ctx, out_lang, *, text):
-        log.info("command was initiated by '%s'", ctx.author.name)
-        if out_lang.casefold() not in self.language_dict:
-            await ctx.send('unknown language')
-            return
-        result = await self._translate(text, out_lang)
-        await self.bot.split_to_messages(ctx, result)
-
     @commands.command(aliases=get_aliases('search_usernames'))
     @allowed_channel_and_allowed_role(CONFIG_NAME, in_dm_allowed=True, allowed_roles_key='roles_restricted_command', allowed_in_dm_key="search_usernames_dm_allowed")
     @log_invoker(log, 'critical')
@@ -365,14 +272,26 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
         await self.bot.split_to_messages(ctx, pformat(partial_match).replace('{', '').replace('}', ''))
         await ctx.reply("__**all user I can see**__")
         await self.bot.split_to_messages(ctx, '\n'.join([user.name for user in user_list]), in_codeblock=True)
+
+    @commands.command()
+    @allowed_channel_and_allowed_role(CONFIG_NAME)
+    @log_invoker(log, 'debug')
+    async def embed_experiment(self, ctx):
+
+        await ctx.send(**await self.bot.make_generic_embed(author='bot_author', footer='feature_request_footer', description="this is and test"))
+
+
 # region [SpecialMethods]
 
+
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.qualified_name
 
+    def cog_unload(self):
+        log.debug("Cog '%s' UNLOADED!", str(self))
 # endregion [SpecialMethods]
 
 

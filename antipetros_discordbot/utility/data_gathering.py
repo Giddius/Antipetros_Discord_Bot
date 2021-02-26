@@ -2,25 +2,10 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
-
-# * Standard Library Imports -->
-
-# * Third Party Imports -->
-# import requests
-# import pyperclip
-# import matplotlib.pyplot as plt
-# from bs4 import BeautifulSoup
-# from dotenv import load_dotenv
-# from github import Github, GithubException
-# from jinja2 import BaseLoader, Environment
-# from natsort import natsorted
-# from fuzzywuzzy import fuzz, process
-
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
@@ -50,7 +35,8 @@ log = glog.aux_logger(__name__)
 PERMISSION_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'permission_data.json')
 ROLE_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'role_data.json')
 CHANNEL_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'channel_data.json')
-GENERAL_DATA_OUTPUT = APPDATA['general_data.json']
+CHANNEL_CAT_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'channel_category_data.json')
+GENERAL_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'general_data.json')
 MEMBERS_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'members_data.json')
 ROLE_CHANNEL_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'role_channel_data.json')
 # endregion[Constants]
@@ -117,7 +103,19 @@ async def get_channel_role_data(bot):
     writejson(role_dict, ROLE_CHANNEL_DATA_OUTPUT, sort_keys=False, indent=4)
 
 
+async def get_channel_category_data(bot):
+    _chan_cat_dict = {}
+    for category in bot.antistasi_guild.categories:
+        if category.name not in _chan_cat_dict:
+            _chan_cat_dict[category.name] = []
+        for channel in category.channels:
+            _chan_cat_dict[category.name].append(channel.name)
+        _chan_cat_dict[category.name] = sorted(list(set(_chan_cat_dict[category.name])))
+    writejson(_chan_cat_dict, CHANNEL_CAT_DATA_OUTPUT, sort_keys=False, indent=4)
+
+
 async def gather_data(bot):
+    await get_channel_category_data(bot)
     await get_general_data(bot)
     await get_channel_data(bot)
     await get_role_data(bot)

@@ -6,56 +6,20 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 
-# * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import async_date_today
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
-
-
-
-
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
-
-
-
-# * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
 # endregion[Imports]
 
@@ -128,18 +92,20 @@ class ChannelStatistician(SubSupportBase):
             if channel.name not in self.channel_usage_stats['overall']:
                 self.channel_usage_stats['overall'][channel.name] = 0
         writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        await self.update()
+        await self.update(typus='time')
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self):
-        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        if await async_date_today() not in self.channel_usage_stats:
-            self.channel_usage_stats[await async_date_today()] = {}
-        for channel in self.bot.antistasi_guild.channels:
-            if channel.name not in self.channel_usage_stats[await async_date_today()]:
-                self.channel_usage_stats[await async_date_today()][channel.name] = 0
-        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-
+    async def update(self, typus):
+        if typus == 'time':
+            writejson(self.channel_usage_stats, self.channel_usage_stats_file)
+            if await async_date_today() not in self.channel_usage_stats:
+                self.channel_usage_stats[await async_date_today()] = {}
+            for channel in self.bot.antistasi_guild.channels:
+                if channel.name not in self.channel_usage_stats[await async_date_today()]:
+                    self.channel_usage_stats[await async_date_today()][channel.name] = 0
+            writejson(self.channel_usage_stats, self.channel_usage_stats_file)
+        else:
+            return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):

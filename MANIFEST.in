@@ -1,7 +1,0 @@
-prune data_pack
-
-include LICENSE
-include construction_info.env
-global-exclude dev.trigger
-
-global-exclude token.env

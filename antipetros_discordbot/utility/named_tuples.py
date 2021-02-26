@@ -1,7 +1,7 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 from collections import namedtuple
 
 # endregion[Imports]
@@ -10,7 +10,7 @@ from collections import namedtuple
 LINK_DATA_ITEM = namedtuple('LinkDataItem', ['author', 'link_name', 'date_time', 'delete_date_time', 'link'])
 
 # for saved suggestions
-SUGGESTION_DATA_ITEM = namedtuple('SuggestionDataItem', ['name', 'message_author', 'reaction_author', 'message', 'time', 'extra_data'], defaults=(None,))
+SUGGESTION_DATA_ITEM = namedtuple('SuggestionDataItem', ['name', 'message_author', 'reaction_author', 'message', 'time', 'team', 'extra_data'], defaults=(None,))
 
 
 # for timezones
@@ -50,3 +50,14 @@ ColorItem = namedtuple('ColorItem', ['name', 'hex', 'hex_alt', 'hsv', 'hsv_norm'
 
 
 FlagItem = namedtuple('FlagItem', ['name', 'value'])
+
+MemberRoleItem = namedtuple("MemberRoleItem", ['name', 'id'])
+
+
+GiveAwayEventItem = namedtuple("GiveAwayEventItem", ['title', 'channel_name', 'message_id', 'enter_emoji', 'end_date_time', 'end_message', 'amount_winners', "author_id"])
+
+
+EmbedFieldItem = namedtuple("EmbedFieldItem", ['name', 'value', "inline"], defaults=(None, None, None))
+
+
+ListenerContext = namedtuple('ListenerContext', ['message', 'content', 'channel', 'author', 'creation_time', 'reactions', 'attachments'], defaults=([], []))

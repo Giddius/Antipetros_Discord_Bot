@@ -6,53 +6,19 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import re
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.exceptions import DuplicateNameError
 from antipetros_discordbot.utility.named_tuples import RegexItem
 from antipetros_discordbot.utility.gidtools_functions import readit
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
-
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
-
-
-
-# * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
 
 # endregion[Imports]
 
@@ -122,7 +88,8 @@ class RegexKeeper(SubSupportBase):
         await self.bot.execute_in_thread(self._compile_all_regexes)
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self):
+    async def update(self, typus):
+        return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):

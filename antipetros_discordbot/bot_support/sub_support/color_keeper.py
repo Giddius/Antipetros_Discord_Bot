@@ -6,53 +6,24 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import random
 
-# * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 from discord import Color
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process as fuzzprocess
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
+from antipetros_discordbot.utility.exceptions import FuzzyMatchError
 from antipetros_discordbot.utility.named_tuples import ColorItem
 from antipetros_discordbot.utility.gidtools_functions import loadjson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-from fuzzywuzzy import fuzz, process as fuzzprocess
-
-
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
-
-# * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.exceptions import FuzzyMatchError
-
 
 # endregion[Imports]
 
@@ -113,7 +84,12 @@ class ColorKeeper(SubSupportBase):
     async def _make_color_items(self):
         for name, values in loadjson(self.all_colors_json_file).items():
             discord_color = Color.from_rgb(*values.get('rgb'))
-            self.colors[name.casefold()] = ColorItem(name=name.casefold(), discord_color=discord_color, ** values)
+            new_values = {}
+            for key, data in values.items():
+                if isinstance(data, list):
+                    data = tuple(data)
+                new_values[key] = data
+            self.colors[name.casefold()] = ColorItem(name=name.casefold(), discord_color=discord_color, ** new_values)
 
     @staticmethod
     def dict_to_color_item(color_name, color_data):
@@ -121,9 +97,9 @@ class ColorKeeper(SubSupportBase):
         return ColorItem(name=color_name.casefold(), discord_color=discord_color, ** color_data)
 
     def color(self, color_name: str):
-        return self.colors.get(color_name)
+        return self.colors.get(color_name.casefold())
 
-    async def discord_color(self, color_name: str):
+    def get_discord_color(self, color_name: str):
         color_name = color_name.casefold()
         if color_name in self.colors:
             return self.colors[color_name].discord_color
@@ -141,7 +117,8 @@ class ColorKeeper(SubSupportBase):
         await self._make_color_items()
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self):
+    async def update(self, typus):
+        return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):

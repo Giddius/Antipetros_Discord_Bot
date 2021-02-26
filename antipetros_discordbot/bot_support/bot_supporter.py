@@ -6,68 +6,14 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from inspect import iscoroutine, iscoroutinefunction
-from functools import partial
-
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.bot_support.sub_support import SUB_SUPPORT_CLASSES
-
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
-# import discord
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-# from discord import Embed, File
-
-# from discord.ext import commands, tasks
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
-
-# * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
-# from PyQt5.QtGui import QFont, QIcon, QBrush, QColor, QCursor, QPixmap, QStandardItem, QRegExpValidator
-
-# from PyQt5.QtCore import (Qt, QRect, QSize, QObject, QRegExp, QThread, QMetaObject, QCoreApplication,
-#                           QFileSystemWatcher, QPropertyAnimation, QAbstractTableModel, pyqtSlot, pyqtSignal)
-
-# from PyQt5.QtWidgets import (QMenu, QFrame, QLabel, QAction, QDialog, QLayout, QWidget, QWizard, QMenuBar, QSpinBox, QCheckBox, QComboBox, QGroupBox, QLineEdit,
-#                              QListView, QCompleter, QStatusBar, QTableView, QTabWidget, QDockWidget, QFileDialog, QFormLayout, QGridLayout, QHBoxLayout,
-#                              QHeaderView, QListWidget, QMainWindow, QMessageBox, QPushButton, QSizePolicy, QSpacerItem, QToolButton, QVBoxLayout, QWizardPage,
-#                              QApplication, QButtonGroup, QRadioButton, QFontComboBox, QStackedWidget, QListWidgetItem, QSystemTrayIcon, QTreeWidgetItem,
-#                              QDialogButtonBox, QAbstractItemView, QCommandLinkButton, QAbstractScrollArea, QGraphicsOpacityEffect, QTreeWidgetItemIterator)
-
-
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
-
-# from antipetros_discordbot.utility.gidtools_functions import ( readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-#                                dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
-
-
-# * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
 
 # endregion[Imports]
@@ -102,15 +48,15 @@ class BotSupporter:
         self.bot = bot
         self.subsupports = []
         self.available_subsupport_classes = SUB_SUPPORT_CLASSES
-        self.recruit_subsupports()
-        log.info("subsupports loaded into command-staff: %s", ', '.join(map(str, self.subsupports)))
 
     def find_available_subsupport_classes(self):
         pass
 
     def recruit_subsupports(self):
+
         for subsupport_class in self.available_subsupport_classes:
             self.subsupports.append(subsupport_class(self.bot, self))
+        log.debug("recruited subsupporters: %s", ', '.join([str(subsupporter) for subsupporter in self.subsupports]))
 
     def __getattr__(self, attribute_name):
         _out = None
@@ -118,7 +64,7 @@ class BotSupporter:
             if hasattr(subsupport, attribute_name):
                 _out = getattr(subsupport, attribute_name)
                 return _out
-        return partial(self.log_attribute_not_found, attribute_name)
+        raise AttributeError
 
     def really_has_attribute(self, attribute_name):
         return hasattr(self, attribute_name) and all(hasattr(subsupport, attribute_name) is False for subsupport in self.subsupports)

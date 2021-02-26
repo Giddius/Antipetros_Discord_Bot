@@ -1,8 +1,7 @@
 [pydeps]
 max_bacon = 4
 cluster=True
-max_cluster_size=10
-min_cluster_size=2
 verbose = 0
 pylib=False
-keep_target_cluster=False
+keep_target_cluster=True
+exclude=

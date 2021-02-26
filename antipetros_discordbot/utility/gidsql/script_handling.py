@@ -1,14 +1,14 @@
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import logging
 from pprint import pformat
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import readit, writeit, pathmaker
 
 # endregion [Imports]

@@ -6,66 +6,18 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from typing import Callable
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import UserDict
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
-# import discord
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-# from discord import Embed, File
-
-# from discord.ext import commands, tasks
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
-
-# * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
-# from PyQt5.QtGui import QFont, QIcon, QBrush, QColor, QCursor, QPixmap, QStandardItem, QRegExpValidator
-
-# from PyQt5.QtCore import (Qt, QRect, QSize, QObject, QRegExp, QThread, QMetaObject, QCoreApplication,
-#                           QFileSystemWatcher, QPropertyAnimation, QAbstractTableModel, pyqtSlot, pyqtSignal)
-
-# from PyQt5.QtWidgets import (QMenu, QFrame, QLabel, QAction, QDialog, QLayout, QWidget, QWizard, QMenuBar, QSpinBox, QCheckBox, QComboBox, QGroupBox, QLineEdit,
-#                              QListView, QCompleter, QStatusBar, QTableView, QTabWidget, QDockWidget, QFileDialog, QFormLayout, QGridLayout, QHBoxLayout,
-#                              QHeaderView, QListWidget, QMainWindow, QMessageBox, QPushButton, QSizePolicy, QSpacerItem, QToolButton, QVBoxLayout, QWizardPage,
-#                              QApplication, QButtonGroup, QRadioButton, QFontComboBox, QStackedWidget, QListWidgetItem, QSystemTrayIcon, QTreeWidgetItem,
-#                              QDialogButtonBox, QAbstractItemView, QCommandLinkButton, QAbstractScrollArea, QGraphicsOpacityEffect, QTreeWidgetItemIterator)
-
-
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
-
-# * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
 # endregion[Imports]
 
@@ -92,6 +44,7 @@ log = glog.aux_logger(__name__)
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+# * Local Imports --------------------------------------------------------------------------------------->
 # * Local Imports -->
 from antipetros_discordbot.utility.misc import date_today
 
@@ -140,12 +93,16 @@ class CommandStatDict(UserDict):
     def add_tick(self, key, unsuccessful=False):
         if key is None or key == 'None':
             return
-        if self.last_initialized.day != datetime.utcnow().day:
+        if self.last_initialized.day != datetime.utcnow().day or date_today() not in self.data:
             self.save_data()
             self.initialize_data()
 
         typus = 'unsuccessful' if unsuccessful is True else "successful"
+        if key not in self.data['overall']:
+            self.data['overall'][key] = {'successful': 0, 'unsuccessful': 0}
         self.data['overall'][key][typus] += 1
+        if key not in self.data[date_today()]:
+            self.data[date_today()][key] = {'successful': 0, 'unsuccessful': 0}
         self.data[date_today()][key][typus] += 1
 
     def load_data(self):

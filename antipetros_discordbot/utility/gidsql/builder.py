@@ -1,9 +1,9 @@
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import logging
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # endregion [Imports]

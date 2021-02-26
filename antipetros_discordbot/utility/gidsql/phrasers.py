@@ -1,12 +1,12 @@
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import logging
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidsql.exceptions import GidSqliteSemiColonError, GidSqliteNoTableNameError, GidSqliteColumnAlreadySetError
 
 # endregion[Imports]

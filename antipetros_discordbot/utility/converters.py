@@ -6,67 +6,16 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import re
 from datetime import datetime
 
-# * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands import Converter, CommandError
-
-# * Gid Imports -->
+from googletrans import LANGUAGES
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
-# * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-
-
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
-
-# * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
-# from PyQt5.QtGui import QFont, QIcon, QBrush, QColor, QCursor, QPixmap, QStandardItem, QRegExpValidator
-
-# from PyQt5.QtCore import (Qt, QRect, QSize, QObject, QRegExp, QThread, QMetaObject, QCoreApplication,
-#                           QFileSystemWatcher, QPropertyAnimation, QAbstractTableModel, pyqtSlot, pyqtSignal)
-
-# from PyQt5.QtWidgets import (QMenu, QFrame, QLabel, QAction, QDialog, QLayout, QWidget, QWizard, QMenuBar, QSpinBox, QCheckBox, QComboBox, QGroupBox, QLineEdit,
-#                              QListView, QCompleter, QStatusBar, QTableView, QTabWidget, QDockWidget, QFileDialog, QFormLayout, QGridLayout, QHBoxLayout,
-#                              QHeaderView, QListWidget, QMainWindow, QMessageBox, QPushButton, QSizePolicy, QSpacerItem, QToolButton, QVBoxLayout, QWizardPage,
-#                              QApplication, QButtonGroup, QRadioButton, QFontComboBox, QStackedWidget, QListWidgetItem, QSystemTrayIcon, QTreeWidgetItem,
-#                              QDialogButtonBox, QAbstractItemView, QCommandLinkButton, QAbstractScrollArea, QGraphicsOpacityEffect, QTreeWidgetItemIterator)
-
-
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
-
-# from antipetros_discordbot.utility.gidtools_functions import ( readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-#                                dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
-
-
 
 # endregion[Imports]
 
@@ -92,6 +41,20 @@ log.info(glog.imported(__name__))
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
+
+
+class LanguageConverter(Converter):
+    def __init__(self):
+        self.languages = {value.casefold(): key for key, value in LANGUAGES.items()}
+        self.languages_by_country_code = {key.casefold(): key for key in LANGUAGES}
+
+    async def convert(self, ctx, argument):
+        argument = argument.casefold()
+        if argument in self.languages:
+            return self.languages.get(argument)
+        elif argument in self.languages_by_country_code:
+            return self.languages_by_country_code.get(argument)
+        raise CommandError
 
 
 class DateTimeFullConverter(Converter):

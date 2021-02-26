@@ -1,14 +1,27 @@
-pep517
-memory-profiler
+--force-reinstall numpy==1.19.3
+PyQt5-stubs
+autopep8
+commonmark
+docstr-coverage
+grip
+icecream
+ipython
+isort
+jupyter
+language_tool_python
 matplotlib
-import-profiler
+memory-profiler
 objectgraph
+optimize-images
+pep517
+pigar
+pipdeptree
 pipreqs
 pydeps
---force-reinstall numpy==1.19.3
-pyqt5-tools
-PyQt5-stubs
-icecream
-autopep8
 pypandoc
-isort
+pyqt5-tools
+pyspellchecker
+python-magic
+stdlib-list
+tomlkit
+fabric

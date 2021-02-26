@@ -2,18 +2,16 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
-
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 
-# * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import loadjson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
@@ -56,7 +54,7 @@ def standard_embed_color():
 
 
 async def make_basic_embed(title, text=None, footer=None, symbol=None, **kwargs):
-    embed_title = str(title).title()
+    embed_title = str(title)
     embed_text = '' if text is None else str(text)
 
     basic_embed = discord.Embed(title=embed_title, description=embed_text, color=standard_embed_color())
@@ -79,11 +77,12 @@ async def make_basic_embed(title, text=None, footer=None, symbol=None, **kwargs)
             basic_embed.set_footer(text=str(footer))
     else:
         basic_embed.set_footer(text=DEFAULT_FOOTER)
+
     return basic_embed
 
 
 async def make_basic_embed_inline(title, text=None, footer=None, symbol=None, **kwargs):
-    embed_title = str(title).title()
+    embed_title = str(title)
     embed_text = '' if text is None else str(text)
 
     basic_embed = discord.Embed(title=embed_title, description=embed_text, color=standard_embed_color())
@@ -103,6 +102,7 @@ async def make_basic_embed_inline(title, text=None, footer=None, symbol=None, **
             basic_embed.set_footer(text=str(footer))
     else:
         basic_embed.set_footer(text=DEFAULT_FOOTER)
+
     return basic_embed
 
 

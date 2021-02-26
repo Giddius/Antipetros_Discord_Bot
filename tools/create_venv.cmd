@@ -74,10 +74,10 @@ if %ERRORLEVEL% == 1 (
 )
 
 
-ECHO.
-ECHO -------------------------------------------- Clearing Pip Cache --------------------------------------------
-RD /S /Q %LocalAppData%\pip\Cache
-ECHO.
+rem ECHO.
+rem ECHO -------------------------------------------- Clearing Pip Cache --------------------------------------------
+rem RD /S /Q %LocalAppData%\pip\Cache
+rem ECHO.
 
 
 
@@ -136,6 +136,9 @@ ECHO.
 ECHO ################# Installing wheel
 CALL pip install --no-cache-dir --upgrade wheel
 ECHO.
+ECHO ################# Installing PEP517
+CALL pip install --no-cache-dir --upgrade PEP517
+ECHO.
 
 ECHO ################# Installing python-dotenv
 CALL pip install --no-cache-dir --upgrade python-dotenv
@@ -167,13 +170,26 @@ ECHO.
 ECHO.
 ECHO.
 
-Echo +++++++++++++++++++++++++++++ Misc Packages +++++++++++++++++++++++++++++
+Echo +++++++++++++++++++++++++++++ misc Packages +++++++++++++++++++++++++++++
 ECHO.
 FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_misc.txt) do (
 ECHO.
 ECHO -------------------------- Installing %%A --------------^>
 ECHO.
-CALL pip install --upgrade %%A
+CALL pip install --upgrade --no-cache-dir %%A
+ECHO.
+)
+
+ECHO.
+ECHO.
+
+Echo +++++++++++++++++++++++++++++ Experimental Packages +++++++++++++++++++++++++++++
+ECHO.
+FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_experimental.txt) do (
+ECHO.
+ECHO -------------------------- Installing %%A --------------^>
+ECHO.
+CALL pip install --upgrade --no-cache-dir %%A
 ECHO.
 )
 
@@ -186,7 +202,7 @@ FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_Qt.txt) do (
 ECHO.
 ECHO -------------------------- Installing %%A --------------^>
 ECHO.
-CALL pip install --upgrade %%A
+CALL pip install --upgrade --no-cache-dir %%A
 ECHO.
 )
 
@@ -199,7 +215,7 @@ FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_from_github.tx
 ECHO.
 ECHO -------------------------- Installing %%A --------------^>
 ECHO.
-CALL call pip install --upgrade git+%%A
+CALL call pip install --upgrade --no-cache-dir git+%%A
 ECHO.
 )
 
@@ -212,7 +228,7 @@ FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_test.txt) do (
 ECHO.
 ECHO -------------------------- Installing %%A --------------^>
 ECHO.
-CALL pip install --upgrade %%A
+CALL pip install --upgrade --no-cache-dir %%A
 ECHO.
 )
 
@@ -225,7 +241,7 @@ FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_dev.txt) do (
 ECHO.
 ECHO -------------------------- Installing %%A --------------^>
 ECHO.
-CALL pip install --upgrade %%A
+CALL pip install --upgrade --no-cache-dir %%A
 ECHO.
 )
 
