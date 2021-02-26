@@ -71,7 +71,7 @@ exclude = [
     "antipetros_discordbot/utility/gidsql/_utils.archive",
     "designer_files",
     "art",
-    "antipetros_discordbot/dev_tools_and_scripts",
+    "dev_tools_and_scripts",
     "pytest_coverage",
 ]
 

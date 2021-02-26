@@ -6,7 +6,7 @@ from dotenv import find_dotenv, load_dotenv
 # * Third Party Imports --------------------------------------------------------------------------------->
 from paramiko import SSHClient, AutoAddPolicy
 from ftplib import FTP
-load_dotenv(find_dotenv("nextcloud.env"))
+load_dotenv(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\nextcloud.env")
 load_dotenv(find_dotenv("token.env"))
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -17,7 +17,7 @@ def get_version():
     return __version__
 
 
-ANTIPETROS_START_CMD = f"nohup antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NX_USERNAME')} -np {os.getenv('NX_PASSWORD')} &"
+ANTIPETROS_START_CMD = f"nohup antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NEXTCLOUD_USERNAME')} -np {os.getenv('NEXTCLOUD_PASSWORD')} &"
 ANTIPETROS_UPDATE_CMD = "python3.9 -m pip install --force-reinstall antipetros_discordbot"
 ANTIPETROS_UPDATE_CMD_VERSION = ANTIPETROS_UPDATE_CMD + '==' + get_version()
 
@@ -67,10 +67,12 @@ def run_command(command: str):
 if __name__ == '__main__':
     # copy_script()
     # run_command("python3.9 -m pip install --upgrade pip")
-    run_command(ANTIPETROS_UPDATE_CMD_VERSION)
-    sleep(10)
+    # run_command("sudo apt update")
+    # run_command("sudo apt install python3-testresources -y")
+    # run_command(ANTIPETROS_UPDATE_CMD_VERSION)
+    # sleep(10)
 
-    run_command(f"antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NX_USERNAME')} -np {os.getenv('NX_PASSWORD')}")
+    run_command(f"antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NEXTCLOUD_USERNAME')} -np {os.getenv('NEXTCLOUD_PASSWORD')}")
     sleep(30)
     run_command('antipetrosbot stop')
     # run_command(ANTIPETROS_START_CMD)
