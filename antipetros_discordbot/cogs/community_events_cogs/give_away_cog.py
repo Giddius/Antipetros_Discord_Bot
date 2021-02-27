@@ -63,7 +63,7 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 # endregion [Helper]
 
 
-class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
+class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": "", "hidden": True}):
     """
     Soon
     """
@@ -124,7 +124,6 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
 # region [Loops]
 
-
     @tasks.loop(seconds=30, reconnect=True)
     async def check_give_away_ended_loop(self):
         for give_away_event in await self.give_aways:
@@ -160,7 +159,6 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 # endregion [Listener]
 
 # region [Commands]
-
 
     async def give_away_finished(self, event_item):
 
@@ -303,6 +301,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 # endregion [Embeds]
 
 # region [HelperMethods]
+
 
     async def add_give_away(self, give_away_event):
         data = loadjson(self.give_away_data_file)

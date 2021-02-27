@@ -66,6 +66,6 @@ def get_cog_paths_from_folder(folder_name: str, files_to_exclude: list = None):
     return import_paths
 
 
-BOT_ADMIN_COG_PATHS = get_cog_paths_from_folder(folder_name='bot_admin_cogs', files_to_exclude=["performance_cog.py"])
+BOT_ADMIN_COG_PATHS = get_cog_paths_from_folder(folder_name='bot_admin_cogs', files_to_exclude=[])
 DEV_COG_PATHS = get_cog_paths_from_folder(folder_name='dev_cogs', files_to_exclude=['test_playground_cog.py'])
 DISCORD_ADMIN_COG_PATHS = get_cog_paths_from_folder(folder_name='discord_admin_cogs', files_to_exclude=['security_cog.py'])

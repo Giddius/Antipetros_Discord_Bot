@@ -87,12 +87,9 @@ _from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 # endregion [Helper]
 
 
-class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
+class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME}):
     """
-    [summary]
-
-    [extended_summary]
-
+    soon
     """
 # region [ClassAttributes]
 
@@ -127,7 +124,6 @@ class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME, "descrip
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -150,6 +146,7 @@ class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME, "descrip
 
 # region [Commands]
 
+
     async def correct_template(self, template_content, item_data):
         new_content = template_content
         for item in item_data:
@@ -158,7 +155,7 @@ class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME, "descrip
         return new_content
 
     @auto_meta_info_command(enabled=get_command_enabled("check_template"))
-    @allowed_channel_and_allowed_role_2(False)
+    @allowed_channel_and_allowed_role_2()
     @has_attachments(1)
     async def check_template(self, ctx, all_items_file=True, case_insensitive: bool = False):
         attachment = ctx.message.attachments[0]
@@ -262,10 +259,10 @@ class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME, "descrip
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
+        return f"{self.qualified_name}({self.bot.__class__.__name__})"
 
     def __str__(self):
-        return self.__class__.__name__
+        return self.qualified_name
 
 
 # endregion [SpecialMethods]

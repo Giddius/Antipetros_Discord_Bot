@@ -10,7 +10,7 @@ from io import BytesIO
 from datetime import datetime, timedelta
 from statistics import mean, stdev, median
 from collections import deque
-
+from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 import matplotlib.dates as mdates
@@ -23,15 +23,17 @@ from matplotlib.ticker import FormatStrFormatter
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, date_today
+
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, date_today, make_config_name
 from antipetros_discordbot.utility.enums import DataSize, CogState
-from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
 from antipetros_discordbot.utility.named_tuples import LatencyMeasurement, MemoryUsageMeasurement
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, make_basic_embed_inline
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, bytes2human, create_folder
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
+from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 
 # endregion[Imports]
 
@@ -66,7 +68,11 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATA_COLLECT_INTERVALL = 60 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 600  # seconds
 DEQUE_SIZE = (24 * 60 * 60) // DATA_COLLECT_INTERVALL  # seconds in day divided by collect interval, full deque is data of one day
 DATA_DUMP_INTERVALL = {'hours': 1, 'minutes': 0, 'seconds': 0} if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else {'hours': 24, 'minutes': 1, 'seconds': 0}
+COG_NAME = "PerformanceCog"
 
+CONFIG_NAME = make_config_name(COG_NAME)
+
+get_command_enabled = command_enabled_checker(CONFIG_NAME)
 # endregion[Constants]
 
 
@@ -74,12 +80,20 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     """
     Soon
     """
-    config_name = 'performance'
+    config_name = CONFIG_NAME
     save_folder = APPDATA['performance_data']
     docattrs = {'show_in_readme': False,
                 'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING | CogState.DOCUMENTATION_MISSING,
                              "2021-02-06 05:25:38",
                              "f0e545c1c0066f269dc77a19380ab01ac1fc3e03b6df4662850ca4a779b4343d64c244941fdef8af3aca0342893463d9de35f8f24f71852649028411a33bebf3")}
+    required_config_data = dedent("""
+                                threshold_latency_warning = 250
+                                threshold_memory_warning = 0.5
+                                threshold_memory_critical = 0.75
+                                latency_graph_formatting = r1-
+                                memory_graph_formatting = b1-
+
+                                """)
 
     def __init__(self, bot):
         self.bot = bot
@@ -91,12 +105,19 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.memory_data = deque(maxlen=DEQUE_SIZE)
         self.plot_formatting_info = {'latency': COGS_CONFIG.get(self.config_name, 'latency_graph_formatting'), 'memory': COGS_CONFIG.get(self.config_name, 'memory_graph_formatting')}
         create_folder(self.save_folder)
+        self.allowed_channels = allowed_requester(self, 'channels')
+        self.allowed_roles = allowed_requester(self, 'roles')
+        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
         self.latency_measure_loop.start()
         self.memory_measure_loop.start()
         self.report_data_loop.start()
+
+    async def update(self, typus):
+        return
+        log.debug('cog "%s" was updated', str(self))
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def latency_measure_loop(self):
@@ -165,9 +186,8 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     async def before_report_data_loop(self):
         await self.bot.wait_until_ready()
 
-    @commands.command(aliases=get_aliases("report_latency"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('performance', 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist('performance', 'allowed_channels')))
+    @auto_meta_info_command(enabled=True)
+    @owner_or_admin()
     async def report_latency(self, ctx, with_graph: bool = True, since_last_hours: int = 24):
         report_data = []
         for item in list(self.latency_data.copy()):
@@ -185,9 +205,8 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             embed.set_image(url=_url)
         await ctx.send(embed=embed, file=_file)
 
-    @commands.command(aliases=get_aliases("report_memory"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('performance', 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist('performance', 'allowed_channels')))
+    @auto_meta_info_command(enabled=True)
+    @owner_or_admin()
     async def report_memory(self, ctx, with_graph: bool = True, since_last_hours: int = 24):
         report_data = []
 
@@ -287,9 +306,8 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
                     _out = item.date_time
         return _out
 
-    @commands.command(aliases=get_aliases("get_command_stats"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('performance', 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist('performance', 'allowed_channels')))
+    @auto_meta_info_command(enabled=True)
+    @owner_or_admin()
     async def get_command_stats(self, ctx):
         data_dict = {item.name: f"{ZERO_WIDTH}\n{item.data}\n{ZERO_WIDTH}" for item in await self.bot.support.get_todays_invoke_data()}
         date = date_today()
@@ -298,9 +316,8 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=get_aliases("report"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('performance', 'allowed_roles'))
-    @ in_allowed_channels(set(COGS_CONFIG.getlist('performance', 'allowed_channels')))
+    @auto_meta_info_command(enabled=True)
+    @owner_or_admin()
     async def report(self, ctx):
         await ctx.invoke(self.bot.get_command('report_memory'))
         await ctx.invoke(self.bot.get_command('report_latency'))
@@ -317,7 +334,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
 def setup(bot):
 
-    bot.add_cog(PerformanceCog(bot))
+    bot.add_cog(attribute_checker(PerformanceCog(bot)))
 
 
 # region[Main_Exec]

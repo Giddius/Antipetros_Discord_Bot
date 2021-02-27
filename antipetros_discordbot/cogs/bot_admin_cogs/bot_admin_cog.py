@@ -70,6 +70,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
     required_config_data = dedent("""
                                   """)
     alive_phrases_file = pathmaker(APPDATA['fixed_data'], 'alive_phrases.json')
+    who_is_trigger_phrases_file = pathmaker(APPDATA['fixed_data'], 'who_is_trigger_phrases.json')
 
     def __init__(self, bot):
         self.bot = bot
@@ -92,7 +93,6 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
 # endregion [Setup]
 
-
     @property
     def alive_phrases(self):
         if os.path.isfile(self.alive_phrases_file) is False:
@@ -101,9 +101,12 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
     @property
     def who_is_trigger_phrases(self):
-        return [f'who is {self.bot.display_name.casefold()}',
-                f'what is {self.bot.display_name.casefold()}',
-                f'who the fuck is {self.bot.display_name.casefold()}']
+        std_phrases = ['who is %BOT_NAME%',
+                       'what is %BOT_NAME%',
+                       'who the fuck is %BOT_NAME%']
+        if os.path.isfile(self.who_is_trigger_phrases_file) is False:
+            writejson(std_phrases, self.who_is_trigger_phrases_file)
+        return loadjson(self.who_is_trigger_phrases_file)
 
     @commands.Cog.listener(name='on_message')
     async def who_is_this_bot_listener(self, msg: discord.Message):
@@ -116,7 +119,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
         if channel.name.casefold() not in self.allowed_channels(command_name):
             return False
-        if any(trigger_phrase in msg.content.casefold() for trigger_phrase in self.who_is_trigger_phrases):
+        if any(trigger_phrase.replace('%BOT_NAME%', self.bot.display_name).casefold() in msg.content.casefold() for trigger_phrase in self.who_is_trigger_phrases):
             image = self.bot.portrait_url
             embed_data = await self.bot.make_generic_embed(title=f'WHO IS {self.bot.display_name.upper()}', description='I am an custom made Bot for this community!',
                                                            fields=[self.bot.field_item(name='What I can do', value=f'Get a description of my features by using `@{self.bot.display_name} help`', inline=False),
@@ -124,6 +127,18 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
                                                            image=image,
                                                            thumbnail=None)
             await msg.reply(**embed_data, delete_after=60)
+
+    @auto_meta_info_command(enabled=True)
+    @owner_or_admin()
+    async def add_who_is_phrase(self, ctx, *, phrase: str):
+        current_phrases = self.who_is_trigger_phrases
+
+        if phrase.casefold() in map(lambda x: x.casefold(), current_phrases):
+            await ctx.send(f'phrase `{phrase}` already in `who_is_trigger_phrases`')
+            return
+        current_phrases.append(phrase)
+        writejson(current_phrases, self.who_is_trigger_phrases_file)
+        await ctx.send(f"Added phrase `{phrase}` to `who_is_trigger_phrases`")
 
     @ auto_meta_info_command(enabled=True, aliases=['you_dead?', 'are-you-there', 'poke-with-stick'])
     async def life_check(self, ctx: commands.Context):
@@ -191,7 +206,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
                                                                self.bot.field_item(
                                                                    name=f'**NEW RULES**\n{ZERO_WIDTH}', value=f"**⍟** No more pro or contra Furry fighting, or Bertha puts on her BanBear Fursuite\n{seperator}\n**⍟** If you spam my commands you get Blacklisted!\n{seperator}\n**⍟** Try to break me, but if you succede, let {creator_mention} know\n{seperator}\n**⍟** Not everything in this announcement is serious, but you don't know what is and what is not\n{seperator}\n{ZERO_WIDTH}", inline=False),
                                                                self.bot.field_item(name=f'**WHO CREATED THIS CRIME AGAINST HUMANITY?**\n{ZERO_WIDTH}',
-                                                                                   value=f"Direct the Mob to {creator_mention}" + f"\n{ZERO_WIDTH}", inline=False),
+                                                                                   value=f"Direct the angry Mob to {creator_mention}" + f"\n{ZERO_WIDTH}", inline=False),
                                                                self.bot.field_item(name=f"**YOU HAVE SOMETHING TO SAY ABOUT ME?**\n{ZERO_WIDTH}",
                                                                                    value=f"Send {creator_mention} a DM or ping him\n*(he is completely ok with getting pinged)*\ndon't hesitate, you are helping!\n{ZERO_WIDTH}", inline=False),
                                                                self.bot.field_item(name=f'**HOW CAN WE INTERACT WITH YOU?**\n{ZERO_WIDTH}',
@@ -214,8 +229,30 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
             COGS_CONFIG.save()
         await ctx.message.delete()
 
+    @auto_meta_info_command(enabled=True)
+    @commands.is_owner()
+    async def send_log_file(self, ctx: commands.Context, which_logs: str = 'newest'):
+        log_folder = APPDATA.log_folder
+        if which_logs == 'newest':
+
+            for file in os.scandir(log_folder):
+                if file.is_file() and file.name.endswith('.log'):
+                    discord_file = discord.File(file.path)
+                    await ctx.send(file=discord_file)
+
+        elif which_logs == 'all':
+            for file in os.scandir(log_folder):
+                if file.is_file() and file.name.endswith('.log'):
+                    discord_file = discord.File(file.path)
+                    await ctx.send(file=discord_file)
+
+            for old_file in os.scandir(pathmaker(log_folder, 'old_logs')):
+                if old_file.is_file() and old_file.name.endswith('.log'):
+                    discord_file = discord.File(old_file.path)
+                    await ctx.send(file=discord_file)
+
     def __repr__(self):
-        return f"{self.name}({self.bot.user.name})"
+        return f"{self.qualified_name}({self.bot.user.name})"
 
     def __str__(self):
         return self.qualified_name

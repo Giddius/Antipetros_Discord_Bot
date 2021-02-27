@@ -170,7 +170,7 @@ def clean_userdata(c, dry_run=False):
     data_pack_path = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "init_userdata\data_pack")
 
     folder_to_clear = ['archive', 'user_env_files', 'env_files', 'performance_data', 'stats', 'database', 'debug', 'temp_files']
-    files_to_clear = ["blacklist.json", "give_aways.json", "registered_steam_workshop_items.json", "notified_log_files.json", "blacklist.json", "registered_timezones.json"]
+    files_to_clear = ["auto_accept_suggestion_users.json", "blacklist.json", "give_aways.json", "registered_steam_workshop_items.json", "notified_log_files.json", "blacklist.json", "registered_timezones.json", "who_is_trigger_phrases.json"]
 
     if dry_run is True:
         print('')
@@ -388,6 +388,6 @@ def set_requirements(c):
         fprod.write('\n'.join(_requirements))
 
 
-@task(pre=[store_userdata, set_requirements, collect_data])
+@task(pre=[store_userdata, collect_data])
 def build(c):
     print('finished building')

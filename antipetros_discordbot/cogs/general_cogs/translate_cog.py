@@ -55,7 +55,7 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 # endregion[Constants]
 
 
-class TranslateCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
+class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
     """
     Soon
     """

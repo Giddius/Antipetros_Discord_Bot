@@ -31,7 +31,7 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
@@ -78,16 +78,13 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # region [Helper]
 
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 
 # endregion [Helper]
 
 
-class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
+class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
     """
-    [summary]
-
-    [extended_summary]
+    soon
 
     """
 # region [ClassAttributes]
@@ -214,10 +211,9 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME, "des
 
 # region [Commands]
 
-
     @auto_meta_info_command()
-    @commands.is_owner()
-    async def check_newest_files(self, ctx, server: str, sub_folder: str, amount: int = 1):
+    @allowed_channel_and_allowed_role_2()
+    async def get_newest_logs(self, ctx, server: str, sub_folder: str, amount: int = 1):
         max_amount = COGS_CONFIG.retrieve(self.config_name, 'max_amount_get_files', typus=int, direct_fallback=5)
         if amount > max_amount:
             await ctx.send(f'You requested more files than the max allowed amount of {max_amount}, aborting!')
