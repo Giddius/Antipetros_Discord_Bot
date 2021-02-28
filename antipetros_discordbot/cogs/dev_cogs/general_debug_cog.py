@@ -262,7 +262,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     @auto_meta_info_command()
     @commands.is_owner()
-    async def all_channel_permissions(self, ctx: commands.Context, member: discord.Member = None, filter_category: str = None, display_mode: str = 'only_true'):
+    async def all_channel_permissions(self, ctx: commands.Context, member: discord.Member = None, display_mode: str = 'only_true', filter_category: str = None):
         for channel in self.bot.antistasi_guild.channels:
             if filter_category is None:
                 if channel.category is not None and channel.category.name not in ["Admin Info", "Staff Rooms", "Voice Channels"]:

@@ -17,3 +17,4 @@ sqlalchemy
 tree-hugger
 vendorize
 wikitextparser
+python-a2s

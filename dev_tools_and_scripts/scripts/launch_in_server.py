@@ -75,9 +75,6 @@ def run_command(command: str):
 
 if __name__ == '__main__':
     # copy_script()
-    # run_command("python3.9 -m pip install --upgrade pip")
-    # run_command("sudo apt update")
-    # run_command("sudo apt install python3-testresources -y")
     # run_command(ANTIPETROS_UPDATE_CMD_VERSION)
     # sleep(10)
 

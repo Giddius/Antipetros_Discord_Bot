@@ -23,3 +23,7 @@ sudo apt-get install -y libcairo2-dev
 sudo apt-get install libmagic1
 
 sudo apt-get install -y libsdl-pango-dev
+
+sudo apt install python3-testresources -y
+
+python3.9 -m pip install --upgrade pip
