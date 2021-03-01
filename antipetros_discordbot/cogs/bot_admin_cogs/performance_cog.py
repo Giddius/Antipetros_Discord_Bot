@@ -198,7 +198,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         _file = None
         if len(report_data) < 11:
             embed_data = embed_data | {item.date_time.strftime(self.bot.std_date_time_format): str(item.latency) + ' ms' for item in report_data}
-        embed = await make_basic_embed_inline(title='Latency Data', text=f"Data of the last {str(since_last_hours)} hours", symbol='save', amount_datapoints=str(len(self.latency_data)), ** embed_data)
+        embed = await make_basic_embed_inline(title='Latency Data', text=f"Data of the last {str(since_last_hours)} hours", symbol='graph', amount_datapoints=str(len(self.latency_data)), ** embed_data)
 
         if with_graph is True:
             _file, _url = await self.make_graph(report_data, 'latency')
@@ -223,7 +223,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
         embed = await make_basic_embed_inline(title='Memory Data',
                                               text=f"Data of the last {str(since_last_hours)} hours",
-                                              symbol='save', amount_datapoints=str(len(self.memory_data)),
+                                              symbol='graph', amount_datapoints=str(len(self.memory_data)),
                                               **embed_data)
         if with_graph is True:
             log.debug('calling make_graph')
@@ -240,55 +240,55 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
     async def make_graph(self, data, typus: str, save_to=None):
         start_time = time.time()
-        with plt.xkcd():
+        plt.style.use('dark_background')
 
-            await asyncio.wait_for(self.format_graph(), timeout=10)
-            x = [item.date_time for item in data]
+        await asyncio.wait_for(self.format_graph(), timeout=10)
+        x = [item.date_time for item in data]
 
-            if typus == 'latency':
-                y = [item.latency for item in data]
-                max_y = max(y)
-                min_y = min(item.latency for item in data)
-                ymin = min_y - (min_y // 6)
+        if typus == 'latency':
+            y = [item.latency for item in data]
+            max_y = max(y)
+            min_y = min(item.latency for item in data)
+            ymin = min_y - (min_y // 6)
 
-                ymax = max_y + (max_y // 6)
-                h_line_height = max_y
-                plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d ms'))
-            else:
-                y = [bytes2human(item.absolute) for item in data]
-                raw_max_y = bytes2human(max(item.absolute for item in data))
-                max_y = bytes2human(max(item.total for item in data))
-                ymin = 0
-                ymax = round(max_y * 1.1)
-                h_line_height = max_y
-                unit_legend = bytes2human(max(item.absolute for item in data), True).split(' ')[-1]
-                plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d ' + unit_legend))
-            await asyncio.sleep(0.25)
+            ymax = max_y + (max_y // 6)
+            h_line_height = max_y
+            plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d ms'))
+        else:
+            y = [bytes2human(item.absolute) for item in data]
+            raw_max_y = bytes2human(max(item.absolute for item in data))
+            max_y = bytes2human(max(item.total for item in data))
+            ymin = 0
+            ymax = round(max_y * 1.1)
+            h_line_height = max_y
+            unit_legend = bytes2human(max(item.absolute for item in data), True).split(' ')[-1]
+            plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d ' + unit_legend))
+        await asyncio.sleep(0.25)
 
-            plt.plot(x, y, self.plot_formatting_info.get(typus), markersize=2, linewidth=0.6, alpha=1)
+        plt.plot(x, y, self.plot_formatting_info.get(typus), markersize=2, linewidth=0.6, alpha=1)
 
-            plt.gcf().autofmt_xdate()
+        plt.gcf().autofmt_xdate()
 
-            await asyncio.sleep(0.25)
-            vline_max = [item.date_time for item in data if item.absolute == max(item.absolute for item in data)][0] if typus == 'memory' else [item.date_time for item in data if item.latency == max(item.latency for item in data)][0]
-            plt.axvline(x=vline_max, color='g', linestyle=':')
-            plt.axhline(y=h_line_height, color='r', linestyle='--')
+        await asyncio.sleep(0.25)
+        vline_max = [item.date_time for item in data if item.absolute == max(item.absolute for item in data)][0] if typus == 'memory' else [item.date_time for item in data if item.latency == max(item.latency for item in data)][0]
+        plt.axvline(x=vline_max, color='g', linestyle=':')
+        plt.axhline(y=h_line_height, color='r', linestyle='--')
 
-            plt.axis(ymin=ymin, ymax=ymax)
+        plt.axis(ymin=ymin, ymax=ymax)
 
-            plt.title(f'{typus.title()} -- {datetime.utcnow().strftime("%Y.%m.%d")}')
+        plt.title(f'{typus.title()} -- {datetime.utcnow().strftime("%Y.%m.%d")}')
 
-            plt.xticks(rotation=90)
-            await asyncio.sleep(0.25)
-            if save_to is not None:
-                plt.savefig(save_to, format='png')
+        plt.xticks(rotation=90)
+        await asyncio.sleep(0.25)
+        if save_to is not None:
+            plt.savefig(save_to, format='png')
 
-            with BytesIO() as image_binary:
-                plt.savefig(image_binary, format='png')
-                plt.close()
-                image_binary.seek(0)
-                log.debug(f'making graph took {await async_seconds_to_pretty_normal(int(round(time.time()-start_time)))}')
-                return discord.File(image_binary, filename=f'{typus}graph.png'), f"attachment://{typus}graph.png"
+        with BytesIO() as image_binary:
+            plt.savefig(image_binary, format='png')
+            plt.close()
+            image_binary.seek(0)
+            log.debug(f'making graph took {await async_seconds_to_pretty_normal(int(round(time.time()-start_time)))}')
+            return discord.File(image_binary, filename=f'{typus}graph.png'), f"attachment://{typus}graph.png"
 
     async def convert_memory_size(self, in_bytes, new_unit: DataSize, annotate: bool = False, extra_digits=2):
 

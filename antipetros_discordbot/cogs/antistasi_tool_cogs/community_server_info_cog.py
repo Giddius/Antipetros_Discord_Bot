@@ -37,7 +37,7 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, seconds_to_pretty, alt_seconds_to_pretty
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2, has_attachments
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
@@ -93,6 +93,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     config_name = CONFIG_NAME
     base_server_info_file = APPDATA['base_server_info.json']
+    server_status_change_exclusions_file = pathmaker(APPDATA['json_data'], 'server_status_change_exclusions.json')
     server_symbol = "https://i.postimg.cc/dJgyvGH7/server-symbol.png"
     docattrs = {'show_in_readme': True,
                 'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
@@ -119,6 +120,11 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Properties]
 
+    @property
+    def server_status_change_exclusions(self):
+        if os.path.isfile(self.server_status_change_exclusions_file) is False:
+            writejson([], self.server_status_change_exclusions_file)
+        return loadjson(self.server_status_change_exclusions_file)
 
 # endregion [Properties]
 
@@ -153,12 +159,12 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                 log.debug("Server %s IS online", server_holder.name)
             else:
                 log.debug("Server %s IS NOT online", server_holder.name)
+            if server_holder.name not in self.server_status_change_exclusions:
+                if server_holder.is_online is True and prev_is_online is False:
+                    await self.notification_channel.send(f'**Server __{server_holder.name}__ was started and is now online!**')
 
-            if server_holder.is_online is True and prev_is_online is False:
-                await self.notification_channel.send(f'**Server __{server_holder.name}__ was started and is now online!**')
-
-            elif server_holder.is_online is False and prev_is_online is True:
-                await self.notification_channel.send(f'**Server __{server_holder.name}__ was stoped and is not online anymore!**')
+                elif server_holder.is_online is False and prev_is_online is True:
+                    await self.notification_channel.send(f'**Server __{server_holder.name}__ was stoped and is not online anymore!**')
 
 # endregion [Loops]
 
@@ -168,7 +174,6 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command(enabled=get_command_enabled("current_online_server"))
     @allowed_channel_and_allowed_role_2()
@@ -210,11 +215,9 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
             player_data = sorted(player_data, key=lambda x: x.score, reverse=True)
             fields = []
             for player in player_data:
-                if player.name is not None:
-                    discord_member = await self.bot.antistasi_guild.query_members(player.name)
-                    discord_mention = discord_member[0].mention if discord_member else ""
+                if player.name:
                     fields.append(self.bot.field_item(name=f"__***{player.name}***__",
-                                                      value=f"{ZERO_WIDTH}\n**Score:** {(ZERO_WIDTH+' ')*16} {player.score}\n**Duration:** {(ZERO_WIDTH+' ')*10} {alt_seconds_to_pretty(player.duration, shorten_name_to=3)}\n**Possible Discord Name:** {(ZERO_WIDTH+' ')*5}{discord_mention}\n{'━'*25}", inline=False))
+                                                      value=f"{ZERO_WIDTH}\n**Score:** {(ZERO_WIDTH+' ')*16} {player.score}\n**Duration:** {(ZERO_WIDTH+' ')*10} {alt_seconds_to_pretty(player.duration, shorten_name_to=3)}\n{'━'*25}", inline=False))
             info = await server_holder.get_info()
             async for embed_data in self.bot.make_paginatedfields_generic_embed(title=f'Online Players on {info.server_name}',
                                                                                 thumbnail=self.server_symbol,
@@ -225,6 +228,33 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         except asyncio.exceptions.TimeoutError:
             await ctx.send(f"The server, `{server}` is currently not online")
             server_holder.is_online = False
+
+    @auto_meta_info_command(enabled=get_command_enabled(''))
+    @allowed_channel_and_allowed_role_2()
+    @log_invoker(log, 'critical')
+    async def exclude_from_server_status_notification(self, ctx: commands.Context, server_name: str):
+        if server_name.casefold() not in [server_holder.name.casefold() for server_holder in self.servers]:
+            await ctx.send(f'Cannot find Server with the name {server_name}, aborting!')
+            return
+        if server_name.casefold() in self.server_status_change_exclusions:
+            await ctx.send(f'Server {server_name} is already excluded from status change notifications. aborting!')
+            return
+        await self._add_to_server_status_change_exclusions(server_name)
+        await ctx.send(f'Excluded {server_name} from status change notifications')
+
+    @auto_meta_info_command(enabled=get_command_enabled(''))
+    @allowed_channel_and_allowed_role_2()
+    @log_invoker(log, 'critical')
+    async def undo_exclude_from_server_status_notification(self, ctx: commands.Context, server_name: str):
+        if server_name.casefold() not in [server_holder.name.casefold() for server_holder in self.servers]:
+            await ctx.send(f'Cannot find Server with the name {server_name}, aborting!')
+            return
+        if server_name.casefold() not in self.server_status_change_exclusions:
+            await ctx.send(f"Server {server_name} is currently not excluded from status change notifications, aborting!")
+            return
+        await self._remove_from_server_status_change_exclusions(server_name)
+        await ctx.send(f"Status change notifications have been reenabled for {server_name}")
+
 # endregion [Commands]
 
 # region [DataStorage]
@@ -244,6 +274,15 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                 log.debug("Server %s IS NOT online", new_server_holder.name)
             self.servers.append(new_server_holder)
 
+    async def _add_to_server_status_change_exclusions(self, server_name: str):
+        existing_data = self.server_status_change_exclusions
+        existing_data.append(server_name.casefold())
+        writejson(existing_data, self.server_status_change_exclusions_file)
+
+    async def _remove_from_server_status_change_exclusions(self, server_name: str):
+        existing_data = self.server_status_change_exclusions
+        existing_data.remove(server_name.casefold())
+        writejson(existing_data, self.server_status_change_exclusions_file)
 
 # endregion [HelperMethods]
 

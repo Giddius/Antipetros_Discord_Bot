@@ -416,6 +416,13 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     @ auto_meta_info_command(enabled=True)
     @ commands.is_owner()
+    async def mention_nomas(self, ctx):
+        nomas_member = await self.bot.retrieve_antistasi_member(320739533417218048)
+        mention_string = nomas_member.mention
+        await ctx.send(f"Something {mention_string}", allowed_mentions=discord.AllowedMentions.none())
+
+    @ auto_meta_info_command(enabled=True)
+    @ commands.is_owner()
     async def check_reload_mech(self, ctx):
         await self.bot.reload_cog_from_command_name("flip_coin")
 

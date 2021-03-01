@@ -219,7 +219,7 @@ def allowed_requester(cog, data_type: str):
         fallback_option = DEFAULT_CONFIG_OPTION_NAMES.get(data_type)
         if data_type == 'dm_ids':
             return COGS_CONFIG.retrieve(cog_section_name, option_name, typus=Set[str], fallback_option=fallback_option, mod_func=mod_func_all_in_int)
-        return COGS_CONFIG.retrieve(cog_section_name, option_name, typus=List[str], fallback_option=fallback_option, mod_func=lambda x: x.casefold()) + ['bot-testing']
+        return COGS_CONFIG.retrieve(cog_section_name, option_name, typus=List[str], fallback_option=fallback_option, mod_func=lambda x: x.casefold())
 
     return _allowed_data
 
