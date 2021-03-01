@@ -24,9 +24,9 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name
-from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, check_after_invoke
+from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, check_after_invoke, only_giddi
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson
+from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState
@@ -95,11 +95,22 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         self.next_cloud_client = Client(self.next_cloud_options)
         self.notified_nextcloud_files = []
         self.bob_user = None
+        self.antidevtros_member = None
+        self.antipetros_member = None
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
         self.bob_user = await self.bot.retrieve_antistasi_member(346595708180103170)
+        for member in self.bot.antistasi_guild.members:
+            if member.bot is True:
+                if member.display_name.casefold() == 'antidevtros':
+                    self.antidevtros_member = member
 
+                elif member.display_name.casefold() == 'antipetros':
+                    self.antipetros_member = member
+                else:
+                    if self.antidevtros_member is not None and self.antipetros_member is not None:
+                        break
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -131,8 +142,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             log.debug("unicode emoji normalized: '%s'", normalize_emoji(emoji.name))
 
     @auto_meta_info_command(enabled=get_command_enabled('roll'))
-    @allowed_channel_and_allowed_role_2()
-    @log_invoker(log, 'debug')
     async def roll_blocking(self, ctx, target_time: int = 1):
         start_time = time()
         time_multiplier = 151267
@@ -158,8 +167,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await ctx.send(embed=await make_basic_embed(title='Roll Result', text='this is a long blocking command for debug purposes', symbol='debug_2', duration=time_taken, ** stats_data))
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
-    @commands.cooldown(1, 30, commands.BucketType.channel)
     async def request_server_restart(self, ctx):
 
         if ctx.prefix != "<@&800769712879042612> ":
@@ -205,7 +212,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             return
 
     @auto_meta_info_command()
-    @commands.is_owner()
     async def save_embed(self, ctx, message: discord.Message):
         if len(message.embeds) == 0:
             await ctx.send("the message has no embed, aborting")
@@ -217,7 +223,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await ctx.send(f'saved embed from message {message.id}')
 
     @auto_meta_info_command()
-    @commands.is_owner()
     async def quick_latency(self, ctx):
         await ctx.send(f"{round(self.bot.latency * 1000)} ms")
 
@@ -228,7 +233,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         return self.qualified_name
 
     @auto_meta_info_command(aliases=['pin'])
-    @commands.is_owner()
     async def pin_message(self, ctx: commands.Context, *, reason: str):
         if ctx.channel.name.casefold() not in ['bot-testing', 'bot-development']:
             return
@@ -241,7 +245,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await ctx.message.delete()
 
     @auto_meta_info_command(aliases=['unpin'])
-    @commands.is_owner()
     async def unpin_message(self, ctx: commands.Context, *, reason: str):
         if ctx.channel.name.casefold() not in ['bot-testing', 'bot-development']:
             return
@@ -261,12 +264,13 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         return permissions
 
     @auto_meta_info_command()
-    @commands.is_owner()
     async def all_channel_permissions(self, ctx: commands.Context, member: discord.Member = None, display_mode: str = 'only_true', filter_category: str = None):
+        json_path = f"{member.display_name}_permissions.json"
+        writejson({}, json_path)
         for channel in self.bot.antistasi_guild.channels:
             if filter_category is None:
-                if channel.category is not None and channel.category.name not in ["Admin Info", "Staff Rooms", "Voice Channels"]:
-                    await self.check_bot_channel_permissions(ctx, channel, member, display_mode)
+                if channel.category is not None and channel.category.name not in ["Voice Channels"]:
+                    await self.check_bot_channel_permissions(ctx, channel, member, display_mode, json_path)
                     await asyncio.sleep(5)
             else:
                 if channel.category is not None and channel.category.name.casefold() == filter_category.casefold():
@@ -274,8 +278,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                     await asyncio.sleep(5)
 
     @auto_meta_info_command(aliases=['channel_permissions'])
-    @commands.is_owner()
-    async def check_bot_channel_permissions(self, ctx: commands.Context, channel: discord.TextChannel = None, member: discord.Member = None, display_mode: str = 'only_true'):
+    async def check_bot_channel_permissions(self, ctx: commands.Context, channel: discord.TextChannel = None, member: discord.Member = None, display_mode: str = 'only_true', json_file=None):
         channel = ctx.channel if channel is None else channel
         member = self.bot.bot_member if member is None else member
         roles = member.roles
@@ -289,6 +292,10 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         for selector in roles:
 
             permissions = await self._apply_overwrites(channel=channel, permissions=permissions, selector=selector)
+            if json_file is not None:
+                json_data = loadjson(json_file)
+                json_data[channel.name] = permissions
+                writejson(json_data, json_file)
         if display_mode.casefold() == 'only_true':
             description = '```ini\n' + f'\n{"-"*35}\n'.join(f"{permission_name} = {' '*(25-len(permission_name))} {permission_bool}" for permission_name, permission_bool in permissions.items() if permission_bool is True) + '\n```'
         elif display_mode.casefold() == 'all':
@@ -299,16 +306,14 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         else:
             raise AttributeError(f'no such displaymode - "{display_mode}"')
         embed_data = await self.bot.make_generic_embed(title=f'Permissions for **__{member.name}__** in **__{channel.name.upper()}__**', description=description, thumbnail=None, footer='not_set')
-        await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none(), delete_after=300)
 
     @ commands.command()
-    @ commands.is_owner()
     async def check_embed_gif(self, ctx: commands.Context):
         embed_data = await self.bot.make_generic_embed(title="check embed gif", image=APPDATA['COMMAND_the_dragon.gif'])
         await ctx.send(**embed_data)
 
     @ commands.command()
-    @ commands.is_owner()
     async def get_prefixes(self, ctx: commands.Context, message: discord.Message):
         prefixes = await self.bot.get_prefix(message)
         await ctx.send(str(prefixes))
@@ -324,7 +329,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     #         await admin_lead_member.send('**From Giddi**:\nAttached are the bot configs, they are commented as best I can right now, but I am always available for questions. You can change them directly and send them back to me(giddi).\n\n*I use the bot to send this message to not have to write it 3 times*', files=[base_config_file, cogs_config_file])
 
     @ commands.command()
-    @ commands.is_owner()
     async def the_bots_new_clothes(self, ctx: commands.Context):
         msg = ZERO_WIDTH * 20 + '\n'
         await ctx.send('```python\nTHE BOTS NEW CLOTHES:\n' + (msg * 40) + '\n```')
@@ -333,7 +337,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     @ commands.after_invoke(check_after_invoke)
     @ auto_meta_info_command()
-    @ commands.is_owner()
     async def check_a_hook(self, ctx: commands.Context):
         await asyncio.sleep(5)
         await ctx.send("this is inside the command")
@@ -398,13 +401,11 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             os.remove(save_folder)
 
     @ auto_meta_info_command(enabled=True)
-    @ commands.is_owner()
     async def write_data(self, ctx):
         await gather_data(self.bot)
         await ctx.send(embed=await make_basic_embed(title='Data Collected', text='Data was gathered and written to the assigned files', symbol='save', collected_data='This command only collected fixed data like role_ids, channel_ids,...\n', reason='Data is collected and saved to a json file so to not relying on getting it at runtime, as this kind of data is unchanging', if_it_changes='then this command can just be run again'))
 
     @ auto_meta_info_command(enabled=True)
-    @ commands.is_owner()
     async def show_command_names(self, ctx):
 
         _out = []
@@ -415,12 +416,58 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await self.bot.split_to_messages(ctx, '\n---\n'.join(_out), split_on='\n---\n')
 
     @ auto_meta_info_command(enabled=True)
-    @ commands.is_owner()
+    async def mention_nomas(self, ctx):
+        nomas_member = await self.bot.retrieve_antistasi_member(320739533417218048)
+        mention_string = nomas_member.mention
+        await ctx.send(f"Something {mention_string}", allowed_mentions=discord.AllowedMentions.none())
+
+    @ auto_meta_info_command(enabled=True)
     async def check_reload_mech(self, ctx):
         await self.bot.reload_cog_from_command_name("flip_coin")
 
+    @auto_meta_info_command(enabled=True)
+    async def create_role_by_name_and_assign_to_all(self, ctx: commands.context, role_name: str, *, reason: str):
+        role = await self.bot.antistasi_guild.create_role(name=role_name, permissions=discord.Permissions.none(), color=self.bot.get_discord_color('pink'), hoist=False, mentionable=False, reason=reason)
+        await ctx.send(f"Created role {role.mention}, now applying to all", allowed_mentions=discord.AllowedMentions.none())
+        for member in self.antistasi_guild.members:
+            await member.add_roles(role)
+            await asyncio.sleep(3)
+        await ctx.reply('Adding of roles completed!')
+
+    @auto_meta_info_command()
+    async def mock_subscribe_thing(self, ctx: commands.Context, *topics: str):
+        emojis = ["1️⃣", "2️⃣", "3️⃣"]
+        fields = []
+        for index, topic in enumerate(topics):
+            role = '$mock_role_' + topic + '_subscriber'
+            field = self.bot.field_item(name=topic, value=f"react with {emojis[index]} to subscribe to the Topic `{topic}`, you will get the role {role}")
+            fields.append(field)
+
+        embed_data = await self.bot.make_generic_embed(title='Topic Subscription', description=f"\@mock_everybody to get notified for a topic react to this message.\navailable topics:", fields=fields, footer={'text': 'to unsubscribe just take your reaction away from this message'})
+
+        msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        for i in range(len(topics)):
+            await msg.add_reaction(emojis[i])
+
+    @auto_meta_info_command(enabled=True)
+    async def dump_permissions(self, ctx: commands.Context):
+        async with ctx.typing():
+            for bot_member in [self.antidevtros_member, self.antipetros_member]:
+                permission_dict = {}
+                for channel in self.bot.antistasi_guild.channels:
+                    if channel.type is discord.ChannelType.text:
+                        permission_dict[channel.name] = {name: value for name, value in channel.permissions_for(bot_member)}
+                writejson(permission_dict, f"{bot_member.display_name.casefold()}_permission_dump.json")
+                await ctx.send(f"dumped permissions for {bot_member.display_name}")
+            await ctx.send(f"finished dumping permission for Giddis Bots")
+
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))
+
+    async def cog_check(self, ctx):
+        if ctx.author.id == self.bot.creator.id:
+            return True
+        return False
 
 
 def setup(bot):

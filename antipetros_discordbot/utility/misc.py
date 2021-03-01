@@ -124,6 +124,18 @@ def seconds_to_pretty(seconds: int, decimal_places: int = 1):
     return out_string
 
 
+def alt_seconds_to_pretty(seconds: int, decimal_places: int = 1, seperator: str = ', ', shorten_name_to: int = None):
+    out_string = ''
+    rest = seconds
+    for name, factor in FACTORS.items():
+        sub_result, rest = divmod(rest, factor)
+        if sub_result != 0:
+            if shorten_name_to is not None:
+                name = name[0:shorten_name_to]
+            out_string += f"{str(int(round(sub_result,ndigits=decimal_places)))} {name} {seperator}"
+    return out_string.rstrip(seperator)
+
+
 async def async_seconds_to_pretty_normal(seconds: int, decimal_places: int = 1):
     out_string = ''
     rest = seconds

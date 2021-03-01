@@ -103,10 +103,13 @@ class AntistasiInformer(SubSupportBase):
         return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)
 
     async def member_by_name(self, member_name):
-        return {member.name.casefold(): member for member in self.antistasi_guild.members}.get(member_name.casefold())
+        return {member.name.casefold(): member for member in self.antistasi_guild.members}.get(member_name.casefold(), None)
 
     async def role_from_string(self, role_name):
         return {role.name.casefold(): role for role in self.antistasi_guild.roles}.get(role_name.casefold())
+
+    async def retrieve_antistasi_role(self, role_id: int):
+        return {role.id: role for role in self.antistasi_guild.roles}.get(role_id)
 
     async def all_members_with_role(self, role: str):
         role = await self.role_from_string(role)

@@ -1,3 +1,5 @@
+ActionsToolkit
+DSDownload
 Nomenclate
 SimpleSQLite
 brain_dump
@@ -10,11 +12,12 @@ peewee
 pyexlatex
 pyowm
 pypika
+python-a2s
 pytl
 pyvis
 sloth-speedtest
 sqlalchemy
+ssh-lite
 tree-hugger
 vendorize
 wikitextparser
-python-a2s

@@ -229,12 +229,14 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
                     if log_item.size >= self.bot.filesize_limit:
                         file_path = await self.zip_log_file(file_path)
                     file = discord.File(file_path)
-                    embed_data = await self.bot.make_generic_embed(title=f"{log_item.name} from {log_item.server_name} - {log_item.sub_folder_name}",
+                    embed_data = await self.bot.make_generic_embed(title=log_item.name,
+                                                                   description=f"{log_item.server_name}/{log_item.sub_folder_name}",
                                                                    fields=[self.bot.field_item(name="__**Size:**__", value=log_item.size_pretty, inline=False),
                                                                            self.bot.field_item(name="__**Created at:**__", value=log_item.created_pretty, inline=False),
                                                                            self.bot.field_item(name="__**Last Modified:**__", value=log_item.modified_pretty, inline=False),
                                                                            self.bot.field_item(name="__**Last Modified Local Time:**__", value="SEE TIMESTAMP AT THE BOTTOM", inline=False)],
-                                                                   timestamp=log_item.modified)
+                                                                   timestamp=log_item.modified,
+                                                                   thumbnail='log_file')
                     await ctx.send(**embed_data, file=file)
         except KeyError as error:
             await ctx.send(str(error))
@@ -254,13 +256,13 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     async def get_base_structure(self):
         nextcloud_client = Client(get_nextcloud_options())
-        for folder in await self.bot.execute_in_thread(nextcloud_client.list, self.nextcloud_base_folder):
+        for folder in await asyncio.to_thread(nextcloud_client.list, self.nextcloud_base_folder):
             folder = folder.strip('/')
             if folder != self.nextcloud_base_folder and '.' not in folder:
                 folder_item = LogServer(self.nextcloud_base_folder, folder)
                 await folder_item.get_data()
                 self.server[folder.casefold()] = folder_item
-            await asyncio.sleep(1)
+            await asyncio.sleep(0)
         log.info(str(self) + ' collected server names: ' + ', '.join([key for key in self.server]))
 
     async def notify_oversized_log(self, log_item):
