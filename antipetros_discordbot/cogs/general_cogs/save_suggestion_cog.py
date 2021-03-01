@@ -2,36 +2,36 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import re
-import sqlite3 as sqlite
-import unicodedata
-from datetime import datetime, timedelta
-import asyncio
 import shutil
-from concurrent.futures import ThreadPoolExecutor
-from tempfile import TemporaryDirectory, TemporaryFile
-# * Third Party Imports -->
+import asyncio
+import sqlite3 as sqlite
+from datetime import datetime
+from tempfile import TemporaryDirectory
+from textwrap import dedent
+# * Third Party Imports --------------------------------------------------------------------------------->
 import discord
-from discord.ext import commands
-from async_property import async_property
 from jinja2 import Environment, FileSystemLoader
-import pdfkit
-from weasyprint import HTML, CSS
-# * Gid Imports -->
+from weasyprint import HTML
+from discord.ext import commands
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-from pprint import pprint, pformat
-# * Local Imports -->
+
+# * Local Imports --------------------------------------------------------------------------------------->
+from antipetros_discordbot.cogs import get_aliases, get_doc_data
+from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, allowed_requester
+from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
-from antipetros_discordbot.utility.sqldata_storager import SuggestionDataStorageSQLite
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+from antipetros_discordbot.utility.embed_helpers import EMBED_SYMBOLS, DEFAULT_FOOTER, make_basic_embed
+from antipetros_discordbot.utility.sqldata_storager import AioSuggestionDataStorageSQLite
+from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed, EMBED_SYMBOLS, DEFAULT_FOOTER
-from antipetros_discordbot.utility.misc import save_commands
-from antipetros_discordbot.utility.checks import in_allowed_channels
-from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 # endregion[Imports]
 
 # region [Logging]
@@ -42,12 +42,16 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
+COG_NAME = "SaveSuggestionCog"
 
+CONFIG_NAME = make_config_name(COG_NAME)
+
+get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion [Constants]
 
@@ -60,18 +64,38 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[TODO]
 
-class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "SaveSuggestionCog"}):
+class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
+    """
+    Soon
+    """
 
     # region [ClassAttributes]
 
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
-    config_name = 'save_suggestions'
-    jinja_env = Environment(loader=FileSystemLoader(APPDATA["reports"]))
+
+    config_name = CONFIG_NAME
+
+    jinja_env = Environment(loader=FileSystemLoader(APPDATA["report_templates"]))
+
     css_files = {"basic_report_style.css": (APPDATA["basic_report_style.css"], "basic_report_style.css"),
                  'style.css': (APPDATA["style.css"], "style.css"),
                  'experiment_css_1.css': (APPDATA['experiment_css_1.css'], 'experiment_css_1.css'),
                  'experiment_3.css': (APPDATA['experiment_3.css'], 'experiment_3.css')}
+
     auto_accept_user_file = APPDATA["auto_accept_suggestion_users.json"]
+
+    docattrs = {'show_in_readme': True,
+                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
+                             "2021-02-06 03:41:58",
+                             "82a2afc155a40808a8e2dcf7385bb5db0769ff2bf8e08f1829b97bfc58551531ebc0deeb178e850b3fb89cbe55522812226865fac0b389a082992130de175fcb")}
+
+    required_config_data = dedent("""
+                                        suggestion_reaction_listener_enabled = yes
+                                        suggestion_reaction_listener_allowed_channels = suggestions, bot-testing
+                                        suggestion_reaction_listener_allowed_roles = Dev Helper, Admin
+                                        downvote_emoji = 👎
+                                        upvote_emoji = 👍
+                                        add_success_embed_verbose = yes""")
 
 # endregion [ClassAttributes]
 
@@ -79,112 +103,168 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
     def __init__(self, bot):
         self.bot = bot
-        self.data_storage_handler = SuggestionDataStorageSQLite()
-        if self.bot.is_debug:
-            save_commands(self)
+        self.support = self.bot.support
+        self.data_storage_handler = AioSuggestionDataStorageSQLite()
+        self.allowed_channels = allowed_requester(self, 'channels')
+        self.allowed_roles = allowed_requester(self, 'roles')
+        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self.command_emojis = None
+        self.categories_emojis = None
+        self.vote_emojis = None
         glog.class_init_notification(log, self)
 
 
 # endregion [Init]
+# region [Setup]
 
+
+    async def on_ready_setup(self):
+        self.command_emojis = await self.get_command_emojis()
+        self.categories_emojis = await self.get_categories_emojis()
+        self.vote_emojis = await self.get_upvote_downvote_emojis()
+        log.debug('setup for cog "%s" finished', str(self))
+
+    async def update(self, typus):
+        return
+        log.debug('cog "%s" was updated', str(self))
+
+
+# endregion[Setup]
 # region [Properties]
 
+    async def get_command_emojis(self):
+        _out = await self.data_storage_handler.get_save_emojis()
 
-    @property
-    def command_emojis(self):
-        if self.bot.is_debug:
-            COGS_CONFIG.read()
-        return {'save': COGS_CONFIG.get(self.config_name, 'save_emoji'),
-                'upvote': COGS_CONFIG.get(self.config_name, 'upvote_emoji'),
-                'downvote': COGS_CONFIG.get(self.config_name, 'downvote_emoji')}
-
-    @property
-    def categories(self):
-        _out = self.data_storage_handler.category_emojis
-        if self.bot.is_debug:
-            log.debug(_out)
         return _out
 
-    @property
-    def allowed_channels(self):
-        if self.bot.is_debug:
-            COGS_CONFIG.read()
-        return set(COGS_CONFIG.getlist(self.config_name, 'allowed_channels'))
+    async def get_upvote_downvote_emojis(self):
+        return {'upvote': normalize_emoji(COGS_CONFIG.get(self.config_name, 'upvote_emoji')),
+                'downvote': normalize_emoji(COGS_CONFIG.get(self.config_name, 'downvote_emoji'))}
 
-    @property
+    async def get_categories_emojis(self):
+
+        categories_emojis = await self.data_storage_handler.category_emojis()
+
+        return {normalize_emoji(key): value for key, value in categories_emojis.items()}
+
+    async def get_category_name(self, emoji_name):
+        data = await self.data_storage_handler.category_emojis()
+        if emoji_name in data:
+            return data.get(emoji_name)
+
+    @ property
     def notify_contact_member(self):
-        if self.bot.is_debug:
-            COGS_CONFIG.read()
         return COGS_CONFIG.get(self.config_name, 'notify_contact_member')
 
-    @property
-    def messages_to_watch(self):
-        return self.data_storage_handler.get_all_non_discussed_message_ids()
+    async def messages_to_watch(self):
+        return await self.data_storage_handler.get_all_non_discussed_message_ids()
 
-    @property
-    def saved_messages(self):
-        return self.data_storage_handler.get_all_message_ids()
+    async def saved_messages(self):
+        saved_messages = await self.data_storage_handler.get_all_message_ids()
+        return saved_messages
 
-    @property
+    @ property
     def std_datetime_format(self):
-        return BASE_CONFIG.get('datetime', 'std_format')
+        return self.bot.std_date_time_format
 
-    @property
+    @ property
     def auto_accept_user_dict(self):
         return loadjson(self.auto_accept_user_file)
+
+    async def get_team_from_emoji(self, emoji_name):
+        for key, value in self.command_emojis.items():
+            if value == emoji_name:
+                return key
+        raise KeyError(f'emoji "{emoji_name}" is not associated with any team')
 
 # endregion [Properties]
 
 # region [Listener]
 
-    @ commands.Cog.listener()
-    @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels')))
-    async def on_raw_reaction_add(self, payload):
+    async def _suggestion_listen_checks(self, payload):
+        command_name = "suggestion_reaction_listener"
+        if get_command_enabled(command_name) is False:
+            return False
+
         channel = self.bot.get_channel(payload.channel_id)
-        if channel.name not in self.allowed_channels:
-            return
-        reaction_user = await self.bot.fetch_user(payload.user_id)
-        if reaction_user.bot is True or reaction_user.id in self.bot.blacklisted_user_ids():
-            return
+        emoji = payload.emoji
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except discord.errors.NotFound:
+            return False
+        if message.author.bot is True:
+            return False
+
+        reaction_member = payload.member
+        if reaction_member.bot is True:
+            return False
+
+        if channel.type is not discord.ChannelType.text:
+            return False
+
+        if channel.name.casefold() not in self.allowed_channels(command_name):
+            return False
+
+        if all(role.name.casefold() not in self.allowed_roles(command_name) for role in reaction_member.roles):
+            return False
+
+        emoji_name = normalize_emoji(emoji.name)
+        if emoji_name not in {value for key, value in self.command_emojis.items()} and emoji_name not in self.categories_emojis and emoji_name not in {value for key, value in self.vote_emojis.items()}:
+
+            return False
+
+        if self.bot.is_blacklisted(reaction_member) is True:
+            return False
+
+        return True
+
+    @ commands.Cog.listener(name="on_raw_reaction_add")
+    async def suggestion_reaction_listener(self, payload):
+        channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
-        emoji_name = unicodedata.name(payload.emoji.name)
 
-        if emoji_name == self.command_emojis['save']:
-            await self._new_suggestion(channel, message, payload.guild_id, reaction_user)
-            if str(message.author.id) not in self.auto_accept_user_dict:
-                await message.author.send(embed=await make_basic_embed(title='Your Suggestion was saved by the Devs!',
-                                                                       text='The devs have saved your suggestion in their Database to locate it more easily',
-                                                                       footer='If you dont want to receive this message anymore íf your suggestion is saved, DM me: `@AntiPetros auto_accept_suggestions',
-                                                                       if_you_do_not_want_this=f'DM me: `@Antipetros unsave_suggestion {message.id}`',
-                                                                       if_you_want_to_see_all_data_saved_from_you='DM me: `@Antipetros request_my_data`',
-                                                                       if_you_want_to_have_all_data_saved_from_you_deleted='DM me: `@Antipetros remove_all_userdata`'),)
+        emoji_name = normalize_emoji(payload.emoji.name)
+        if emoji_name in [self.vote_emojis['upvote'], self.vote_emojis['downvote']] and message.id in await self.saved_messages():
+            await self._change_votes(message, emoji_name)
+        if await self._suggestion_listen_checks(payload) is False:
+            return
 
-        elif emoji_name in self.categories and message.id in self.saved_messages:
+        reaction_user = await self.bot.fetch_user(payload.user_id)
+
+        if emoji_name in [value for key, value in self.command_emojis.items()]:
+            team = await self.get_team_from_emoji(emoji_name)
+            is_new = await self._new_suggestion(channel, message, reaction_user, team)
+            if str(message.author.id) not in self.auto_accept_user_dict and is_new is True:
+                _embed_data = await self.bot.make_generic_embed(title="Your suggestion has been saved by the dev team",
+                                                                description="The devs have saved your in their Database to locate it more easily",
+                                                                thumbnail="save",
+                                                                fields=[self.bot.field_item(name="If You Do Not Want This", value=f"DM me: `@{self.bot.display_name} unsave_suggestion {message.id}`", inline=False),
+                                                                        self.bot.field_item(name="If You Want To See All Data Saved From You", value=f"DM me: `@{self.bot.display_name} request_my_data`", inline=False),
+                                                                        self.bot.field_item(name="If You Want To Have All Data Saved From You Deleted", value=f"DM me: `@{self.bot.display_name} remove_all_userdata`", inline=False),
+                                                                        self.bot.field_item(name="If you dont want to receive this message anymore íf your suggestion is saved", value=f"DM me: `@{self.bot.display_name} auto_accept_suggestions`")])
+                await message.author.send(**_embed_data)
+
+        elif emoji_name in self.categories_emojis and message.id in await self.saved_messages():
+            log.debug('category change triggered')
             await self._change_category(channel, message, emoji_name)
 
-        elif emoji_name in [self.command_emojis['upvote'], self.command_emojis['downvote']] and message.id in self.saved_messages:
-            await self._change_votes(message, emoji_name)
-        ()
 
 # endregion [Listener]
 
 # region [Commands]
 
-    @ commands.command(aliases=get_aliases("mark_discussed"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_admin_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels')))
+
+    @ commands.command(aliases=get_aliases("mark_discussed"), enabled=get_command_enabled("mark_discussed"))
+    @ allowed_channel_and_allowed_role_2(in_dm_allowed=True)
     async def mark_discussed(self, ctx, *suggestion_ids: int):
         embed_dict = {}
         for suggestion_id in suggestion_ids:
-            self.data_storage_handler.mark_discussed(suggestion_id)
+            await self.data_storage_handler.mark_discussed(suggestion_id)
             embed_dict['message_with_id_' + str(suggestion_id)] = 'was marked as discussed'
         await ctx.send(embed=await make_basic_embed(title='Marked Suggestions as discussed', text='The following items were marked as discussed: ', symbol='update', ** embed_dict))
-        ()
 
-    @ commands.command(aliases=get_aliases("clear_all_suggestions"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels')))
+    @ commands.command(aliases=get_aliases("clear_all_suggestions"), enabled=get_command_enabled("clear_all_suggestions"))
+    @ owner_or_admin()
     async def clear_all_suggestions(self, ctx, sure: bool = False):
         if sure is False:
             question_msg = await ctx.send("Do you really want to delete all saved suggestions?\n\nANSWER **YES** in the next __30 SECONDS__")
@@ -201,10 +281,9 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
                 await question_msg.delete()
         else:
             await self._clear_suggestions(ctx, 'yes')
-        ()
 
-    @ commands.command(aliases=get_aliases("auto_accept_suggestions"))
-    @commands.dm_only()
+    @ commands.command(aliases=get_aliases("auto_accept_suggestions"), **get_doc_data("auto_accept_suggestions"))
+    @ commands.dm_only()
     async def auto_accept_suggestions(self, ctx):
         if str(ctx.author.id) in self.auto_accept_user_dict:
             # Todo: make as embed
@@ -215,19 +294,18 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         writejson(auto_accept_dict, self.auto_accept_user_file)
         # Todo: make as embed
         await ctx.send("I added you to the auto accept suggestion list")
-        ()
 
-    @commands.command(aliases=get_aliases("user_delete_suggestion"))
-    @commands.dm_only()
-    async def user_delete_suggestion(self, ctx, suggestion_id: int):
-        if suggestion_id not in self.saved_messages:
+    @ commands.command(aliases=get_aliases("unsave_suggestion"), **get_doc_data("unsave_suggestion"))
+    @ commands.dm_only()
+    async def unsave_suggestion(self, ctx, suggestion_id: int):
+        if suggestion_id not in await self.saved_messages():
 
             await ctx.send(embed=await make_basic_embed(title=f'ID {suggestion_id} not found',
                                                         text='We have no message saved with this ID',
                                                         symbol='not_possible',
                                                         if_you_feel_like_this_is_an_error_please_contact=self.notify_contact_member))
             return
-        suggestion = self.data_storage_handler.get_suggestion_by_id(suggestion_id)
+        suggestion = await self.data_storage_handler.get_suggestion_by_id(suggestion_id)
         if ctx.author.name != suggestion['author_name']:
             # TODO: make as embed
             await ctx.send("You are not the Author of that suggestion, so you cannot remove it | if you feel like this is an error please contact: " + self.notify_contact_member)
@@ -240,7 +318,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         try:
             msg = await self.bot.wait_for('message', check=check, timeout=30.0)
             if 'yes' in msg.content.casefold():
-                self.data_storage_handler.remove_suggestion_by_id(suggestion_id)
+                await self.data_storage_handler.remove_suggestion_by_id(suggestion_id)
                 # TODO: make as embed
                 await ctx.send("Suggestion was remove from stored data, it will still be on discord!")
                 return
@@ -257,14 +335,12 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             # TODO: make as embed
             await ctx.send('No answer received, aborting request, you can always try again')
             return
-        ()
 
-    @ commands.command(aliases=get_aliases("get_all_suggestions"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist('save_suggestions', 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist('save_suggestions', 'allowed_channels')))
+    @ commands.command(aliases=get_aliases("get_all_suggestions"), **get_doc_data("get_all_suggestions"))
+    @ allowed_channel_and_allowed_role_2(in_dm_allowed=True)
     async def get_all_suggestions(self, ctx, report_template: str = "basic_report.html.jinja"):
 
-        query = self.data_storage_handler.get_all_suggestion_not_discussed()
+        query = await self.data_storage_handler.get_all_suggestion_not_discussed()
         var_dict = {'all_suggestions': query, 'style_sheet': "basic_report_style.css"}
         log.debug('getting template')
         template = self.jinja_env.get_template(report_template)
@@ -284,13 +360,12 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             file = discord.File(pdf_path, filename='suggestion_report.pdf')
             log.debug('sending file')
             await ctx.send(file=file)
-        ()
 
-    @ commands.command(aliases=get_aliases("remove_all_userdata"))
-    @commands.dm_only()
+    @ commands.command(aliases=get_aliases("remove_all_userdata"), **get_doc_data("remove_all_userdata"))
+    @ commands.dm_only()
     async def remove_all_userdata(self, ctx):
         user = ctx.author
-        all_user_data = self.data_storage_handler.get_suggestions_per_author(user.name)
+        all_user_data = await self.data_storage_handler.get_suggestions_per_author(user.name)
         if len(all_user_data) == 0:
             # TODO: make as embed
             await ctx.send("We have no data stored from you | if you feel like this is an error please contact: " + self.notify_contact_member)
@@ -305,7 +380,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             msg = await self.bot.wait_for('message', check=check, timeout=30.0)
             if 'yes' in msg.content.casefold():
                 for row in all_user_data:
-                    self.data_storage_handler.remove_suggestion_by_id(row['message_discord_id'])
+                    await self.data_storage_handler.remove_suggestion_by_id(row['message_discord_id'])
                     # TODO: make as embed
                 await ctx.send("All your data was removed from the database")
                 return
@@ -322,13 +397,12 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             # TODO: make as embed
             await ctx.send('No answer received, aborting request, you can always try again')
             return
-        ()
 
-    @ commands.command(aliases=get_aliases("request_my_data"))
-    @commands.dm_only()
+    @ commands.command(aliases=get_aliases("request_my_data"), **get_doc_data("request_my_data"))
+    @ commands.dm_only()
     async def request_my_data(self, ctx):
         user = ctx.author
-        all_user_data = self.data_storage_handler.get_suggestions_per_author(user.name)
+        all_user_data = await self.data_storage_handler.get_suggestions_per_author(user.name)
         if len(all_user_data) == 0:
             # TODO: make as embed
             await ctx.send("We have no data stored from you | if you feel like this is an error please contact: " + self.notify_contact_member)
@@ -337,19 +411,19 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
             writejson(await self._row_to_json_user_data(all_user_data), pathmaker(tmpdir, 'output.json'))
             file = discord.File(pathmaker(tmpdir, 'output.json'), filename=ctx.author.name + '_data.txt')
             await ctx.send(file=file)
-        ()
+
 # endregion [Commands]
 
 # region [DataStorage]
 
     async def _add_suggestion(self, suggestion_item: SUGGESTION_DATA_ITEM, extra_data=None):
         if extra_data is not None:
-            _path = pathmaker(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\data\data_storage\images\suggestion_extra_data", extra_data[0])
+            _path = pathmaker(APPDATA['suggestion_extra_data'], extra_data[0])
             with open(_path, 'wb') as extra_data_file:
                 extra_data_file.write(extra_data[1])
             suggestion_item = suggestion_item._replace(extra_data=(extra_data[0], _path))
         try:
-            self.data_storage_handler.add_suggestion(suggestion_item)
+            await self.data_storage_handler.add_suggestion(suggestion_item)
             return True, suggestion_item
         except sqlite.Error as error:
             log.error(error)
@@ -357,7 +431,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
     async def _set_category(self, category, message_id):
         try:
-            self.data_storage_handler.update_category(category, message_id)
+            await self.data_storage_handler.update_category(category, message_id)
             return True
         except sqlite.Error as error:
             log.error(error)
@@ -367,7 +441,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         if answer.casefold() == 'yes':
             # TODO: make as embed
             await ctx.send('deleting Database')
-            self.data_storage_handler.clear()
+            await self.data_storage_handler.clear()
             # TODO: make as embed
             await ctx.send('Database was cleared, ready for input again')
 
@@ -379,7 +453,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 # endregion [DataStorage]
 
 # region [Embeds]
-
 
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
@@ -394,7 +467,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
         if len(_filtered_content) >= 900:
             _filtered_content = _filtered_content[:900] + '...```'
-        embed = discord.Embed(title="**Suggestion was Saved!**", description="Your suggestion was saved for the Dev Team.\n\n", color=0xf2ea48)
+        embed = discord.Embed(title="**Suggestion was Saved!**", description=f"Your suggestion was saved for the {suggestion_item.team.replace('_',' ').title()}.\n\n", color=0xf2ea48)
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('save', None))
         embed.add_field(name="Title:", value=f"__{suggestion_item.name}__", inline=False)
         if COGS_CONFIG.getboolean(self.config_name, 'add_success_embed_verbose') is True:
@@ -405,7 +478,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         extra_data_value = ['No attachments detected'] if suggestion_item.extra_data is None else suggestion_item.extra_data[0]
         embed.add_field(name='Attachments', value=f"`{extra_data_value}`")
         embed.set_footer(text=DEFAULT_FOOTER)
-
+        writejson(embed.to_dict(), "suggestion_saved_embed.json")
         return embed
 
     async def make_changed_category_embed(self, message, category):
@@ -414,19 +487,20 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         embed.add_field(name="New Category:", value=category, inline=False)
         embed.add_field(name="Suggestion:", value=message.jump_url, inline=False)
         embed.set_footer(text=DEFAULT_FOOTER)
+        writejson(embed.to_dict(), "suggestion_changed_category_embed.json")
         return embed
 
     async def make_already_saved_embed(self):
         embed = discord.Embed(title="**This Suggestion was already saved!**", description="I did not save the Suggestion as I have it already saved", color=0xe04d7e)
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('not_possible', None))
         embed.set_footer(text=DEFAULT_FOOTER)
+        writejson(embed.to_dict(), "suggestion_already_daved_embed.json")
         return embed
 
 
 # endregion [Embeds]
 
 # region [HelperMethods]
-
 
     async def _collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)
@@ -439,13 +513,13 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
     async def specifc_reaction_from_message(self, message, target_reaction):
         for reaction in message.reactions:
-            if unicodedata.name(reaction.emoji) == target_reaction:
+            if normalize_emoji(reaction.emoji) == target_reaction:
                 return reaction
 
-    async def _new_suggestion(self, channel, message, guild_id, reaction_user):
-        if message.id in self.saved_messages:
+    async def _new_suggestion(self, channel, message, reaction_user, team):
+        if message.id in await self.saved_messages():
             await channel.send(embed=await self.make_already_saved_embed())
-            return
+            return False
 
         message_member = await self.bot.retrieve_antistasi_member(message.author.id)
         reaction_member = await self.bot.retrieve_antistasi_member(reaction_user.id)
@@ -453,7 +527,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
         name = await self._collect_title(message.content)
         extra_data = (message.attachments[0].filename, await message.attachments[0].read()) if len(message.attachments) != 0 else None
 
-        suggestion_item = SUGGESTION_DATA_ITEM(name, message_member, reaction_member, message, now_time)
+        suggestion_item = SUGGESTION_DATA_ITEM(name=name, message_author=message_member, reaction_author=reaction_member, message=message, time=now_time, team=team)
 
         was_saved, suggestion_item = await self._add_suggestion(suggestion_item, extra_data)
         log.info("saved new suggestion, suggestion name: '%s', suggestion author: '%s', saved by: '%s', suggestion has extra data: '%s'",
@@ -464,27 +538,28 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 
         if was_saved is True:
             await channel.send(embed=await self.make_add_success_embed(suggestion_item))
+        return True
 
     async def _remove_previous_categories(self, target_message, new_emoji_name):
-        for reaction_emoji in self.categories:
+        for reaction_emoji in self.categories_emojis:
             if reaction_emoji is not None and reaction_emoji != new_emoji_name:
                 other_reaction = await self.specifc_reaction_from_message(target_message, reaction_emoji)
                 if other_reaction is not None:
                     await other_reaction.clear()
 
     async def _change_category(self, channel, message, emoji_name):
-        category = self.categories.get(emoji_name)
+        category = await self.get_category_name(emoji_name)
         if category:
             success = await self._set_category(category, message.id)
             if success:
-                await channel.send(embed=await self.make_changed_category_embed(message, category))
+                await channel.send(embed=await self.make_changed_category_embed(message, category), delete_after=30)
                 log.info("updated category for suggestion (id: %s) to category '%s'", message.id, category)
                 await self._remove_previous_categories(message, emoji_name)
 
     async def _change_votes(self, message, emoji_name):
         reaction = await self.specifc_reaction_from_message(message, emoji_name)
         _count = reaction.count
-        self.data_storage_handler.update_votes(emoji_name, _count, message.id)
+        await self.data_storage_handler.update_votes(emoji_name, _count, message.id)
         log.info("updated votecount for suggestion (id: %s) for type: '%s' to count: %s", message.id, emoji_name, _count)
 
     async def _row_to_json_user_data(self, data):
@@ -506,11 +581,13 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": "Sa
 # region [SpecialMethods]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.qualified_name
 
+    def cog_unload(self):
+        log.debug("Cog '%s' UNLOADED!", str(self))
 # endregion [SpecialMethods]
 
 
@@ -518,4 +595,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(SaveSuggestionCog(bot))
+    bot.add_cog(attribute_checker(SaveSuggestionCog(bot)))

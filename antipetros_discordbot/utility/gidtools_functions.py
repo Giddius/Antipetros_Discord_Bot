@@ -1,7 +1,8 @@
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
+import sys
 import json
 import pickle
 import shutil
@@ -10,9 +11,8 @@ import datetime
 import configparser
 from pprint import pformat
 from contextlib import contextmanager
-import sys
 
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # endregion [Imports]
@@ -654,6 +654,13 @@ def limit_amount_of_files(in_basename, in_directory, in_amount_max):
                 log.debug(f"renaming file [{files}] to [{_existing_file_list[_rename_index]}]")
 
 
+def create_file(in_path, overwrite=False):
+    if os.path.isfile(in_path) is True and overwrite is False:
+        return
+    with open(in_path, 'w') as f:
+        f.write('')
+
+
 def create_folder(in_path):
     if os.path.isdir(in_path) is False:
         log.error(f"Folder '{in_path}' does **NOT** exist!")
@@ -675,11 +682,11 @@ def bytes2human(n, annotate=False):
         if n >= prefix[s]:
             _out = float(n) / prefix[s]
             if annotate is True:
-                _out = '%.1f%s' % (_out, s)
+                _out = '%.1f %s' % (_out, s)
             return _out
     _out = n
     if annotate is True:
-        _out = "%sb" % _out
+        _out = "%s b" % _out
     return _out
 
 

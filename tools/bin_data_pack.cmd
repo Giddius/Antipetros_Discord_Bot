@@ -24,5 +24,5 @@ set TIMEBLOCK=%_years%-%_months%-%_days%_%_hours%-%_minutes%-%_seconds%
 Echo ################# Current time is %TIMEBLOCK%
 cd %OLDHOME_FOLDER%
 call ..\.venv\Scripts\activate
-
-call appdata_binit.cmd -n %PROJECT_NAME% -a %PROJECT_AUTHOR% -64 -cz %TOPLEVELMODULE%\init_userdata -i oauth2_google_credentials.json -i token.pickle -i save_link_db.db -i save_suggestion.db -i archive/* -i performance_data/* -i stats/* -i last_shutdown_message.pkl
+call %OLDHOME_FOLDER%private_quick_scripts\clean_data_pack.py
+call appdata_binit -n %PROJECT_NAME% -a %PROJECT_AUTHOR% -64 -cz %TOPLEVELMODULE%\init_userdata -i oauth2_google_credentials.json -i token.pickle -i save_link_db.db -i save_suggestion.db -i archive/* -i performance_data/* -i stats/* -i last_shutdown_message.pkl

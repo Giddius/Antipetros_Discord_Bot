@@ -2,35 +2,39 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from datetime import datetime, timedelta
-from tempfile import TemporaryDirectory
-from urllib.parse import urlparse
-import asyncio
-from time import time, sleep
 import random
-from pprint import pprint, pformat
-from statistics import mean, median, stdev, variance, mode, harmonic_mean, median_grouped, pvariance
-# * Third Party Imports -->
-import aiohttp
+from time import time
+from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
+import asyncio
+from textwrap import dedent
+from dotenv import load_dotenv
+from datetime import datetime
+import shutil
+from zipfile import ZipFile, ZIP_LZMA
+# * Third Party Imports --------------------------------------------------------------------------------->
 import discord
-from discord.ext import tasks, commands
-import discord
-
-# * Gid Imports -->
+from discord.ext import commands
+from emoji import demojize
+from webdav3.client import Client
+from icecream import ic
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
-from antipetros_discordbot.utility.enums import RequestStatus
-from antipetros_discordbot.utility.named_tuples import LINK_DATA_ITEM, MovieQuoteItem
-from antipetros_discordbot.utility.sqldata_storager import LinkDataStorageSQLite
-from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+# * Local Imports --------------------------------------------------------------------------------------->
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name
+from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, check_after_invoke, only_giddi
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.misc import save_commands, async_seconds_to_pretty_normal, color_hex_embed
-from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
+from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
+from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name, normalize_emoji
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
+from antipetros_discordbot.utility.data_gathering import gather_data
 # endregion [Imports]
 
 # region [Logging]
@@ -41,12 +45,16 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+COG_NAME = "GeneralDebugCog"
+CONFIG_NAME = make_config_name(COG_NAME)
+
+get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion [Constants]
 
@@ -59,27 +67,82 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion [TODO]
 
 
-class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "GeneralDebugCog"}):
-
-    config_name = 'general_debug'
+class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
+    """
+    Cog for debug or test commands, should not be enabled fo normal Bot operations.
+    """
+    config_name = CONFIG_NAME
+    docattrs = {'show_in_readme': False,
+                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
+                             "2021-02-06 05:26:32",
+                             "a296317ad6ce67b66c11e18769b28ef24060e5dac5a0b61a9b00653ffbbd9f4e521b2481189f075d029a4e9745892052413d2364e0666a97d9ffc7561a022b07")}
+    required_config_data = dedent("""
+                                  """)
 
     def __init__(self, bot):
         self.bot = bot
-        self.movie_quotes = None
-        self._make_movie_quote_items()
-        if self.bot.is_debug:
-            save_commands(self)
+        self.support = self.bot.support
+
+        self.allowed_channels = allowed_requester(self, 'channels')
+        self.allowed_roles = allowed_requester(self, 'roles')
+        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        load_dotenv("nextcloud.env")
+        self.next_cloud_options = {
+            'webdav_hostname': f"https://antistasi.de/dev_drive/remote.php/dav/files/{os.getenv('NX_USERNAME')}/",
+            'webdav_login': os.getenv('NX_USERNAME'),
+            'webdav_password': os.getenv('NX_PASSWORD')
+        }
+        self.next_cloud_client = Client(self.next_cloud_options)
+        self.notified_nextcloud_files = []
+        self.bob_user = None
+        self.antidevtros_member = None
+        self.antipetros_member = None
         glog.class_init_notification(log, self)
 
-    def _make_movie_quote_items(self):
-        self.movie_quotes = []
-        for item in loadjson(APPDATA['movie_quotes.json']):
-            self.movie_quotes.append(MovieQuoteItem(**item))
+    async def on_ready_setup(self):
+        self.bob_user = await self.bot.retrieve_antistasi_member(346595708180103170)
+        for member in self.bot.antistasi_guild.members:
+            if member.bot is True:
+                if member.display_name.casefold() == 'antidevtros':
+                    self.antidevtros_member = member
 
-    @commands.command(aliases=get_aliases("roll"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist("general_debug", 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist("general_debug", 'allowed_channels')))
-    async def roll(self, ctx, target_time: int = 1):
+                elif member.display_name.casefold() == 'antipetros':
+                    self.antipetros_member = member
+                else:
+                    if self.antidevtros_member is not None and self.antipetros_member is not None:
+                        break
+        log.debug('setup for cog "%s" finished', str(self))
+
+    async def update(self, typus):
+        return
+        log.debug('cog "%s" was updated', str(self))
+
+    @commands.Cog.listener(name="on_raw_reaction_add")
+    async def emoji_tester(self, payload):
+        disable = True
+
+        if disable is True:
+            return
+        emoji = payload.emoji
+
+        if emoji.is_custom_emoji():
+            log.debug("custom emoji as str(): '%s'", str(emoji))
+            log.debug("custom emoji id: '%s'", emoji.id)
+            log.debug("custom emoji name: '%s'", emoji.name)
+            log.debug("custom emoji demojized: '%s'", demojize(str(emoji)))
+            log.debug("custom emoji hash: '%s'", hash(emoji))
+            log.debug("custom emoji normalized: '%s'", normalize_emoji(emoji.name))
+        elif emoji.is_unicode_emoji():
+            log.debug("unicode emoji as str(): '%s'", str(emoji))
+            log.debug("unicode emoji id: '%s'", emoji.id)
+            log.debug("unicode emoji name: '%s'", emoji.name)
+            log.debug("unicode emoji demojized: '%s'", demojize(emoji.name))
+            log.debug("unicode emoji hash: '%s'", hash(emoji))
+            log.debug("unicode emoji customized name: '%s'", create_emoji_custom_name(str(emoji)))
+            log.debug("unicode emoji normalized: '%s'", normalize_emoji(emoji.name))
+
+    @auto_meta_info_command(enabled=get_command_enabled('roll'))
+    async def roll_blocking(self, ctx, target_time: int = 1):
         start_time = time()
         time_multiplier = 151267
         random_stats_funcs = [("mean", mean),
@@ -92,9 +155,8 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "Gene
                               ("pvariance", pvariance),
                               ('amount', len),
                               ('sum', sum)]
-        roll_data = []
-        for i in range(target_time * time_multiplier):
-            roll_data.append(random.randint(1, 10))
+        roll_data = [random.randint(1, 10) for _ in range(target_time * time_multiplier)]
+
         stats_data = {}
         log.debug("starting calculating statistics")
         for key, func in random_stats_funcs:
@@ -104,32 +166,312 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": "Gene
         time_taken = await async_seconds_to_pretty_normal(time_taken_seconds) if time_taken_seconds != 0 else "less than 1 second"
         await ctx.send(embed=await make_basic_embed(title='Roll Result', text='this is a long blocking command for debug purposes', symbol='debug_2', duration=time_taken, ** stats_data))
 
-    @commands.command(aliases=get_aliases("quote"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist("general_debug", 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist("general_debug", 'allowed_channels')))
-    async def quote(self, ctx):
-        quote_item = random.choice(self.movie_quotes)
-        embed = discord.Embed(title=quote_item.quote, description=quote_item.movie + ' - ' + str(quote_item.year), color=color_hex_embed("0xf5b042"))
-        embed.set_thumbnail(url="https://cdn4.iconfinder.com/data/icons/planner-color/64/popcorn-movie-time-512.png")
-        await ctx.send(embed=embed)
+    @auto_meta_info_command()
+    async def request_server_restart(self, ctx):
 
-    @commands.command(aliases=get_aliases("multiple_quotes"))
-    @ commands.has_any_role(*COGS_CONFIG.getlist("general_debug", 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist("general_debug", 'allowed_channels')))
-    async def multiple_quotes(self, ctx, amount: int = 10):
-        for i in range(amount):
-            await ctx.invoke(self.bot.get_command("quote"))
-        await ctx.send('done')
+        if ctx.prefix != "<@&800769712879042612> ":
+
+            return
+
+        servers = ["COMMUNITY_SERVER_1", "TEST_SERVER_1", "TEST_SERVER_2"]
+        await ctx.send(f"please specify the server name in the next 20 seconds | OPTIONS: {', '.join(servers)}")
+        user = ctx.author
+        channel = ctx.channel
+
+        def check(m):
+            return m.author.name == user.name and m.channel.name == channel.name
+        try:
+            msg = await self.bot.wait_for('message', check=check, timeout=20.0)
+            if any(server.casefold() in msg.content.casefold() for server in servers):
+                for server in servers:
+                    if server.casefold() in msg.content.casefold():
+                        _server = server
+            else:
+                await ctx.send('No valid answer received, aborting request, you can always try again')
+                return
+            await ctx.send("Did the commander save and is everyone ready for a restart? answer time: 20 seconds | OPTIONS: YES, NO")
+            try:
+                msg_2 = await self.bot.wait_for('message', check=check, timeout=20.0)
+                if msg_2.content.casefold() == 'yes':
+                    is_saved = 'yes'
+                elif msg_2.content.casefold() == 'no':
+                    is_saved = 'no'
+                else:
+                    await ctx.send('No valid answer received, aborting request, you can always try again')
+                    return
+                await ctx.send("notifying admin now")
+                member = await self.bot.retrieve_antistasi_member(576522029470056450)
+                await member.send(f"This is a notification from {ctx.author.name}!\nHe requests a server restart for server {_server}, saved and ready: {is_saved}")
+                await ctx.send(f"I have notified {member.name} per DM!")
+            except asyncio.TimeoutError:
+                await ctx.send('No answer received, aborting request, you can always try again')
+                return
+
+        except asyncio.TimeoutError:
+            await ctx.send('No answer received, aborting request, you can always try again')
+            return
+
+    @auto_meta_info_command()
+    async def save_embed(self, ctx, message: discord.Message):
+        if len(message.embeds) == 0:
+            await ctx.send("the message has no embed, aborting")
+            return
+
+        embed = message.embeds[0]
+        embed_dict = embed.to_dict()
+        writejson(embed_dict, pathmaker(APPDATA["saved_embeds"], f"{message.id}.json"))
+        await ctx.send(f'saved embed from message {message.id}')
+
+    @auto_meta_info_command()
+    async def quick_latency(self, ctx):
+        await ctx.send(f"{round(self.bot.latency * 1000)} ms")
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.qualified_name
+
+    @auto_meta_info_command(aliases=['pin'])
+    async def pin_message(self, ctx: commands.Context, *, reason: str):
+        if ctx.channel.name.casefold() not in ['bot-testing', 'bot-development']:
+            return
+        if ctx.message.reference.resolved is None:
+            await ctx.send('you need to reply to a message, that should be pinned, aborting!')
+            return
+        message = ctx.message.reference.resolved
+        log.debug(f"{reason=}")
+        await message.pin(reason=reason)
+        await ctx.message.delete()
+
+    @auto_meta_info_command(aliases=['unpin'])
+    async def unpin_message(self, ctx: commands.Context, *, reason: str):
+        if ctx.channel.name.casefold() not in ['bot-testing', 'bot-development']:
+            return
+        if ctx.message.reference.resolved is None:
+            await ctx.send('you need to reply to a message, that should be pinned, aborting!')
+            return
+        message = ctx.message.reference.resolved
+        log.debug(f"{reason=}")
+        await message.unpin(reason=reason)
+        await ctx.send(f'UNpinned message {message.id}', delete_after=60)
+        await ctx.message.delete()
+
+    async def _apply_overwrites(self, channel: discord.TextChannel, permissions: dict, selector: discord.Role):
+        for name, value in channel.overwrites_for(selector):
+            if value is not None:
+                permissions[name] = value
+        return permissions
+
+    @auto_meta_info_command()
+    async def all_channel_permissions(self, ctx: commands.Context, member: discord.Member = None, display_mode: str = 'only_true', filter_category: str = None):
+        json_path = f"{member.display_name}_permissions.json"
+        writejson({}, json_path)
+        for channel in self.bot.antistasi_guild.channels:
+            if filter_category is None:
+                if channel.category is not None and channel.category.name not in ["Voice Channels"]:
+                    await self.check_bot_channel_permissions(ctx, channel, member, display_mode, json_path)
+                    await asyncio.sleep(5)
+            else:
+                if channel.category is not None and channel.category.name.casefold() == filter_category.casefold():
+                    await self.check_bot_channel_permissions(ctx, channel, member, display_mode)
+                    await asyncio.sleep(5)
+
+    @auto_meta_info_command(aliases=['channel_permissions'])
+    async def check_bot_channel_permissions(self, ctx: commands.Context, channel: discord.TextChannel = None, member: discord.Member = None, display_mode: str = 'only_true', json_file=None):
+        channel = ctx.channel if channel is None else channel
+        member = self.bot.bot_member if member is None else member
+        roles = member.roles
+        role_names = ', '.join(map(lambda x: x.name, roles))
+        role_ids = ', '.join(map(lambda x: str(x.id), roles))
+        y = roles.pop(0)
+
+        permissions = {}
+        for name, value in channel.permissions_for(member):
+            permissions[name] = value
+        for selector in roles:
+
+            permissions = await self._apply_overwrites(channel=channel, permissions=permissions, selector=selector)
+            if json_file is not None:
+                json_data = loadjson(json_file)
+                json_data[channel.name] = permissions
+                writejson(json_data, json_file)
+        if display_mode.casefold() == 'only_true':
+            description = '```ini\n' + f'\n{"-"*35}\n'.join(f"{permission_name} = {' '*(25-len(permission_name))} {permission_bool}" for permission_name, permission_bool in permissions.items() if permission_bool is True) + '\n```'
+        elif display_mode.casefold() == 'all':
+            permission_list = [f"{'+' if permission_bool is True else '-'} {permission_name} = {' '*(25-len(permission_name))} {permission_bool}" for permission_name, permission_bool in permissions.items()]
+            description = '```diff\n' + '\n'.join(sorted(permission_list, key=lambda x: x.endswith('True'), reverse=True)) + '\n```'
+        elif display_mode.casefold() == 'only_false':
+            description = '```ini\n' + f'\n{"-"*35}\n'.join(f"{permission_name} = {' '*(25-len(permission_name))} {permission_bool}" for permission_name, permission_bool in permissions.items() if permission_bool is False) + '\n```'
+        else:
+            raise AttributeError(f'no such displaymode - "{display_mode}"')
+        embed_data = await self.bot.make_generic_embed(title=f'Permissions for **__{member.name}__** in **__{channel.name.upper()}__**', description=description, thumbnail=None, footer='not_set')
+        await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none(), delete_after=300)
+
+    @ commands.command()
+    async def check_embed_gif(self, ctx: commands.Context):
+        embed_data = await self.bot.make_generic_embed(title="check embed gif", image=APPDATA['COMMAND_the_dragon.gif'])
+        await ctx.send(**embed_data)
+
+    @ commands.command()
+    async def get_prefixes(self, ctx: commands.Context, message: discord.Message):
+        prefixes = await self.bot.get_prefix(message)
+        await ctx.send(str(prefixes))
+
+    # @ commands.command()
+    # @ commands.is_owner()
+    # async def send_the_configs(self, ctx: commands.Context):
+    #     data = loadjson(APPDATA['Admin Lead_members.json'])
+    #     for item in data:
+    #         admin_lead_member = await self.bot.retrieve_antistasi_member(item.get('id'))
+    #         cogs_config_file = discord.File(APPDATA['cogs_config.ini'])
+    #         base_config_file = discord.File(APPDATA['base_config.ini'])
+    #         await admin_lead_member.send('**From Giddi**:\nAttached are the bot configs, they are commented as best I can right now, but I am always available for questions. You can change them directly and send them back to me(giddi).\n\n*I use the bot to send this message to not have to write it 3 times*', files=[base_config_file, cogs_config_file])
+
+    @ commands.command()
+    async def the_bots_new_clothes(self, ctx: commands.Context):
+        msg = ZERO_WIDTH * 20 + '\n'
+        await ctx.send('```python\nTHE BOTS NEW CLOTHES:\n' + (msg * 40) + '\n```')
+        await ctx.send(msg * 60)
+        await ctx.message.delete()
+
+    @ commands.after_invoke(check_after_invoke)
+    @ auto_meta_info_command()
+    async def check_a_hook(self, ctx: commands.Context):
+        await asyncio.sleep(5)
+        await ctx.send("this is inside the command")
+        await asyncio.sleep(5)
+
+    async def get_save_path(self, save_folder, name, in_round=0):
+        if in_round == 0:
+            path = pathmaker(save_folder, name)
+        else:
+            path = pathmaker(save_folder, f"{name.split('.')[0]}_{in_round}.{name.split('.')[-1]}")
+        if os.path.exists(path) is False:
+            return path
+        return await self.get_save_path(save_folder, name, in_round + 1)
+
+    @ commands.after_invoke(check_after_invoke)
+    @ auto_meta_info_command()
+    async def get_all_attachments(self, ctx: commands.Context, channel: discord.TextChannel, amount_to_scan: int = None):
+        if ctx.author.id not in [152532555600494593, 576522029470056450, 346595708180103170]:
+            return
+        to_large = False
+        delete_after = 300
+        wanted_extensions = ['jpg', 'png', 'svg', 'jpeg', 'psd', 'xcf']
+        msg = f'...try to collect all images from `{channel.name}`'
+        if amount_to_scan is not None:
+            msg += f' in the last `{amount_to_scan}` messages'
+        await ctx.send(msg, delete_after=delete_after)
+        save_folder = pathmaker(APPDATA['temp_files'], f"attachments_from_channel_{channel.name.replace(' ','_').lower()}")
+        if os.path.exists(save_folder) is False:
+            os.makedirs(save_folder)
+        await ctx.send(f'...scraping all attachments from `{channel.name}`', delete_after=delete_after)
+        async for message in channel.history(limit=amount_to_scan):
+            if len(message.attachments) != 0:
+                for attachment in message.attachments:
+                    # if any(attachment.filename.casefold().endswith('.' + wanted_ext.casefold()) for wanted_ext in wanted_extensions):
+                    save_path = await self.get_save_path(save_folder, attachment.filename)
+                    log.debug('SAVING image "%s"', os.path.basename(save_path))
+                    with open(save_path, 'wb') as f:
+                        await attachment.save(f)
+        await ctx.send(f"...I have collected `{len(os.listdir(save_folder))}` attachments from `{channel.name}`", delete_after=delete_after)
+        timestamp = datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S')
+        zip_path = await self.get_save_path(APPDATA['temp_files'], f"attachments_from_channel_{channel.name.replace(' ','_').lower()}_{timestamp}.zip")
+        await ctx.send('...compressing collected attachments', delete_after=delete_after)
+        with ZipFile(zip_path, 'w', compression=ZIP_LZMA) as zippy:
+            for file_item in os.scandir(save_folder):
+                if file_item.is_file():
+                    log.debug('COMPRESSING image "%s"', file_item.name)
+                    zippy.write(file_item.path, file_item.name)
+                    await asyncio.sleep(0)
+        await ctx.send(f"...zip file has a size of `{bytes2human(os.stat(zip_path).st_size,annotate=True)}`", delete_after=delete_after)
+
+        client = Client(get_nextcloud_options())
+        await ctx.send("...Starting upload to Dev-Drive", delete_after=delete_after)
+        async with ctx.typing():
+            await self.bot.execute_in_thread(client.upload_sync, f"collected_attachments_discord/{os.path.basename(zip_path)}", zip_path)
+            await ctx.send(f"...uploaded to Dev-drive as `collected_attachments_discord/{os.path.basename(zip_path)}`", delete_after=delete_after)
+
+        log.debug("cleaning up '%s'", zip_path)
+        os.remove(zip_path)
+        log.debug('cleaning up "%s"', save_folder)
+        shutil.rmtree(save_folder)
+        if os.path.isdir(save_folder) is True:
+            os.remove(save_folder)
+
+    @ auto_meta_info_command(enabled=True)
+    async def write_data(self, ctx):
+        await gather_data(self.bot)
+        await ctx.send(embed=await make_basic_embed(title='Data Collected', text='Data was gathered and written to the assigned files', symbol='save', collected_data='This command only collected fixed data like role_ids, channel_ids,...\n', reason='Data is collected and saved to a json file so to not relying on getting it at runtime, as this kind of data is unchanging', if_it_changes='then this command can just be run again'))
+
+    @ auto_meta_info_command(enabled=True)
+    async def show_command_names(self, ctx):
+
+        _out = []
+
+        for cog_name, cog_object in self.bot.cogs.items():
+            for command in cog_object.get_commands():
+                _out.append('__**' + str(command.name) + '**__' + ': ```\n' + str(command.help).split('\n')[0] + '\n```')
+        await self.bot.split_to_messages(ctx, '\n---\n'.join(_out), split_on='\n---\n')
+
+    @ auto_meta_info_command(enabled=True)
+    async def mention_nomas(self, ctx):
+        nomas_member = await self.bot.retrieve_antistasi_member(320739533417218048)
+        mention_string = nomas_member.mention
+        await ctx.send(f"Something {mention_string}", allowed_mentions=discord.AllowedMentions.none())
+
+    @ auto_meta_info_command(enabled=True)
+    async def check_reload_mech(self, ctx):
+        await self.bot.reload_cog_from_command_name("flip_coin")
+
+    @auto_meta_info_command(enabled=True)
+    async def create_role_by_name_and_assign_to_all(self, ctx: commands.context, role_name: str, *, reason: str):
+        role = await self.bot.antistasi_guild.create_role(name=role_name, permissions=discord.Permissions.none(), color=self.bot.get_discord_color('pink'), hoist=False, mentionable=False, reason=reason)
+        await ctx.send(f"Created role {role.mention}, now applying to all", allowed_mentions=discord.AllowedMentions.none())
+        for member in self.antistasi_guild.members:
+            await member.add_roles(role)
+            await asyncio.sleep(3)
+        await ctx.reply('Adding of roles completed!')
+
+    @auto_meta_info_command()
+    async def mock_subscribe_thing(self, ctx: commands.Context, *topics: str):
+        emojis = ["1️⃣", "2️⃣", "3️⃣"]
+        fields = []
+        for index, topic in enumerate(topics):
+            role = '$mock_role_' + topic + '_subscriber'
+            field = self.bot.field_item(name=topic, value=f"react with {emojis[index]} to subscribe to the Topic `{topic}`, you will get the role {role}")
+            fields.append(field)
+
+        embed_data = await self.bot.make_generic_embed(title='Topic Subscription', description=f"\@mock_everybody to get notified for a topic react to this message.\navailable topics:", fields=fields, footer={'text': 'to unsubscribe just take your reaction away from this message'})
+
+        msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        for i in range(len(topics)):
+            await msg.add_reaction(emojis[i])
+
+    @auto_meta_info_command(enabled=True)
+    async def dump_permissions(self, ctx: commands.Context):
+        async with ctx.typing():
+            for bot_member in [self.antidevtros_member, self.antipetros_member]:
+                permission_dict = {}
+                for channel in self.bot.antistasi_guild.channels:
+                    if channel.type is discord.ChannelType.text:
+                        permission_dict[channel.name] = {name: value for name, value in channel.permissions_for(bot_member)}
+                writejson(permission_dict, f"{bot_member.display_name.casefold()}_permission_dump.json")
+                await ctx.send(f"dumped permissions for {bot_member.display_name}")
+            await ctx.send(f"finished dumping permission for Giddis Bots")
+
+    def cog_unload(self):
+        log.debug("Cog '%s' UNLOADED!", str(self))
+
+    async def cog_check(self, ctx):
+        if ctx.author.id == self.bot.creator.id:
+            return True
+        return False
 
 
 def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(GeneralDebugCog(bot))
+    bot.add_cog(attribute_checker(GeneralDebugCog(bot)))

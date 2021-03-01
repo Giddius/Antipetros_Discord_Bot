@@ -599,7 +599,7 @@ icons/
 shebang.txt
 .env_tools
 .env_main
-.env
+**/*.env
 *.json
 private_quick_scripts/
 create_venv_logs/
@@ -624,3 +624,12 @@ antipetros_discordbot/init_userdata/data_pack/image_files/other_images/armaimage
 antipetros_discordbot/init_userdata/data_pack/misc/boston.ttf
 tools/_project_devmeta.env
 antipetros_discordbot/init_userdata/data_pack/temp_files/last_shutdown_message.pkl
+antistasi_template_checker.exe
+recommende_manifest_stuff.txt
+art/WiP
+/docs/poll_example.png
+/docs/proposals.md
+/tools/scratches
+/antipetros_discordbot/nextcloud.env
+/tools/_project_devmeta.env
+/.unotes

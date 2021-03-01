@@ -1,11 +1,10 @@
-Placeholder Description for AntiPetros DiscordBot
+WiP Description for AntiPetros DiscordBot
 
-----------------------------------------------------------------------
-if you want to suggest and feature or an idea for a new command
+I am an custom made Bot for this community!
+---
+if you want to suggest and feature or an idea for a new command,
+OR IF THERE IS A BUG, OR PROBLEM:
 
-+ use the command -->
+shoot @Giddi a Dm!
 
-+ @AntiPetros new_feature [YOUR SUGGESTION TEXT]
-
-you can even attach images to the suggestion.
-----------------------------------------------------------------------
+---

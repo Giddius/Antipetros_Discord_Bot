@@ -1,8 +1,8 @@
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 from enum import Enum, Flag, auto
-from datetime import datetime
+
 # endregion[Imports]
 
 
@@ -49,3 +49,49 @@ class DataSize(Enum):
         if annotate is True:
             return str(converted_bytes) + ' ' + self.short_name
         return converted_bytes
+
+
+class EmbedType(Enum):
+    Rich = "rich"
+    Image = "image"
+    Video = "video"
+    Gifv = "gifv"
+    Article = "article"
+    Link = "link"
+
+
+class CogState(Flag):
+    """
+    [summary]
+
+    all states template:
+        CogState.READY|CogState.WORKING|CogState.OPEN_TODOS|CogState.UNTESTED|CogState.FEATURE_MISSING|CogState.NEEDS_REFRACTORING|CogState.OUTDATED|CogState.CRASHING|CogState.EMPTY
+
+
+    Args:
+        Flag ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+
+    READY = auto()
+    WORKING = auto()
+    OPEN_TODOS = auto()
+    UNTESTED = auto()
+    FEATURE_MISSING = auto()
+    NEEDS_REFRACTORING = auto()
+    OUTDATED = auto()
+    CRASHING = auto()
+    DOCUMENTATION_MISSING = auto()
+    EMPTY = auto()
+
+    @classmethod
+    def split(cls, combined_cog_state):
+        if combined_cog_state is cls.EMPTY:
+            return [combined_cog_state]
+        _out = []
+        for state in cls:
+            if state is not cls.EMPTY and state in combined_cog_state:
+                _out.append(state)
+        return _out

@@ -2,36 +2,38 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
+import asyncio
 from io import BytesIO
-from tempfile import TemporaryDirectory
 from pathlib import Path
-from asyncio import get_running_loop
-from concurrent.futures import ThreadPoolExecutor
-# * Third Party Imports -->
+from datetime import datetime
+from tempfile import TemporaryDirectory
+from textwrap import dedent
+# * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from PIL import Image, ImageEnhance
-from discord.ext import commands
-
-
-# * Gid Imports -->
+from pytz import timezone
+from discord.ext import commands, flags
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-# * Local Imports -->
-from antipetros_discordbot.utility.enums import WATERMARK_COMBINATIONS, WatermarkPosition
-from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
+# * Local Imports --------------------------------------------------------------------------------------->
+from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.enums import WatermarkPosition
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.misc import save_commands
-from antipetros_discordbot.utility.checks import in_allowed_channels
-
-from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
+from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 # endregion[Imports]
 
 # region [TODO]
 
+# TODO: create regions for this file
+# TODO: Document and Docstrings
 
 # endregion [TODO]
 
@@ -43,32 +45,39 @@ glog.import_notification(log, __name__)
 # endregion[Logging]
 
 # region [Constants]
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
-# location of this file, does not work if app gets compiled to exe with pyinstaller
-THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-IMAGE_MANIPULATION_CONFIG_NAME = 'image_manipulation'
-
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))  # location of this file, does not work if app gets compiled to exe with pyinstaller
+COG_NAME = "ImageManipulationCog"
+CONFIG_NAME = make_config_name(COG_NAME)
+get_command_enabled = command_enabled_checker(CONFIG_NAME)
 # endregion [Constants]
 
-# TODO: create regions for this file
-# TODO: Document and Docstrings
 
-
-class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "ImageManipulationCog"}):
-
+class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
+    """
+    Soon
+    """
     # region [ClassAttributes]
-
+    config_name = CONFIG_NAME
     allowed_stamp_formats = set(loadjson(APPDATA["image_file_extensions.json"]))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
-
+    docattrs = {'show_in_readme': True,
+                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
+                             "2021-02-06 05:09:20",
+                             "f166431cb83ae36c91d70d7d09020e274a7ebea84d5a0c724819a3ecd2230b9eca0b3e14c2d473563d005671b7a2bf9d87f5449544eb9b57bcab615035b0f83d")}
+    required_config_data = dedent("""  avatar_stamp = ASLOGO1
+                                avatar_stamp_fraction = 0.2
+                                stamps_margin = 5
+                                stamp_fraction = 0.3""")
 # endregion[ClassAttributes]
 
 # region [Init]
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.stamp_location = APPDATA['stamps']
         self.stamps = {}
         self.stamp_pos_functions = {WatermarkPosition.Right | WatermarkPosition.Bottom: self._to_bottom_right,
@@ -80,43 +89,52 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                                     WatermarkPosition.Center | WatermarkPosition.Center: self._to_center_center,
                                     WatermarkPosition.Center | WatermarkPosition.Bottom: self._to_bottom_center,
                                     WatermarkPosition.Center | WatermarkPosition.Top: self._to_top_center}
-
+        # self.base_map_image = Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v3_2000_w_outposts.png")
+        # self.outpost_overlay = {'city': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_city_marker.png"),
+        #                         'volcano': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_volcano_marker.png"),
+        #                         'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
+        self.old_map_message = None
         self._get_stamps()
-        if self.bot.is_debug:
-            save_commands(self)
+        self.allowed_channels = allowed_requester(self, 'channels')
+        self.allowed_roles = allowed_requester(self, 'roles')
+        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         glog.class_init_notification(log, self)
 
 
 # endregion[Init]
 
+# region [Setup]
+
+
+    async def on_ready_setup(self):
+        self._get_stamps()
+        log.debug('setup for cog "%s" finished', str(self))
+
+    async def update(self, typus):
+        return
+        log.debug('cog "%s" was updated', str(self))
+
+# endregion[Setup]
+
 # region [Properties]
-
-    @property
-    def allowed_channels(self):
-
-        return set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels'))
 
     @property
     def target_stamp_fraction(self):
 
-        return COGS_CONFIG.getfloat(IMAGE_MANIPULATION_CONFIG_NAME, 'stamp_fraction')
+        return COGS_CONFIG.getfloat(CONFIG_NAME, 'stamp_fraction')
 
     @property
     def stamp_margin(self):
 
-        return COGS_CONFIG.getint(IMAGE_MANIPULATION_CONFIG_NAME, 'stamps_margin')
-
-    @property
-    def stamp_opacity(self):
-        return COGS_CONFIG.getfloat(IMAGE_MANIPULATION_CONFIG_NAME, 'stamp_opacity')
+        return COGS_CONFIG.getint(CONFIG_NAME, 'stamps_margin')
 
     @property
     def avatar_stamp_fraction(self):
-        return COGS_CONFIG.getfloat(IMAGE_MANIPULATION_CONFIG_NAME, 'avatar_stamp_fraction')
+        return COGS_CONFIG.getfloat(CONFIG_NAME, 'avatar_stamp_fraction')
 
     @property
     def avatar_stamp(self):
-        return self._get_stamp_image(COGS_CONFIG.get(IMAGE_MANIPULATION_CONFIG_NAME, 'avatar_stamp').upper())
+        return self._get_stamp_image(COGS_CONFIG.get(CONFIG_NAME, 'avatar_stamp').upper(), 1)
 
 # endregion[Properties]
 
@@ -127,10 +145,10 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                 name = file.name.split('.')[0].replace(' ', '_').strip().upper()
                 self.stamps[name] = file.path
 
-    def _get_stamp_image(self, stamp_name):
+    def _get_stamp_image(self, stamp_name, stamp_opacity):
         image = Image.open(self.stamps.get(stamp_name))
         alpha = image.split()[3]
-        alpha = ImageEnhance.Brightness(alpha).enhance(self.stamp_opacity)
+        alpha = ImageEnhance.Brightness(alpha).enhance(stamp_opacity)
         image.putalpha(alpha)
         return image.copy()
 
@@ -222,31 +240,41 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
         with BytesIO() as image_binary:
             image.save(image_binary, image_format.upper(), optimize=True)
             image_binary.seek(0)
-            out_file = discord.File(image_binary, filename=name + '.' + image_format)
-            embed = discord.Embed(title=message_title, description=message_text)
-            embed.set_thumbnail(url="https://userscontent2.emaze.com/images/20605779-4667-427c-a954-343bbc02a65f/c8b5d9a464d4288e9a951d3728772236.png")
+            file = discord.File(fp=image_binary, filename=name.replace('_', '') + '.' + image_format)
+            embed = discord.Embed(title=message_title, description=message_text, color=self.support.cyan.discord_color, timestamp=datetime.now(tz=timezone("Europe/Berlin")), type='image')
+            embed.set_author(name='AntiPetros', icon_url="https://www.der-buntspecht-shop.de/wp-content/uploads/Baumwollstoff-Camouflage-olivegruen-2.jpg")
             embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
-            await ctx.send(embed=embed, file=out_file, delete_after=delete_after)
+            await ctx.send(embed=embed, file=file, delete_after=delete_after)
 
-    @commands.command(aliases=get_aliases("stamp_image"))
-    @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
-    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
-    async def stamp_image(self, ctx, stamp: str = 'ASLOGO1', first_pos: str = 'bottom', second_pos: str = 'right', factor: float = None):
+    @flags.add_flag("--stamp-image", "-si", type=str, default='ASLOGO1')
+    @flags.add_flag("--first-pos", '-fp', type=str, default="bottom")
+    @flags.add_flag("--second-pos", '-sp', type=str, default="right")
+    @flags.add_flag("--stamp-opacity", '-so', type=float, default=1.0)
+    @flags.add_flag('--factor', '-f', type=float, default=None)
+    @auto_meta_info_command(enabled=get_command_enabled("stamp_image"), cls=flags.FlagCommand)
+    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
+    async def stamp_image(self, ctx, **flags):
+        """
+        Stamps an image with a small image from the available stamps.
+
+        Usefull for watermarking images.
+
+        Get all available stamps with '@AntiPetros available_stamps'
+
+        """
         async with ctx.channel.typing():
-            if ctx.channel.name not in self.allowed_channels:
-                return
 
             if len(ctx.message.attachments) == 0:
                 # TODO: make as embed
                 await ctx.send('! **there is NO image to antistasify** !')
                 return
-            if stamp not in self.stamps:
+            if flags.get('stamp_image') not in self.stamps:
                 # TODO: make as embed
                 await ctx.send("! **There is NO stamp with that name** !")
                 return
-            first_pos = self.stamp_positions.get(first_pos.casefold(), None)
-            second_pos = self.stamp_positions.get(second_pos.casefold(), None)
+            first_pos = self.stamp_positions.get(flags.get("first_pos").casefold(), None)
+            second_pos = self.stamp_positions.get(flags.get("second_pos").casefold(), None)
 
             if any(_pos is None for _pos in [first_pos, second_pos]) or first_pos | second_pos not in self.stamp_pos_functions:
                 # TODO: make as embed
@@ -255,7 +283,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
             for _file in ctx.message.attachments:
                 # TODO: maybe make extra attribute for input format, check what is possible and working. else make a generic format list
                 if any(_file.filename.endswith(allowed_ext) for allowed_ext in self.allowed_stamp_formats):
-                    _stamp = self._get_stamp_image(stamp)
+                    _stamp = self._get_stamp_image(flags.get('stamp_image'), flags.get('stamp_opacity'))
                     _stamp = _stamp.copy()
                     with TemporaryDirectory(prefix='temp') as temp_dir:
                         temp_file = Path(pathmaker(temp_dir, 'temp_file.png'))
@@ -263,26 +291,31 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                         await _file.save(temp_file)
                         in_image = await self.bot.execute_in_thread(Image.open, temp_file)
                         in_image = await self.bot.execute_in_thread(in_image.copy)
-                    factor = self.target_stamp_fraction if factor is None else factor
+                    factor = self.target_stamp_fraction if flags.get('factor') is None else flags.get('factor')
                     pos_function = self.stamp_pos_functions.get(first_pos | second_pos)
 
                     in_image = await self.bot.execute_in_thread(pos_function, in_image, _stamp, factor)
                     name = 'antistasified_' + os.path.splitext(_file.filename)[0]
+                    await ctx.message.delete()
                     # TODO: make as embed
                     await self._send_image(ctx, in_image, name, f"__**{name}**__")
 
-    @commands.command(aliases=get_aliases("available_stamps"))
-    @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
+    @auto_meta_info_command(enabled=get_command_enabled("available_stamps"))
+    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_stamps(self, ctx):
+        """
+        Posts all available stamps.
 
+        """
+        await ctx.message.delete()
         await ctx.send(embed=await make_basic_embed(title="__**Currently available Stamps are:**__", footer="These messages will be deleted in 120 seconds", symbol='photo'), delete_after=120)
         for name, image_path in self.stamps.items():
 
             thumb_image = Image.open(image_path)
             thumb_image.thumbnail((128, 128))
             with BytesIO() as image_binary:
+                await asyncio.sleep(0)
                 thumb_image.save(image_binary, 'PNG', optimize=True)
                 image_binary.seek(0)
                 _file = discord.File(image_binary, filename=name + '.png')
@@ -291,20 +324,22 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
                 embed.set_image(url=f"attachment://{name}.png")
                 await ctx.send(embed=embed, file=_file, delete_after=120)
 
-    @commands.command(aliases=get_aliases("member_avatar"))
-    @commands.has_any_role(*COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_avatar_roles'))
-    @in_allowed_channels(set(COGS_CONFIG.getlist(IMAGE_MANIPULATION_CONFIG_NAME, 'allowed_channels')))
-    @commands.cooldown(1, 30, commands.BucketType.member)
-    async def other_members_avatar(self, ctx, members: commands.Greedy[discord.Member]):
+    @auto_meta_info_command(enabled=get_command_enabled("member_avatar"))
+    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @commands.cooldown(1, 300, commands.BucketType.member)
+    async def member_avatar(self, ctx):
+        """
+        Stamps the avatar of a Member with the Antistasi Crest.
 
-        for member in members:
-            avatar_image = await self.get_avatar_from_user(member)
-            stamp = self.avatar_stamp
-            modified_avatar = await self.bot.execute_in_thread(self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
+        Returns the new stamped avatar as a .PNG image that the Member can save and replace his orginal avatar with.
 
-            name = f"{member.name}_Member_avatar"
-            await ctx.send(f"{member.name} hey!")
-            await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**", f"__**{member.name}**__")
+        """
+        avatar_image = await self.get_avatar_from_user(ctx.author)
+        stamp = self.avatar_stamp
+        modified_avatar = await self.bot.execute_in_thread(self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
+
+        name = f"{ctx.author.name}_Member_avatar"
+        await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**")  # change completion line to "Pledge your allegiance to the Antistasi Rebellion!"?
 
     async def get_avatar_from_user(self, user):
         avatar = user.avatar_url
@@ -318,14 +353,50 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': True, "name": "
         temp_dir.cleanup()
         return avatar_image
 
+    def map_image_handling(self, base_image, marker_name, color, bytes_out):
+        log.debug("creating changed map, changed_location: '%s', changed_color: '%s'", marker_name, color)
+        marker_image = self.outpost_overlay.get(marker_name)
+        marker_alpha = marker_image.getchannel('A')
+        marker_image = Image.new('RGBA', marker_image.size, color=color)
+        marker_image.putalpha(marker_alpha)
+        base_image.paste(marker_image, mask=marker_alpha)
+        base_image.save(bytes_out, 'PNG', optimize=True)
+        bytes_out.seek(0)
+        return base_image, bytes_out
+
+    # @commands.command(aliases=get_aliases("map_changed"), enabled=get_command_enabled("map_changed"))
+    # @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    # @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
+    # async def map_changed(self, ctx, marker, color):
+    #     """
+    #     Proof of concept for future real time server map.
+    #     """
+    #     log.info("command was initiated by '%s'", ctx.author.name)
+    #     with BytesIO() as image_binary:
+
+    #         self.base_map_image, image_binary = await self.bot.execute_in_thread(self.map_image_handling, self.base_map_image, marker, color, image_binary)
+
+    #         if self.old_map_message is not None:
+    #             await self.old_map_message.delete()
+    #         delete_time = None
+    #         embed = discord.Embed(title='Current Server Map State', color=self.support.green.discord_color, timestamp=datetime.now(tz=timezone("Europe/Berlin")), type="image")
+    #         embed.set_author(name='Antistasi Community Server 1', icon_url="https://s3.amazonaws.com/files.enjin.com/1218665/site_logo/NEW%20LOGO%20BANNER.png", url="https://a3antistasi.enjin.com/")
+    #         embed.set_image(url="attachment://map.png")
+    #         self.old_map_message = await ctx.send(embed=embed, file=discord.File(fp=image_binary, filename="map.png"), delete_after=delete_time)
+
+    #     log.debug("finished 'map_changed' command")
+
 
 # region [SpecialMethods]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.qualified_name
+
+    def cog_unload(self):
+        log.debug("Cog '%s' UNLOADED!", str(self))
 
 # endregion[SpecialMethods]
 
@@ -334,4 +405,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(ImageManipulatorCog(bot))
+    bot.add_cog(attribute_checker(ImageManipulatorCog(bot)))

@@ -2,58 +2,12 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
-
-import asyncio
-import gc
-import logging
-import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import logging
-import platform
-import subprocess
-from enum import Enum, Flag, auto
-from time import sleep
-from pprint import pprint, pformat
-from typing import Union
-from datetime import tzinfo, datetime, timezone, timedelta
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial
-from contextlib import contextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-
-
-# * Third Party Imports -->
-
-# import requests
-# import pyperclip
-# import matplotlib.pyplot as plt
-# from bs4 import BeautifulSoup
-# from dotenv import load_dotenv
-# from github import Github, GithubException
-# from jinja2 import BaseLoader, Environment
-# from natsort import natsorted
-# from fuzzywuzzy import fuzz, process
-import discord
-from discord.ext import commands, tasks
-
-# * PyQt5 Imports -->
-
-
-# * Gid Imports -->
-
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-                               dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
 
-
-# * Local Imports -->
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
+# * Local Imports --------------------------------------------------------------------------------------->
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
 # endregion[Imports]
 
@@ -63,9 +17,9 @@ from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
 # endregion [TODO]
 
 # region [AppUserData]
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 
 # endregion [AppUserData]
 
@@ -81,7 +35,8 @@ log = glog.aux_logger(__name__)
 PERMISSION_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'permission_data.json')
 ROLE_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'role_data.json')
 CHANNEL_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'channel_data.json')
-GENERAL_DATA_OUTPUT = APPDATA['general_data.json']
+CHANNEL_CAT_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'channel_category_data.json')
+GENERAL_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'general_data.json')
 MEMBERS_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'members_data.json')
 ROLE_CHANNEL_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'role_channel_data.json')
 # endregion[Constants]
@@ -148,7 +103,19 @@ async def get_channel_role_data(bot):
     writejson(role_dict, ROLE_CHANNEL_DATA_OUTPUT, sort_keys=False, indent=4)
 
 
+async def get_channel_category_data(bot):
+    _chan_cat_dict = {}
+    for category in bot.antistasi_guild.categories:
+        if category.name not in _chan_cat_dict:
+            _chan_cat_dict[category.name] = []
+        for channel in category.channels:
+            _chan_cat_dict[category.name].append(channel.name)
+        _chan_cat_dict[category.name] = sorted(list(set(_chan_cat_dict[category.name])))
+    writejson(_chan_cat_dict, CHANNEL_CAT_DATA_OUTPUT, sort_keys=False, indent=4)
+
+
 async def gather_data(bot):
+    await get_channel_category_data(bot)
     await get_general_data(bot)
     await get_channel_data(bot)
     await get_role_data(bot)

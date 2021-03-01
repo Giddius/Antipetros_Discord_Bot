@@ -3,7 +3,7 @@
 set OLDHOME_FOLDER=%~dp0
 pushd %OLDHOME_FOLDER%
 call ..\.venv\Scripts\activate
-call .\comment_profiler.py --activate
+
 rem ---------------------------------------------------
 set _date=%DATE:/=-%
 set _time=%TIME::=%
@@ -33,4 +33,4 @@ mprof.exe plot --flame
 mprof.exe plot -o %INPATH%reports\memory_profiling\[%_years%-%_months%-%_days%_%_hours%-%_minutes%-%_seconds%]_mem_%INFILEBASE%.svg
 mprof.exe clean
 pushd %OLDHOME_FOLDER%
-call D:\Dropbox\hobby\Modding\Projects\Giddis_Project_Creator\tools\comment_profiler.py --deactivate
+

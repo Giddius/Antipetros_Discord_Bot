@@ -1,60 +1,27 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
-import gc
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import logging
-import platform
-import subprocess
-from enum import Enum, Flag, auto
-from time import sleep
-from pprint import pprint, pformat
-from typing import Union
-from datetime import tzinfo, datetime, timedelta
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial
-from contextlib import contextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from tempfile import TemporaryDirectory
-from urllib.parse import urlparse
-import asyncio
-import unicodedata
-from io import BytesIO
+from datetime import datetime
 
-# * Third Party Imports -->
-# import requests
-# import pyperclip
-# import matplotlib.pyplot as plt
-# from bs4 import BeautifulSoup
-# from dotenv import load_dotenv
-# from github import Github, GithubException
-# from jinja2 import BaseLoader, Environment
-# from natsort import natsorted
+# * Third Party Imports --------------------------------------------------------------------------------->
+from pytz import timezone, country_timezones
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process as fuzzprocess
-import aiohttp
-import discord
-from discord.ext import tasks, commands
-from discord import DiscordException
+from discord.ext import commands
 
-from async_property import async_property
-from pytz import country_timezones, timezone, all_timezones
-# * Gid Imports -->
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, readbin, linereadit, writeit, writebin, appendwriteit, loadjson, writejson, pickleit, get_pickled, clearit
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
-from antipetros_discordbot.utility.misc import save_commands, STANDARD_DATETIME_FORMAT
-from antipetros_discordbot.utility.checks import in_allowed_channels
-from antipetros_discordbot.utility.named_tuples import COUNTRY_ITEM, CITY_ITEM
+
+# * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands
+from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.named_tuples import CITY_ITEM, COUNTRY_ITEM
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.utility.enums import CogState
 # endregion[Imports]
 
 # region [TODO]
@@ -75,9 +42,9 @@ log = glog.aux_logger(__name__)
 
 # region [Constants]
 
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -85,20 +52,27 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "AbsoluteTimeCog"}):
-
+    """
+    Soon
+    """
     # region [ClassAttributes]
     config_name = "absolute_time"
+    docattrs = {'show_in_readme': True,
+                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
+                             "2021-02-06 05:16:51",
+                             "ed8f3b4d66db18f01a1d7c0fefd24434c07a0035c5582fd79b75782ab28498170967dc42582d2ac10b208f662a03302532bad1c128c1b82a7b1edec96447f8a4")}
 # endregion [ClassAttributes]
 
 # region [Init]
 
     def __init__(self, bot):
         self.bot = bot
+        self.support = self.bot.support
         self.registered_timezones_file = APPDATA['registered_timezones.json']
         self._item_id = 0
         self.country_items = self.all_country_as_items()
         self.city_items = self.all_cities_as_item()
-        if self.bot.is_debug:
+        if os.environ.get('INFO_RUN', '') == "1":
             save_commands(self)
         glog.class_init_notification(log, self)
 
@@ -243,7 +217,7 @@ class AbsoluteTimeCog(commands.Cog, command_attrs={'hidden': True, "name": "Abso
 # region [SpecialMethods]
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.bot.user.name})"
+        return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
         return self.qualified_name

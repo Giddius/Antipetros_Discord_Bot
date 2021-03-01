@@ -1,3 +1,5 @@
+# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import sys
 
@@ -12,7 +14,7 @@ set FILEFOLDER=%~dp0
 pushd %FILEFOLDER%
 rem ----------------------------------------------------------------
 cd ..\..\tools
-echo ##################### setting vars from %cd%\_project_devmeta.env
+rem ##################### setting vars from %cd%\_project_devmeta.env
 for /f %%i in (_project_devmeta.env) do set %%i
 rem ----------------------------------------------------------------
 popd

@@ -14,8 +14,8 @@ REM - post_setup_scripts.txt
 REM ----------------------------------------------------------------------------------------------------
 
 
-SET PROJECT_NAME=ANTIPETROS_DISCORDBOT
-SET PROJECT_AUTHOR=ANTISTASI_TOOLS
+SET PROJECT_NAME=%~1
+SET PROJECT_AUTHOR=%~2
 
 SET TOOLS_FOLDER=%~dp0
 SET WORKSPACE_FOLDER=%TOOLS_FOLDER%\..
@@ -53,23 +53,48 @@ ECHO -------------------------- Calling %%A with %%B --------------^>
 CALL %%A %%B
 ECHO.
 )
+Echo.
+ECHO -------------------------------------------- preparing venv_setup_settings --------------------------------------------
 ECHO.
-ECHO -------------------------------------------- Clearing Pip Cache --------------------------------------------
-RD /S /Q %LocalAppData%\pip\Cache
-ECHO.
+ECHO ################# preparing venv_setup_settings
+call  %TOOLS_FOLDER%prepare_venv_settings.py %TOOLS_FOLDER%
+if %ERRORLEVEL% == 1 (
+    ECHO.
+    ECHO ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ECHO 8888888888888888888888888888888888888888888888888
+    ECHO.
+    Echo Created Venv settings folder, please custimize the files and restart the Scripts
+    ECHO.
+    ECHO 8888888888888888888888888888888888888888888888888
+    ECHO ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ECHO.
+    Exit 63
+) else (
+    Echo finished preparing venv
+)
+
+
+rem ECHO.
+rem ECHO -------------------------------------------- Clearing Pip Cache --------------------------------------------
+rem RD /S /Q %LocalAppData%\pip\Cache
+rem ECHO.
 
 
 
 ECHO -------------------------------------------- BASIC VENV SETUP --------------------------------------------
 ECHO.
 
-ECHO ################# suspending Dropbox
-CALL pskill64 Dropbox
-ECHO.
 
 ECHO ################# Removing old venv folder
 RD /S /Q %WORKSPACE_FOLDER%\.venv
 ECHO.
+
+
+ECHO ################# pycleaning workspace
+call pyclean %WORKSPACE_FOLDER%
+echo.
+
+
 
 ECHO ################# creating new venv folder
 mkdir %WORKSPACE_FOLDER%\.venv
@@ -85,7 +110,10 @@ ECHO.
 
 ECHO ################# upgrading pip to get rid of stupid warning
 call curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+set _REPLACE_STRING=
+call fart -C %TOOLS_FOLDER%get-pip.py "import os.path" "import setuptools\nimport os.path"
 call get-pip.py --force-reinstall
+del /Q get-pip.py
 ECHO.
 
 ECHO.
@@ -107,6 +135,9 @@ ECHO.
 
 ECHO ################# Installing wheel
 CALL pip install --no-cache-dir --upgrade wheel
+ECHO.
+ECHO ################# Installing PEP517
+CALL pip install --no-cache-dir --upgrade PEP517
 ECHO.
 
 ECHO ################# Installing python-dotenv
@@ -139,9 +170,22 @@ ECHO.
 ECHO.
 ECHO.
 
-Echo +++++++++++++++++++++++++++++ Misc Packages +++++++++++++++++++++++++++++
+Echo +++++++++++++++++++++++++++++ misc Packages +++++++++++++++++++++++++++++
 ECHO.
 FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_misc.txt) do (
+ECHO.
+ECHO -------------------------- Installing %%A --------------^>
+ECHO.
+CALL pip install --upgrade --no-cache-dir %%A
+ECHO.
+)
+
+ECHO.
+ECHO.
+
+Echo +++++++++++++++++++++++++++++ Experimental Packages +++++++++++++++++++++++++++++
+ECHO.
+FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_experimental.txt) do (
 ECHO.
 ECHO -------------------------- Installing %%A --------------^>
 ECHO.
@@ -197,7 +241,7 @@ FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_dev.txt) do (
 ECHO.
 ECHO -------------------------- Installing %%A --------------^>
 ECHO.
-CALL pip install --no-cache-dir --upgrade %%A
+CALL pip install --upgrade --no-cache-dir %%A
 ECHO.
 )
 
@@ -234,7 +278,10 @@ ECHO ###########################################################################
 ECHO -------------------------------------------------------------------------------------------------------------
 ECHO #############################################################################################################
 ECHO.
+ECHO.
 ECHO ++++++++++++++++++++++++++++++++++++++++++++++++++ FINISHED +++++++++++++++++++++++++++++++++++++++++++++++++
+ECHO.
+echo ************************** ErrorLevel at end of create_venv script is %ERRORLEVEL% **************************
 ECHO.
 ECHO #############################################################################################################
 ECHO -------------------------------------------------------------------------------------------------------------

@@ -1,6 +1,7 @@
-pytest
-pytest-qt
-pytest-cov
 dpytest
-pytest-venv
+pytest
+pytest-asyncio
 pytest-click
+pytest-cov
+pytest-qt
+pytest-venv

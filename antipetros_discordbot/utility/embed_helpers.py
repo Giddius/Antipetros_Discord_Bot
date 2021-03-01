@@ -2,46 +2,19 @@
 
 # region [Imports]
 
-# * Standard Library Imports -->
-
-import asyncio
-import gc
-import logging
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import logging
-import platform
-import subprocess
-from enum import Enum, Flag, auto
-from time import sleep
-from pprint import pprint, pformat
-from typing import Union
-from datetime import tzinfo, datetime, timezone, timedelta
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial
-from contextlib import contextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
-
-# * Third Party Imports -->
-
+# * Third Party Imports --------------------------------------------------------------------------------->
 import discord
-from discord.ext import commands, tasks
 
-
-# * Gid Imports -->
-
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
+# * Local Imports --------------------------------------------------------------------------------------->
+from antipetros_discordbot.utility.gidtools_functions import loadjson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
-# * Local Imports -->
-from antipetros_discordbot.init_userdata.user_data_setup import SupportKeeper
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, loadjson, writejson, readit, readbin, writeit, work_in, writebin
 # endregion[Imports]
 
 # region [TODO]
@@ -51,9 +24,9 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker, loadjson
 
 # region [AppUserData]
 
-APPDATA = SupportKeeper.get_appdata()
-BASE_CONFIG = SupportKeeper.get_config('base_config')
-COGS_CONFIG = SupportKeeper.get_config('cogs_config')
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 
 # endregion [AppUserData]
 
@@ -81,7 +54,7 @@ def standard_embed_color():
 
 
 async def make_basic_embed(title, text=None, footer=None, symbol=None, **kwargs):
-    embed_title = str(title).title()
+    embed_title = str(title)
     embed_text = '' if text is None else str(text)
 
     basic_embed = discord.Embed(title=embed_title, description=embed_text, color=standard_embed_color())
@@ -104,11 +77,12 @@ async def make_basic_embed(title, text=None, footer=None, symbol=None, **kwargs)
             basic_embed.set_footer(text=str(footer))
     else:
         basic_embed.set_footer(text=DEFAULT_FOOTER)
+
     return basic_embed
 
 
 async def make_basic_embed_inline(title, text=None, footer=None, symbol=None, **kwargs):
-    embed_title = str(title).title()
+    embed_title = str(title)
     embed_text = '' if text is None else str(text)
 
     basic_embed = discord.Embed(title=embed_title, description=embed_text, color=standard_embed_color())
@@ -128,6 +102,7 @@ async def make_basic_embed_inline(title, text=None, footer=None, symbol=None, **
             basic_embed.set_footer(text=str(footer))
     else:
         basic_embed.set_footer(text=DEFAULT_FOOTER)
+
     return basic_embed
 
 

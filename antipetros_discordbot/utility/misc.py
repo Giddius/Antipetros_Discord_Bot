@@ -1,20 +1,35 @@
-from functools import wraps, partial
-from asyncio import get_event_loop
-from concurrent.futures import ThreadPoolExecutor
+# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from textwrap import dedent
-import inspect
-import discord
-from pprint import pprint, pformat
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, loadjson, writejson, readit, readbin, writeit, work_in, writebin
-import gidlogger as glog
-from datetime import datetime
 import sys
+import inspect
+from asyncio import get_event_loop
+from datetime import datetime
+from textwrap import dedent
+from functools import wraps, partial
+from concurrent.futures import ThreadPoolExecutor
+from inspect import getclosurevars
 
+# * Third Party Imports --------------------------------------------------------------------------------->
+# * Third Party Imports -->
+import discord
+from discord.ext import commands
+# * Gid Imports ----------------------------------------------------------------------------------------->
+# * Gid Imports -->
+import gidlogger as glog
+
+# * Local Imports --------------------------------------------------------------------------------------->
+# * Local Imports -->
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writeit, writejson
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_SECTION
+from antipetros_discordbot.utility.enums import CogState
 
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
-
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 
 SGF = 1024  # SIZE_GENERAL_FACTOR
 SIZE_CONV = {'byte': {'factor': SGF**0, 'short_name': 'b'},
@@ -23,6 +38,11 @@ SIZE_CONV = {'byte': {'factor': SGF**0, 'short_name': 'b'},
              'gigabyte': {'factor': SGF**3, 'short_name': 'gb'},
              'terrabyte': {'factor': SGF**4, 'short_name': 'tb'}}
 
+SIZE_CONV_BY_SHORT_NAME = {'b': 1,
+                           'gb': 1073741824,
+                           'kb': 1024,
+                           'mb': 1048576,
+                           'tb': 1099511627776}
 
 STANDARD_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -104,6 +124,18 @@ def seconds_to_pretty(seconds: int, decimal_places: int = 1):
     return out_string
 
 
+def alt_seconds_to_pretty(seconds: int, decimal_places: int = 1, seperator: str = ', ', shorten_name_to: int = None):
+    out_string = ''
+    rest = seconds
+    for name, factor in FACTORS.items():
+        sub_result, rest = divmod(rest, factor)
+        if sub_result != 0:
+            if shorten_name_to is not None:
+                name = name[0:shorten_name_to]
+            out_string += f"{str(int(round(sub_result,ndigits=decimal_places)))} {name} {seperator}"
+    return out_string.rstrip(seperator)
+
+
 async def async_seconds_to_pretty_normal(seconds: int, decimal_places: int = 1):
     out_string = ''
     rest = seconds
@@ -131,19 +163,86 @@ def sync_to_async(_func):
     return wrapped
 
 
-def save_commands(cog):
-    command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/commands.json')
+def save_commands(cog, output_file=None):
+    command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/data/commands.json') if output_file is None else pathmaker(output_file)
+
+    if os.path.isfile(command_json_file) is False:
+        writejson({}, command_json_file)
+
     command_json = loadjson(command_json_file)
+
     command_json[str(cog)] = {'file_path': pathmaker(os.path.abspath(inspect.getfile(cog.__class__))),
                               'description': dedent(str(inspect.getdoc(cog.__class__))),
-                              "commands": {}}
+                              "commands": {},
+                              "state": [' | '.join(map(str, CogState.split(cog.docattrs.get('is_ready')[0]))), cog.docattrs.get('is_ready')[1]]
+                              }
+
     for command in cog.get_commands():
         command_json[str(cog)]["commands"][command.name.strip()] = {"signature": command.signature.replace('<ctx>', '').replace('  ', ' ').strip(),
                                                                     "aliases": command.aliases,
                                                                     "parameter": [param_string for param_string, _ in command.clean_params.items() if param_string != 'ctx'],
-                                                                    "checks": [str(check).split()[1].split('.')[0] for check in command.checks]}
+                                                                    "checks": [str(check).split()[1].split('.')[0] for check in command.checks],
+                                                                    'short_doc': command.short_doc,
+                                                                    'usage': command.usage,
+                                                                    'description': command.description,
+                                                                    'is_hidden': command.hidden,
+                                                                    'is_enabled': command.enabled,
+                                                                    'qualified_name': command.qualified_name}
+
     writejson(command_json, command_json_file, indent=4)
     log.debug("commands for %s saved to %s", cog, command_json_file)
+
+
+def make_command_subsection_seperator(command_name):
+    command_name = f"{command_name} COMMAND"
+    return f'# {command_name.upper().center(75, "-")}'
+
+
+def generate_base_cogs_config(bot: commands.Bot, output_file=None):
+    out_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/prototype_files/standard_cogs_config.ini') if output_file is None else pathmaker(output_file)
+    sub_section_seperator = f'# {"_"*75}'
+    command_section_seperator = f'# {"COMMANDS".center(75, "-")}'
+    listener_section_seperator = f'# {"LISTENER".center(75, "+")}'
+    out_lines = [DEFAULT_CONFIG_SECTION]
+    for cog_name, cog in bot.cogs.items():
+        config_name = cog.config_name
+        required_config_data = cog.required_config_data
+
+        out_lines += [f'\n\n[{config_name}]',
+                      'default_allowed_dm_ids =',
+                      'default_allowed_channels =',
+                      'default_allowed_roles =',
+                      sub_section_seperator + '\n' + sub_section_seperator,
+                      required_config_data]
+        for command in cog.get_commands():
+            out_lines.append(make_command_subsection_seperator(command.name))
+            out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('enabled')[0]} = {COMMAND_CONFIG_SUFFIXES.get('enabled')[1]}")
+            out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('channels')[0]} = {COMMAND_CONFIG_SUFFIXES.get('channels')[1]}")
+
+            out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('roles')[0]} = {COMMAND_CONFIG_SUFFIXES.get('roles')[1]}")
+            if any(getclosurevars(check).nonlocals.get('in_dm_allowed', False) is True for check in command.checks):
+                out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('dm_ids')[0]} = {COMMAND_CONFIG_SUFFIXES.get('dm_ids')[1]}")
+    writeit(out_file, '\n\n'.join(out_lines))
+
+
+def generate_help_data(cog: commands.Cog, output_file=None):
+    help_data_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/data/command_help.json') if output_file is None else pathmaker(output_file)
+    if os.path.isfile(help_data_file) is False:
+        writejson({}, help_data_file)
+    help_data = loadjson(help_data_file)
+    cog_name = cog.qualified_name
+    if cog_name not in help_data:
+        help_data[cog_name] = {}
+    help_data[cog_name] = {'description': cog.description,
+                           'config_name': cog.config_name,
+                           'file_path': pathmaker(os.path.abspath(inspect.getfile(cog.__class__))),
+                           'commands': {}}
+    for command in cog.get_commands():
+        help_data[cog_name]['commands'][command.name.strip()] = {'brief': command.brief,
+                                                                 'description': command.description,
+                                                                 'usage': command.usage,
+                                                                 'help': command.help}
+    writejson(help_data, help_data_file)
 
 
 async def async_load_json(json_file):
@@ -248,3 +347,48 @@ def casefold_list(in_list: list):
 
 def casefold_contains(query, data):
     return query.casefold() in casefold_list(data)
+
+
+class CogConfigReadOnly():
+    cogs_config = ParaStorageKeeper.get_config('cogs_config')
+    retriev_map = {str: cogs_config.get,
+                   list: cogs_config.getlist,
+                   int: cogs_config.getint,
+                   bool: cogs_config.getboolean,
+                   set: partial(cogs_config.getlist, as_set=True)}
+
+    def __init__(self, config_name):
+        self.config_name = config_name
+
+    def __call__(self, key, typus: type = str):
+        return self.retriev_map.get(typus)(section=self.config_name, option=key)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(config_name={self.config_name})"
+
+
+def minute_to_second(minutes: int):
+    return minutes * 60
+
+
+def hour_to_second(hours: int):
+    return hours * 60 * 60
+
+
+def day_to_second(days: int):
+    return days * 24 * 60 * 60
+
+
+def datetime_isoformat_to_discord_format(in_data: datetime):
+
+    return in_data.replace(microsecond=0).isoformat()
+
+
+def make_config_name(name):
+    name = split_camel_case_string(name).replace('Cog', '').strip().replace(' ', '_').casefold()
+
+    return name
+
+
+def is_even(number: int):
+    return not number & 1

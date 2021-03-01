@@ -1,6 +1,10 @@
+# * Third Party Imports -->
+# * Third Party Imports --------------------------------------------------------------------------------->
 import pytest
-from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, UnderScore, Cursive, CodeBlock, LineCode, BlockQuote
 
+# * Local Imports --------------------------------------------------------------------------------------->
+# * Local Imports -->
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import Bold, Cursive, LineCode, CodeBlock, BlockQuote, UnderScore
 
 def test_simple_bold():
     bold_text = Bold('test')

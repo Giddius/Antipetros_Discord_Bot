@@ -1,16 +1,130 @@
 [build-system]
-requires = [ "flit_core >=2,<4",]
 build-backend = "flit_core.buildapi"
+requires = ["flit_core >=2,<4"]
+
+# region [flit]
 
 [tool.flit.metadata]
-module = "antipetros_discordbot"
 author = "antistasi_tools"
-home-page = "https://github.com/Giddius/Antipetros_Discord_Bot"
-classifiers = [ "License :: OSI Approved :: MIT License",]
+classifiers = ["License :: OSI Approved :: MIT License"]
 description-file = "README.md"
+home-page = "https://github.com/Giddius/Antipetros_Discord_Bot"
 license = "MIT"
-requires = [ "google_auth_oauthlib==0.4.2", "networkx==2.5", "watchgod==0.6", "matplotlib==3.3.3", "WeasyPrint==52.2", "aiohttp==3.6.3", "pytz==2020.5", "Jinja2==2.11.2", "psutil==5.8.0", "pyfiglet==0.8.post1", "fuzzywuzzy==0.18.0", "async_property==0.2.1", "click==7.1.2", "googletrans==4.0.0rc1", "pdfkit==0.6.1", "dpytest==0.0.22", "graphviz==0.16", "pyowm==3.1.1", "discord==1.0.1", "gidappdata==0.1.1", "gidlogger==0.1.3", "google_api_python_client==1.12.8", "Pillow==8.1.0", "protobuf==3.14.0", "PyQt5==5.15.2", "python-dotenv==0.15.0", "udpy==2.0.0",]
+module = "antipetros_discordbot"
+requires = [
+    "Jinja2==2.11.2",
+    "Pillow==8.1.0",
+    "WeasyPrint==52.2",
+    "aiohttp==3.7.3",
+    "aiosqlite==0.16.1",
+    "antistasi_template_checker==0.1.1",
+    "arrow==0.17.0",
+    "async_property==0.2.1",
+    "asyncstdlib==3.9.0",
+    "autopep8==1.5.5",
+    "beautifulsoup4==4.9.3",
+    "click==7.1.2",
+    "cryptography==3.3.1",
+    "dateparser==1.0.0",
+    "dpytest==0.0.22",
+    "emoji==1.1.0",
+    "fuzzywuzzy==0.18.0",
+    "gidappdata==0.1.13",
+    "gidconfig==0.1.16",
+    "gidlogger==0.1.9",
+    "googletrans==4.0.0rc1",
+    "humanize==3.2.0",
+    "icecream==2.0.0",
+    "marshmallow==3.10.0",
+    "matplotlib==3.3.3",
+    "paramiko==2.7.2",
+    "psutil==5.8.0",
+    "pyfiglet==0.8.post1",
+    "python_dotenv==0.15.0",
+    "python-magic",
+    "pytz==2020.5",
+    "tldextract==3.1.0",
+    "watchgod==0.6",
+    "webdavclient3==3.14.5",
+    "discord-flags==2.1.1",
+]
 
 [tool.flit.scripts]
 antipetrosbot = "antipetros_discordbot.__main__:cli"
-new_soldier_class = "antipetros_discordbot.dev_tools.cli.new_command_staff_soldier:new_command_staff_soldier"
+
+
+[tool.flit.sdist]
+exclude = [
+    "antipetros_discordbot/init_userdata/data_pack",
+    "antipetros_discordbot/init_userdata/*.trigger",
+    "antipetros_discordbot/dev_tools_and_scripts",
+    "misc",
+    "temp",
+    "docs",
+    "tools",
+    ".pydeps",
+    ".isort.cfg",
+    "tests",
+    ".gitattributes",
+    ".gitignore",
+    ".editorconfig",
+    "antipetros_discordbot/utility/gidsql/_utils.archive",
+    "designer_files",
+    "art",
+    "dev_tools_and_scripts",
+    "pytest_coverage",
+]
+
+# endregion [flit]
+# region [autopep8]
+[tool.autopep8]
+ignore = ["E402", "E501"]
+max-line-length = 250
+
+# endregion [autopep8]
+# region [isort]
+[tool.isort]
+balanced_wrapping = true
+ensure_newline_before_comments = true
+group_by_package = true
+import_heading_firstparty = "* Local Imports --------------------------------------------------------------------------------------->"
+import_heading_gid = "* Gid Imports ----------------------------------------------------------------------------------------->"
+import_heading_pyqt = "* PyQt5 Imports --------------------------------------------------------------------------------------->"
+import_heading_stdlib = "* Standard Library Imports ---------------------------------------------------------------------------->"
+import_heading_thirdparty = "* Third Party Imports --------------------------------------------------------------------------------->"
+known_gid = ["gidtools", "gidlogger", "gidqtutils", "gidviewmodels"]
+known_pyqt = ["PyQt5"]
+length_sort = true
+line_length = 200
+lines_after_imports = 1
+sections = [
+    "FUTURE",
+    "STDLIB",
+    "THIRDPARTY",
+    "PYQT",
+    "GID",
+    "FIRSTPARTY",
+    "LOCALFOLDER",
+]
+
+# endregion [isort]
+# region [pytest]
+[tool.pytest.ini_options]
+addopts = "-rP -vv --durations=0 --show-capture=all --color=auto --code-highlight=yes"
+
+# endregion [pytest]
+# region [gidvenv]
+[tool.gidvenv.base_venv_settings]
+clear = true
+symlinks = true
+system_site_packages = false
+with_pip = false
+# prompt=
+upgrade_deps = false
+
+[tool.gidvenv.settings]
+extra_install_instructions = []
+manipulate_script = true
+pyclean_before = true
+verbose = false
+# endregion [gidvenv]

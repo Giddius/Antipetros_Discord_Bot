@@ -1,5 +1,4 @@
-D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Gid_Vscode_Wrapper,gid_vscode_wrapper
-D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\gidtools_utils,gidtools
-D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\GidConfig,gidconfig
 D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\GidAppData,gidappdata
+D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\GidConfig,gidconfig
 D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\gidlogger_rep,gidlogger
+D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\gidtools_utils,gidtools

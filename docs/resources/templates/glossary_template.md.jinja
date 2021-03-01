@@ -1,0 +1,12 @@
+{% import 'macros/glossary_item.md.jinja' as glossary_item_macros %}
+{% set macro_name =  dynamic_macro_name + '_glossary_entry' %}
+# Glossary
+
+---
+
+{% for item_name, item_description in glossary_terms.items() -%}
+{{ glossary_item_macros[macro_name](item_name, item_description, key_formats,value_formats) }}
+
+---
+
+{% endfor -%}

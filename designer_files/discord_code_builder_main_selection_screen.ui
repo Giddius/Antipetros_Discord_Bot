@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainSelectionScreen</class>
+ <widget class="QWidget" name="MainSelectionScreen">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="QPushButton" name="new_cog_builder_pushButton">
+     <property name="text">
+      <string>New Cog Builder</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QPushButton" name="new_support_builder_pushButton">
+     <property name="text">
+      <string>New Support Builder</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../antipetros_discordbot/dev_tools_and_scripts/gui/ressources/discord_code_builder_ressources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

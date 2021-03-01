@@ -1,0 +1,1 @@
+from .command_replacement import auto_meta_info_command
