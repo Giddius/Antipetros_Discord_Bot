@@ -34,3 +34,4 @@ pytz
 tldextract
 watchgod
 webdavclient3
+python-a2s

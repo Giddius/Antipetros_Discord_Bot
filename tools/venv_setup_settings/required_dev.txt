@@ -1,4 +1,4 @@
---force-reinstall numpy==1.19.3
+numpy==1.19.3
 PyGithub
 PyLaTeX
 PyQt5-stubs
@@ -36,3 +36,4 @@ python-magic
 stdlib-list
 tomlkit
 vulture
+rich

@@ -160,18 +160,17 @@ class LogFile:
         client = Client(get_nextcloud_options())
         with TemporaryDirectory() as tempdir:
             new_path = pathmaker(tempdir, os.path.basename(self.path))
-            loop = get_event_loop()
-            await loop.run_in_executor(THREADPOOL, client.download_sync, self.path, new_path)
+            await asyncio.to_thread(client.download_sync, self.path, new_path)
 
-            content = await loop.run_in_executor(THREADPOOL, readit, new_path)
+            content = asyncio.to_thread(readit, new_path)
 
             return content
 
     async def download(self, save_dir):
         client = Client(get_nextcloud_options())
         new_path = pathmaker(save_dir, os.path.basename(self.path))
-        loop = get_event_loop()
-        await loop.run_in_executor(THREADPOOL, client.download_sync, self.path, new_path)
+
+        await asyncio.to_thread(client.download_sync, self.path, new_path)
 
         return new_path
 
@@ -217,7 +216,6 @@ class LogServer:
     log_item = LogFile
 
     def __init__(self, base_folder: str, name: str):
-        self.loop = get_event_loop()
         self.base_folder = base_folder
         self.name = name
         self.sub_folder = None
@@ -227,23 +225,25 @@ class LogServer:
         client = Client(get_nextcloud_options())
         log.debug("collecting initial data for LogServer '%s'", self.name)
         self.sub_folder = {}
-        sub_folder_names = await self.loop.run_in_executor(THREADPOOL, client.list, self.path)
+        sub_folder_names = await asyncio.to_thread(client.list, self.path)
         for sub_folder_name in sub_folder_names:
             sub_folder_name = sub_folder_name.strip('/')
             if sub_folder_name != self.name:
                 self.sub_folder[sub_folder_name] = sorted(await self.get_file_infos(sub_folder_name), key=lambda x: x.modified, reverse=True)
+            await asyncio.sleep(0)
         log.info(self.path + ' collected subfolder: ' + ', '.join([key for key in self.sub_folder]))
 
     async def get_file_infos(self, sub_folder_name, raw=False):
         client = Client(get_nextcloud_options())
         _out = []
-        for file_data in await self.loop.run_in_executor(THREADPOOL, partial(client.list, f"{self.path}/{sub_folder_name}", get_info=True)):
+        for file_data in await asyncio.to_thread(partial(client.list, f"{self.path}/{sub_folder_name}", get_info=True)):
             if not file_data.get('path').endswith('/'):
                 if raw is True:
                     _out.append(file_data)
                 else:
                     item = self.log_item(**file_data)
                     _out.append(item)
+            await asyncio.sleep(0)
         return _out
 
     async def get_newest_log_file(self, sub_folder, amount):

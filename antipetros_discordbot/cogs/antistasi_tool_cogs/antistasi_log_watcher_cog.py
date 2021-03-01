@@ -254,13 +254,13 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     async def get_base_structure(self):
         nextcloud_client = Client(get_nextcloud_options())
-        for folder in await self.bot.execute_in_thread(nextcloud_client.list, self.nextcloud_base_folder):
+        for folder in await asyncio.to_thread(nextcloud_client.list, self.nextcloud_base_folder):
             folder = folder.strip('/')
             if folder != self.nextcloud_base_folder and '.' not in folder:
                 folder_item = LogServer(self.nextcloud_base_folder, folder)
                 await folder_item.get_data()
                 self.server[folder.casefold()] = folder_item
-            await asyncio.sleep(1)
+            await asyncio.sleep(0)
         log.info(str(self) + ' collected server names: ' + ', '.join([key for key in self.server]))
 
     async def notify_oversized_log(self, log_item):
