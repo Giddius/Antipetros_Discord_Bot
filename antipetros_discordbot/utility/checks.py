@@ -245,6 +245,15 @@ async def check_after_invoke(instance, ctx):
     log.info("this is the instance: '%s'", instance)
     await ctx.message.delete()
 
+
+def only_giddi():
+    async def predicate(ctx: commands.Context):
+        if ctx.author.id == ctx.bot.creator.id:
+            return True
+        return False
+    return commands.check(predicate)
+
+
 # region[Main_Exec]
 if __name__ == '__main__':
     pass

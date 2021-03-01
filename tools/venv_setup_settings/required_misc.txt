@@ -28,10 +28,10 @@ paramiko
 psutil
 pyfiglet
 python-Levenshtein
+python-a2s
 python_dotenv
 python_magic_bin
 pytz
 tldextract
 watchgod
 webdavclient3
-python-a2s

@@ -179,7 +179,7 @@ class CommunityServerInfo:
             port = port - 2
         try:
             check_data = await a2s.ainfo((self.address, port), timeout=self.timeout)
-            writejson(dict(check_data), f"{self.name}.json")
+
             self.query_port = port
             log.debug("query port for %s found as %s", self.name, self.query_port)
             return

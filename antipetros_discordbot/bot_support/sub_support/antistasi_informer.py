@@ -108,6 +108,9 @@ class AntistasiInformer(SubSupportBase):
     async def role_from_string(self, role_name):
         return {role.name.casefold(): role for role in self.antistasi_guild.roles}.get(role_name.casefold())
 
+    async def retrieve_antistasi_role(self, role_id: int):
+        return {role.id: role for role in self.antistasi_guild.roles}.get(role_id)
+
     async def all_members_with_role(self, role: str):
         role = await self.role_from_string(role)
         _out = []
