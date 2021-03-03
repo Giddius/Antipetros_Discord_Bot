@@ -134,6 +134,8 @@ class EmbedBuilder(SubSupportBase):
             return self.datetime_parser(timestamp)
         elif isinstance(timestamp, int):
             return self.datetime_int_parser(timestamp)
+        elif timestamp is None:
+            return Embed.Empty
         else:
             raise TypeError("'timestamp' has to be either of type 'datetime', 'str' or 'int' not '{type(timestamp)}'")
 

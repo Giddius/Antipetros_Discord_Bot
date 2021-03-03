@@ -56,9 +56,7 @@ def when_mentioned_or_roles_or():
     role_exceptions = BASE_CONFIG.retrieve('prefix', 'invoke_by_role_exceptions', typus=List[str], direct_fallback=[])
 
     def inner(bot, msg):
-        ic(all_prefixes)
         extra = [f"{prfx} " for prfx in all_prefixes]
-        ic(extra)
         r = []
         if BASE_CONFIG.retrieve('prefix', 'invoke_by_role_and_mention', typus=bool, direct_fallback=True):
             r = when_mentioned(bot, msg)
@@ -66,7 +64,6 @@ def when_mentioned_or_roles_or():
                 if role.name not in role_exceptions and role.name.casefold() not in role_exceptions:  # and role.mentionable is True:
                     r += [role.mention + ' ']
         absolutely_all_prefixes = list(set(r + extra))
-        ic(absolutely_all_prefixes)
         return absolutely_all_prefixes
 
     return inner
