@@ -73,7 +73,6 @@ class AntiPetrosBot(commands.Bot):
 
 # endregion[ClassAttributes]
 
-
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
@@ -98,7 +97,6 @@ class AntiPetrosBot(commands.Bot):
         self.on_command_error = None
         self.github_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot"
         self.used_startup_message = None
-
 
         self.support.recruit_subsupports()
         user_not_blacklisted(self, log)
@@ -248,14 +246,12 @@ class AntiPetrosBot(commands.Bot):
             for index, role in enumerate(self.bot_member.roles):
                 if index != 0:
                     self.all_bot_roles.append(role)
-        self.command_prefix = BASE_CONFIG.get('prefix', 'command_prefix')
-        if BASE_CONFIG.getboolean('prefix', 'invoke_by_role_and_mention') is True:
-            self.command_prefix = when_mentioned_or_roles_or(BASE_CONFIG.get('prefix', 'command_prefix'))
+
+        self.command_prefix = when_mentioned_or_roles_or()
 
         AntiPetrosBot.creator = self.creator._replace(**{'member_object': await self.retrieve_antistasi_member(self.creator.id), 'user_object': await self.fetch_user(self.creator.id)})
         os.environ['BOT_CREATOR_NAME'] = self.creator.name
         os.environ['BOT_CREATOR_ID'] = str(self.creator.id)
-
 
     async def _start_sessions(self):
         if self.aio_request_session is None:

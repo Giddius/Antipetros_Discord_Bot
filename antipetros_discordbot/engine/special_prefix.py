@@ -6,11 +6,12 @@ Contains custom dynamic invokation prefix implementations.
 
 # * Third Party Imports -->
 # * Third Party Imports --------------------------------------------------------------------------------->
-from discord.ext.commands import when_mentioned
-from typing import Union
+from discord.ext.commands import when_mentioned, when_mentioned_or
+from typing import Union, List, Tuple, Set, Dict
 # * Gid Imports ----------------------------------------------------------------------------------------->
 # * Gid Imports -->
 import gidlogger as glog
+from icecream import ic
 
 # * Local Imports --------------------------------------------------------------------------------------->
 # * Local Imports -->
@@ -29,7 +30,7 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 # endregion[Logging]
 
 
-def when_mentioned_or_roles_or(prefixes: Union[str, list] = None):
+def when_mentioned_or_roles_or():
     """
     An alternative to the standard `when_mentioned_or`.
 
@@ -50,20 +51,22 @@ def when_mentioned_or_roles_or(prefixes: Union[str, list] = None):
         `callable`: the dynamic function
     """
 
-    prefixes = BASE_CONFIG.getlist('prefix', 'command_prefix') if prefixes is None else prefixes
-    role_exceptions = BASE_CONFIG.getlist('prefix', 'invoke_by_role_exceptions')
+    config_set_prefixes = BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])
+    all_prefixes = list(set(config_set_prefixes))
+    role_exceptions = BASE_CONFIG.retrieve('prefix', 'invoke_by_role_exceptions', typus=List[str], direct_fallback=[])
 
     def inner(bot, msg):
-        extra = []
-        if isinstance(prefixes, str):
-            extra.append(prefixes)
-        elif isinstance(prefixes, list):
-            extra += prefixes
-
-        r = when_mentioned(bot, msg)
-        for role in bot.all_bot_roles:
-            if role.name not in role_exceptions and role.name.casefold() not in role_exceptions:  # and role.mentionable is True:
-                r += [role.mention + ' ']
-        return r + extra
+        ic(all_prefixes)
+        extra = [f"{prfx} " for prfx in all_prefixes]
+        ic(extra)
+        r = []
+        if BASE_CONFIG.retrieve('prefix', 'invoke_by_role_and_mention', typus=bool, direct_fallback=True):
+            r = when_mentioned(bot, msg)
+            for role in bot.all_bot_roles:
+                if role.name not in role_exceptions and role.name.casefold() not in role_exceptions:  # and role.mentionable is True:
+                    r += [role.mention + ' ']
+        absolutely_all_prefixes = list(set(r + extra))
+        ic(absolutely_all_prefixes)
+        return absolutely_all_prefixes
 
     return inner
