@@ -20,10 +20,11 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 # * Local Imports -->
-from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writeit, writejson
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writeit, writejson, bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_SECTION
 from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.general_decorator import debug_timing_print
 
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
@@ -392,3 +393,20 @@ def make_config_name(name):
 
 def is_even(number: int):
     return not number & 1
+
+
+def pretty_md_date_string(in_datetime: datetime, dt_format: str = None):
+    dt_format = STANDARD_DATETIME_FORMAT if dt_format is None else dt_format
+    return dedent(f"""
+                    ```fix
+                    {in_datetime.strftime(dt_format)}
+                    ```
+                    """).strip()
+
+
+def pretty_md_size_string(in_size: int):
+    return dedent(f"""
+                    ```css
+                    {bytes2human(in_size, True)}
+                    ```
+                    """).strip()

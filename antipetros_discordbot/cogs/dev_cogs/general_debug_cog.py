@@ -23,7 +23,7 @@ from icecream import ic
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, pretty_md_date_string
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, check_after_invoke, only_giddi
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson
@@ -219,7 +219,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
         embed = message.embeds[0]
         embed_dict = embed.to_dict()
-        writejson(embed_dict, pathmaker(APPDATA["saved_embeds"], f"{message.id}.json"))
+        writejson(embed_dict, pathmaker(APPDATA["temp_files"], f"{message.id}.json"))
         await ctx.send(f'saved embed from message {message.id}')
 
     @auto_meta_info_command()
@@ -423,6 +423,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     @ auto_meta_info_command(enabled=True)
     async def check_reload_mech(self, ctx):
+        await ctx.send(pretty_md_date_string(datetime.utcnow()))
         await self.bot.reload_cog_from_command_name("flip_coin")
 
     @auto_meta_info_command(enabled=True)

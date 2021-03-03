@@ -13,7 +13,6 @@ click
 cryptography
 dateparser
 discord-flags
-dpytest
 emoji
 fuzzywuzzy
 gidappdata
@@ -21,16 +20,14 @@ gidconfig
 gidlogger
 googletrans
 humanize
-icecream
 marshmallow
 matplotlib
 paramiko
 psutil
 pyfiglet
-python-Levenshtein
 python-a2s
-python_dotenv
-python_magic_bin
+python-dotenv
+python-magic
 pytz
 tldextract
 watchgod

@@ -162,8 +162,9 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     async def _clear_other_emojis(self, topic_item):
         pass
 
-    async def _post_new_topic(self, topic_item, color=None):
-        embed_data = await self.bot.make_generic_embed(**topic_item.embed_data, fields=[self.bot.field_item(name="Subscribe!", value=f"press {topic_item.emoji}"), self.bot.field_item(name='Subscriber Role', value=topic_item.role.mention), self.bot.field_item(name="Created by", value=topic_item.creator.mention)], color=color)
+    async def _post_new_topic(self, topic_item, color=None, image=None):
+        image = 'link' if image is None else image
+        embed_data = await self.bot.make_generic_embed(**topic_item.embed_data, fields=[self.bot.field_item(name="Subscribe!", value=f"press {topic_item.emoji}"), self.bot.field_item(name='Subscriber Role', value=topic_item.role.mention), self.bot.field_item(name="Created by", value=topic_item.creator.mention)], color=color, thumbnail=image)
         msg = await self.subscription_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
         await msg.add_reaction(topic_item.emoji)
         topic_item.message = msg
@@ -237,6 +238,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             content = readit(path)
             name = None
             emoji = None
+            image = None
             color = 'random'
             for line in content.splitlines():
                 if line.casefold().startswith('name'):
@@ -245,6 +247,8 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                     emoji = line.split('=')[-1].strip()
                 elif line.casefold().startswith('color'):
                     color = line.split('=')[-1].strip()
+                elif line.casefold().startswith('image'):
+                    image = line.split('=')[-1].strip()
             desc_start = content.casefold().find('\ndescription')
             if desc_start == -1:
                 description = None
@@ -255,7 +259,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await self._create_topic_role(item)
         # await ctx.send(f"role {item.role_name} created, mentionable as {item.role.mention}", allowed_mentions=discord.AllowedMentions.none())
         # await ctx.send("creating new embed")
-        await self._post_new_topic(item, color)
+        await self._post_new_topic(item, color, image)
         # await ctx.send("serializing topic data")
         await self._add_topic_data(item)
         self.topics.append(item)

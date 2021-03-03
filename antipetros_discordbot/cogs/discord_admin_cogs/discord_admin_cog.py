@@ -5,8 +5,9 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from textwrap import dedent
+from datetime import datetime, timedelta
 # * Third Party Imports --------------------------------------------------------------------------------->
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
@@ -78,6 +79,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+
         glog.class_init_notification(log, self)
 
 
@@ -90,7 +92,6 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -100,6 +101,10 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
+
+# region [Loops]
+
+# endregion[Loops]
 
     @ auto_meta_info_command(enabled=True)
     @owner_or_admin()

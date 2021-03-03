@@ -4,20 +4,21 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from textwrap import dedent
 import random
 import asyncio
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
+
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name, seconds_to_pretty
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin, only_giddi
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
@@ -78,12 +79,13 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-
+        self.rate_limit_notification_paused_until = None
+        self.rate_limit_notification_enabled = True
         glog.class_init_notification(log, self)
 # region [Setup]
 
     async def on_ready_setup(self):
-
+        self.check_if_rate_limited_loop.start()
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -92,6 +94,30 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
 
 # endregion [Setup]
+
+
+# region [Loops]
+
+
+    @tasks.loop(minutes=1)
+    async def check_if_rate_limited_loop(self):
+        if self.bot.is_ws_ratelimited() is True:
+            log.warning("Bot %s IS currently rate limited", self.bot.display_name)
+            if self.rate_limit_notification_enabled is True and (self.rate_limit_notification_paused_until is None or datetime.utcnow() >= self.rate_limit_notification_paused_until):
+                embed_data = await self.bot.make_generic_embed(title='Rate Limit Warning', description=f"{self.bot.mention} is currently rate limited", thumbnail="warning")
+                await self.bot.message_creator(**embed_data)
+                self.rate_limit_notification_paused_until = datetime.utcnow() + self.rate_limit_notification_paused_interval
+        else:
+            log.debug("Bot %s is currently NOT rate limited", self.bot.display_name)
+
+# endregion[Loops]
+
+
+# region [Properties]
+
+    @property
+    def rate_limit_notification_paused_interval(self):
+        return timedelta(minutes=COGS_CONFIG.retrieve(self.config_name, 'rate_limit_notification_pause_minutes', typus=int, direct_fallback=5))
 
     @property
     def alive_phrases(self):
@@ -107,6 +133,8 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         if os.path.isfile(self.who_is_trigger_phrases_file) is False:
             writejson(std_phrases, self.who_is_trigger_phrases_file)
         return loadjson(self.who_is_trigger_phrases_file)
+
+# endregion[Properties]
 
     @commands.Cog.listener(name='on_message')
     async def who_is_this_bot_listener(self, msg: discord.Message):
@@ -127,6 +155,22 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
                                                            image=image,
                                                            thumbnail=None)
             await msg.reply(**embed_data, delete_after=60)
+
+    @auto_meta_info_command(enabled=True)
+    @only_giddi()
+    async def disable_rate_limit_notification(self, ctx: commands.Context):
+        if self.rate_limit_notification_enabled is False:
+            await ctx.send('rate limit notifications are already disabled', delete_after=60)
+            return
+        self.rate_limit_notification_enabled = False
+        await ctx.send('Disabled rate limit notifications', delete_after=60)
+
+    @auto_meta_info_command(enabled=True)
+    @only_giddi()
+    async def chanege_rate_limit_notifications_interval(self, ctx: commands.Context, new_interval: int):
+        COGS_CONFIG.set(self.config_name, "rate_limit_notification_pause_minutes", new_interval)
+        COGS_CONFIG.save()
+        await ctx.send(f'rate limit notification interval was changed to {new_interval} min', delete_after=60)
 
     @auto_meta_info_command(enabled=True)
     @owner_or_admin()
@@ -190,7 +234,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         creator_mention = self.bot.creator.member_object.mention
         seperator = '━' * 25
         pre_embed = await self.bot.make_generic_embed(title='ANNOUNCEMENT\nfrom\n~~ the Party Leadership ~~\nthe Antistasi Leadership',
-                                                      description="\n***Please direct your eyes to the mandatory Telescreens and await the announcement***",
+                                                      description="\n> ***Please direct your eyes to the mandatory Telescreens and await the announcement***",
                                                       image="https://i.postimg.cc/zJWWVMBj/bot-announcement.png",
                                                       footer=None)
 
@@ -202,20 +246,19 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
                                                        image=self.bot.portrait_url,
                                                        thumbnail=None,
                                                        fields=[self.bot.field_item(name=ZERO_WIDTH, value=ZERO_WIDTH, inline=False),
-                                                               self.bot.field_item(name=f'**USER HAS JOINED YOUR CHANNEL**\n{ZERO_WIDTH}', value=f'Just call me {self.bot.user.mention}\n{ZERO_WIDTH}', inline=False),
+                                                               self.bot.field_item(name=f'**USER HAS JOINED YOUR CHANNEL**\n{ZERO_WIDTH}', value=f'> Just call me {self.bot.user.mention}\n{ZERO_WIDTH}', inline=False),
                                                                self.bot.field_item(
-                                                                   name=f'**NEW RULES**\n{ZERO_WIDTH}', value=f"**⍟** No more pro or contra Furry fighting, or Bertha puts on her BanBear Fursuite\n{seperator}\n**⍟** If you spam my commands you get Blacklisted!\n{seperator}\n**⍟** Try to break me, but if you succede, let {creator_mention} know\n{seperator}\n**⍟** Not everything in this announcement is serious, but you don't know what is and what is not\n{seperator}\n{ZERO_WIDTH}", inline=False),
+                                                                   name=f'**NEW RULES**\n{ZERO_WIDTH}', value=f"```diff\n+ No more pro or contra Furry fighting, or Bertha puts on her BanBear Fursuite\n```\n```diff\n- If you spam my commands you get Blacklisted!\n```\n```diff\n+ Try to break me, but if you succede, let Giddi know\n```\n```diff\n- Not everything in this announcement is serious, but you don't know what is and what is not\n```\n{ZERO_WIDTH}", inline=False),
                                                                self.bot.field_item(name=f'**WHO CREATED THIS CRIME AGAINST HUMANITY?**\n{ZERO_WIDTH}',
-                                                                                   value=f"Direct the angry Mob to {creator_mention}" + f"\n{ZERO_WIDTH}", inline=False),
+                                                                                   value=f"> Direct the angry Mob to {creator_mention}" + f"\n{ZERO_WIDTH}", inline=False),
                                                                self.bot.field_item(name=f"**YOU HAVE SOMETHING TO SAY ABOUT ME?**\n{ZERO_WIDTH}",
-                                                                                   value=f"Send {creator_mention} a DM or ping him\n*(he is completely ok with getting pinged)*\ndon't hesitate, you are helping!\n{ZERO_WIDTH}", inline=False),
+                                                                                   value=f"> Send {creator_mention} a DM or ping him\n> *(he is completely ok with getting pinged)*\n> don't hesitate, you are helping!\n{ZERO_WIDTH}", inline=False),
                                                                self.bot.field_item(name=f'**HOW CAN WE INTERACT WITH YOU?**\n{ZERO_WIDTH}',
-                                                                                   value=f'Just use\n\n```fix\n@{self.bot.display_name} [COMMAND]\n```\n\nand\n\n```fix\n@{self.bot.display_name} help\n```\nfor info.\n{ZERO_WIDTH}'),
-                                                               self.bot.field_item(name=f"**CAN I SEE THE CODE?**\n{ZERO_WIDTH}", value=f"{self.bot.github_url}\n{ZERO_WIDTH}", inline=False),
-                                                               self.bot.field_item(name=f"**I WANT TO ALSO WORK ON THIS BOT**\n{ZERO_WIDTH}", value=f"Again, {creator_mention}\n{ZERO_WIDTH}", inline=False),
-                                                               self.bot.field_item(name=ZERO_WIDTH, value=ZERO_WIDTH, inline=False)],
+                                                                                   value=f'> Just use\n\n```fix\n@{self.bot.display_name} [COMMAND]\n```\n\n> and\n\n```fix\n@{self.bot.display_name} help\n```\n> for info.\n{ZERO_WIDTH}'),
+                                                               self.bot.field_item(name=f"**CAN I SEE THE CODE?**\n{ZERO_WIDTH}", value=f"[🔗 __**AntiPetros Github Repo**__]({self.bot.github_url})\n{ZERO_WIDTH}", inline=False),
+                                                               self.bot.field_item(name=f"**I WANT TO ALSO WORK ON THIS BOT**\n{ZERO_WIDTH}", value=f"> Again, {creator_mention}\n{ZERO_WIDTH}", inline=False)],
                                                        footer=None,
-                                                       timestamp=datetime.strptime("6666.06.06 06:06", "%Y.%m.%d %H:%M"))
+                                                       timestamp=datetime.strptime("0666.06.06 06:06", "%Y.%m.%d %H:%M"))
         file = discord.File(APPDATA['announcement.mp3'])
         await channel.send(**pre_embed)
         async with ctx.typing():
@@ -258,6 +301,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         return self.qualified_name
 
     def cog_unload(self):
+        self.check_if_rate_limited_loop.stop()
         log.debug("Cog '%s' UNLOADED!", str(self))
 
 # region[Main_Exec]
