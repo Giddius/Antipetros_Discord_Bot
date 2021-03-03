@@ -1,6 +1,6 @@
+--force-reinstall numpy==1.19.3
 PyGithub
 PyLaTeX
-PyQt5-stubs
 autopep8
 commonmark
 docstr-coverage
@@ -11,13 +11,11 @@ icecream
 invoke
 ipython
 isort
-jupyter
-language_tool_python
+language-tool-python
 markdown2
 matplotlib
 mdutils
 memory-profiler
-numpy==1.19.3
 objectgraph
 optimize-images
 pandocfilters
@@ -32,7 +30,6 @@ pydoc-markdown
 pypandoc
 pyqt5-tools
 pyspellchecker
-python-magic
 rich
 stdlib-list
 tomlkit

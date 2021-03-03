@@ -177,17 +177,9 @@ class LogFile:
     async def update(self, size: Union[str, int], modified: Union[datetime, str], first: bool = False):
         if isinstance(size, str):
             size = int(size)
+
         if isinstance(modified, str):
             modified = date_parse(modified)
-        # if first is True:
-            # current_time = datetime.utcnow()
-            # log.debug(ic.format(self.path))
-            # log.debug(ic.format(current_time.strftime("%Y-%m-%d %H:%M:%S")))
-            # log.debug(ic.format(modified.strftime("%Y-%m-%d %H:%M:%S")))
-            # log.debug(ic.format(self.modified.strftime("%Y-%m-%d %H:%M:%S")))
-            # log.debug(ic.format(size))
-            # log.debug(ic.format(self.size))
-            # log.debug('#' * 50 + '\n\n')
 
         if self.size != size or self.modified < modified:
             self.size = size
@@ -220,6 +212,7 @@ class LogServer:
         self.name = name
         self.sub_folder = None
         self.path = f"{self.base_folder}/{self.name}"
+        self.old_files = []
 
     async def get_data(self):
         client = Client(get_nextcloud_options())
@@ -230,6 +223,9 @@ class LogServer:
             sub_folder_name = sub_folder_name.strip('/')
             if sub_folder_name != self.name:
                 self.sub_folder[sub_folder_name] = sorted(await self.get_file_infos(sub_folder_name), key=lambda x: x.modified, reverse=True)
+                self.old_files = list(self.old_files)
+                self.old_files += [log_file.etag for log_file in self.sub_folder[sub_folder_name][2:]]
+                self.old_files = set(self.old_files)
             await asyncio.sleep(0)
         log.info(self.path + ' collected subfolder: ' + ', '.join([key for key in self.sub_folder]))
 
@@ -262,10 +258,11 @@ class LogServer:
         _temp_holder = {}
         for sub_folder_name in self.sub_folder:
             _temp_holder[sub_folder_name] = await self.get_file_infos(sub_folder_name, raw=True)
-            await asyncio.sleep(random.randint(0, 1))
+            await asyncio.sleep(0)
         for sub_folder_name in self.sub_folder:
             for new_log_item_data in _temp_holder[sub_folder_name]:
-                await self.update_log_items(sub_folder_name, **new_log_item_data)
+                if new_log_item_data.get("etag").strip('"') not in self.old_files:
+                    await self.update_log_items(sub_folder_name, **new_log_item_data)
 
             self.sub_folder[sub_folder_name] = sorted(self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True)
             await asyncio.sleep(random.randint(0, 1))
@@ -275,10 +272,11 @@ class LogServer:
         path = '/'.join(path.split('/')[6:])
         target_log_object = None
         for index, log_object in enumerate(self.sub_folder.get(sub_folder_name)):
-            if path == log_object.path:
-                target_log_object = log_object
-                target_index = index
-                break
+            if log_object.etag not in self.old_files:
+                if path == log_object.path:
+                    target_log_object = log_object
+                    target_index = index
+                    break
 
         if target_log_object is not None:
             first = target_index == 0
@@ -287,6 +285,9 @@ class LogServer:
             new_log_item = self.log_item(**data_kwargs)
             self.sub_folder[sub_folder_name].append(new_log_item)
             self.sub_folder[sub_folder_name] = sorted(self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True)
+            self.old_files = list(self.old_files)
+            self.old_files += [log_file.etag for log_file in self.sub_folder[sub_folder_name][2:]]
+            self.old_files = set(self.old_files)
             log.info("!NEW LOG ITEM! added new log_item '%s' to LogServer('%s', '%s')", new_log_item.name, self.name, sub_folder_name)
 
     async def sort(self):
@@ -297,7 +298,7 @@ class LogServer:
         oversized_items = []
         for sub_folder_name, log_items in self.sub_folder.items():
             for log_item in log_items:
-                if log_item.is_over_threshold is True:
+                if log_item.etag is not self.old_files and log_item.is_over_threshold is True:
                     oversized_items.append(log_item)
         return oversized_items
 

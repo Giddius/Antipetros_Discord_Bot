@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 # * Third Party Imports --------------------------------------------------------------------------------->
 import arrow
 import PIL.Image
+import discord
 from pytz import timezone
 from discord import File
 from discord import Color as DiscordColor
@@ -134,6 +135,8 @@ class EmbedBuilder(SubSupportBase):
             return self.datetime_parser(timestamp)
         elif isinstance(timestamp, int):
             return self.datetime_int_parser(timestamp)
+        elif timestamp is None:
+            return Embed.Empty
         else:
             raise TypeError("'timestamp' has to be either of type 'datetime', 'str' or 'int' not '{type(timestamp)}'")
 
@@ -158,6 +161,8 @@ class EmbedBuilder(SubSupportBase):
                 file = File(fp=image_binary, filename=file_name)
                 image = f"attachment://{file_name}"
                 return image, file
+        elif isinstance(image, discord.asset.Asset):
+            return image, None
         elif image is None:
             return None, None
         else:
@@ -247,7 +252,6 @@ class EmbedBuilder(SubSupportBase):
             _out["file"] = files[0]
         elif len(files) > 1:
             _out['files'] = files
-
         return _out
 
     async def save_embed_as_json(self, embed, save_name: str = None):
@@ -269,26 +273,26 @@ class EmbedBuilder(SubSupportBase):
             if method_name.startswith('_embed_recipe_'):
                 self.embed_build_recipes[method_name.replace("_embed_recipe_", "")] = getattr(self, method_name)
 
-    @property
+    @ property
     def standard_embed_symbols(self):
         create_file(self.standard_embed_symbols_file)
         return loadjson(self.standard_embed_symbols_file)
 
-    @property
+    @ property
     def folder_exists(self):
         return os.path.isdir(self.embed_data_folder)
 
     def _ensure_folder_exists(self):
         create_folder(self.embed_data_folder)
 
-    @property
+    @ property
     def default_inline_value(self):
         """
         "default_inline_value": [true or false]
         """
         return loadjson(self.default_embed_data_file).get('default_inline_value')
 
-    @property
+    @ property
     def default_title(self):
         """
         "default_title": ""
@@ -301,7 +305,7 @@ class EmbedBuilder(SubSupportBase):
             _out = _out.replace(replace_marker, replace_value)
         return _out
 
-    @property
+    @ property
     def default_description(self):
         """
         "default_description": ""
@@ -312,14 +316,14 @@ class EmbedBuilder(SubSupportBase):
             _out = _out.replace(replace_marker, replace_value)
         return _out
 
-    @property
+    @ property
     def default_author(self):
         """
         "default_author": {"name": "", "url": "", "icon_url": ""}
         """
         return loadjson(self.default_embed_data_file).get('default_author')
 
-    @property
+    @ property
     def default_footer(self):
         """
 
@@ -328,7 +332,7 @@ class EmbedBuilder(SubSupportBase):
         """
         return loadjson(self.default_embed_data_file).get('default_footer')
 
-    @property
+    @ property
     def default_thumbnail(self):
         """
 
@@ -337,14 +341,14 @@ class EmbedBuilder(SubSupportBase):
         """
         return loadjson(self.default_embed_data_file).get('default_thumbnail')
 
-    @property
+    @ property
     def default_color(self):
         """
         "default_color": ""
         """
         return loadjson(self.default_embed_data_file).get('default_color')
 
-    @property
+    @ property
     def default_timestamp(self):
         """
         optional!
@@ -352,7 +356,7 @@ class EmbedBuilder(SubSupportBase):
         """
         return loadjson(self.default_embed_data_file).get('default_timestamp', datetime.now(tz=timezone("Europe/Berlin")))
 
-    @property
+    @ property
     def default_type(self):
         """
         """

@@ -30,7 +30,7 @@ import pytz
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, pretty_md_date_string, pretty_md_size_string
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -231,9 +231,9 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
                     file = discord.File(file_path)
                     embed_data = await self.bot.make_generic_embed(title=log_item.name,
                                                                    description=f"{log_item.server_name}/{log_item.sub_folder_name}",
-                                                                   fields=[self.bot.field_item(name="__**Size:**__", value=log_item.size_pretty, inline=False),
-                                                                           self.bot.field_item(name="__**Created at:**__", value=log_item.created_pretty, inline=False),
-                                                                           self.bot.field_item(name="__**Last Modified:**__", value=log_item.modified_pretty, inline=False),
+                                                                   fields=[self.bot.field_item(name="__**Size:**__", value=pretty_md_size_string(log_item.size), inline=False),
+                                                                           self.bot.field_item(name="__**Created at:**__", value=pretty_md_date_string(log_item.created), inline=False),
+                                                                           self.bot.field_item(name="__**Last Modified:**__", value=pretty_md_date_string(log_item.modified), inline=False),
                                                                            self.bot.field_item(name="__**Last Modified Local Time:**__", value="SEE TIMESTAMP AT THE BOTTOM", inline=False)],
                                                                    timestamp=log_item.modified,
                                                                    thumbnail='log_file')
@@ -269,8 +269,8 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
         for member in await self.member_to_notify:
             embed_data = await self.bot.make_generic_embed(title="Warning Oversized Log File",
                                                            description=f"Log file `{log_item.name}` from server `{log_item.server_name}` and subfolder `{log_item.sub_folder_name}`, is over the size limit of `{self.size_limit}`",
-                                                           fields=[self.bot.field_item(name="__**Current Size**__", value=log_item.size_pretty),
-                                                                   self.bot.field_item(name="__**Last modified**__", value=log_item.modified_pretty)],
+                                                           fields=[self.bot.field_item(name="__**Current Size**__", value=pretty_md_size_string(log_item.size)),
+                                                                   self.bot.field_item(name="__**Last modified**__", value=pretty_md_date_string(log_item.modified))],
                                                            thumbnail="warning",
                                                            footer=None)
             await member.send(**embed_data)

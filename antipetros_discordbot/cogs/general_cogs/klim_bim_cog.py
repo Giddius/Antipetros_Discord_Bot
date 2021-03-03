@@ -5,6 +5,8 @@
 import os
 import random
 import secrets
+from datetime import datetime
+from typing import List, Set, Dict, Tuple, Union
 import asyncio
 from urllib.parse import quote as urlquote
 from textwrap import dedent
@@ -12,6 +14,7 @@ from textwrap import dedent
 from discord.ext import commands
 from discord import AllowedMentions
 from pyfiglet import Figlet
+import discord
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
@@ -84,11 +87,26 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self.user_info_transform_table = {'id': lambda x: f"```py\n{x}\n```",
+                                          'top_role': lambda x: f"> ♔ {x.mention} ♔",
+                                          'roles': lambda x: '\n'.join(f"> ⍟ {role.mention}" for role in x),
+                                          'created_at': lambda x: f"```fix\n{x.strftime(self.bot.std_date_time_format)}\n```",
+                                          'joined_at': lambda x: f"```fix\n{x.strftime(self.bot.std_date_time_format)}\n```",
+                                          'raw_status': lambda x: f'> {x.title()}',
+                                          'public_flags': lambda x: '```diff\n' + '\n'.join(f"- {name} = {' '*(25 - len(name))}{value}" if value is False else f"+ {name} = {' '*(25 - len(name))}{value}" for name, value in x) + '\n```',
+                                          'premium_since': lambda x: '> ⚡ Boosting the Discord Guild since ⚡\n' + f"```fix\n{x.strftime(self.bot.std_date_time_format)}\n```" if x is not None else '🌧️ Not boosting the Discord Guild 🌧️',
+                                          'activity': lambda x: f"> {x}",
+                                          'guild_permissions': lambda x: '```ini\n' + '\n'.join(f"{name} = {' '*(22-len(name))}{value}" for name, value in x if value is True) + '\n```'}
+
         glog.class_init_notification(log, self)
 
 # endregion [Init]
 
 # region [Properties]
+
+    @property
+    def user_info_to_show(self):
+        return COGS_CONFIG.retrieve(self.config_name, 'user_info_attributes', typus=List[str], direct_fallback=['id', 'top_role', 'roles', 'created_at', 'joined_at', 'premium_since', 'raw_status', 'activity', 'guild_permissions'])
 
 
 # endregion [Properties]
@@ -219,6 +237,60 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         new_text = figlet.renderText(text.upper())
         await ctx.send(f"```fix\n{new_text}\n```")
 
+    @auto_meta_info_command(enabled=get_command_enabled("show_user_info"))
+    @allowed_channel_and_allowed_role_2(False)
+    async def show_user_info(self, ctx, user: discord.Member = None):
+        user = ctx.author if user is None else user
+        embed_data = await self._user_info_to_embed(user)
+        await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+    @auto_meta_info_command(enabled=get_command_enabled("make_hyperlink"))
+    @allowed_channel_and_allowed_role_2(False)
+    async def make_hyperlink(self, ctx: commands.Context, link: str, *, link_text: str):
+        embed_data = await self.bot.make_generic_embed(title=discord.Embed.Empty, description=f"[🔗 __**{link_text}**__]({link})\n{ZERO_WIDTH}\n{ZERO_WIDTH}", timestamp=None, thumbnail=None)
+        await ctx.send(**embed_data)
+        await ctx.message.delete()
+
+    @auto_meta_info_command(enabled=get_command_enabled("am_i_beautiful"), aliases=['am-I-beautiful?'])
+    @allowed_channel_and_allowed_role_2(False)
+    async def ask_if_beautiful(self, ctx: commands.Context):
+        beholder_images = ["https://static.wikia.nocookie.net/forgottenrealms/images/2/2c/Monster_Manual_5e_-_Beholder_-_p28.jpg/revision/latest?cb=20200313153220",
+                           "https://static.wikia.nocookie.net/forgottenrealms/images/6/66/Beholder_-_Scott_M._Fischer.jpg/revision/latest?cb=20200226103050",
+                           "https://i.pinimg.com/originals/68/2d/69/682d69829f55202a0aa62db643b748fe.jpg",
+                           "https://static.giga.de/wp-content/uploads/2016/03/shutterstock_1884419721.jpg"]
+        b_image = random.choice(beholder_images)
+
+        embed_data = await self.bot.make_generic_embed(title='That is for me to decide!', image=b_image, thumbnail=None)
+        await ctx.reply(**embed_data)
+
+    @auto_meta_info_command(enabled=get_command_enabled("roll_initiative"))
+    @allowed_channel_and_allowed_role_2(False)
+    async def roll_initiative(self, ctx: commands.Context, *users: discord.Member):
+        initiatives = []
+        for user in users:
+            if user.id == 346595708180103170:
+                initiatives.append((user, -20))
+            else:
+                initiatives.append((user, random.randint(1, 20)))
+        initiatives = sorted(initiatives, key=lambda x: x[1], reverse=True)
+        fields = [self.bot.field_item(name=f"{index+1}. {item[0].display_name}", value=f"🎲 {item[1]}\n⸻⸻⸻⸻⸻", inline=False) for index, item in enumerate(initiatives)]
+        embed_data = await self.bot.make_generic_embed(title="Initiatives", fields=fields, thumbnail="https://www.clipartkey.com/mpngs/m/137-1379967_d20-clipart-critical-success-20-sided-dice-drawing.png")
+        await ctx.send(**embed_data)
+
+    @auto_meta_info_command(enabled=get_command_enabled("longest_user"))
+    @allowed_channel_and_allowed_role_2(False)
+    async def longest_user(self, ctx: commands.Context, typus: str = 'community'):
+        async with ctx.typing():
+            attr = 'created_at' if typus.casefold() == 'discord' else 'joined_at'
+            longest_user = (None, datetime.utcnow())
+            async for user in self.bot.antistasi_guild.fetch_members(limit=None):
+                date = getattr(user, attr)
+                if date < longest_user[1]:
+                    longest_user = (user, date)
+
+        await ctx.send(f"The longest user is {longest_user[0].mention} ({longest_user[0].display_name}) he {attr.replace('_',' ')} `{longest_user[1].strftime(self.bot.std_date_time_format)}`", allowed_mentions=discord.AllowedMentions.none())
+
+
 # endregion [Commands]
 
 # region [DataStorage]
@@ -233,6 +305,30 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
 # region [HelperMethods]
 
+
+    async def _user_info_to_embed(self, user: discord.Member):
+        # seperator = '⸻⸻⸻⸻⸻'
+        master_sort_table = {"id": 0, 'top_role': 4, 'roles': 5, 'premium_since': 3, 'created_at': 1, 'joined_at': 2, 'raw_status': 6, 'activity': 7, "guild_permissions": 8}
+        seperator = ''
+        fields = []
+        for attr in sorted(self.user_info_to_show, key=master_sort_table.get):
+            name = '__**' + attr.replace('_', ' ').title() + f'**__'
+            value = self.user_info_transform_table.get(attr)(getattr(user, attr))
+            if attr in ["joined_at", 'activity', 'top_role', "created_at", 'activity', "raw_status"]:
+                in_line = True
+            else:
+                in_line = False
+            if attr in ["created_at", "joined_at", "guild_permissions", 'premium_since', 'raw_status', 'activity']:
+                sep = ''
+            else:
+                sep = seperator
+            fields.append(self.bot.field_item(name=name, value=f"{value}\n{sep}", inline=in_line))
+        fields.append(self.bot.field_item(name='On Mobile?', value='📱' if user.is_on_mobile() is True else '💻'))
+        return await self.bot.make_generic_embed(title=ZERO_WIDTH,
+                                                 thumbnail=user.avatar_url,
+                                                 author={"name": user.display_name, 'icon_url': user.avatar_url},
+                                                 fields=fields,
+                                                 footer={'text': 'You want the bot to fetch more or other data? Contact Giddi!'})
 
 # endregion [HelperMethods]
 
