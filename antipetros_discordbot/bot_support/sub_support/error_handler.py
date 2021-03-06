@@ -81,7 +81,8 @@ class ErrorHandler(SubSupportBase):
                                    IsNotTextChannelError: self._handle_not_text_channel,
                                    NotNecessaryDmId: self._handle_not_necessary_dm_id,
                                    NotAllowedChannelError: self._handle_not_allowed_channel,
-                                   NotNecessaryRole: self._handle_not_necessary_role}
+                                   NotNecessaryRole: self._handle_not_necessary_role,
+                                   commands.errors.CommandNotFound: self._handle_command_not_found}
         self.cooldown_data = CoolDownDict()
 
         glog.class_init_notification(log, self)
@@ -117,8 +118,11 @@ class ErrorHandler(SubSupportBase):
 
     async def handle_errors(self, ctx, error):
         error_traceback = '\n'.join(traceback.format_exception(error, value=error, tb=None))
+        log.critical('#' * 10)
+        log.critical(error)
+        log.critical('#' * 10)
         await self.error_handle_table.get(type(error), self._default_handle_error)(ctx, error, error_traceback)
-        if ctx.channel.type is ChannelType.text:
+        if ctx.channel.type is ChannelType.text and ctx.command is not None:
             log.error("Error '%s' was caused by '%s' on the command '%s' with args '%s' and traceback --> %s", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args, error_traceback)
             if self.delete_invoking_messages is True:
                 await ctx.message.delete()
@@ -130,12 +134,17 @@ class ErrorHandler(SubSupportBase):
             await ctx.reply(f'The command had an unspecified __**ERROR**__\n please send {self.bot.creator.member_object.mention} a DM of what exactly you did when the error occured.', delete_after=120, allowed_mentions=discord.AllowedMentions.none())
             await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error), error_traceback=error_traceback))
 
+    async def _handle_command_not_found(self, ctx, error, error_traceback):
+        wrong_command_name = ctx.invoked_with
+        corrected_command_name, corrected_command_aliases = await self.fuzzy_match_command_name(wrong_command_name)
+        await ctx.reply(f"The command `{wrong_command_name}` does not exist!\n\nDid you mean `{corrected_command_name}` with aliases `{', '.join(corrected_command_aliases)}` ?", delete_after=120)
+
     async def _handle_not_necessary_role(self, ctx, error, error_traceback):
         embed_data = await self.bot.make_generic_embed(footer='default_footer', title='Missing Role', thumbnail=self.error_thumbnail, description=await self.transform_error_msg(error.msg), field=[self.bot.field_item(name='Your Roles:', value='\n'.join(role.name for role in ctx.author.roles))])
         await ctx.reply(delete_after=self.delete_reply_after, **embed_data)
 
     async def _handle_not_allowed_channel(self, ctx, error, error_traceback):
-        embed_data = await self.bot.make_generic_embed(footer='default_footer', title='Wrong Channel', thumbnail=self.error_thumbnail, description=await self.transform_error_msg(error.msg))
+        embed_data = await self.bot.make_generic_embed(footer='default_footer', title='Wrong Channel', thumbnail=self.error_thumbnail, description=await self.transform_error_msg(error.msg), image='bertha')
         await ctx.reply(delete_after=self.delete_reply_after, **embed_data)
 
     async def _handle_not_necessary_dm_id(self, ctx, error, error_traceback):
@@ -211,6 +220,21 @@ class ErrorHandler(SubSupportBase):
             embed.set_footer(text=f'to get a list of all commands use:\n@AntiPetros {self.bot.help_invocation}\n{ZERO_WIDTH}\n{ZERO_WIDTH}')
 
         return embed
+
+    async def commands_and_alias_mapping(self):
+        _out = {}
+        for command in self.bot.commands:
+            _out[command.name] = list(command.aliases)
+        return _out
+
+    async def fuzzy_match_command_name(self, wrong_name):
+        best = (None, 0)
+        command_and_aliases = await self.commands_and_alias_mapping()
+        for command_name, aliases in command_and_aliases.items():
+            fuzz_match = fuzzprocess.extractOne(wrong_name, [command_name] + aliases, processor=lambda x: x.casefold())
+            if fuzz_match[1] > best[1]:
+                best = (command_name, fuzz_match[1])
+        return best[0], command_and_aliases.get(best[0])
 
     async def if_ready(self):
         log.debug("'%s' sub_support is READY", str(self))

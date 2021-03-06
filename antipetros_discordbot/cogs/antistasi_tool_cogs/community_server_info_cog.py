@@ -267,7 +267,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         self.servers = []
         for name, info in loadjson(self.base_server_info_file).items():
             new_server_holder = CommunityServerInfo(name, **info)
-            await new_server_holder.find_query_port()
+            await new_server_holder.check_is_online()
             if new_server_holder.is_online is True:
                 log.debug("Server %s IS online", new_server_holder.name)
             else:

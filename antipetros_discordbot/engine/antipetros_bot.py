@@ -358,6 +358,14 @@ class AntiPetrosBot(commands.Bot):
         await ctx.send(**embed_data)
 
     @property
+    def all_command_names(self):
+        _out = []
+        for command in self.commands:
+            _out.append(command.name)
+            _out += command.aliases
+        return _out
+
+    @property
     def admins(self):
         role = {role.name.casefold(): role for role in self.antistasi_guild.roles}.get("admin".casefold())
         _out = []
@@ -465,8 +473,14 @@ class AntiPetrosBot(commands.Bot):
 
     async def debug_function(self):
         log.debug("debug function triggered")
-        log.info('no debug function set')
-        # log.debug("debug function finished")
+        _out = []
+        for channel in self.antistasi_guild.channels:
+            if channel.type is discord.ChannelType.text:
+                _out.append({'name': channel.name, 'position': channel.position, 'category': channel.category.name})
+        _out = sorted(_out, key=lambda x: x.get('position'))
+        writejson(_out, 'channel_shit.json')
+        # log.info('no debug function set')
+        log.debug("debug function finished")
 
 # region [SpecialMethods]
 

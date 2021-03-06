@@ -35,6 +35,8 @@ from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_nam
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.data_gathering import gather_data
+from antipetros_discordbot.utility.exceptions import NotAllowedChannelError
+
 # endregion [Imports]
 
 # region [Logging]
@@ -460,6 +462,10 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                 writejson(permission_dict, f"{bot_member.display_name.casefold()}_permission_dump.json")
                 await ctx.send(f"dumped permissions for {bot_member.display_name}")
             await ctx.send(f"finished dumping permission for Giddis Bots")
+
+    @auto_meta_info_command()
+    async def check_not_allowed_channel(self, ctx):
+        raise NotAllowedChannelError(ctx, ['dev-thrash'])
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))

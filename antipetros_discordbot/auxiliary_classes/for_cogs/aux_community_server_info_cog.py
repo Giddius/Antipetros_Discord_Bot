@@ -142,7 +142,7 @@ class CommunityServerInfo:
         self.address = address
         self.port = port
         self.encoding = 'utf-8'
-        self.query_port = None
+        self.query_port = port + 1
         self.is_online = True
 
     @property
@@ -153,38 +153,13 @@ class CommunityServerInfo:
         return (self.address, self.query_port)
 
     async def check_is_online(self):
+        # TODO: Hardcode query_port to port +1
         log.debug("checking if Server %s is online", self.name)
-        if self.query_port is not None:
-            try:
-                check_data = await a2s.ainfo(self.query_full_address, timeout=self.timeout)
-                self.is_online = True
-            except asyncio.exceptions.TimeoutError:
-                self.is_online = False
-        else:
-            await self.find_query_port()
-
-    async def find_query_port(self):
         try:
-            check_data = await a2s.ainfo((self.address, self.port + 1), timeout=self.timeout)
-            self.query_port = self.port + 1
-            log.debug("query port for %s found DIRECTLY as %s", self.name, self.query_port)
+            check_data = await a2s.ainfo(self.query_full_address, timeout=self.timeout)
+            self.is_online = True
         except asyncio.exceptions.TimeoutError:
-            await self._find_query_port_helper(self.port, is_first=True)
-
-    async def _find_query_port_helper(self, port: int, is_first: bool = False, recursive_round: int = 1):
-        if recursive_round > 5:
             self.is_online = False
-            return
-        if is_first:
-            port = port - 2
-        try:
-            check_data = await a2s.ainfo((self.address, port), timeout=self.timeout)
-
-            self.query_port = port
-            log.debug("query port for %s found as %s", self.name, self.query_port)
-            return
-        except asyncio.exceptions.TimeoutError:
-            await self._find_query_port_helper(port=port + 1, is_first=False, recursive_round=recursive_round + 1)
 
     async def get_info(self):
         return await a2s.ainfo(self.query_full_address, encoding=self.encoding)

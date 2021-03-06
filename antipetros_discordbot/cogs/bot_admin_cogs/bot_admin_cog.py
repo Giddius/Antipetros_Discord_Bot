@@ -95,6 +95,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
 # endregion [Setup]
 
+
     @property
     def alive_phrases(self):
         if os.path.isfile(self.alive_phrases_file) is False:
@@ -273,6 +274,15 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         await asyncio.sleep(60)
         await cmsg.delete()
         await ctx.message.delete()
+
+    @auto_meta_info_command(enabled=True)
+    async def all_aliases(self, ctx: commands.Context):
+        all_aliases = []
+        for command in self.bot.walk_commands():
+            if command.aliases:
+                all_aliases.append(f"`{command.name}`\n```python\n" + '\n'.join(command.aliases) + "\n```")
+
+        await self.bot.split_to_messages(ctx, '\n\n'.join(all_aliases), split_on='\n\n')
 
     def __repr__(self):
         return f"{self.qualified_name}({self.bot.user.name})"
