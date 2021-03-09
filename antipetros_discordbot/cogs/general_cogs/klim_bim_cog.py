@@ -60,13 +60,13 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
     """
-    Soon
+    Collection of small commands that either don't fit anywhere else or are just for fun.
     """
     # region [ClassAttributes]
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
+                'is_ready': (CogState.WORKING,
                              "2021-02-06 03:32:39",
                              "05703df4faf098a7f3f5cea49c51374b3225162318b081075eb0745cc36ddea6ff11d2f4afae1ac706191e8db881e005104ddabe5ba80687ac239ede160c3178")}
 
@@ -95,6 +95,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -118,12 +119,16 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
 # region [Commands]
 
+
     @ auto_meta_info_command(enabled=get_command_enabled('the_dragon'))
     @ allowed_channel_and_allowed_role_2()
     @commands.cooldown(1, 60, commands.BucketType.channel)
     async def the_dragon(self, ctx):
         """
         Posts and awesome ASCII Art Dragon!
+
+        Example:
+            `@AntiPetros the_dragon`
 
         """
         suprise_dragon_check = secrets.randbelow(100) + 1
@@ -134,24 +139,15 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         else:
             await ctx.send(THE_DRAGON)
 
-    @ auto_meta_info_command(enabled=True, hidden=True)
-    @commands.is_owner()
-    async def flip_multiple(self, ctx: commands.Context, amount: int = 1):
-        nato_amount = 0
-        for i in range(amount):
-            await ctx.send(f'__**Item number {i+1}**__')
-            res = await self.flip_coin(ctx)
-            if res == 'nato, you lose!':
-                nato_amount += 1
-
-        await ctx.send(f"\n__**Nato frequency was about {(nato_amount/amount)*100} %**__")
-
     @ auto_meta_info_command(enabled=get_command_enabled('flip_coin'))
     @allowed_channel_and_allowed_role_2()
     @commands.cooldown(1, 15, commands.BucketType.channel)
     async def flip_coin(self, ctx: commands.Context):
         """
         Simulates a coin flip and posts the result as an image of a Petros Dollar.
+
+        Example:
+            `@AntiPetros flip_coin`
 
         """
         with ctx.typing():
@@ -183,6 +179,9 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
             term (str): the search term
             entries (int, optional): How many UD entries for that term it should post, max is 5. Defaults to 1.
 
+        Example:
+            `@AntiPetros urban_dictionary Petros 2`
+
         """
         if entries > 5:
             await ctx.send('To many requested entries,max allowed return entries is 5')
@@ -212,13 +211,19 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         """
         Posts an ASCII Art version of the input text.
 
+        **Warning, your invoking message gets deleted!**
+
         Args:
             text (str): text you want to see as ASCII Art.
+
+        Example:
+            `@AntiPetros make_figlet The text to figlet`
         """
         figlet = Figlet(font='gothic', width=300)
         new_text = figlet.renderText(text.upper())
-        await ctx.send(f"```fix\n{new_text}\n```")
 
+        await ctx.send(f"```fix\n{new_text}\n```")
+        await ctx.message.delete()
 # endregion [Commands]
 
 # region [DataStorage]
@@ -238,11 +243,24 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
 # region [SpecialMethods]
 
+
+    def cog_check(self, ctx):
+        return True
+
+    async def cog_command_error(self, ctx, error):
+        pass
+
+    async def cog_before_invoke(self, ctx):
+        pass
+
+    async def cog_after_invoke(self, ctx):
+        pass
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
     def __str__(self):
-        return self.qualified_name
+        return self.__class__.__name__
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))

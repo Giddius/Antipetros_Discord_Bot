@@ -106,7 +106,9 @@ class EmbedBuilder(SubSupportBase):
         glog.class_init_notification(log, self)
 
     def _validate_color(self, color):
-        if isinstance(color, str):
+        if color is None:
+            return self._validate_color(self.default_color)
+        elif isinstance(color, str):
             if color == 'random':
                 return self.bot.random_color.discord_color
             else:

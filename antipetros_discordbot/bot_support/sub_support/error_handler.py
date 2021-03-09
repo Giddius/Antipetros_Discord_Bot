@@ -120,6 +120,8 @@ class ErrorHandler(SubSupportBase):
         error_traceback = '\n'.join(traceback.format_exception(error, value=error, tb=None))
         log.critical('#' * 10)
         log.critical(error)
+        log.error(error)
+        log.critical(error_traceback)
         log.critical('#' * 10)
         await self.error_handle_table.get(type(error), self._default_handle_error)(ctx, error, error_traceback)
         if ctx.channel.type is ChannelType.text and ctx.command is not None:

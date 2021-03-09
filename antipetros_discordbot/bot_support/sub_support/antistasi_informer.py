@@ -64,6 +64,10 @@ class AntistasiInformer(SubSupportBase):
         return False
 
     @property
+    def antistasi_invite_url(self):
+        return BASE_CONFIG.retrieve('antistasi_info', 'invite_url', typus=str, direct_fallback='')
+
+    @property
     def filesize_limit(self):
         return self.antistasi_guild.filesize_limit
 

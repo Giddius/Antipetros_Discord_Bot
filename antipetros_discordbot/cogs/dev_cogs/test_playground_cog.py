@@ -70,7 +70,7 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
     config_name = "test_playground"
     language_dict = {value: key for key, value in LANGUAGES.items()}
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING | CogState.DOCUMENTATION_MISSING,
+                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING | CogState.DOCUMENTATION_MISSING | CogState.FOR_DEBUG,
                              "2021-02-06 05:27:52",
                              "206141b64e3688eedda4d196dada700bdff9a22170c5557515d8cfd99706d56e42771c27e121dfddbbfb093a1edcdf7bde66fada427201e47ef72a40d7b4f2b1")}
 
@@ -282,7 +282,6 @@ class TestPlaygroundCog(commands.Cog, command_attrs={'hidden': True, "name": "Te
 
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

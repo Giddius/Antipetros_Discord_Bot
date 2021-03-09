@@ -134,7 +134,7 @@ class LogFile:
                 if line != '':
                     line_match = MOD_TABLE_LINE_REGEX.search(line)
                     _out.append({key: value.strip() for key, value in line_match.groupdict().items()})
-            return [item.get('mod_name') for item in _out if item.get('official') == 'false' and item.get("mod_name") not in ["@members", "@TaskForceEnforcer", "@utility"]]
+            return [item.get('mod_dir') for item in _out if item.get('official') == 'false' and item.get("mod_name") not in ["@members", "@TaskForceEnforcer", "@utility"]]
 
     @property
     def warning_size_threshold(self):

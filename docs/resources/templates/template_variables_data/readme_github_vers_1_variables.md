@@ -1,0 +1,34 @@
+- project_name
+- license
+
+- antipetros_image_location
+- brief_description
+- bot_name
+- package_version
+- package_name
+- long_description
+- main_script_name
+- scripts
+  - key
+  - value
+- current_cogs
+  - cogname
+    - file_path
+    - description
+    - commands
+      - command_name
+        - is_hidden
+        - short_doc
+        - aliases
+        - checks
+        - signature
+- dependencies
+  - key
+  - value
+- python_version
+- future_plans
+  - key
+  - value
+- links
+  - key
+  - value

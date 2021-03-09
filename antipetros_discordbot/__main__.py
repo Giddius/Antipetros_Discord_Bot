@@ -23,7 +23,7 @@ from antipetros_discordbot.utility.misc import generate_base_cogs_config, genera
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.enums import CogState
 # endregion[Imports]
 
 # region [TODO]
@@ -117,11 +117,13 @@ log = configure_logger()
 
 
 # region [Helper]
-
+def get_cog_states(cog_object):
+    return CogState.split(cog_object.docattrs['is_ready'][0])
 
 # endregion [Helper]
 
 # region [Main_function]
+
 
 @click.group()
 def cli():
@@ -193,8 +195,10 @@ def bot_help_data_run(output_file, verbose):
         logging.disable(logging.CRITICAL)
     anti_petros_bot = AntiPetrosBot()
     for cog_name, cog_object in anti_petros_bot.cogs.items():
-        print(f"Collecting help-data for '{cog_name}'")
-        generate_help_data(cog_object, output_file=output_file)
+        cog_states = get_cog_states(cog_object)
+        if CogState.FOR_DEBUG not in cog_states and CogState.WORKING in cog_states:
+            print(f"Collecting help-data for '{cog_name}'")
+            generate_help_data(cog_object, output_file=output_file)
     print('#' * 15 + ' finished collecting help-data ' + '#' * 15)
 
 

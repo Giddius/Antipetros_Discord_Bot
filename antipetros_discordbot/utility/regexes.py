@@ -50,3 +50,6 @@ MOD_TABLE_LINE_REGEX = re.compile(r"""^[\d\s]\d.[0123456]\d.[0123456]\d\s*?
                                   (?P<hashshort>.*?)\s\|
                                   \s*?
                                   (?P<fullpath>.*)""", re.VERBOSE)
+
+
+COMMAND_TEXT_FILE_REGEX = re.compile(r"\n?(?P<key_words>[\w\s]+).*?\=.*?(?P<value_words>.*?(?=(?:\n[^\n]*?\=)|$))", re.DOTALL)

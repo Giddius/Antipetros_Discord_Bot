@@ -21,6 +21,7 @@ from typing import Iterable, Union, List
 # from natsort import natsorted
 from fuzzywuzzy import process as fuzzprocess
 import discord
+from icecream import ic
 from discord.ext import commands, tasks
 from webdav3.client import Client
 from async_property import async_property
@@ -217,7 +218,6 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     def _transform_mod_name(self, mod_name: str):
         mod_name = mod_name.removeprefix('@')
-        mod_name = split_camel_case_string(mod_name)
         return mod_name
 
     @auto_meta_info_command()
@@ -230,18 +230,19 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
         log_item = await folder_item.get_newest_log_file('Server', 1)
         log_item = log_item[0]
         mod_data = await log_item.mod_data
-        transformed_mod_data = [self._transform_mod_name(mod_name) for mod_name in mod_data]
         templ_data = []
-        for mod_name in transformed_mod_data:
-            key_name = fuzzprocess.extractOne(mod_name, [key for key in self.mod_lookup_data], score_cutoff=70)
-            if key_name:
-                templ_data.append({'name': key_name[0], 'link': self.mod_lookup_data.get(key_name[0])})
+        for item in mod_data:
+            transformed_mod_name = self._transform_mod_name(item)
+            templ_data.append(self.mod_lookup_data.get(transformed_mod_name))
+
         template = self.jinja_env.get_template('arma_required_mods.html.jinja')
+        embed_data = await self.bot.make_generic_embed(title=f"Mods currently on the {server}", description='```diff\n' + '\n------------\n'.join(f"- {item.get('name')}" for item in templ_data) + '\n```')
         with TemporaryDirectory() as tempdir:
             html_path = pathmaker(tempdir, f"{mod_server}_mods.html")
             writeit(html_path, template.render(req_mods=templ_data, server_name=server.replace('_', ' ')))
             html_file = discord.File(html_path)
-            await ctx.send('\n'.join(mod_data), file=html_file)
+            await ctx.send(**embed_data)
+            await ctx.send(file=html_file)
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role_2()

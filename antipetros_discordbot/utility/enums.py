@@ -84,6 +84,7 @@ class CogState(Flag):
     OUTDATED = auto()
     CRASHING = auto()
     DOCUMENTATION_MISSING = auto()
+    FOR_DEBUG = auto()
     EMPTY = auto()
 
     @classmethod

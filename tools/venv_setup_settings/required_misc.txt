@@ -1,5 +1,5 @@
+--force-reinstall pillow
 Jinja2
-Pillow
 WeasyPrint
 aiohttp
 aiosqlite
