@@ -13,6 +13,7 @@ import discord
 from discord import AllowedMentions
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
+from emoji import emojize
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
@@ -24,6 +25,8 @@ from antipetros_discordbot.utility.converters import LanguageConverter
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
+from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import discord_key_value_text
 # endregion[Imports]
 
 # region [TODO]
@@ -57,7 +60,7 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
     """
-    Soon
+    Collection of commands that help in translating text to different Languages.
     """
     # region [ClassAttributes]
 
@@ -96,7 +99,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
                           'Netherlands': 'nl'
                           }
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
+                'is_ready': (CogState.WORKING,
                              "2021-02-06 03:40:46",
                              "29d140f50313ab11e4ec463a204b56dbcba90f86502c5f4a027f4d1ab7f25525dcf97a5619fd1b88709b95e6facb81a7620b39551c98914dcb6f6fbf3038f542")}
 
@@ -174,6 +177,12 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 
     @commands.Cog.listener(name="on_raw_reaction_add")
     async def emoji_translate_listener(self, payload):
+        """
+        Translates a Message when you add a Flag Emoji to it.
+        The flag emoji represents the language you want the message translated to.
+        The translated message is then send to you via DM.
+
+        """
         if await self._emoji_translate_checks(payload) is False:
             return
         channel = self.bot.get_channel(payload.channel_id)
@@ -218,36 +227,46 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 
 # region [Commands]
 
-    @commands.command(aliases=get_aliases('translate'), **get_doc_data('translate'))
+    @auto_meta_info_command(enabled=get_command_enabled("translate"))
     @allowed_channel_and_allowed_role_2()
     @commands.cooldown(1, 60, commands.BucketType.channel)
     async def translate(self, ctx, to_language_id: Optional[LanguageConverter] = "english", *, text_to_translate: str):
         """
         Translates text into multiple different languages.
+
         Tries to auto-guess input language.
+
+        **Warning, your invoking message gets deleted!**
 
         Args:
             text_to_translate (str): the text to translate, quotes are optional
             to_language_id (Optional[LanguageConverter], optional): either can be the name of the language or an language code (iso639-1 language codes). Defaults to "english".
+
+        Example:
+                `@AntiPetros translate german This is the Sentence to translate`
         """
         translated = self.translator.translate(text=text_to_translate, dest=to_language_id, src="auto")
+
         await ctx.send(f"__from {ctx.author.display_name}:__ *{translated.text}*")
+        await ctx.message.delete()
 
-
+    @auto_meta_info_command(enabled=get_command_enabled('available_languages'))
+    @allowed_channel_and_allowed_role_2()
+    @commands.cooldown(1, 120, commands.BucketType.channel)
+    async def available_languages(self, ctx: commands.Context):
+        await self.bot.not_implemented(ctx)
+        return
 # endregion [Commands]
 
 # region [DataStorage]
-
 
 # endregion [DataStorage]
 
 # region [Embeds]
 
-
 # endregion [Embeds]
 
 # region [HelperMethods]
-
 
     @staticmethod
     def get_emoji_name(s):
@@ -258,6 +277,17 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 
 # region [SpecialMethods]
 
+    def cog_check(self, ctx):
+        return True
+
+    async def cog_command_error(self, ctx, error):
+        pass
+
+    async def cog_before_invoke(self, ctx):
+        pass
+
+    async def cog_after_invoke(self, ctx):
+        pass
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

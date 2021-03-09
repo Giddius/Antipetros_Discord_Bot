@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import shutil
 from zipfile import ZipFile, ZIP_LZMA
+from tempfile import TemporaryDirectory
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands
@@ -23,7 +24,7 @@ from icecream import ic
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, check_after_invoke, only_giddi
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson
@@ -35,6 +36,8 @@ from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_nam
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.data_gathering import gather_data
+from antipetros_discordbot.utility.exceptions import NotAllowedChannelError
+
 # endregion [Imports]
 
 # region [Logging]
@@ -73,7 +76,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     """
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
+                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING | CogState.FOR_DEBUG,
                              "2021-02-06 05:26:32",
                              "a296317ad6ce67b66c11e18769b28ef24060e5dac5a0b61a9b00653ffbbd9f4e521b2481189f075d029a4e9745892052413d2364e0666a97d9ffc7561a022b07")}
     required_config_data = dedent("""
@@ -100,6 +103,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
+
         self.bob_user = await self.bot.retrieve_antistasi_member(346595708180103170)
         for member in self.bot.antistasi_guild.members:
             if member.bot is True:
@@ -111,6 +115,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                 else:
                     if self.antidevtros_member is not None and self.antipetros_member is not None:
                         break
+        await generate_bot_data(self.bot, self.antipetros_member)
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -328,11 +333,11 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     #         base_config_file = discord.File(APPDATA['base_config.ini'])
     #         await admin_lead_member.send('**From Giddi**:\nAttached are the bot configs, they are commented as best I can right now, but I am always available for questions. You can change them directly and send them back to me(giddi).\n\n*I use the bot to send this message to not have to write it 3 times*', files=[base_config_file, cogs_config_file])
 
-    @ commands.command()
+    @ commands.command(aliases=['clr-scrn'])
     async def the_bots_new_clothes(self, ctx: commands.Context):
         msg = ZERO_WIDTH * 20 + '\n'
-        await ctx.send('```python\nTHE BOTS NEW CLOTHES:\n' + (msg * 40) + '\n```')
-        await ctx.send(msg * 60)
+        await ctx.send('THE BOTS NEW CLOTHES' + (msg * 60))
+
         await ctx.message.delete()
 
     @ commands.after_invoke(check_after_invoke)
@@ -460,6 +465,51 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                 writejson(permission_dict, f"{bot_member.display_name.casefold()}_permission_dump.json")
                 await ctx.send(f"dumped permissions for {bot_member.display_name}")
             await ctx.send(f"finished dumping permission for Giddis Bots")
+
+    @auto_meta_info_command()
+    async def check_not_allowed_channel(self, ctx):
+        raise NotAllowedChannelError(ctx, ['dev-thrash'])
+
+    @auto_meta_info_command()
+    @only_giddi()
+    async def get_all_from_embed_user(self, ctx):
+        async with ctx.typing():
+            names = []
+            channel = self.bot.get_channel(584070905840533516)
+            async for msg in channel.history(limit=999999):
+                reactions = msg.reactions
+                for reaction in reactions:
+                    async for user in reaction.users():
+                        names.append(user.name)
+            names = list(set(names))
+            with TemporaryDirectory() as tempdir:
+                path = pathmaker(tempdir, 'reaction_users.txt')
+                with open(path, 'w') as f:
+                    f.write('\n'.join(names))
+                file = discord.File(path)
+                await ctx.send(file=file)
+            msg_names = []
+            channel = self.bot.get_channel(795439678127996958)
+            async for msg in channel.history(limit=999999):
+                msg_names.append(msg.author.name)
+            msg_names = list(set(msg_names))
+            with TemporaryDirectory() as tempdir:
+                path = pathmaker(tempdir, 'msg_user_event_suggestion.txt')
+                with open(path, 'w') as f:
+                    f.write('\n'.join(msg_names))
+                file = discord.File(path)
+                await ctx.send(file=file)
+            msg_names = []
+            channel = self.bot.get_channel(790353924640473110)
+            async for msg in channel.history(limit=999999):
+                msg_names.append(msg.author.name)
+            msg_names = list(set(msg_names))
+            with TemporaryDirectory() as tempdir:
+                path = pathmaker(tempdir, 'msg_user_event_discussion.txt')
+                with open(path, 'w') as f:
+                    f.write('\n'.join(msg_names))
+                file = discord.File(path)
+                await ctx.send(file=file)
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))

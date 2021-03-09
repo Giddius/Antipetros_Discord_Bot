@@ -1,7 +1,8 @@
 from invoke import task
 import sys
 import os
-
+import subprocess
+import shutil
 from pprint import pprint
 from time import sleep
 import json
@@ -9,7 +10,12 @@ from PIL import Image, ImageFilter, ImageOps
 import toml
 import tomlkit
 from dotenv import load_dotenv
-load_dotenv('tools/_project_devmeta.env')
+import re
+from jinja2 import Environment, FileSystemLoader
+from collections import namedtuple
+
+
+GIT_EXE = shutil.which('git.exe')
 
 
 def readit(in_file, per_lines=False, in_encoding='utf-8', in_errors=None):
@@ -67,28 +73,58 @@ def pathmaker(first_segment, *in_path_segments, rev=False):
     return os.path.normpath(_path).replace(os.path.sep, '/')
 
 
+def loadjson(in_file):
+    with open(in_file, 'r') as jsonfile:
+        _out = json.load(jsonfile)
+    return _out
+
+
 def writejson(in_object, in_file, sort_keys=True, indent=4):
     with open(in_file, 'w') as jsonoutfile:
         print(f"writing json '{in_file}'")
         json.dump(in_object, jsonoutfile, sort_keys=sort_keys, indent=indent)
 
 
+def main_dir_from_git():
+    cmd = subprocess.run([GIT_EXE, "rev-parse", "--show-toplevel"], capture_output=True, text=True, shell=True, check=True)
+    main_dir = pathmaker(cmd.stdout.rstrip('\n'))
+    if os.path.isdir(main_dir) is False:
+        raise FileNotFoundError('Unable to locate main dir of project')
+    return main_dir
+
+
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-
 VENV_ACTIVATOR_PATH = pathmaker(THIS_FILE_DIR, '.venv/Scripts/activate.bat', rev=True)
+load_dotenv(pathmaker(THIS_FILE_DIR, 'tools/_project_devmeta.env'))
 
-PYPROJECT_TOML_DATA = toml.load(pathmaker(THIS_FILE_DIR, 'pyproject.toml'))
+FOLDER = {'docs': pathmaker(THIS_FILE_DIR, 'docs'),
+          'docs_data': pathmaker(THIS_FILE_DIR, 'docs', 'resources', 'data'),
+          'docs_templates': pathmaker(THIS_FILE_DIR, 'docs', 'resources', 'templates'),
+          'images': pathmaker(THIS_FILE_DIR, 'art', 'finished', 'images'),
+          'gifs': pathmaker(THIS_FILE_DIR, 'art', 'finished', 'gifs'),
+          'docs_raw_text': pathmaker(THIS_FILE_DIR, 'docs', 'resources', 'raw_text')}
+
+FILES = {'bot_info.json': pathmaker(FOLDER.get('docs_data'), 'bot_info.json'),
+         'command_data.json': pathmaker(FOLDER.get('docs_data'), 'command_data.json'),
+         'links_data.json': pathmaker(FOLDER.get('docs_data'), 'links_data.json'),
+         'future_plans.txt': pathmaker(FOLDER.get('docs_raw_text'), 'future_plans.txt'),
+         'commands.json': pathmaker(FOLDER.get('docs_data'), 'commands.json')}
+
+HEADING_REGEX = re.compile(r"(?P<level>\#+)\s*(?P<name>.*)")
+ALT_HEADING_REGEX = re.compile(r"(?P<level>\#+).*\[(?P<name>.*)\]")
+SUB_COMMAND_REGEX = re.compile(r"Commands:\n(?P<sub_commands>.*)", re.DOTALL)
+SUB_COMMAND_NAME_VALUE_REGEX = re.compile(r"(?P<name>[\w\-]+)\s+(?P<description>.*)")
+JINJA_ENV = Environment(loader=FileSystemLoader(FOLDER.get('docs_templates')))
 
 
 def flit_data(to_get: str):
-    data = PYPROJECT_TOML_DATA
+    pyproject_toml_data = toml.load(pathmaker(THIS_FILE_DIR, 'pyproject.toml'))
+    data = pyproject_toml_data
     path_keys = ['tool', 'flit']
 
     if to_get == 'first_script':
         path_keys += ['scripts']
-    elif to_get == 'project_name':
-        path_keys += ['metadata']
-    elif to_get == 'author_name':
+    elif to_get in ['project_name', "author_name", "dependencies", "license"]:
         path_keys += ['metadata']
 
     for key in path_keys:
@@ -101,6 +137,10 @@ def flit_data(to_get: str):
         return data.get('module')
     if to_get == 'author_name':
         return data.get('author')
+    if to_get == 'dependencies':
+        return data.get('requires')
+    if to_get == 'license':
+        return data.get('license')
 
 
 ANTIPETROS_CLI_COMMAND = flit_data('first_script')
@@ -113,7 +153,7 @@ PROJECT_NAME = flit_data('project_name')
 PROJECT_AUTHOR = flit_data('author_name')
 
 
-def activator_run(c, command, echo=False, **kwargs):
+def activator_run(c, command, echo=True, **kwargs):
     with c.prefix(VENV_ACTIVATOR_PATH):
         result = c.run(command, echo=echo, **kwargs)
         return result
@@ -348,7 +388,7 @@ def optimize_art(c, quality=100):
                 os.rename(file.path, file.path.replace('.jpg', '.png'))
 
 
-REQUIREMENT_EXTRAS = ['discord-flags', "PyQt5", "python-Levenshtein"]
+REQUIREMENT_EXTRAS = ['discord-flags']
 
 
 def _get_version_from_freeze(context, package_name):
@@ -358,6 +398,24 @@ def _get_version_from_freeze(context, package_name):
         req_name = req_line.split('==')[0]
         if req_name.casefold() == package_name.casefold():
             return req_line
+
+
+@task
+def clear_icecream(c):
+    py_files = []
+    for dirname, folderlist, filelist in os.walk(os.getenv('TOPLEVELMODULE')):
+        if '__pycache__' not in dirname.casefold():
+            for file in filelist:
+                if file.endswith('.py'):
+                    py_files.append(pathmaker(dirname, file))
+    for py_file in py_files:
+        new_content_lines = []
+        with open(py_file, 'r') as f_orig:
+            for line in f_orig.read().splitlines():
+                if not line.strip().startswith('ic('):
+                    new_content_lines.append(line)
+        with open(py_file, 'w') as f_mod:
+            f_mod.write('\n'.join(new_content_lines))
 
 
 @task
@@ -386,6 +444,132 @@ def set_requirements(c):
     prod_file = pathmaker('tools', 'venv_setup_settings', 'required_production.txt')
     with open(prod_file, 'w') as fprod:
         fprod.write('\n'.join(_requirements))
+    os.chdir(old_cwd)
+
+
+def get_subcommands(c, script_name):
+    _out = {}
+    raw_data = activator_run(c, f"{script_name} --help", hide=True).stdout
+
+    sub_commands_match = SUB_COMMAND_REGEX.search(raw_data)
+    for line in sub_commands_match.group('sub_commands').splitlines():
+        if line != '':
+            name, desc = SUB_COMMAND_NAME_VALUE_REGEX.search(line).groups()
+            if 'dummy function' not in desc:
+                _out[name.strip()] = desc.strip()
+
+    return _out
+
+
+def get_dependencies():
+    _out = {}
+    raw_dependencies = flit_data('dependencies')
+    for raw_dependency in raw_dependencies:
+        name, version = raw_dependency.split('==')
+        _out[name.strip()] = version.strip()
+    return dict(sorted(_out.items()))
+
+
+def get_python_version():
+    return sys.version.split()[0].strip()
+
+
+def make_path_relative(in_path):
+    return pathmaker(in_path).replace(pathmaker(THIS_FILE_DIR) + '/', '')
+
+
+def get_brief_description():
+    path = pathmaker(FOLDER.get('docs_raw_text'), 'brief_description.md')
+    if os.path.isfile(path) is False:
+        return ''
+    return readit(path)
+
+
+def get_long_description():
+    path = pathmaker(FOLDER.get('docs_raw_text'), 'long_description.md')
+    if os.path.isfile(path) is False:
+        return ''
+    return readit(path)
+
+
+def get_package_version():
+    init_file = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "__init__.py")
+    with open(init_file, 'r') as f:
+        content = f.read()
+    version_line = None
+
+    for line in content.splitlines():
+        if '__version__' in line:
+            version_line = line
+            break
+    if version_line is None:
+        raise RuntimeError('Version line not found')
+    return version_line.replace('__version__', '').replace('=', '').replace('"', '').replace("'", "").strip()
+
+
+COMMAND_TEXT_FILE_REGEX = re.compile(r"\n?(?P<key_words>[\w\s]+).*?\=.*?(?P<value_words>.*?(?=(?:\n[^\n]*?\=)|$))", re.DOTALL)
+
+
+def get_future_plans():
+    path = FILES.get('future_plans.txt')
+    if os.path.isfile(path) is False:
+        return {}
+    content = readit(path)
+    results = {}
+    for match_data in COMMAND_TEXT_FILE_REGEX.finditer(content):
+        if match_data:
+            key_word = match_data.group('key_words').strip().casefold()
+            results[key_word] = '\n'.join(line.strip() for line in match_data.group('value_words').splitlines() if not line.startswith('#'))
+    return results
+
+
+def get_links():
+    bot_info_data = loadjson(FILES.get('bot_info.json'))
+    link_data = loadjson(FILES.get('links_data.json')) if os.path.isfile(FILES.get('links_data.json')) else {}
+    link_data[bot_info_data.get('guild') + " Discord Server"] = bot_info_data.get('invite_url')
+    return link_data
+
+
+def create_tocs(content):
+    _headings = {}
+    for line in content.splitlines():
+        if line.strip().startswith('##'):
+            if '<p align="center"><b>' in line:
+                heading_match = ALT_HEADING_REGEX.search(line)
+            else:
+                heading_match = HEADING_REGEX.search(line)
+            level, name = heading_match.groups()
+            if name.casefold() != 'toc' and len(level) != 4:
+                _headings[name.strip()] = (len(level) - 1, name.replace(' ', '-'))
+    template = JINJA_ENV.get_template('tocs_template.md.jinja')
+    return template.render(tocs=_headings)
+
+
+@task
+def make_readme(c):
+    bot_info_data = loadjson(FILES.get('bot_info.json'))
+    command_data = loadjson(FILES.get('commands.json'))
+    template_data = {'project_name': flit_data('project_name').replace('_', ' ').title(),
+                     'license': flit_data("license"),
+                     'antipetros_image_location': make_path_relative(pathmaker(FOLDER.get('images'), 'AntiPetros_for_readme.png')),
+                     'brief_description': get_brief_description(),
+                     'bot_name': bot_info_data.get('display_name'),
+                     'package_version': get_package_version(),
+                     'package_name': flit_data('project_name'),
+                     'long_description': get_long_description(),
+                     'main_script_name': flit_data("first_script"),
+                     'scripts': get_subcommands(c, flit_data("first_script")),
+                     'dependencies': get_dependencies(),
+                     'python_version': get_python_version(),
+                     'future_plans': get_future_plans(),
+                     'links': get_links(),
+                     'current_cogs': command_data}
+    template = JINJA_ENV.get_template('readme_github_vers_1.md.jinja')
+    result_string = template.render(template_data)
+    toc_string = create_tocs(result_string)
+    result = result_string.replace('$$$TOC$$$', toc_string)
+    with open(pathmaker(THIS_FILE_DIR, 'README.md'), 'w') as f:
+        f.write(result)
 
 
 @task(pre=[store_userdata, collect_data])

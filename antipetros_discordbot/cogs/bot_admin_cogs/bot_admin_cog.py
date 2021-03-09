@@ -12,6 +12,7 @@ import asyncio
 import discord
 from discord.ext import commands
 
+from icecream import ic
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -24,6 +25,7 @@ from antipetros_discordbot.utility.replacements.command_replacement import auto_
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import make_message_list
 # endregion[Imports]
 
 # region [TODO]
@@ -92,6 +94,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
 
 # endregion [Setup]
+
 
     @property
     def alive_phrases(self):
@@ -250,6 +253,36 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
                 if old_file.is_file() and old_file.name.endswith('.log'):
                     discord_file = discord.File(old_file.path)
                     await ctx.send(file=discord_file)
+
+    @auto_meta_info_command(enabled=True)
+    async def invocation_prefixes(self, ctx: commands.Context):
+        prefixes = self.bot.command_prefix(self.bot, ctx.message)
+        prefixes = sorted(prefixes, key=lambda x: '@' in x, reverse=True)
+        mod_prefixes = []
+        for prefix in prefixes:
+            if not prefix.startswith('<@'):
+                prefix = f'{prefix}'
+            if '@' in prefix and prefix.replace('!', '') in [prfx.replace('!', '') for prfx in mod_prefixes]:
+                pass
+            else:
+                mod_prefixes.append(prefix)
+        embed_data = await self.bot.make_generic_embed(title=f'Invocation Prefixes', description=make_message_list(mod_prefixes),
+                                                       thumbnail=None,
+                                                       timestamp=None,
+                                                       author='bot_author')
+        cmsg = await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        await asyncio.sleep(60)
+        await cmsg.delete()
+        await ctx.message.delete()
+
+    @auto_meta_info_command(enabled=True)
+    async def all_aliases(self, ctx: commands.Context):
+        all_aliases = []
+        for command in self.bot.walk_commands():
+            if command.aliases:
+                all_aliases.append(f"`{command.name}`\n```python\n" + '\n'.join(command.aliases) + "\n```")
+
+        await self.bot.split_to_messages(ctx, '\n\n'.join(all_aliases), split_on='\n\n')
 
     def __repr__(self):
         return f"{self.qualified_name}({self.bot.user.name})"

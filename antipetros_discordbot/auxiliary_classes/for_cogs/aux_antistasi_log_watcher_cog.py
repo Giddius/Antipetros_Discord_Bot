@@ -46,7 +46,7 @@ from asyncio import get_event_loop
 # from natsort import natsorted
 
 # from fuzzywuzzy import fuzz, process
-
+from async_property import async_property
 from webdav3.client import Client
 # * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
@@ -73,7 +73,7 @@ import gidlogger as glog
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, readit, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.regexes import LOG_NAME_DATE_TIME_REGEX
+from antipetros_discordbot.utility.regexes import LOG_NAME_DATE_TIME_REGEX, LOG_SPLIT_REGEX, MOD_TABLE_START_REGEX, MOD_TABLE_END_REGEX, MOD_TABLE_LINE_REGEX
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.misc import SIZE_CONV_BY_SHORT_NAME
 # endregion[Imports]
@@ -121,6 +121,21 @@ class LogFile:
         self.server_name = self.path.split('/')[1]
         self.sub_folder_name = self.path.split('/')[2]
 
+    @async_property
+    async def mod_data(self):
+        _out = []
+        content = await self.content()
+        split_match = LOG_SPLIT_REGEX.search(content)
+        if split_match:
+            pre_content = content[:split_match.end()]
+            cleaned_lower = MOD_TABLE_START_REGEX.split(pre_content)[-1]
+            mod_table = MOD_TABLE_END_REGEX.split(cleaned_lower)[0]
+            for line in mod_table.splitlines():
+                if line != '':
+                    line_match = MOD_TABLE_LINE_REGEX.search(line)
+                    _out.append({key: value.strip() for key, value in line_match.groupdict().items()})
+            return [item.get('mod_dir') for item in _out if item.get('official') == 'false' and item.get("mod_name") not in ["@members", "@TaskForceEnforcer", "@utility"]]
+
     @property
     def warning_size_threshold(self):
         limit = COGS_CONFIG.retrieve('antistasi_log_watcher', 'log_file_warning_size_threshold', typus=str, direct_fallback='200mb')
@@ -162,7 +177,7 @@ class LogFile:
             new_path = pathmaker(tempdir, os.path.basename(self.path))
             await asyncio.to_thread(client.download_sync, self.path, new_path)
 
-            content = asyncio.to_thread(readit, new_path)
+            content = await asyncio.to_thread(readit, new_path)
 
             return content
 

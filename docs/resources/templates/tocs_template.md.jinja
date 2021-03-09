@@ -1,0 +1,21 @@
+{%- for name, data in tocs.items() -%}
+{%- if data.0== 0 %}
+- [{{ name }}](#{{ data.1 }})
+{%- elif data.0 == 1 %}
+{%- filter indent(width=2,first=True) %}
+- [{{ name }}](#{{ data.1 }})
+{%- endfilter %}
+{%- elif data.0 == 2 %}
+{%- filter indent(width=4,first=True) %}
+- [{{ name }}](#{{ data.1 }})
+{%- endfilter %}
+{%- elif data.0 == 3 %}
+{%- filter indent(width=6,first=True) %}
+- [{{ name }}](#{{ data.1 }})
+{%- endfilter %}
+{%- elif data.0 == 4 %}
+{%- filter indent(width=8,first=True) %}
+- [{{ name }}](#{{ data.1 }})
+{%- endfilter %}
+{%- endif %}
+{%- endfor -%}

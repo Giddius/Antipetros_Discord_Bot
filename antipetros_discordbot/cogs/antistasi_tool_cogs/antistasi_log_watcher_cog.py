@@ -21,18 +21,20 @@ from typing import Iterable, Union, List
 # from natsort import natsorted
 from fuzzywuzzy import process as fuzzprocess
 import discord
+from icecream import ic
 from discord.ext import commands, tasks
 from webdav3.client import Client
 from async_property import async_property
 from dateparser import parse as date_parse
 import pytz
+from jinja2 import Environment, FileSystemLoader
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, split_camel_case_string
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState
@@ -114,6 +116,8 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
         self.server = {}
         self.update_log_file_data_loop_is_first_loop = True
         self.check_oversized_logs_loop_is_first_loop = True
+        self.mod_lookup_data = loadjson(APPDATA['mod_lookup.json'])
+        self.jinja_env = Environment(loader=FileSystemLoader(APPDATA['templates']))
 
         glog.class_init_notification(log, self)
 
@@ -211,6 +215,35 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
+
+    def _transform_mod_name(self, mod_name: str):
+        mod_name = mod_name.removeprefix('@')
+        return mod_name
+
+    @auto_meta_info_command()
+    @allowed_channel_and_allowed_role_2()
+    async def get_newest_mod_data(self, ctx: commands.Context, server: str):
+        mod_server = server.casefold()
+        if mod_server not in self.server:
+            await ctx.send(f"unknown server `{server}`")
+        folder_item = self.server[mod_server]
+        log_item = await folder_item.get_newest_log_file('Server', 1)
+        log_item = log_item[0]
+        mod_data = await log_item.mod_data
+        templ_data = []
+        for item in mod_data:
+            transformed_mod_name = self._transform_mod_name(item)
+            templ_data.append(self.mod_lookup_data.get(transformed_mod_name))
+
+        template = self.jinja_env.get_template('arma_required_mods.html.jinja')
+        embed_data = await self.bot.make_generic_embed(title=f"Mods currently on the {server}", description='```diff\n' + '\n------------\n'.join(f"- {item.get('name')}" for item in templ_data) + '\n```')
+        with TemporaryDirectory() as tempdir:
+            html_path = pathmaker(tempdir, f"{mod_server}_mods.html")
+            writeit(html_path, template.render(req_mods=templ_data, server_name=server.replace('_', ' ')))
+            html_file = discord.File(html_path)
+            await ctx.send(**embed_data)
+            await ctx.send(file=html_file)
+
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role_2()
     async def get_newest_logs(self, ctx, server: str, sub_folder: str, amount: int = 1):
@@ -249,7 +282,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [HelperMethods]
 
     async def zip_log_file(self, file_path):
-        zip_path = pathmaker(os.path.basename(file_path).split('.')[0] + '.zip')
+        zip_path = pathmaker(os.path.dirname(file_path), os.path.basename(file_path).split('.')[0] + '.zip')
         with ZipFile(zip_path, 'w', ZIP_LZMA) as zippy:
             zippy.write(file_path, os.path.basename(file_path))
         return zip_path

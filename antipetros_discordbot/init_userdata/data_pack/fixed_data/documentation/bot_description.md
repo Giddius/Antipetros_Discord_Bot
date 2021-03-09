@@ -1,10 +1,3 @@
-WiP Description for AntiPetros DiscordBot
+A custom made Bot specially created for the Antistasi Community
 
-I am an custom made Bot for this community!
----
-if you want to suggest and feature or an idea for a new command,
-OR IF THERE IS A BUG, OR PROBLEM:
-
-shoot @Giddi a Dm!
-
----
+Built by Giddi, so if there is any problem or any questions, send him a DM.

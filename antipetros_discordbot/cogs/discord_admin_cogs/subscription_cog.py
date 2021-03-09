@@ -23,6 +23,8 @@ from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson, pathmaker, pickleit, get_pickled, writeit, readit
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
+from antipetros_discordbot.utility.emoji_handling import normalize_emoji
+from antipetros_discordbot.utility.parsing import parse_command_text_file
 # endregion[Imports]
 
 # region [TODO]
@@ -141,6 +143,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
 # region [Properties]
 
+
     @property
     def topic_data(self):
         if os.path.isfile(self.topics_data_file) is False:
@@ -150,6 +153,46 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 # endregion[Properties]
 
 # region [Helper]
+
+    @commands.Cog.listener(name='on_raw_reaction_add')
+    async def subscription_reaction(self, payload):
+        channel = self.bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        if message not in [topic.message for topic in self.topics]:
+            return
+        topic = {topic.message: topic for topic in self.topics}.get(message)
+        emoji_name = normalize_emoji(payload.emoji.name)
+        if emoji_name != normalize_emoji(topic.emoji):
+            for reaction in message.reactions:
+                if normalize_emoji(str(reaction.emoji)) != normalize_emoji(topic.emoji):
+                    await message.clear_reaction(reaction.emoji)
+            return
+        reaction_user = await self.bot.retrieve_antistasi_member(payload.user_id)
+        if reaction_user.bot is True:
+            return
+        if topic.role in reaction_user.roles:
+            return
+        await self.sucess_subscribed_embed(reaction_user, topic)
+
+    @commands.Cog.listener(name='on_raw_reaction_remove')
+    async def unsubscription_reaction(self, payload):
+        channel = self.bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        if message not in [topic.message for topic in self.topics]:
+            return
+        topic = {topic.message: topic for topic in self.topics}.get(message)
+        emoji_name = normalize_emoji(payload.emoji.name)
+        if emoji_name != normalize_emoji(topic.emoji):
+            for reaction in message.reactions:
+                if normalize_emoji(str(reaction.emoji)) != normalize_emoji(topic.emoji):
+                    await message.clear_reaction(reaction.emoji)
+            return
+        reaction_user = await self.bot.retrieve_antistasi_member(payload.user_id)
+        if reaction_user.bot is True:
+            return
+        # if topic.role not in reaction_user.roles:
+        #     return
+        await self.sucess_unsubscribed_embed(reaction_user, topic)
 
     async def _add_topic_data(self, topic_item):
         current_data = self.topic_data
@@ -162,8 +205,8 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     async def _clear_other_emojis(self, topic_item):
         pass
 
-    async def _post_new_topic(self, topic_item, color=None):
-        embed_data = await self.bot.make_generic_embed(**topic_item.embed_data, fields=[self.bot.field_item(name="Subscribe!", value=f"press {topic_item.emoji}"), self.bot.field_item(name='Subscriber Role', value=topic_item.role.mention), self.bot.field_item(name="Created by", value=topic_item.creator.mention)], color=color)
+    async def _post_new_topic(self, topic_item, color=None, image=None):
+        embed_data = await self.bot.make_generic_embed(**topic_item.embed_data, fields=[self.bot.field_item(name="Subscribe!", value=f"press {topic_item.emoji}"), self.bot.field_item(name='Subscriber Role', value=topic_item.role.mention), self.bot.field_item(name="Created by", value=topic_item.creator.mention)], color=color, image=image)
         msg = await self.subscription_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
         await msg.add_reaction(topic_item.emoji)
         topic_item.message = msg
@@ -183,7 +226,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         # FAKE: FOR DEMONSTRATION
         await asyncio.sleep(5)
         log.info(f'Fake created_channel {name} in {category.name}')
-        self.subscription_channel = await self.bot.channel_from_name('bot-testing')
+        self.subscription_channel = await self.bot.channel_from_name('bot-commands')
         COGS_CONFIG.set(self.config_name, 'subscription_channel', self.subscription_channel.name)
         COGS_CONFIG.save()
 
@@ -227,40 +270,41 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await ctx.message.delete()
 
     @auto_meta_info_command(enabled=get_command_enabled('add_topic'))
-    @owner_or_admin()
     @has_attachments(1)
     async def new_topic(self, ctx: commands.Context):
+        if ctx.channel is not self.subscription_channel:
+            return
         file = ctx.message.attachments[0]
         with TemporaryDirectory() as tempdir:
             path = pathmaker(tempdir, file.filename)
             await file.save(path)
             content = readit(path)
-            name = None
-            emoji = None
-            color = 'random'
-            for line in content.splitlines():
-                if line.casefold().startswith('name'):
-                    name = line.split('=')[-1].strip()
-                elif line.casefold().startswith('emoji'):
-                    emoji = line.split('=')[-1].strip()
-                elif line.casefold().startswith('color'):
-                    color = line.split('=')[-1].strip()
-            desc_start = content.casefold().find('\ndescription')
-            if desc_start == -1:
-                description = None
-            else:
-                description = content[desc_start:].split('=')[-1].strip()
-        item = TopicItem(name, emoji, ctx.author, self.subscription_channel, description=description)
+            command_data = await parse_command_text_file(content, {'name', 'emoji', 'color', 'description', 'image'})
+        item = TopicItem(command_data.get('name'), command_data.get('emoji'), ctx.author, self.subscription_channel, description=command_data.get("description"))
         # await ctx.send("creating role")
         await self._create_topic_role(item)
         # await ctx.send(f"role {item.role_name} created, mentionable as {item.role.mention}", allowed_mentions=discord.AllowedMentions.none())
         # await ctx.send("creating new embed")
-        await self._post_new_topic(item, color)
+        await self._post_new_topic(item, command_data.get("color"), command_data.get("image"))
         # await ctx.send("serializing topic data")
         await self._add_topic_data(item)
         self.topics.append(item)
         await ctx.message.delete()
         # await ctx.send('done')
+
+    async def sucess_subscribed_embed(self, member: discord.Member, topic: TopicItem):
+        embed_data = await self.bot.make_generic_embed(title="Successfully Subscribed", description=f"You are now subscribed to {topic.name} and will get pinged if they have an Announcement.",
+                                                       thumbnail="subscribed",
+                                                       fields=[self.bot.field_item(name="Subscription Role", value=f"For this purpose you have been assigne the Role {topic.role.mention}", inline=False),
+                                                               self.bot.field_item(name="Unsubscribe", value=f"To Unsubscribe just remove your emoji from the subscription post [link to post]({topic.message.jump_url})", inline=False),
+                                                               self.bot.field_item(name="Unsubscribe Command", value=f"You can also use the command `@AntiPetros unsubscribe [{topic.name}]`]", inline=False)])
+        await member.send(**embed_data)
+
+    async def sucess_unsubscribed_embed(self, member: discord.Member, topic: TopicItem):
+        embed_data = await self.bot.make_generic_embed(title="Successfully Unsubscribed", description=f"You are now no longer subscribed to {topic.name} and will NOT get pinged anymore if they have an Announcement.",
+                                                       thumbnail="update",
+                                                       fields=[self.bot.field_item(name="Subscription Role", value=f"The Role {topic.role.mention} has been removed", inline=False)])
+        await member.send(**embed_data)
 
 # endregion[Commands]
 

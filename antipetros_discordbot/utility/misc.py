@@ -171,11 +171,11 @@ def save_commands(cog, output_file=None):
 
     command_json = loadjson(command_json_file)
 
-    command_json[str(cog)] = {'file_path': pathmaker(os.path.abspath(inspect.getfile(cog.__class__))),
+    command_json[str(cog)] = {'file_path': pathmaker(inspect.getfile(cog.__class__)).split('site-packages')[-1].strip('/'),
                               'description': dedent(str(inspect.getdoc(cog.__class__))),
                               "commands": {},
-                              "state": [' | '.join(map(str, CogState.split(cog.docattrs.get('is_ready')[0]))), cog.docattrs.get('is_ready')[1]]
-                              }
+                              "state": str(cog.docattrs.get('is_ready')[0]).replace('CogState.', '').split('|'),
+                              'config_name': cog.config_name}
 
     for command in cog.get_commands():
         command_json[str(cog)]["commands"][command.name.strip()] = {"signature": command.signature.replace('<ctx>', '').replace('  ', ' ').strip(),
@@ -187,7 +187,9 @@ def save_commands(cog, output_file=None):
                                                                     'description': command.description,
                                                                     'is_hidden': command.hidden,
                                                                     'is_enabled': command.enabled,
-                                                                    'qualified_name': command.qualified_name}
+                                                                    'qualified_name': command.qualified_name,
+                                                                    'help': command.help,
+                                                                    'brief': command.brief}
 
     writejson(command_json, command_json_file, indent=4)
     log.debug("commands for %s saved to %s", cog, command_json_file)
@@ -225,8 +227,23 @@ def generate_base_cogs_config(bot: commands.Bot, output_file=None):
     writeit(out_file, '\n\n'.join(out_lines))
 
 
+async def generate_bot_data(bot, production_bot):
+    bot_info_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/data/bot_info.json')
+    attrs_to_get = ['description']
+    bot_info = {}
+    for attr in attrs_to_get:
+        bot_info[attr] = getattr(bot, attr)
+    bot_info['display_name'] = production_bot.display_name
+    bot_info['guild'] = bot.guilds[0].name
+    bot_info['intents'] = dict(bot.intents)
+    bot_info['avatar_url'] = str(production_bot.avatar_url)
+    bot_info['invite_url'] = bot.antistasi_invite_url
+
+    writejson(bot_info, bot_info_file)
+
+
 def generate_help_data(cog: commands.Cog, output_file=None):
-    help_data_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/data/command_help.json') if output_file is None else pathmaker(output_file)
+    help_data_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/data/command_data.json') if output_file is None else pathmaker(output_file)
     if os.path.isfile(help_data_file) is False:
         writejson({}, help_data_file)
     help_data = loadjson(help_data_file)
@@ -235,7 +252,8 @@ def generate_help_data(cog: commands.Cog, output_file=None):
         help_data[cog_name] = {}
     help_data[cog_name] = {'description': cog.description,
                            'config_name': cog.config_name,
-                           'file_path': pathmaker(os.path.abspath(inspect.getfile(cog.__class__))),
+                           'cogstate': str(cog.docattrs['is_ready'][0]),
+                           'file_path': pathmaker(inspect.getfile(cog.__class__)).split('site-packages')[-1].strip('/'),
                            'commands': {}}
     for command in cog.get_commands():
         help_data[cog_name]['commands'][command.name.strip()] = {'brief': command.brief,

@@ -73,7 +73,6 @@ class AntiPetrosBot(commands.Bot):
 
 # endregion[ClassAttributes]
 
-
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
@@ -98,7 +97,6 @@ class AntiPetrosBot(commands.Bot):
         self.on_command_error = None
         self.github_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot"
         self.used_startup_message = None
-
 
         self.support.recruit_subsupports()
         user_not_blacklisted(self, log)
@@ -248,14 +246,12 @@ class AntiPetrosBot(commands.Bot):
             for index, role in enumerate(self.bot_member.roles):
                 if index != 0:
                     self.all_bot_roles.append(role)
-        self.command_prefix = BASE_CONFIG.get('prefix', 'command_prefix')
-        if BASE_CONFIG.getboolean('prefix', 'invoke_by_role_and_mention') is True:
-            self.command_prefix = when_mentioned_or_roles_or(BASE_CONFIG.get('prefix', 'command_prefix'))
+
+        self.command_prefix = when_mentioned_or_roles_or()
 
         AntiPetrosBot.creator = self.creator._replace(**{'member_object': await self.retrieve_antistasi_member(self.creator.id), 'user_object': await self.fetch_user(self.creator.id)})
         os.environ['BOT_CREATOR_NAME'] = self.creator.name
         os.environ['BOT_CREATOR_ID'] = str(self.creator.id)
-
 
     async def _start_sessions(self):
         if self.aio_request_session is None:
@@ -360,6 +356,14 @@ class AntiPetrosBot(commands.Bot):
                                                    footer='feature_request_footer',
                                                    thumbnail="under_construction")
         await ctx.send(**embed_data)
+
+    @property
+    def all_command_names(self):
+        _out = []
+        for command in self.commands:
+            _out.append(command.name)
+            _out += command.aliases
+        return _out
 
     @property
     def admins(self):
@@ -469,8 +473,14 @@ class AntiPetrosBot(commands.Bot):
 
     async def debug_function(self):
         log.debug("debug function triggered")
-        log.info('no debug function set')
-        # log.debug("debug function finished")
+        _out = []
+        for channel in self.antistasi_guild.channels:
+            if channel.type is discord.ChannelType.text:
+                _out.append({'name': channel.name, 'position': channel.position, 'category': channel.category.name})
+        _out = sorted(_out, key=lambda x: x.get('position'))
+        writejson(_out, 'channel_shit.json')
+        # log.info('no debug function set')
+        log.debug("debug function finished")
 
 # region [SpecialMethods]
 

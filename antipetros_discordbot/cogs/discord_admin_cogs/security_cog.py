@@ -20,7 +20,6 @@ from typing import TYPE_CHECKING
 import discord
 from discord.ext import commands
 from discord import ChannelType
-import magic
 import tldextract
 from textwrap import dedent
 from icecream import ic
@@ -135,7 +134,6 @@ class SecurityCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
     def __init__(self, bot: "AntiPetrosBot"):
         self.bot = bot
         self.support = self.bot.support
-        self.file_magic = magic.Magic(mime=True, uncompress=True)
         self.bad_links = None
         self.blocklist_hostfile_urls = COGS_CONFIG.retrieve(self.config_name, 'blocklist_hostfile_urls', typus=List[str])
         self.allowed_channels = allowed_requester(self, 'channels')
@@ -199,14 +197,10 @@ class SecurityCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
         for attachment in listener_context.attachments:
             filename = attachment.filename
             extension = filename.split('.')[-1]
-            ic(extension)
             if extension.casefold() in self.forbidden_extensions:
                 await self._handle_forbidden_attachment(listener_context, filename)
                 return
-            bytes_content = await attachment.read()
-            if self.file_magic.from_buffer(bytes_content) in self.forbidden_mime_types:
-                await self._handle_forbidden_attachment(listener_context, filename)
-                return
+
 
 # endregion [Listener]
 

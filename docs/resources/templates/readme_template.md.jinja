@@ -1,0 +1,180 @@
+# <p align="center">{{ appname }}</p> #
+
+
+<p align="center"><img src="{{ antipetros_image_location }}" alt="Anti-Petros Avatar"/></p>
+
+
+{{ brief }}
+
+
+## Installation
+{% for installation_type, installation_instructions in installation.items() %}
+### {{ installation_type }}
+
+{{ installation_instructions.0 }}
+
+```cmd
+{{ installation_instructions.1 }}
+```
+
+{% endfor %}
+
+
+{% if usage is not none %}
+## Usage
+
+{{ usage }}
+
+{% endif %}
+
+{% if full_documentation is not none %}
+### Full Documentation
+
+{{ full_documentation.name }}({{ full_documentation.link }})
+
+{% endif %}
+
+{% if long_description is not none %}
+## Description ##
+
+{{ long_description }}
+
+{% endif %}
+
+
+## Features ##
+
+<details><summary><b>Currently usable Cogs</b></summary><blockquote>
+
+{% for cogname, value in current_cogs.items() %}
+
+### <p align="center"><b>[{{ cogname }}]({{ value.file_path }})</b></p> ###
+
+<details><summary><b>Description</b></summary>
+
+<blockquote>{{ value.description }}</blockquote>
+
+</details>
+
+<details><summary><b>Commands</b></summary><blockquote>
+
+{% for command_name, command_value in value.commands.items() %}
+{% if command_value.is_hidden is true %}
+- **{{ command_name|upper }}**
+    {% if command_value.short_doc|length >0 %}
+    ```diff
+    + {{ command_value.short_doc }}
+    ```
+    {% endif %}
+
+    {% if command_value.aliases|length >0 %}
+    - **aliases:** {% for alias in command_value.aliases %}*{{ alias }}*{{ ", " if not loop.last }}{% endfor %}
+    {% endif %}
+
+    {% if command_value.checks|length >0 %}
+    - **checks:** {% for check in command_value.checks %}*{{ check }}*{{ ", " if not loop.last }}{% endfor %}
+    {% endif %}
+
+    {% if command_value.signature|length %}
+    - **signature:**
+        ```diff
+        {{ command_value.signature }}
+        ```
+    {% endif %}
+    <br>
+{% endif %}
+{% endfor %}
+
+</blockquote>
+
+</details>
+
+---
+
+{% endfor %}
+</blockquote></details>
+
+## Dependencies ##
+
+***Currently only tested on Windows***
+
+**Developed with Python Version `{{ python_version }}`**
+
+{% for dependency in dependencies %}
+- {{dependency.name}}<=`{{dependency.version}}`
+{% endfor %}
+
+
+{% if see_also is not none %}
+## See also
+{% for item in see_also %}
+- [{{ item.name }}]({{ item.link }})
+{% endfor %}
+{% endif %}
+
+{% if acknowledgments is not none %}
+## Acknowledgments
+{% for item in acknowledgments %}
+- [{{ item.name }}]({{ item.link }})
+{% endfor %}
+{% endif %}
+
+
+## License
+
+MIT
+
+## Development
+
+{% if help_needed is not none %}
+### Help Needed ###
+
+<details><summary><b>Help Needed</b></summary>
+{% for item in help_needed %}
+- [ ] {{ item }}
+{% endfor %}
+</details>
+{% endif %}
+
+### Todo ###
+
+<details><summary><b>TODOS FROM CODE</b></summary>
+{% for file_path,cat_items in todos.items() %}{% set link_parts = file_path.split('||') %}
+{% for category, todo_items in cat_items.items() %}
+
+#### {{ category }} [{{ link_parts.1 }}]({{ link_parts.0 }}): ####
+
+{% for todo_item in todo_items %}
+
+- [ ] [{{ link_parts.1 }} line {{ todo_item.linenumber }}:]({{ link_parts.0 }}#L{{ todo_item.linenumber }}) `{{ todo_item.text }}`
+
+{% endfor %}
+{% endfor %}
+
+---
+
+{% endfor %}
+### General Todos ###
+{% for typus, value in general_todos.items() %}
+#### {{typus}} ####
+
+{% for level, content in value.items() %}
+{% for text in content %}
+- [ ] *{{ level }}*: {{ text }}
+
+{% endfor %}
+{% endfor %}
+
+---
+
+{% endfor %}
+</details>
+
+{% if decisions is not none %}
+### DECISIONS ###
+{% for item in decisions %}
+- [ ] {{ item }}
+{% endfor %}
+
+{% endif %}
+
