@@ -47,6 +47,7 @@ from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_community_server_info_cog import CommunityServerInfo
@@ -186,8 +187,10 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         Example:
             @AntiPetros current_online_server
         """
+        exclude = COGS_CONFIG.retrieve(self.config_name, 'exclude_from_show_online', typus=List[str], direct_fallback=["Testserver_3", 'Eventserver'])
+        exclude = set(map(lambda x: x.casefold(), exclude))
         for server_item in self.servers:
-            if server_item.name not in ["Testserver_3", 'Eventserver']:
+            if server_item.name not in exclude:
                 try:
                     if server_item.is_online is True:
                         info = await server_item.get_info()
@@ -199,14 +202,18 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                         password_needed = info.password_protected
                         server_name = info.server_name
                         embed_data = await self.bot.make_generic_embed(title=server_name,
-                                                                       description=f"__**Server Address:**__ {server_item.address}\n__**Port:**__ {server_item.port}",
+                                                                       description=f"__**Server Address:**__ {server_item.address}\n__**Port:**__ {server_item.port}\n",
                                                                        thumbnail=self.server_symbol,
                                                                        fields=[self.bot.field_item(name="**Current Map**", value=map_name),
                                                                                self.bot.field_item(name="**Players**", value=f"{player_count}/{max_players}"),
                                                                                self.bot.field_item(name="**Ping**", value=ping),
                                                                                self.bot.field_item(name="**Game**", value=game),
-                                                                               self.bot.field_item(name="**Password Required**", value=f"{password_needed}")])
+                                                                               self.bot.field_item(name="**Password Required**", value=f"{password_needed}"),
+                                                                               self.bot.field_item(name='Battlemetrics', value=server_item.battlemetrics_url)])
+
+                        mod_list_command = self.bot.get_command('get_newest_mod_data')
                         await ctx.send(**embed_data)
+                        await ctx.invoke(mod_list_command, server_item.name)
                         await asyncio.sleep(0.5)
                 except asyncio.exceptions.TimeoutError:
                     server_item.is_online = False

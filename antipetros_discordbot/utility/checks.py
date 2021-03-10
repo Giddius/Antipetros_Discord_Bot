@@ -234,18 +234,6 @@ def owner_or_admin():
     return commands.check(predicate)
 
 
-def check_decorator():
-    async def predicate(ctx: commands.Context):
-        await ctx.send('this is inside the decorator')
-        return True
-    return commands.check(predicate)
-
-
-async def check_after_invoke(instance, ctx):
-    log.info("this is the instance: '%s'", instance)
-    await ctx.message.delete()
-
-
 def only_giddi():
     async def predicate(ctx: commands.Context):
         if ctx.author.id == ctx.bot.creator.id:

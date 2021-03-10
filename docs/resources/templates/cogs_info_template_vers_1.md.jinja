@@ -1,0 +1,84 @@
+{% extends "base_cogs_info_template.md.jinja" %}
+
+{% block title_image %}
+<p align="center"><img src="/{{ cog_image_location }}" alt="Cog_Icon"/></p>
+{% endblock %}
+
+{% block toc %}
+
+$$$TOC$$$
+
+{% endblock %}
+
+
+{% block cog_data %}
+
+{% for cogname, value in current_cogs.items() %}
+{% if 'FOR_DEBUG' not in value.state %}
+
+### {{ cogname }}
+
+- __Config Name__
+    {{ value.config_name }}
+
+- __Description__
+{{ value.description|indent(width=4, first=True, blank=True)}}
+
+- __Cog States__
+```diff
+{%- for state_tag in value.state -%}
+{% if state_tag=='WORKING' %}
++ {{ state_tag }}
+{% else %}
+- {{ state_tag }}
+{% endif %}
+{%- endfor -%}
+```
+#### Commands:
+{% for command_name, command_value in value.commands.items() %}
+##### __{{ command_name }}__
+{% if command_value.help %}
+- **help:**
+
+{{ command_value.help|indent(width=8, first=true, blank=true)}}
+
+{% endif %}
+
+{% if command_value.aliases|length >0 %}
+- **aliases:** {% for alias in command_value.aliases %}*{{ alias }}*{{ ", " if not loop.last }}{% endfor %}
+{% endif %}
+
+- **is hidden:** {{ command_value.is_hidden }}
+
+- **usage:**
+    ```python
+    {{ command_value.usage }}
+    ```
+{% if command_value.gif %}
+![](/{{ command_value.gif }})
+{% endif %}
+<br>
+
+{% endfor %}
+
+---
+{% endif %}
+{% endfor %}
+
+{% endblock %}
+
+
+{% block misc %}
+
+{% if misc %}
+{% for misc_name, misc_description in misc.items() %}
+### {{misc_name}}
+
+{{ misc_description }}
+
+---
+
+{% endfor %}
+{% endif %}
+
+{% endblock %}

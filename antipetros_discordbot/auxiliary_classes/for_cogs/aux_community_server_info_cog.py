@@ -136,6 +136,11 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class CommunityServerInfo:
     timeout = 1
+    battle_metrics_mapping = {'mainserver_1': "https://www.battlemetrics.com/servers/arma3/10560386",
+                              'mainserver_2': "https://www.battlemetrics.com/servers/arma3/10561000",
+                              'testserver_1': "https://www.battlemetrics.com/servers/arma3/4789978",
+                              'testserver_2': "https://www.battlemetrics.com/servers/arma3/9851037",
+                              'eventserver': "https://www.battlemetrics.com/servers/arma3/9552734"}
 
     def __init__(self, name: str, address: str, port: int):
         self.name = name
@@ -144,6 +149,7 @@ class CommunityServerInfo:
         self.encoding = 'utf-8'
         self.query_port = port + 1
         self.is_online = True
+        self.battlemetrics_url = self.battle_metrics_mapping.get(self.name.casefold())
 
     @property
     def query_full_address(self):

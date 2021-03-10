@@ -158,6 +158,19 @@ class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @allowed_channel_and_allowed_role_2()
     @has_attachments(1)
     async def check_template(self, ctx, all_items_file=True, case_insensitive: bool = False):
+        """
+        Checks all Classnames inside a provided template.
+
+        Needs to have the tempalte as attachment to the invoking message.
+
+        Returns the list of classnames it can't find in the config along with possible correction.
+
+        Returns also a corrected version of the template file.
+
+        Args:
+            all_items_file (bool, optional): if it should also provide a file that lists all used classes. Defaults to True.
+            case_insensitive (bool, optional): if it should check Case insentive. Defaults to False.
+        """
         attachment = ctx.message.attachments[0]
         if attachment.filename.endswith('.sqf'):
 

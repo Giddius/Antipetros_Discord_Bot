@@ -25,7 +25,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data
-from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, check_after_invoke, only_giddi
+from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, only_giddi
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -340,13 +340,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
         await ctx.message.delete()
 
-    @ commands.after_invoke(check_after_invoke)
-    @ auto_meta_info_command()
-    async def check_a_hook(self, ctx: commands.Context):
-        await asyncio.sleep(5)
-        await ctx.send("this is inside the command")
-        await asyncio.sleep(5)
-
     async def get_save_path(self, save_folder, name, in_round=0):
         if in_round == 0:
             path = pathmaker(save_folder, name)
@@ -356,7 +349,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             return path
         return await self.get_save_path(save_folder, name, in_round + 1)
 
-    @ commands.after_invoke(check_after_invoke)
     @ auto_meta_info_command()
     async def get_all_attachments(self, ctx: commands.Context, channel: discord.TextChannel, amount_to_scan: int = None):
         if ctx.author.id not in [152532555600494593, 576522029470056450, 346595708180103170]:

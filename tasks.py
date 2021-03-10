@@ -109,10 +109,13 @@ FILES = {'bot_info.json': pathmaker(FOLDER.get('docs_data'), 'bot_info.json'),
          'links_data.json': pathmaker(FOLDER.get('docs_data'), 'links_data.json'),
          'future_plans.txt': pathmaker(FOLDER.get('docs_raw_text'), 'future_plans.txt'),
          'command_data.json': pathmaker(FOLDER.get('docs_data'), 'command_data.json'),
-         'external_dependencies.json': pathmaker(FOLDER.get('docs_data'), 'external_dependencies.json')}
+         'external_dependencies.json': pathmaker(FOLDER.get('docs_data'), 'external_dependencies.json'),
+         'cogs_misc.txt': pathmaker(FOLDER.get('docs_raw_text'), 'cogs_misc.txt'),
+         'cogs_info.md': pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'cogs', 'cogs_info.md')}
 
 HEADING_REGEX = re.compile(r"(?P<level>\#+)\s*(?P<name>.*)")
 ALT_HEADING_REGEX = re.compile(r"(?P<level>\#+).*\[(?P<name>.*)\]")
+ALT_ALT_HEADING_REGEX = re.compile(r'(?P<level>\<h\d\>)(?P<name>.*?)\<')
 SUB_COMMAND_REGEX = re.compile(r"Commands:\n(?P<sub_commands>.*)", re.DOTALL)
 SUB_COMMAND_NAME_VALUE_REGEX = re.compile(r"(?P<name>[\w\-]+)\s+(?P<description>.*)")
 JINJA_ENV = Environment(loader=FileSystemLoader(FOLDER.get('docs_templates')))
@@ -301,7 +304,7 @@ def subreadme_toc(c, output_file=None):
 
 
 @task
-def increment_version(c, increment_part='minor'):
+def increment_version(c, increment_part='patch'):
     init_file = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "__init__.py")
     with open(init_file, 'r') as f:
         content = f.read()
@@ -558,7 +561,7 @@ def get_external_dependencies():
     return data
 
 
-def create_tocs(content):
+def create_tocs(content, max_level=3):
     _headings = {}
     for line in content.splitlines():
         if line.strip().startswith('##'):
@@ -567,7 +570,7 @@ def create_tocs(content):
             else:
                 heading_match = HEADING_REGEX.search(line)
             level, name = heading_match.groups()
-            if name.casefold() != 'toc' and len(level) != 4 and 'Cog' not in name:
+            if name.casefold() != 'toc' and len(level) <= max_level and 'Cog' not in name:
                 _headings[name.strip()] = (len(level) - 1, name.replace(' ', '-').lower())
     template = JINJA_ENV.get_template('tocs_template.md.jinja')
     return template.render(tocs=_headings)
@@ -601,6 +604,49 @@ def make_readme(c):
         f.write(result)
 
 
+def get_cog_misc_data():
+    text_file_regex = re.compile(r"\n?(?P<key_words>[\w\s]+).*?\=.*?(?P<value_words>.*?(?=(?:\n[^\n]*?\=)|$))", re.DOTALL)
+    content = readit(FILES.get('cogs_misc.txt'))
+    results = {}
+    for match_data in COMMAND_TEXT_FILE_REGEX.finditer(content):
+        if match_data:
+            key_word = match_data.group('key_words').strip().casefold()
+            results[key_word] = '\n'.join(line.strip() for line in match_data.group('value_words').splitlines() if not line.startswith('#'))
+
+    return results
+
+
+def create_cog_info_tocs(content):
+    _headings = {}
+    for line in content.splitlines():
+        if line.strip().startswith('##') or line.strip().startswith('<p align="center"><h'):
+            if '<p align="center">' in line:
+                heading_match = ALT_ALT_HEADING_REGEX.search(line)
+            else:
+                heading_match = HEADING_REGEX.search(line)
+            level, name = heading_match.groups()
+            if level.startswith('<'):
+                level = '#' * int(level.replace('<', '').replace('h', '').replace('>', ''))
+            if name.casefold() not in ['toc', 'commands:'] and 2 <= len(level) <= 5:
+                _headings[name.strip().strip('_*').strip()] = (len(level) - 1, name.replace(' ', '-').lower())
+    template = JINJA_ENV.get_template('tocs_template.md.jinja')
+    return template.render(tocs=_headings)
+
+
+@task
+def make_cogs_info(c):
+    command_data = loadjson(FILES.get('command_data.json'))
+    template_data = {'cog_image_location': "art/finished/images/cog_icon.png",
+                     'current_cogs': command_data,
+                     'misc': get_cog_misc_data()}
+    template = JINJA_ENV.get_template('cogs_info_template_vers_1.md.jinja')
+    result_string = template.render(template_data)
+    toc_string = create_cog_info_tocs(result_string)
+    result = result_string.replace('$$$TOC$$$', toc_string)
+    with open(FILES.get('cogs_info.md'), 'w') as f:
+        f.write(result)
+
+
 @task
 def commit_push(c):
     os.chdir(main_dir_from_git())
@@ -612,12 +658,8 @@ def commit_push(c):
     sleep(1)
 
 
-@task
-def publish(c):
+@task(pre=[clean_repo, collect_data, store_userdata, increment_version, set_requirements, make_readme, commit_push])
+def build(c):
     os.chdir(main_dir_from_git())
     c.run("flit publish", echo=True)
-
-
-@task(pre=[clean_repo, collect_data, store_userdata, increment_version, make_readme, commit_push, publish])
-def build(c):
-    NOTIFIER.show_toast(title=f"Finished Building {PROJECT_NAME}", icon_path=r"art/finished/icons/pip.ico", duration=15)
+    NOTIFIER.show_toast(title=f"Finished Building {PROJECT_NAME}", icon_path=r"art/finished/icons/pip.ico", duration=15, msg=f"Published {PROJECT_NAME}, Version {get_package_version()} to PyPi")
