@@ -635,6 +635,7 @@ def create_cog_info_tocs(content):
 
 @task
 def make_cogs_info(c):
+    cog_info_file = pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'cogs', 'README.md')
     command_data = loadjson(FILES.get('command_data.json'))
     template_data = {'cog_image_location': "art/finished/images/cog_icon.png",
                      'current_cogs': command_data,
@@ -643,7 +644,7 @@ def make_cogs_info(c):
     result_string = template.render(template_data)
     toc_string = create_cog_info_tocs(result_string)
     result = result_string.replace('$$$TOC$$$', toc_string)
-    with open(FILES.get('cogs_info.md'), 'w') as f:
+    with open(cog_info_file, 'w') as f:
         f.write(result)
 
 
