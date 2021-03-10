@@ -128,7 +128,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         Posts and awesome ASCII Art Dragon!
 
         Example:
-            `@AntiPetros the_dragon`
+            @AntiPetros the_dragon
 
         """
         suprise_dragon_check = secrets.randbelow(100) + 1
@@ -147,7 +147,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         Simulates a coin flip and posts the result as an image of a Petros Dollar.
 
         Example:
-            `@AntiPetros flip_coin`
+            @AntiPetros flip_coin
 
         """
         with ctx.typing():
@@ -180,7 +180,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
             entries (int, optional): How many UD entries for that term it should post, max is 5. Defaults to 1.
 
         Example:
-            `@AntiPetros urban_dictionary Petros 2`
+            @AntiPetros urban_dictionary Petros 2
 
         """
         if entries > 5:
@@ -217,7 +217,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
             text (str): text you want to see as ASCII Art.
 
         Example:
-            `@AntiPetros make_figlet The text to figlet`
+            @AntiPetros make_figlet The text to figlet
         """
         figlet = Figlet(font='gothic', width=300)
         new_text = figlet.renderText(text.upper())

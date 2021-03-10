@@ -20,7 +20,6 @@ sudo apt-get update -y
 
 sudo apt-get install -y libcairo2-dev
 
-sudo apt-get install libmagic1
 
 sudo apt-get install -y libsdl-pango-dev
 

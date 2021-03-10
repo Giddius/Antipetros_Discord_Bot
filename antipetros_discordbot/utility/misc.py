@@ -163,38 +163,6 @@ def sync_to_async(_func):
     return wrapped
 
 
-def save_commands(cog, output_file=None):
-    command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/data/commands.json') if output_file is None else pathmaker(output_file)
-
-    if os.path.isfile(command_json_file) is False:
-        writejson({}, command_json_file)
-
-    command_json = loadjson(command_json_file)
-
-    command_json[str(cog)] = {'file_path': pathmaker(inspect.getfile(cog.__class__)).split('site-packages')[-1].strip('/'),
-                              'description': dedent(str(inspect.getdoc(cog.__class__))),
-                              "commands": {},
-                              "state": str(cog.docattrs.get('is_ready')[0]).replace('CogState.', '').split('|'),
-                              'config_name': cog.config_name}
-
-    for command in cog.get_commands():
-        command_json[str(cog)]["commands"][command.name.strip()] = {"signature": command.signature.replace('<ctx>', '').replace('  ', ' ').strip(),
-                                                                    "aliases": command.aliases,
-                                                                    "parameter": [param_string for param_string, _ in command.clean_params.items() if param_string != 'ctx'],
-                                                                    "checks": [str(check).split()[1].split('.')[0] for check in command.checks],
-                                                                    'short_doc': command.short_doc,
-                                                                    'usage': command.usage,
-                                                                    'description': command.description,
-                                                                    'is_hidden': command.hidden,
-                                                                    'is_enabled': command.enabled,
-                                                                    'qualified_name': command.qualified_name,
-                                                                    'help': command.help,
-                                                                    'brief': command.brief}
-
-    writejson(command_json, command_json_file, indent=4)
-    log.debug("commands for %s saved to %s", cog, command_json_file)
-
-
 def make_command_subsection_seperator(command_name):
     command_name = f"{command_name} COMMAND"
     return f'# {command_name.upper().center(75, "-")}'
@@ -224,6 +192,7 @@ def generate_base_cogs_config(bot: commands.Bot, output_file=None):
             out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('roles')[0]} = {COMMAND_CONFIG_SUFFIXES.get('roles')[1]}")
             if any(getclosurevars(check).nonlocals.get('in_dm_allowed', False) is True for check in command.checks):
                 out_lines.append(f"{command.name}{COMMAND_CONFIG_SUFFIXES.get('dm_ids')[0]} = {COMMAND_CONFIG_SUFFIXES.get('dm_ids')[1]}")
+
     writeit(out_file, '\n\n'.join(out_lines))
 
 
@@ -243,23 +212,22 @@ async def generate_bot_data(bot, production_bot):
 
 
 def generate_help_data(cog: commands.Cog, output_file=None):
-    help_data_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/data/command_data.json') if output_file is None else pathmaker(output_file)
+    if CogState.FOR_DEBUG in CogState.split(cog.docattrs['is_ready'][0]):
+        return
+    help_data_file = pathmaker(APPDATA['documentation'], 'command_help_data.json') if output_file is None else pathmaker(output_file)
     if os.path.isfile(help_data_file) is False:
         writejson({}, help_data_file)
     help_data = loadjson(help_data_file)
-    cog_name = cog.qualified_name
-    if cog_name not in help_data:
-        help_data[cog_name] = {}
-    help_data[cog_name] = {'description': cog.description,
-                           'config_name': cog.config_name,
-                           'cogstate': str(cog.docattrs['is_ready'][0]),
-                           'file_path': pathmaker(inspect.getfile(cog.__class__)).split('site-packages')[-1].strip('/'),
-                           'commands': {}}
+
     for command in cog.get_commands():
-        help_data[cog_name]['commands'][command.name.strip()] = {'brief': command.brief,
-                                                                 'description': command.description,
-                                                                 'usage': command.usage,
-                                                                 'help': command.help}
+        help_data[command.name.strip()] = {'brief': command.brief,
+                                           'description': command.description,
+                                           'usage': command.usage,
+                                           'help': command.help,
+                                           'hide': command.hidden,
+                                           'brief': command.brief,
+                                           'short_doc': command.short_doc}
+
     writejson(help_data, help_data_file)
 
 

@@ -11,34 +11,19 @@
 
 
   
-  - [Installation](#Installation)    
-    - [PyPi](#PyPi)  
-  - [Usage](#Usage)  
-  - [Description](#Description)  
-  - [Features](#Features)    
-    - [AdministrationCog](#AdministrationCog)    
-    - [AntistasiLogWatcherCog](#AntistasiLogWatcherCog)    
-    - [BotAdminCog](#BotAdminCog)    
-    - [CommunityServerInfoCog](#CommunityServerInfoCog)    
-    - [ConfigCog](#ConfigCog)    
-    - [FaqCog](#FaqCog)    
-    - [GeneralDebugCog](#GeneralDebugCog)    
-    - [GiveAwayCog](#GiveAwayCog)    
-    - [ImageManipulatorCog](#ImageManipulatorCog)    
-    - [KlimBimCog](#KlimBimCog)    
-    - [PurgeMessagesCog](#PurgeMessagesCog)    
-    - [SaveSuggestionCog](#SaveSuggestionCog)    
-    - [SubscriptionCog](#SubscriptionCog)    
-    - [TemplateCheckerCog](#TemplateCheckerCog)    
-    - [TranslateCog](#TranslateCog)  
-  - [Dependencies](#Dependencies)    
-    - [Python dependencies](#Python-dependencies)    
-    - [External dependencies](#External-dependencies)  
-  - [License](#License)  
-  - [Development](#Development)    
-    - [Future Plans](#Future-Plans)  
-  - [See also](#See-also)    
-    - [Links](#Links)
+  - [Installation](#installation)    
+    - [PyPi](#pypi)  
+  - [Usage](#usage)  
+  - [Description](#description)  
+  - [Features](#features)  
+  - [Dependencies](#dependencies)    
+    - [Python dependencies](#python-dependencies)    
+    - [External dependencies](#external-dependencies)  
+  - [License](#license)  
+  - [Development](#development)    
+    - [Future Plans](#future-plans)  
+  - [See also](#see-also)    
+    - [Links](#links)
 
 
 
@@ -124,7 +109,7 @@ pip install antipetros_discordbot==1.0.1
 
 #### Short Description
 
-<blockquote>Soon</blockquote>
+<blockquote>Commands and methods that help in Administrate the Discord Server.</blockquote>
 
 #### Config Name
 
@@ -156,17 +141,14 @@ pip install antipetros_discordbot==1.0.1
     
 
     
-    - **aliases:** *delete+msg*, *deletemsg*, *delete.msg*, *delete-msg*
+    - **aliases:** *deletemsg*, *delete-msg*, *delete+msg*, *delete.msg*
     
 
-    
-    - **checks:** *log_invoker*, *owner_or_admin*
-    
+    - **is hidden:** True
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <msg_id>
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -200,17 +182,13 @@ pip install antipetros_discordbot==1.0.1
 #### Cog State Tags
 
 ```diff
-- EMPTY
-
 - DOCUMENTATION_MISSING
-
-- CRASHING
-
-- OUTDATED
 
 - FEATURE_MISSING
 
 - UNTESTED
+
++ WORKING
 ```
 
 </details>
@@ -220,19 +198,30 @@ pip install antipetros_discordbot==1.0.1
 
 - **GET_NEWEST_LOGS**
     
+    - **help:**
+
+        Gets the newest log files from the Dev Drive.
+        
+        If the log file is bigger than current file size limit, it will provide it zipped.
+        
+        Tries to fuzzy match both server and sub-folder.
+        
+        Args:
+            server (str): Name of the Server
+            sub_folder (str): Name of the sub-folder e.g. Server, HC_0, HC_1,...
+            amount (int, optional): The amount of log files to get. standard max is 5 . Defaults to 1.
 
     
-    - **aliases:** *get+newest+logs*, *get.newest.logs*, *getnewestlogs*, *get-newest-logs*
-    
 
     
-    - **checks:** *allowed_channel_and_allowed_role_2*
+    - **aliases:** *get+newest+logs*, *getnewestlogs*, *get.newest.logs*, *get-newest-logs*
     
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <server> <sub_folder> [amount=1]
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        @AntiPetros get_newest_logs mainserver_1 server
         ```
     
     <br>
@@ -240,19 +229,26 @@ pip install antipetros_discordbot==1.0.1
 
 - **GET_NEWEST_MOD_DATA**
     
+    - **help:**
+
+        Gets the required mods for the Server.
+        
+        Provides the list as embed and Arma3 importable html file.
+        
+        Args:
+            server (str): Name of the Antistasi Community Server to retrieve the mod list.
 
     
-    - **aliases:** *get.newest.mod.data*, *get-newest-mod-data*, *getnewestmoddata*, *get+newest+mod+data*
-    
 
     
-    - **checks:** *allowed_channel_and_allowed_role_2*
+    - **aliases:** *get+newest+mod+data*, *getnewestmoddata*, *get.newest.mod.data*, *get-newest-mod-data*
     
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <server>
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        @AntiPetros get_newest_mod_data mainserver_1
         ```
     
     <br>
@@ -276,7 +272,7 @@ pip install antipetros_discordbot==1.0.1
 
 #### Short Description
 
-<blockquote>Soon</blockquote>
+<blockquote>Commands and methods that are needed to Administrate the Bot itself.</blockquote>
 
 #### Config Name
 
@@ -300,17 +296,14 @@ pip install antipetros_discordbot==1.0.1
     
 
     
-    - **aliases:** *add-to-blacklist*, *add.to.blacklist*, *add+to+blacklist*, *addtoblacklist*
+    - **aliases:** *add+to+blacklist*, *addtoblacklist*, *add.to.blacklist*, *add-to-blacklist*
     
 
-    
-    - **checks:** *log_invoker*, *owner_or_admin*
-    
+    - **is hidden:** True
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <user>
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -320,17 +313,14 @@ pip install antipetros_discordbot==1.0.1
     
 
     
-    - **aliases:** *add-who-is-phrase*, *add+who+is+phrase*, *add.who.is.phrase*, *addwhoisphrase*
+    - **aliases:** *addwhoisphrase*, *add+who+is+phrase*, *add.who.is.phrase*, *add-who-is-phrase*
     
 
-    
-    - **checks:** *owner_or_admin*
-    
+    - **is hidden:** True
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <phrase>
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -340,11 +330,15 @@ pip install antipetros_discordbot==1.0.1
     
 
     
-    - **aliases:** *allaliases*, *all.aliases*, *all-aliases*, *all+aliases*
+    - **aliases:** *allaliases*, *all-aliases*, *all.aliases*, *all+aliases*
     
 
-    
+    - **is hidden:** True
 
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
@@ -353,11 +347,15 @@ pip install antipetros_discordbot==1.0.1
     
 
     
-    - **aliases:** *invocation+prefixes*, *invocationprefixes*, *invocation.prefixes*, *invocation-prefixes*
+    - **aliases:** *invocation-prefixes*, *invocation.prefixes*, *invocation+prefixes*, *invocationprefixes*
     
 
-    
+    - **is hidden:** True
 
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
@@ -366,11 +364,15 @@ pip install antipetros_discordbot==1.0.1
     
 
     
-    - **aliases:** *you_dead?*, *lifecheck*, *life.check*, *poke-with-stick*, *life+check*, *are-you-there*, *life-check*
+    - **aliases:** *life+check*, *poke-with-stick*, *life.check*, *lifecheck*, *are-you-there*, *you_dead?*, *life-check*
     
 
-    
+    - **is hidden:** True
 
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
@@ -379,17 +381,14 @@ pip install antipetros_discordbot==1.0.1
     
 
     
-    - **aliases:** *removefromblacklist*, *remove-from-blacklist*, *remove+from+blacklist*, *remove.from.blacklist*
+    - **aliases:** *remove+from+blacklist*, *remove-from-blacklist*, *remove.from.blacklist*, *removefromblacklist*
     
 
-    
-    - **checks:** *log_invoker*, *owner_or_admin*
-    
+    - **is hidden:** True
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <user>
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -399,17 +398,14 @@ pip install antipetros_discordbot==1.0.1
     
 
     
-    - **aliases:** *self-announcement*, *selfannouncement*, *self.announcement*, *self+announcement*
+    - **aliases:** *self+announcement*, *selfannouncement*, *self.announcement*, *self-announcement*
     
 
-    
-    - **checks:** *is_owner*
-    
+    - **is hidden:** True
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <channel> [test=False]
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -417,19 +413,26 @@ pip install antipetros_discordbot==1.0.1
 
 - **SEND_LOG_FILE**
     
+    - **help:**
+
+        Gets the log files of the bot and post it as a file to discord.
+        
+        You can choose to only get the newest or all logs.
+        
+        Args:
+            which_logs (str, optional): [description]. Defaults to 'newest'. other options = 'all'
 
     
-    - **aliases:** *send+log+file*, *send.log.file*, *sendlogfile*, *send-log-file*
-    
 
     
-    - **checks:** *is_owner*
+    - **aliases:** *sendlogfile*, *send+log+file*, *send.log.file*, *send-log-file*
     
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [which_logs=newest]
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        @AntiPetros send_log_file all
         ```
     
     <br>
@@ -439,11 +442,15 @@ pip install antipetros_discordbot==1.0.1
     
 
     
-    - **aliases:** *tell.uptime*, *tell-uptime*, *tell+uptime*, *telluptime*
+    - **aliases:** *tell.uptime*, *tell+uptime*, *tell-uptime*, *telluptime*
     
 
-    
+    - **is hidden:** True
 
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
@@ -496,34 +503,50 @@ pip install antipetros_discordbot==1.0.1
 
 - **CURRENT_ONLINE_SERVER**
     
+    - **help:**
+
+        Shows all server of the Antistasi Community, that are currently online.
+        
+        Testserver_3 and Eventserver are excluded as they usually are password guarded.
 
     
-    - **aliases:** *current-online-server*, *current.online.server*, *current+online+server*, *currentonlineserver*
-    
 
     
-    - **checks:** *allowed_channel_and_allowed_role_2*
+    - **aliases:** *currentonlineserver*, *current+online+server*, *current-online-server*, *current.online.server*
     
 
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        @AntiPetros current_online_server
+        ```
     
     <br>
 
 
 - **CURRENT_PLAYERS**
     
+    - **help:**
+
+        Show all players that are currently online on one of the Antistasi Community Server.
+        
+        Shows Player Name, Player Score and Time Played on that Server.
+        
+        Args:
+            server (str): Name of the Server, case insensitive.
 
     
-    - **aliases:** *currentplayers*, *current+players*, *current-players*, *current.players*
-    
 
     
-    - **checks:** *allowed_channel_and_allowed_role_2*
+    - **aliases:** *current.players*, *current-players*, *currentplayers*, *current+players*
     
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <server>
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        @AntiPetros current_players mainserver_1
         ```
     
     <br>
@@ -533,17 +556,14 @@ pip install antipetros_discordbot==1.0.1
     
 
     
-    - **aliases:** *exclude-from-server-status-notification*, *excludefromserverstatusnotification*, *exclude.from.server.status.notification*, *exclude+from+server+status+notification*
+    - **aliases:** *exclude+from+server+status+notification*, *exclude-from-server-status-notification*, *exclude.from.server.status.notification*, *excludefromserverstatusnotification*
     
 
-    
-    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** False
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <server_name>
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -553,17 +573,14 @@ pip install antipetros_discordbot==1.0.1
     
 
     
-    - **aliases:** *undoexcludefromserverstatusnotification*, *undo+exclude+from+server+status+notification*, *undo-exclude-from-server-status-notification*, *undo.exclude.from.server.status.notification*
+    - **aliases:** *undo.exclude.from.server.status.notification*, *undo-exclude-from-server-status-notification*, *undo+exclude+from+server+status+notification*, *undoexcludefromserverstatusnotification*
     
 
-    
-    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** False
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <server_name>
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -600,17 +617,9 @@ commands are hidden from the help command.</blockquote>
 #### Cog State Tags
 
 ```diff
-- DOCUMENTATION_MISSING
-
-- CRASHING
-
-- OUTDATED
-
 - NEEDS_REFRACTORING
 
 - FEATURE_MISSING
-
-- UNTESTED
 
 - OPEN_TODOS
 ```
@@ -622,19 +631,27 @@ commands are hidden from the help command.</blockquote>
 
 - **ADD_ALIAS**
     
+    - **help:**
+
+        Adds an alias for a command.
+        
+        Alias has to be unique and not spaces.
+        
+        Args:
+            command_name (str): name of the command
+            alias (str): the new alias.
 
     
-    - **aliases:** *add+alias*, *addalias*, *add.alias*, *add-alias*
-    
 
     
-    - **checks:** *log_invoker*, *owner_or_admin*
+    - **aliases:** *add-alias*, *add.alias*, *add+alias*, *addalias*
     
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <command_name> <alias>
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        @AntiPetros add_alias flip_coin flip_it
         ```
     
     <br>
@@ -642,21 +659,19 @@ commands are hidden from the help command.</blockquote>
 
 - **CHANGE_SETTING_TO**
     
-    ```diff
-    + Command to change a single config setting.
-    ```
-    
+    - **help:**
+
+        NOT IMPLEMENTED
 
     
 
     
-    - **checks:** *is_owner*
-    
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <config> <section> <option> <value>
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -664,21 +679,19 @@ commands are hidden from the help command.</blockquote>
 
 - **CONFIG_REQUEST**
     
-    ```diff
-    + Sends config files via discord as attachments.
-    ```
-    
+    - **help:**
+
+        NOT IMPLEMENTED
 
     
 
     
-    - **checks:** *is_owner*
-    
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [config_name=all]
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -686,51 +699,59 @@ commands are hidden from the help command.</blockquote>
 
 - **LIST_CONFIGS**
     
-    ```diff
-    + Lists all available configs, usefull to get the name for the other commands
-    ```
-    
+    - **help:**
+
+        NOT IMPLEMENTED
 
     
 
     
-    - **checks:** *is_owner*
-    
 
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
 
 - **OVERWRITE_CONFIG_FROM_FILE**
     
-    ```diff
-    + Accepts and config file as attachments and replaces the existing config with it.
-    ```
-    
+    - **help:**
+
+        NOT IMPLEMENTED
 
     
 
     
-    - **checks:** *log_invoker*, *is_owner*
-    
 
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
 
 - **SHOW_CONFIG_CONTENT**
     
+    - **help:**
+
+        NOT IMPLEMENTED
 
     
 
     
-    - **checks:** *is_owner*
-    
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [config_name=all]
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -738,17 +759,19 @@ commands are hidden from the help command.</blockquote>
 
 - **SHOW_CONFIG_CONTENT_RAW**
     
+    - **help:**
+
+        NOT IMPLEMENTED
 
     
 
     
-    - **checks:** *is_owner*
-    
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [config_name=all]
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -798,23 +821,25 @@ commands are hidden from the help command.</blockquote>
 
 - **ADD_FAQ_ITEM**
     
-    ```diff
-    + UNFINISHED
-    ```
+    - **help:**
+
+        UNFINISHED
+        
+        Args:
+            faq_number (Optional[int], optional): [description]. Defaults to None.
+            from_message (Optional[discord.Message], optional): [description]. Defaults to None.
+
     
 
     
-    - **aliases:** *add-faq-item*, *add.faq.item*, *add+faq+item*, *addfaqitem*
+    - **aliases:** *add-faq-item*, *addfaqitem*, *add.faq.item*, *add+faq+item*
     
 
-    
-    - **checks:** *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** False
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [faq_number] [from_message]
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -822,23 +847,26 @@ commands are hidden from the help command.</blockquote>
 
 - **CREATE_FAQS_AS_EMBED**
     
-    ```diff
-    + Posts all faqs ,that it has saved, at once and posts a TOC afterwards.
-    ```
+    - **help:**
+
+        Posts all faqs ,that it has saved, at once and posts a TOC afterwards.
+        
+        Intended to recreate the FAQ's as embeds, or after changing an FAQ to rebuild it
+        
+        Args:
+            as_template (bool, optional): if the resulting faq item should be created via the templated items or from the direct parsed faqs.
+
     
 
     
-    - **aliases:** *create-faqs-as-embed*, *createfaqsasembed*, *create.faqs.as.embed*, *create+faqs+as+embed*
+    - **aliases:** *create-faqs-as-embed*, *create+faqs+as+embed*, *create.faqs.as.embed*, *createfaqsasembed*
     
 
-    
-    - **checks:** *log_invoker*, *owner_or_admin*
-    
+    - **is hidden:** False
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [as_template]
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -846,23 +874,29 @@ commands are hidden from the help command.</blockquote>
 
 - **POST_FAQ_BY_NUMBER**
     
-    ```diff
-    + Posts an FAQ as an embed on request.
-    ```
+    - **help:**
+
+        Posts an FAQ as an embed on request.
+        
+        Either as an normal message or as an reply, if the invoking message was also an reply.
+        
+        Deletes invoking message
+        
+        Args:
+            faq_numbers (commands.Greedy[int]): minimum one faq number to request, maximum as many as you want seperated by one space (i.e. 14 12 3)
+            as_template (bool, optional): if the resulting faq item should be created via the templated items or from the direct parsed faqs.
+
     
 
     
-    - **aliases:** *postfaqbynumber*, *post-faq-by-number*, *post+faq+by+number*, *post.faq.by.number*, *faq*
+    - **aliases:** *faq*, *postfaqbynumber*, *post-faq-by-number*, *post+faq+by+number*, *post.faq.by.number*
     
 
-    
-    - **checks:** *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** False
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [faq_numbers]... [as_template]
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -876,386 +910,6 @@ commands are hidden from the help command.</blockquote>
 ---
 
 
-
-### <p align="center"><b>[GeneralDebugCog](antipetros_discordbot/cogs/dev_cogs/general_debug_cog.py)</b></p>
-
-<details><summary><b>Description</b></summary>
-
-
-
-
-#### Short Description
-
-<blockquote>Cog for debug or test commands, should not be enabled fo normal Bot operations.</blockquote>
-
-#### Config Name
-
-<blockquote>general_debug</blockquote>
-
-
-#### Cog State Tags
-
-```diff
-- FOR_DEBUG
-
-- DOCUMENTATION_MISSING
-
-- NEEDS_REFRACTORING
-
-- FEATURE_MISSING
-
-- UNTESTED
-
-- OPEN_TODOS
-
-+ WORKING
-```
-
-</details>
-
-<details><summary><b>Commands</b></summary><blockquote>
-
-
-- **ALL_CHANNEL_PERMISSIONS**
-    
-
-    
-    - **aliases:** *all.channel.permissions*, *all-channel-permissions*, *allchannelpermissions*, *all+channel+permissions*
-    
-
-    
-
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [member] [display_mode=only_true] [filter_category]
-        ```
-    
-    <br>
-
-
-- **CHECK_A_HOOK**
-    
-
-    
-    - **aliases:** *check+a+hook*, *checkahook*, *check-a-hook*, *check.a.hook*
-    
-
-    
-
-    
-    <br>
-
-
-- **CHECK_BOT_CHANNEL_PERMISSIONS**
-    
-
-    
-    - **aliases:** *check-bot-channel-permissions*, *check.bot.channel.permissions*, *channel_permissions*, *checkbotchannelpermissions*, *check+bot+channel+permissions*
-    
-
-    
-
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [channel] [member] [display_mode=only_true] [json_file]
-        ```
-    
-    <br>
-
-
-- **CHECK_EMBED_GIF**
-    
-
-    
-
-    
-
-    
-    <br>
-
-
-- **CHECK_NOT_ALLOWED_CHANNEL**
-    
-
-    
-    - **aliases:** *check-not-allowed-channel*, *check.not.allowed.channel*, *check+not+allowed+channel*, *checknotallowedchannel*
-    
-
-    
-
-    
-    <br>
-
-
-- **CHECK_RELOAD_MECH**
-    
-
-    
-    - **aliases:** *checkreloadmech*, *check+reload+mech*, *check.reload.mech*, *check-reload-mech*
-    
-
-    
-
-    
-    <br>
-
-
-- **CREATE_ROLE_BY_NAME_AND_ASSIGN_TO_ALL**
-    
-
-    
-    - **aliases:** *create-role-by-name-and-assign-to-all*, *createrolebynameandassigntoall*, *create.role.by.name.and.assign.to.all*, *create+role+by+name+and+assign+to+all*
-    
-
-    
-
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <role_name> <reason>
-        ```
-    
-    <br>
-
-
-- **DUMP_PERMISSIONS**
-    
-
-    
-    - **aliases:** *dump.permissions*, *dump-permissions*, *dumppermissions*, *dump+permissions*
-    
-
-    
-
-    
-    <br>
-
-
-- **GET_ALL_ATTACHMENTS**
-    
-
-    
-    - **aliases:** *get.all.attachments*, *get-all-attachments*, *get+all+attachments*, *getallattachments*
-    
-
-    
-
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <channel> [amount_to_scan]
-        ```
-    
-    <br>
-
-
-- **GET_ALL_FROM_EMBED_USER**
-    
-
-    
-    - **aliases:** *getallfromembeduser*, *get-all-from-embed-user*, *get.all.from.embed.user*, *get+all+from+embed+user*
-    
-
-    
-    - **checks:** *only_giddi*
-    
-
-    
-    <br>
-
-
-- **GET_PREFIXES**
-    
-
-    
-
-    
-
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <message>
-        ```
-    
-    <br>
-
-
-- **MENTION_NOMAS**
-    
-
-    
-    - **aliases:** *mention-nomas*, *mention+nomas*, *mentionnomas*, *mention.nomas*
-    
-
-    
-
-    
-    <br>
-
-
-- **MOCK_SUBSCRIBE_THING**
-    
-
-    
-    - **aliases:** *mock.subscribe.thing*, *mock+subscribe+thing*, *mocksubscribething*, *mock-subscribe-thing*
-    
-
-    
-
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [topics...]
-        ```
-    
-    <br>
-
-
-- **PIN_MESSAGE**
-    
-
-    
-    - **aliases:** *pin-message*, *pin*, *pin.message*, *pinmessage*, *pin+message*
-    
-
-    
-
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <reason>
-        ```
-    
-    <br>
-
-
-- **QUICK_LATENCY**
-    
-
-    
-    - **aliases:** *quicklatency*, *quick.latency*, *quick+latency*, *quick-latency*
-    
-
-    
-
-    
-    <br>
-
-
-- **REQUEST_SERVER_RESTART**
-    
-
-    
-    - **aliases:** *requestserverrestart*, *request-server-restart*, *request+server+restart*, *request.server.restart*
-    
-
-    
-
-    
-    <br>
-
-
-- **ROLL_BLOCKING**
-    
-
-    
-    - **aliases:** *roll.blocking*, *roll-blocking*, *roll+blocking*, *rollblocking*
-    
-
-    
-
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [target_time=1]
-        ```
-    
-    <br>
-
-
-- **SAVE_EMBED**
-    
-
-    
-    - **aliases:** *save.embed*, *save+embed*, *save-embed*, *saveembed*
-    
-
-    
-
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <message>
-        ```
-    
-    <br>
-
-
-- **SHOW_COMMAND_NAMES**
-    
-
-    
-    - **aliases:** *show-command-names*, *showcommandnames*, *show+command+names*, *show.command.names*
-    
-
-    
-
-    
-    <br>
-
-
-- **THE_BOTS_NEW_CLOTHES**
-    
-
-    
-    - **aliases:** *clr-scrn*
-    
-
-    
-
-    
-    <br>
-
-
-- **UNPIN_MESSAGE**
-    
-
-    
-    - **aliases:** *unpin+message*, *unpin*, *unpin-message*, *unpinmessage*, *unpin.message*
-    
-
-    
-
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <reason>
-        ```
-    
-    <br>
-
-
-- **WRITE_DATA**
-    
-
-    
-    - **aliases:** *write-data*, *write+data*, *write.data*, *writedata*
-    
-
-    
-
-    
-    <br>
-
-
-
-</blockquote>
-
-</details>
-
----
 
 
 
@@ -1290,15 +944,22 @@ commands are hidden from the help command.</blockquote>
 
 - **ABORT_GIVE_AWAY**
     
+    - **help:**
+
+        NOT IMPLEMENTED
 
     
-    - **aliases:** *abortgiveaway*, *abort+give+away*, *abort-give-away*, *abort.give.away*
-    
 
     
-    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role_2*
+    - **aliases:** *abort+give+away*, *abortgiveaway*, *abort.give.away*, *abort-give-away*
     
 
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
@@ -1307,17 +968,14 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *create+giveaway*, *creategiveaway*, *giveaway*, *create.giveaway*, *create-giveaway*
+    - **aliases:** *create-giveaway*, *create.giveaway*, *creategiveaway*, *giveaway*, *create+giveaway*
     
 
-    
-    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** True
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [--enter_emoji ENTER_EMOJI=🎁] [--start_message START_MESSAGE] [--end_message END_MESSAGE=Give away has finished!] [--num_winners NUM_WINNERS=1] [--end_date END_DATE=24 hours] [--title TITLE=Antistasi Give-Away]
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -1325,15 +983,22 @@ commands are hidden from the help command.</blockquote>
 
 - **FINISH_GIVE_AWAY**
     
+    - **help:**
+
+        NOT IMPLEMENTED
 
     
-    - **aliases:** *finishgiveaway*, *finish-give-away*, *finish.give.away*, *finish+give+away*
-    
 
     
-    - **checks:** *log_invoker*, *allowed_channel_and_allowed_role_2*
+    - **aliases:** *finish+give+away*, *finishgiveaway*, *finish.give.away*, *finish-give-away*
     
 
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
@@ -1356,7 +1021,7 @@ commands are hidden from the help command.</blockquote>
 
 #### Short Description
 
-<blockquote>Soon</blockquote>
+<blockquote>Commands that manipulate or generate images.</blockquote>
 
 #### Config Name
 
@@ -1366,13 +1031,9 @@ commands are hidden from the help command.</blockquote>
 #### Cog State Tags
 
 ```diff
-- DOCUMENTATION_MISSING
-
 - NEEDS_REFRACTORING
 
 - FEATURE_MISSING
-
-- UNTESTED
 
 - OPEN_TODOS
 
@@ -1384,63 +1045,97 @@ commands are hidden from the help command.</blockquote>
 <details><summary><b>Commands</b></summary><blockquote>
 
 
+- **ADD_STAMP**
+    
+    - **help:**
+
+        Adds a new stamp image to the available stamps.
+        
+        This command needs to have the image as an attachment.
+
+    
+
+    
+    - **aliases:** *add-stamp*, *add+stamp*, *add.stamp*, *addstamp*
+    
+
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        @AntiPetros add_stamp
+        ```
+    
+    <br>
+
+
 - **AVAILABLE_STAMPS**
     
-    ```diff
-    + Posts all available stamps.
-    ```
+    - **help:**
+
+        Posts all available stamps.
+
     
 
     
     - **aliases:** *available.stamps*, *available+stamps*, *available-stamps*, *availablestamps*
     
 
-    
-    - **checks:** *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** False
 
+    - **usage:**
+        ```python
+        @AntiPetros available_stamps
+        ```
     
     <br>
 
 
 - **MEMBER_AVATAR**
     
-    ```diff
-    + Stamps the avatar of a Member with the Antistasi Crest.
-    ```
+    - **help:**
+
+        Stamps the avatar of a Member with the Antistasi Crest.
+        
+        Returns the new stamped avatar as a .PNG image that the Member can save and replace his orginal avatar with.
+
     
 
     
-    - **aliases:** *member-avatar*, *member+avatar*, *memberavatar*, *member.avatar*
+    - **aliases:** *memberavatar*, *member.avatar*, *member+avatar*, *member-avatar*
     
 
-    
-    - **checks:** *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** False
 
+    - **usage:**
+        ```python
+        @AntiPetros member_avatar
+        ```
     
     <br>
 
 
 - **STAMP_IMAGE**
     
-    ```diff
-    + Stamps an image with a small image from the available stamps.
-    ```
+    - **help:**
+
+        Stamps an image with a small image from the available stamps.
+        
+        Usefull for watermarking images.
+        
+        Get all available stamps with '@AntiPetros available_stamps'
+
     
 
     
-    - **aliases:** *stamp+image*, *stamp-image*, *stamp.image*, *stampimage*
+    - **aliases:** *stamp.image*, *stampimage*, *stamp+image*, *stamp-image*
     
 
-    
-    - **checks:** *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** False
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [--factor FACTOR] [--stamp_opacity STAMP_OPACITY=1.0] [--second_pos SECOND_POS=right] [--first_pos FIRST_POS=bottom] [--stamp_image STAMP_IMAGE=ASLOGO1]
+    - **usage:**
+        ```python
+        @AntiPetros stamp_image -si ASLOGO -fp bottom -sp right -so 0.5 -f 0.25
         ```
     
     <br>
@@ -1484,85 +1179,218 @@ commands are hidden from the help command.</blockquote>
 
 - **FLIP_COIN**
     
-    ```diff
-    + Simulates a coin flip and posts the result as an image of a Petros Dollar.
-    ```
+    - **help:**
+
+        Simulates a coin flip and posts the result as an image of a Petros Dollar.
+
     
 
     
-    - **aliases:** *flip+coin*, *flip-coin*, *flip.coin*, *flipcoin*, *flip*, *coinflip*
+    - **aliases:** *flip+coin*, *coinflip*, *flip.coin*, *flip-coin*, *flip*, *flipcoin*
     
 
-    
-    - **checks:** *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** False
 
+    - **usage:**
+        ```python
+        @AntiPetros flip_coin
+        ```
+    
+    ![](art/finished/gifs/flip_coin_command.gif)
     
     <br>
 
 
 - **MAKE_FIGLET**
     
-    ```diff
-    + Posts an ASCII Art version of the input text.
-    ```
+    - **help:**
+
+        Posts an ASCII Art version of the input text.
+        
+        **Warning, your invoking message gets deleted!**
+        
+        Args:
+            text (str): text you want to see as ASCII Art.
+
     
 
     
     - **aliases:** *make.figlet*, *make+figlet*, *make-figlet*, *makefiglet*
     
 
-    
-    - **checks:** *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** False
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <text>
+    - **usage:**
+        ```python
+        @AntiPetros make_figlet The text to figlet
         ```
+    
+    ![](art/finished/gifs/make_figlet_command.gif)
     
     <br>
 
 
 - **THE_DRAGON**
     
-    ```diff
-    + Posts and awesome ASCII Art Dragon!
-    ```
+    - **help:**
+
+        Posts and awesome ASCII Art Dragon!
+
     
 
     
     - **aliases:** *thedragon*, *the.dragon*, *the-dragon*, *the+dragon*
     
 
-    
-    - **checks:** *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** False
 
+    - **usage:**
+        ```python
+        @AntiPetros the_dragon
+        ```
+    
+    ![](art/finished/gifs/the_dragon_command.gif)
     
     <br>
 
 
 - **URBAN_DICTIONARY**
     
-    ```diff
-    + Searches Urbandictionary for the search term and post the answer as embed
-    ```
+    - **help:**
+
+        Searches Urbandictionary for the search term and post the answer as embed
+        
+        Args:
+        
+            term (str): the search term
+            entries (int, optional): How many UD entries for that term it should post, max is 5. Defaults to 1.
+
     
 
     
-    - **aliases:** *urbandictionary*, *urban+dictionary*, *urban.dictionary*, *urban-dictionary*
+    - **aliases:** *urban+dictionary*, *urbandictionary*, *urban.dictionary*, *urban-dictionary*
+    
+
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        @AntiPetros urban_dictionary Petros 2
+        ```
+    
+    ![](art/finished/gifs/urban_dictionary_command.gif)
+    
+    <br>
+
+
+
+</blockquote>
+
+</details>
+
+---
+
+
+
+### <p align="center"><b>[PerformanceCog](antipetros_discordbot/cogs/bot_admin_cogs/performance_cog.py)</b></p>
+
+<details><summary><b>Description</b></summary>
+
+
+
+
+#### Short Description
+
+<blockquote>Collects Latency data and memory usage every 10min and posts every 24h a report of the last 24h as graphs.</blockquote>
+
+#### Config Name
+
+<blockquote>performance</blockquote>
+
+
+#### Cog State Tags
+
+```diff
+- DOCUMENTATION_MISSING
+
+- NEEDS_REFRACTORING
+
+- FEATURE_MISSING
+
+- OPEN_TODOS
+```
+
+</details>
+
+<details><summary><b>Commands</b></summary><blockquote>
+
+
+- **GET_COMMAND_STATS**
     
 
     
-    - **checks:** *allowed_channel_and_allowed_role_2*
+    - **aliases:** *get+command+stats*, *get.command.stats*, *get-command-stats*, *getcommandstats*
+    
+
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
+- **REPORT**
+    
+    - **help:**
+
+        Reports both current latency and memory usage as Graph.
+
     
 
     
-    - **signature:**
-        ```diff
-        @AntiPetros <term> [entries=1]
+
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        @AntiPetros report
+        ```
+    
+    <br>
+
+
+- **REPORT_LATENCY**
+    
+
+    
+    - **aliases:** *reportlatency*, *report.latency*, *report+latency*, *report-latency*
+    
+
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
+- **REPORT_MEMORY**
+    
+
+    
+    - **aliases:** *reportmemory*, *report-memory*, *report.memory*, *report+memory*
+    
+
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -1610,17 +1438,14 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *purge+antipetros*, *purge.antipetros*, *purgeantipetros*, *purge-antipetros*
+    - **aliases:** *purge-antipetros*, *purge+antipetros*, *purgeantipetros*, *purge.antipetros*
     
 
-    
-    - **checks:** *in_allowed_channels*, *is_owner*
-    
+    - **is hidden:** True
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [--number_of_messages NUMBER_OF_MESSAGES=99999999999] [--and_giddi AND_GIDDI=False]
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -1644,7 +1469,7 @@ commands are hidden from the help command.</blockquote>
 
 #### Short Description
 
-<blockquote>Soon</blockquote>
+<blockquote>Provides functionality for each Antistasi Team to save suggestions by reacting with emojis.</blockquote>
 
 #### Config Name
 
@@ -1677,10 +1502,12 @@ commands are hidden from the help command.</blockquote>
 
     
 
-    
-    - **checks:** *dm_only*
-    
+    - **is hidden:** True
 
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
@@ -1690,14 +1517,11 @@ commands are hidden from the help command.</blockquote>
 
     
 
-    
-    - **checks:** *owner_or_admin*
-    
+    - **is hidden:** True
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [sure=False]
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -1708,14 +1532,11 @@ commands are hidden from the help command.</blockquote>
 
     
 
-    
-    - **checks:** *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** True
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [report_template=basic_report.html.jinja]
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -1726,14 +1547,11 @@ commands are hidden from the help command.</blockquote>
 
     
 
-    
-    - **checks:** *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** True
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [suggestion_ids...]
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -1744,10 +1562,12 @@ commands are hidden from the help command.</blockquote>
 
     
 
-    
-    - **checks:** *dm_only*
-    
+    - **is hidden:** True
 
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
@@ -1757,10 +1577,12 @@ commands are hidden from the help command.</blockquote>
 
     
 
-    
-    - **checks:** *dm_only*
-    
+    - **is hidden:** True
 
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
@@ -1770,14 +1592,11 @@ commands are hidden from the help command.</blockquote>
 
     
 
-    
-    - **checks:** *dm_only*
-    
+    - **is hidden:** True
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <suggestion_id>
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -1825,17 +1644,14 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *create-subscription-channel*, *createsubscriptionchannel*, *create.subscription.channel*, *create+subscription+channel*
+    - **aliases:** *create-subscription-channel*, *create+subscription+channel*, *createsubscriptionchannel*, *create.subscription.channel*
     
 
-    
-    - **checks:** *owner_or_admin*
-    
+    - **is hidden:** True
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros <category> <name>
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -1845,13 +1661,15 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *new+topic*, *new-topic*, *newtopic*, *new.topic*
+    - **aliases:** *new-topic*, *new+topic*, *new.topic*, *newtopic*
     
 
-    
-    - **checks:** *has_attachments*
-    
+    - **is hidden:** True
 
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
@@ -1906,17 +1724,14 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *checktemplate*, *check.template*, *check+template*, *check-template*
+    - **aliases:** *checktemplate*, *check+template*, *check.template*, *check-template*
     
 
-    
-    - **checks:** *has_attachments*, *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** False
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [all_items_file=True] [case_insensitive=False]
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -1962,34 +1777,42 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *available-languages*, *available.languages*, *availablelanguages*, *available+languages*
+    - **aliases:** *available.languages*, *available-languages*, *availablelanguages*, *available+languages*
     
 
-    
-    - **checks:** *allowed_channel_and_allowed_role_2*
-    
+    - **is hidden:** False
 
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
 
 - **TRANSLATE**
     
-    ```diff
-    + Translates text into multiple different languages.
-    ```
-    
+    - **help:**
+
+        Translates text into multiple different languages.
+        
+        Tries to auto-guess input language.
+        
+        **Warning, your invoking message gets deleted!**
+        
+        Args:
+            text_to_translate (str): the text to translate, quotes are optional
+            to_language_id (Optional[LanguageConverter], optional): either can be the name of the language or an language code (iso639-1 language codes). Defaults to "english".
 
     
 
     
-    - **checks:** *allowed_channel_and_allowed_role_2*
-    
 
-    
-    - **signature:**
-        ```diff
-        @AntiPetros [to_language_id=english] <text_to_translate>
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        @AntiPetros translate german This is the Sentence to translate
         ```
     
     <br>
@@ -2090,6 +1913,21 @@ commands are hidden from the help command.</blockquote>
 ### External dependencies
 
 
+- [Cairo](https://www.cairographics.org/)
+    - __Windows__
+        follow these instructions `https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer`
+
+    - __Unix__
+        sudo apt-get install -y libcairo2-dev
+
+- [Pango](https://pango.gnome.org/)
+    - __Windows__
+        Follow this `https://github.com/ImageMagick/pango`
+
+    - __Unix__
+        sudo apt-get install -y libsdl-pango-dev
+
+
 
 ---
 
@@ -2117,6 +1955,10 @@ MIT
 
 ### Links
 
+
+- [Antistasi Website](https://a3antistasi.enjin.com/)
+
+- [Antistasi Steam Workshop Items](https://steamcommunity.com/id/OfficialAntiStasiCommunity/myworkshopfiles/)
 
 - [A3 Antistasi Official Discord Server](https://discord.gg/8WNsueDKf5)
 

@@ -2,11 +2,17 @@
 
 # region [Imports]
 
+import os
+import inspect
+from textwrap import dedent
+import subprocess
+import shutil
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+from discord.ext import commands, tasks
+import discord
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
 # endregion[Imports]
@@ -39,7 +45,60 @@ CHANNEL_CAT_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'channel_category_dat
 GENERAL_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'general_data.json')
 MEMBERS_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'members_data.json')
 ROLE_CHANNEL_DATA_OUTPUT = pathmaker(APPDATA['fixed_data'], 'role_channel_data.json')
+
 # endregion[Constants]
+
+
+def main_dir_from_git():
+    GIT_EXE = shutil.which('git.exe')
+    cmd = subprocess.run([GIT_EXE, "rev-parse", "--show-toplevel"], capture_output=True, text=True, shell=True, check=True)
+    main_dir = pathmaker(cmd.stdout.rstrip('\n'))
+    if os.path.isdir(main_dir) is False:
+        raise FileNotFoundError('Unable to locate main dir of project')
+    return main_dir
+
+
+def get_gif(in_command: commands.Command):
+    main_dir = main_dir_from_git()
+    GIF_FOLDER = pathmaker(main_dir, 'art', 'finished', 'gifs')
+    for file in os.scandir(GIF_FOLDER):
+        if file.is_file() and file.name.endswith('.gif') and file.name.casefold().startswith(in_command.name.casefold()):
+            print(main_dir)
+            return pathmaker(pathmaker(file.path).removeprefix(pathmaker(main_dir) + '/'))
+    return None
+
+
+def save_cog_command_data(cog, output_file=None):
+    command_json_file = pathmaker(os.getenv('TOPLEVELMODULE'), '../docs/resources/data/command_data.json') if output_file is None else pathmaker(output_file)
+
+    if os.path.isfile(command_json_file) is False:
+        writejson({}, command_json_file)
+
+    command_json = loadjson(command_json_file)
+
+    command_json[str(cog)] = {'file_path': pathmaker(inspect.getfile(cog.__class__)).split('site-packages')[-1].strip('/'),
+                              'description': dedent(str(inspect.getdoc(cog.__class__))),
+                              "commands": {},
+                              "state": str(cog.docattrs.get('is_ready')[0]).replace('CogState.', '').split('|'),
+                              'config_name': cog.config_name}
+
+    for command in cog.get_commands():
+        command_json[str(cog)]["commands"][command.name.strip()] = {"signature": command.signature.replace('<ctx>', '').replace('  ', ' ').strip(),
+                                                                    "aliases": command.aliases,
+                                                                    "parameter": [param_string for param_string, _ in command.clean_params.items() if param_string != 'ctx'],
+                                                                    "checks": [str(check).split()[1].split('.')[0] for check in command.checks],
+                                                                    'short_doc': command.short_doc,
+                                                                    'usage': command.usage,
+                                                                    'description': command.description,
+                                                                    'is_hidden': command.hidden,
+                                                                    'is_enabled': command.enabled,
+                                                                    'qualified_name': command.qualified_name,
+                                                                    'help': command.help,
+                                                                    'brief': command.brief,
+                                                                    'gif': get_gif(command)}
+
+    writejson(command_json, command_json_file, indent=4)
+    log.debug("commands for %s saved to %s", cog, command_json_file)
 
 
 async def get_member_data(bot):

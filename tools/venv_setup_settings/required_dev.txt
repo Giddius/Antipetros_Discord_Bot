@@ -37,3 +37,4 @@ rich
 stdlib-list
 tomlkit
 vulture
+win10toast

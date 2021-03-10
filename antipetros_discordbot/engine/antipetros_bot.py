@@ -473,13 +473,7 @@ class AntiPetrosBot(commands.Bot):
 
     async def debug_function(self):
         log.debug("debug function triggered")
-        _out = []
-        for channel in self.antistasi_guild.channels:
-            if channel.type is discord.ChannelType.text:
-                _out.append({'name': channel.name, 'position': channel.position, 'category': channel.category.name})
-        _out = sorted(_out, key=lambda x: x.get('position'))
-        writejson(_out, 'channel_shit.json')
-        # log.info('no debug function set')
+        log.info('no debug function set')
         log.debug("debug function finished")
 
 # region [SpecialMethods]

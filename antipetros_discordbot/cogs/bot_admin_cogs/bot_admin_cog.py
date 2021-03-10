@@ -26,6 +26,7 @@ from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import make_message_list
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 # endregion[Imports]
 
 # region [TODO]
@@ -61,7 +62,7 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     """
-    Soon
+    Commands and methods that are needed to Administrate the Bot itself.
     """
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
@@ -214,7 +215,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
                                                                                    value=f"Send {creator_mention} a DM or ping him\n*(he is completely ok with getting pinged)*\ndon't hesitate, you are helping!\n{ZERO_WIDTH}", inline=False),
                                                                self.bot.field_item(name=f'**HOW CAN WE INTERACT WITH YOU?**\n{ZERO_WIDTH}',
                                                                                    value=f'Just use\n\n```fix\n@{self.bot.display_name} [COMMAND]\n```\n\nand\n\n```fix\n@{self.bot.display_name} help\n```\nfor info.\n{ZERO_WIDTH}'),
-                                                               self.bot.field_item(name=f"**CAN I SEE THE CODE?**\n{ZERO_WIDTH}", value=f"{self.bot.github_url}\n{ZERO_WIDTH}", inline=False),
+                                                               self.bot.field_item(name=f"**CAN I SEE THE CODE?**\n{ZERO_WIDTH}", value=f"{embed_hyperlink('Link to Github Repo',self.bot.github_url)}\n{ZERO_WIDTH}", inline=False),
                                                                self.bot.field_item(name=f"**I WANT TO ALSO WORK ON THIS BOT**\n{ZERO_WIDTH}", value=f"Again, {creator_mention}\n{ZERO_WIDTH}", inline=False),
                                                                self.bot.field_item(name=ZERO_WIDTH, value=ZERO_WIDTH, inline=False)],
                                                        footer=None,
@@ -235,6 +236,17 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
     @auto_meta_info_command(enabled=True)
     @commands.is_owner()
     async def send_log_file(self, ctx: commands.Context, which_logs: str = 'newest'):
+        """
+        Gets the log files of the bot and post it as a file to discord.
+
+        You can choose to only get the newest or all logs.
+
+        Args:
+            which_logs (str, optional): [description]. Defaults to 'newest'. other options = 'all'
+
+        Example:
+            @AntiPetros send_log_file all
+        """
         log_folder = APPDATA.log_folder
         if which_logs == 'newest':
 

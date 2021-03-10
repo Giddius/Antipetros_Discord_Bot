@@ -78,12 +78,12 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "PerformanceCog"}):
     """
-    Soon
+    Collects Latency data and memory usage every 10min and posts every 24h a report of the last 24h as graphs.
     """
     config_name = CONFIG_NAME
     save_folder = APPDATA['performance_data']
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING | CogState.DOCUMENTATION_MISSING,
+                'is_ready': (CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
                              "2021-02-06 05:25:38",
                              "f0e545c1c0066f269dc77a19380ab01ac1fc3e03b6df4662850ca4a779b4343d64c244941fdef8af3aca0342893463d9de35f8f24f71852649028411a33bebf3")}
     required_config_data = dedent("""
@@ -319,6 +319,12 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     @auto_meta_info_command(enabled=True)
     @owner_or_admin()
     async def report(self, ctx):
+        """
+        Reports both current latency and memory usage as Graph.
+
+        Example:
+            @AntiPetros report
+        """
         await ctx.invoke(self.bot.get_command('report_memory'))
         await ctx.invoke(self.bot.get_command('report_latency'))
 

@@ -178,35 +178,58 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @auto_meta_info_command(enabled=get_command_enabled("current_online_server"))
     @allowed_channel_and_allowed_role_2()
     async def current_online_server(self, ctx: commands.Context):
+        """
+        Shows all server of the Antistasi Community, that are currently online.
 
+        Testserver_3 and Eventserver are excluded as they usually are password guarded.
+
+        Example:
+            @AntiPetros current_online_server
+        """
         for server_item in self.servers:
-            try:
-                if server_item.is_online is True:
-                    info = await server_item.get_info()
-                    player_count = info.player_count
-                    max_players = info.max_players
-                    map_name = info.map_name
-                    ping = info.ping
-                    game = info.game
-                    password_needed = info.password_protected
-                    server_name = info.server_name
-                    embed_data = await self.bot.make_generic_embed(title=server_name,
-                                                                   description=f"__**Server Address:**__ {server_item.address}\n__**Port:**__ {server_item.port}",
-                                                                   thumbnail=self.server_symbol,
-                                                                   fields=[self.bot.field_item(name="**Current Map**", value=map_name),
-                                                                           self.bot.field_item(name="**Players**", value=f"{player_count}/{max_players}"),
-                                                                           self.bot.field_item(name="**Ping**", value=ping),
-                                                                           self.bot.field_item(name="**Game**", value=game),
-                                                                           self.bot.field_item(name="**Password Required**", value=f"{password_needed}")])
-                    await ctx.send(**embed_data)
-                    await asyncio.sleep(1)
-            except asyncio.exceptions.TimeoutError:
-                server_item.is_online = False
+            if server_item.name not in ["Testserver_3", 'Eventserver']:
+                try:
+                    if server_item.is_online is True:
+                        info = await server_item.get_info()
+                        player_count = info.player_count
+                        max_players = info.max_players
+                        map_name = info.map_name
+                        ping = info.ping
+                        game = info.game
+                        password_needed = info.password_protected
+                        server_name = info.server_name
+                        embed_data = await self.bot.make_generic_embed(title=server_name,
+                                                                       description=f"__**Server Address:**__ {server_item.address}\n__**Port:**__ {server_item.port}",
+                                                                       thumbnail=self.server_symbol,
+                                                                       fields=[self.bot.field_item(name="**Current Map**", value=map_name),
+                                                                               self.bot.field_item(name="**Players**", value=f"{player_count}/{max_players}"),
+                                                                               self.bot.field_item(name="**Ping**", value=ping),
+                                                                               self.bot.field_item(name="**Game**", value=game),
+                                                                               self.bot.field_item(name="**Password Required**", value=f"{password_needed}")])
+                        await ctx.send(**embed_data)
+                        await asyncio.sleep(0.5)
+                except asyncio.exceptions.TimeoutError:
+                    server_item.is_online = False
 
     @auto_meta_info_command(enabled=get_command_enabled("current_players"))
     @allowed_channel_and_allowed_role_2()
-    async def current_players(self, ctx: commands.Context, server: str):
-        server_holder = {server_item.name.casefold(): server_item for server_item in self.servers}.get(server.casefold())
+    async def current_players(self, ctx: commands.Context, *, server: str):
+        """
+        Show all players that are currently online on one of the Antistasi Community Server.
+
+        Shows Player Name, Player Score and Time Played on that Server.
+
+        Args:
+            server (str): Name of the Server, case insensitive.
+
+        Example:
+            @AntiPetros current_players mainserver_1
+        """
+        mod_server = server.strip().replace(' ', '_')
+        server_holder = {server_item.name.casefold(): server_item for server_item in self.servers}.get(mod_server.casefold(), None)
+        if server_holder is None:
+            await ctx.send(f"Can't find a server nammed {server}")
+            return
         if server_holder.is_online is False:
             await ctx.send(f"The server, `{server}` is currently not online")
             return

@@ -4,7 +4,7 @@ import os
 import subprocess
 import shutil
 from pprint import pprint
-from time import sleep
+from time import time, sleep
 import json
 from PIL import Image, ImageFilter, ImageOps
 import toml
@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 import re
 from jinja2 import Environment, FileSystemLoader
 from collections import namedtuple
-
+from win10toast import ToastNotifier
 
 GIT_EXE = shutil.which('git.exe')
 
@@ -108,7 +108,8 @@ FILES = {'bot_info.json': pathmaker(FOLDER.get('docs_data'), 'bot_info.json'),
          'command_data.json': pathmaker(FOLDER.get('docs_data'), 'command_data.json'),
          'links_data.json': pathmaker(FOLDER.get('docs_data'), 'links_data.json'),
          'future_plans.txt': pathmaker(FOLDER.get('docs_raw_text'), 'future_plans.txt'),
-         'commands.json': pathmaker(FOLDER.get('docs_data'), 'commands.json')}
+         'command_data.json': pathmaker(FOLDER.get('docs_data'), 'command_data.json'),
+         'external_dependencies.json': pathmaker(FOLDER.get('docs_data'), 'external_dependencies.json')}
 
 HEADING_REGEX = re.compile(r"(?P<level>\#+)\s*(?P<name>.*)")
 ALT_HEADING_REGEX = re.compile(r"(?P<level>\#+).*\[(?P<name>.*)\]")
@@ -152,11 +153,33 @@ PROJECT_NAME = flit_data('project_name')
 
 PROJECT_AUTHOR = flit_data('author_name')
 
+NOTIFIER = ToastNotifier()
+
 
 def activator_run(c, command, echo=True, **kwargs):
     with c.prefix(VENV_ACTIVATOR_PATH):
         result = c.run(command, echo=echo, **kwargs)
         return result
+
+
+@task
+def clean_repo(c):
+    to_clean_folder = ['logs', 'dist']
+    to_clean_files = []
+    main_dir = THIS_FILE_DIR
+    for dirname, folderlist, filelist in os.walk(main_dir):
+        if all(excl_folder.casefold() not in dirname.casefold() for excl_folder in ['.git', '.vscode']):
+            for folder in folderlist:
+                if folder.casefold() in to_clean_folder:
+                    path = pathmaker(dirname, folder)
+                    shutil.rmtree(path)
+                    print(f"remove folder '{path}'")
+            for file in filelist:
+                if file.casefold() in to_clean_files:
+                    path = pathmaker(dirname, file)
+                    os.remove(pathmaker(dirname, file))
+                    print(f"removed file '{path}'")
+    print("finished cleaning repo")
 
 
 @task(help={'output_file': 'alternative output file, defaults to /docs/resources/data'})
@@ -187,7 +210,7 @@ def get_config_data(c, output_file=None, verbose=False):
     activator_run(c, command)
 
 
-@task(help={'output_file': 'alternative output file, defaults to /docs/resources/data'})
+@task(help={'output_file': 'alternative output file'})
 def get_help_data(c, output_file=None, verbose=False):
     output_file = pathmaker(output_file, rev=True) if output_file is not None else output_file
     command = f"{ANTIPETROS_CLI_COMMAND} {COLLECT_COMMAND} bot-help"
@@ -530,6 +553,11 @@ def get_links():
     return link_data
 
 
+def get_external_dependencies():
+    data = loadjson(FILES.get('external_dependencies.json'))
+    return data
+
+
 def create_tocs(content):
     _headings = {}
     for line in content.splitlines():
@@ -539,16 +567,16 @@ def create_tocs(content):
             else:
                 heading_match = HEADING_REGEX.search(line)
             level, name = heading_match.groups()
-            if name.casefold() != 'toc' and len(level) != 4:
-                _headings[name.strip()] = (len(level) - 1, name.replace(' ', '-'))
+            if name.casefold() != 'toc' and len(level) != 4 and 'Cog' not in name:
+                _headings[name.strip()] = (len(level) - 1, name.replace(' ', '-').lower())
     template = JINJA_ENV.get_template('tocs_template.md.jinja')
     return template.render(tocs=_headings)
 
 
-@task
+@task(collect_data)
 def make_readme(c):
     bot_info_data = loadjson(FILES.get('bot_info.json'))
-    command_data = loadjson(FILES.get('commands.json'))
+    command_data = loadjson(FILES.get('command_data.json'))
     template_data = {'project_name': flit_data('project_name').replace('_', ' ').title(),
                      'license': flit_data("license"),
                      'antipetros_image_location': make_path_relative(pathmaker(FOLDER.get('images'), 'AntiPetros_for_readme.png')),
@@ -563,7 +591,8 @@ def make_readme(c):
                      'python_version': get_python_version(),
                      'future_plans': get_future_plans(),
                      'links': get_links(),
-                     'current_cogs': command_data}
+                     'current_cogs': command_data,
+                     'external_dependencies': get_external_dependencies()}
     template = JINJA_ENV.get_template('readme_github_vers_1.md.jinja')
     result_string = template.render(template_data)
     toc_string = create_tocs(result_string)
@@ -572,6 +601,23 @@ def make_readme(c):
         f.write(result)
 
 
-@task(pre=[store_userdata, collect_data])
+@task
+def commit_push(c):
+    os.chdir(main_dir_from_git())
+    c.run("git add .", echo=True)
+    sleep(1)
+    c.run('git commit -am "🎆 Release"', echo=True)
+    sleep(1)
+    c.run('git push', echo=True)
+    sleep(1)
+
+
+@task
+def publish(c):
+    os.chdir(main_dir_from_git())
+    c.run("flit publish", echo=True)
+
+
+@task(pre=[clean_repo, collect_data, store_userdata, increment_version, make_readme, commit_push, publish])
 def build(c):
-    print('finished building')
+    NOTIFIER.show_toast(title=f"Finished Building {PROJECT_NAME}", icon_path=r"art/finished/icons/pip.ico", duration=15)

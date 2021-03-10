@@ -277,6 +277,9 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
     @ allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def abort_give_away(self, ctx):
+        """
+        NOT IMPLEMENTED
+        """
         await self.bot.not_implemented(ctx)
         return
 
@@ -284,6 +287,9 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
     @ allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def finish_give_away(self, ctx):
+        """
+        NOT IMPLEMENTED
+        """
         await self.bot.not_implemented(ctx)
         return
 

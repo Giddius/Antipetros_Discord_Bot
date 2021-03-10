@@ -94,7 +94,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
     config_name = CONFIG_NAME
     already_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
+                'is_ready': (CogState.WORKING | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
                              "2021-02-18 11:00:11")}
 
     required_config_data = dedent("""
@@ -223,6 +223,17 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role_2()
     async def get_newest_mod_data(self, ctx: commands.Context, server: str):
+        """
+        Gets the required mods for the Server.
+
+        Provides the list as embed and Arma3 importable html file.
+
+        Args:
+            server (str): Name of the Antistasi Community Server to retrieve the mod list.
+
+        Example:
+            @AntiPetros get_newest_mod_data mainserver_1
+        """
         mod_server = server.casefold()
         if mod_server not in self.server:
             await ctx.send(f"unknown server `{server}`")
@@ -247,6 +258,21 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role_2()
     async def get_newest_logs(self, ctx, server: str, sub_folder: str, amount: int = 1):
+        """
+        Gets the newest log files from the Dev Drive.
+
+        If the log file is bigger than current file size limit, it will provide it zipped.
+
+        Tries to fuzzy match both server and sub-folder.
+
+        Args:
+            server (str): Name of the Server
+            sub_folder (str): Name of the sub-folder e.g. Server, HC_0, HC_1,...
+            amount (int, optional): The amount of log files to get. standard max is 5 . Defaults to 1.
+
+        Example:
+            @AntiPetros get_newest_logs mainserver_1 server
+        """
         max_amount = COGS_CONFIG.retrieve(self.config_name, 'max_amount_get_files', typus=int, direct_fallback=5)
         if amount > max_amount:
             await ctx.send(f'You requested more files than the max allowed amount of {max_amount}, aborting!')

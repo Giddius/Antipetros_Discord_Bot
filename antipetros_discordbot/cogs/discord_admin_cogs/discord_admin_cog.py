@@ -56,7 +56,7 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     """
-    Soon
+    Commands and methods that help in Administrate the Discord Server.
     """
     # region [ClassAttributes]
 

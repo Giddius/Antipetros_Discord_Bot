@@ -21,7 +21,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name
 from antipetros_discordbot.utility.enums import WatermarkPosition
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, log_invoker, has_attachments
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -57,14 +57,14 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
     """
-    Soon
+    Commands that manipulate or generate images.
     """
     # region [ClassAttributes]
     config_name = CONFIG_NAME
     allowed_stamp_formats = set(loadjson(APPDATA["image_file_extensions.json"]))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
+                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
                              "2021-02-06 05:09:20",
                              "f166431cb83ae36c91d70d7d09020e274a7ebea84d5a0c724819a3ecd2230b9eca0b3e14c2d473563d005671b7a2bf9d87f5449544eb9b57bcab615035b0f83d")}
     required_config_data = dedent("""  avatar_stamp = ASLOGO1
@@ -94,7 +94,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         #                         'volcano': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_volcano_marker.png"),
         #                         'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
         self.old_map_message = None
-        self._get_stamps()
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
@@ -134,7 +133,9 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
     @property
     def avatar_stamp(self):
-        return self._get_stamp_image(COGS_CONFIG.get(CONFIG_NAME, 'avatar_stamp').upper(), 1)
+        stamp_name = COGS_CONFIG.retrieve(CONFIG_NAME, 'avatar_stamp', direct_fallback='aslogo').upper()
+        return self._get_stamp_image(stamp_name, 1)
+
 
 # endregion[Properties]
 
@@ -246,7 +247,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
             embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
             await ctx.send(embed=embed, file=file, delete_after=delete_after)
 
-    @flags.add_flag("--stamp-image", "-si", type=str, default='ASLOGO1')
+    @flags.add_flag("--stamp-image", "-si", type=str, default='ASLOGO')
     @flags.add_flag("--first-pos", '-fp', type=str, default="bottom")
     @flags.add_flag("--second-pos", '-sp', type=str, default="right")
     @flags.add_flag("--stamp-opacity", '-so', type=float, default=1.0)
@@ -258,10 +259,15 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         """
         Stamps an image with a small image from the available stamps.
 
+        Needs to have the to stamp image as an attachment on the invoking message.
+
         Usefull for watermarking images.
 
         Get all available stamps with '@AntiPetros available_stamps'
 
+
+        Example:
+            @AntiPetros stamp_image -si ASLOGO -fp bottom -sp right -so 0.5 -f 0.25
         """
         async with ctx.channel.typing():
 
@@ -307,6 +313,10 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         """
         Posts all available stamps.
 
+        Removes them after 2min to keep channel clean.
+
+        Example:
+            @AntiPetros available_stamps
         """
         await ctx.message.delete()
         await ctx.send(embed=await make_basic_embed(title="__**Currently available Stamps are:**__", footer="These messages will be deleted in 120 seconds", symbol='photo'), delete_after=120)
@@ -333,6 +343,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
         Returns the new stamped avatar as a .PNG image that the Member can save and replace his orginal avatar with.
 
+        Example:
+            @AntiPetros member_avatar
         """
         avatar_image = await self.get_avatar_from_user(ctx.author)
         stamp = self.avatar_stamp
@@ -364,27 +376,30 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         bytes_out.seek(0)
         return base_image, bytes_out
 
-    # @commands.command(aliases=get_aliases("map_changed"), enabled=get_command_enabled("map_changed"))
-    # @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
-    # @commands.max_concurrency(1, per=commands.BucketType.guild, wait=False)
-    # async def map_changed(self, ctx, marker, color):
-    #     """
-    #     Proof of concept for future real time server map.
-    #     """
-    #     log.info("command was initiated by '%s'", ctx.author.name)
-    #     with BytesIO() as image_binary:
+    @auto_meta_info_command(enabled=get_command_enabled('add_stamp'))
+    @allowed_channel_and_allowed_role_2()
+    @has_attachments(1)
+    @log_invoker(log, "critical")
+    async def add_stamp(self, ctx: commands.Context):
+        """
+        Adds a new stamp image to the available stamps.
 
-    #         self.base_map_image, image_binary = await self.bot.execute_in_thread(self.map_image_handling, self.base_map_image, marker, color, image_binary)
+        This command needs to have the image as an attachment.
 
-    #         if self.old_map_message is not None:
-    #             await self.old_map_message.delete()
-    #         delete_time = None
-    #         embed = discord.Embed(title='Current Server Map State', color=self.support.green.discord_color, timestamp=datetime.now(tz=timezone("Europe/Berlin")), type="image")
-    #         embed.set_author(name='Antistasi Community Server 1', icon_url="https://s3.amazonaws.com/files.enjin.com/1218665/site_logo/NEW%20LOGO%20BANNER.png", url="https://a3antistasi.enjin.com/")
-    #         embed.set_image(url="attachment://map.png")
-    #         self.old_map_message = await ctx.send(embed=embed, file=discord.File(fp=image_binary, filename="map.png"), delete_after=delete_time)
-
-    #     log.debug("finished 'map_changed' command")
+        Example:
+            @AntiPetros add_stamp
+        """
+        attachment = ctx.message.attachments[0]
+        file_name = attachment.filename
+        if file_name.casefold() in {file.casefold() for file in os.listdir(self.stamp_location)}:
+            await ctx.reply(f"A Stamp file with the name `{file_name}` already exists, aborting!")
+            return
+        path = pathmaker(self.stamp_location, file_name)
+        await attachment.save(path)
+        stamp_name = file_name.split('.')[0].replace(' ', '_').strip().upper()
+        await ctx.reply(f"successfully, saved new stamp. The stamp name to use is `{stamp_name}`")
+        await self.bot.creator.member_object.send(f"New stamp was added by `{ctx.author.name}`", file=await attachment.to_file())
+        self._get_stamps()
 
 
 # region [SpecialMethods]

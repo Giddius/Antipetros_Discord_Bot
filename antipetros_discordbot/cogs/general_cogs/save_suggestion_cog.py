@@ -66,7 +66,7 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     """
-    Soon
+    Provides functionality for each Antistasi Team to save suggestions by reacting with emojis.
     """
 
     # region [ClassAttributes]

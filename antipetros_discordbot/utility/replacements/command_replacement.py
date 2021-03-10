@@ -23,8 +23,8 @@ def _get_custom_aliases(command_name: str) -> List[str]:
     file = APPDATA['command_aliases.json']
     if os.path.isfile(file) is False:
         return []
-    data = loadjson(file)
-    return data.get(command_name, [])
+    alias_data = loadjson(file)
+    return alias_data.get(command_name, [])
 
 
 def _default_alias_maker(command_name: str) -> List[str]:
@@ -46,6 +46,12 @@ def _default_alias_maker(command_name: str) -> List[str]:
         if mod_name not in default_aliases and mod_name != command_name:
             default_aliases.append(mod_name)
     return default_aliases
+
+
+def get_meta_info(command_name: str) -> dict:
+    meta_data_file = APPDATA['command_help_data.json']
+    meta_data = loadjson(meta_data_file)
+    return meta_data.get(command_name, {})
 
 
 def auto_meta_info_command(name=None, cls=None, **attrs):
@@ -97,6 +103,7 @@ def auto_meta_info_command(name=None, cls=None, **attrs):
 
         if isinstance(func, Command):
             raise TypeError('Callback is already a command.')
-        return cls(func, name=name, aliases=aliases, **{key: value for key, value in attrs.items() if key != 'aliases'})
+        meta_attrs = get_meta_info(command_name) | {key: value for key, value in attrs.items() if value not in ['', None]}
+        return cls(func, name=name, aliases=aliases, **{key: value for key, value in meta_attrs.items() if key != 'aliases'})
 
     return decorator

@@ -131,6 +131,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -148,6 +149,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 
 # region [Listener]
 
+
     async def _emoji_translate_checks(self, payload):
         command_name = "emoji_translate_listener"
         channel = self.bot.get_channel(payload.channel_id)
@@ -162,15 +164,14 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
         channel = self.bot.get_channel(payload.channel_id)
         if channel.type is not discord.ChannelType.text:
             return False
-
-        if channel.name.casefold() not in self.allowed_channels(command_name):
+        if self.allowed_channels(command_name) != ['all'] and channel.name.casefold() not in self.allowed_channels(command_name):
             return False
 
         emoji_name = normalize_emoji(payload.emoji.name)
         if emoji_name not in self.language_emoji_map:
             return False
 
-        if all(role.name.casefold() not in self.allowed_roles(command_name) for role in member.roles):
+        if self.allowed_roles(command_name) != ['all'] and all(role.name.casefold() not in self.allowed_roles(command_name) for role in member.roles):
             return False
 
         return True
@@ -195,7 +196,8 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
             return
 
         translated = self.translator.translate(text=message.content, dest=country_code, src="auto")
-        await payload.member.send(f"**in {LANGUAGES.get(country_code)}:**\n {translated.text.strip('.')}", allowed_mentions=AllowedMentions.none())
+        # TODO: Make embed with Hyperlink
+        await payload.member.send(f"{message.jump_url}\n**in {LANGUAGES.get(country_code)}:**\n {translated.text.strip('.')}", allowed_mentions=AllowedMentions.none())
 
     async def translate_embed(self, member, channel, message, embed, country_code):
         embed_dict = embed.to_dict()
@@ -243,7 +245,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
             to_language_id (Optional[LanguageConverter], optional): either can be the name of the language or an language code (iso639-1 language codes). Defaults to "english".
 
         Example:
-                `@AntiPetros translate german This is the Sentence to translate`
+                @AntiPetros translate german This is the Sentence to translate
         """
         translated = self.translator.translate(text=text_to_translate, dest=to_language_id, src="auto")
 
@@ -276,6 +278,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

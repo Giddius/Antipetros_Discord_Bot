@@ -86,7 +86,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     config_dir = APPDATA['config']
     alias_file = APPDATA['command_aliases.json']
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING | CogState.DOCUMENTATION_MISSING,
+                'is_ready': (CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
                              "2021-02-06 05:24:31",
                              "87f320af11ad9e4bd1743d9809c3af554bedab8efe405cd81309088960efddba539c3a892101943902733d783835373760c8aabbcc2409db9403366373891baf")}
     required_config_data = dedent("""
@@ -160,17 +160,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
         return [await self.bot.role_from_string(role_name) for role_name in self.notify_role_names]
 
     async def _get_available_configs(self):  # sourcery skip: dict-comprehension
-        """
-        Methods to collect all available config file names, that are in the config folder
-
-        Returns:
-            [dict]: dictionary with file names without the extension as keys and the full file name as value
-        """
-        found_configs = {}
-        for _file in os.scandir(self.config_dir):
-            if 'config' in _file.name and os.path.splitext(_file.name)[1] in ['.ini', '.json', '.yaml', '.toml']:
-                found_configs[os.path.splitext(_file.name)[0]] = _file.name
-        return found_configs
+        pass
 
     async def _config_file_to_discord_file(self, config_name: str):
         """
@@ -239,26 +229,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
                                                  fields=[self.bot.field_item(name=item.section, value=f"{item.option}\n{item.old_value} -> {item.new_value}", inline=False) for item in change_items])
 
     async def changed_config_uploaded(self, ctx, old_config: str, new_config: str):
-        # TODO: Dont know how but test this thing, could very well explode
-        changes = await self.compare_configs(old_config, new_config)
-
-        roles_to_notify = await amap(self.bot.role_from_string, _from_cog_config('notify_by_role', list))
-        members_to_notify = await amap(self.bot.member_by_name, _from_cog_config('notfiy_by_name', list))
-
-        if self.bot.creator.member_object not in members_to_notify:
-            members_to_notify.append(self.bot.creator.member_object)
-
-        if _from_cog_config('notify_via', str).casefold() == 'dm':
-            for role in roles_to_notify:
-                members_to_notify += await self.bot.all_members_with_role(role)
-        for member in members_to_notify:
-            _embed = await self._make_notify_changed_config_embed(ctx, change_items=changes)
-            await member.send(**_embed)
-        if _from_cog_config('notify_via', str).casefold() == 'CHANNEL':
-            channel = await self.bot.channel_from_name(_from_cog_config('notification_channel', str))
-            content = ' '.join((role.mention for role in roles_to_notify)) + ' ' + ' '.join((member.mention for member in members_to_notify))
-            _embed = await self._make_notify_changed_config_embed(ctx, change_items=changes)
-            await channel.send(content=content, **_embed)
+        pass
 
 # endregion [HelperMethods]
 
@@ -268,186 +239,67 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     @commands.is_owner()
     async def list_configs(self, ctx):
         """
-        Lists all available configs, usefull to get the name for the other commands
-
-        Args:
-            ctx ([discord.ext.commands.Context]): mandatory argument for discord bot commands, contains the invocation context
+        NOT IMPLEMENTED
         """
-        log.debug("list_configs command passed check")
-        available_configs = await self._get_available_configs()
-        log.debug(f"{available_configs=}")
-        _fields = []
-        for available_config in available_configs:
-            _fields.append(self.bot.field_item('--> ' + available_config, ZERO_WIDTH, False))
-        _embed = await self.bot.make_generic_embed(fields=_fields)
-        await ctx.send(**_embed)
-
-        log.info("config list send to '%s'", ctx.author.name)
+        await self.bot.not_implemented(ctx)
 
     @ commands.command(aliases=get_aliases("config_request"))
     @ commands.is_owner()
     async def config_request(self, ctx, config_name: str = 'all'):
         """
-        Sends config files via discord as attachments.
-        If config_name is 'all' it sends all available configs.
-
-        Args:
-            ctx ([discord.ext.commands.Context]): mandatory argument for discord bot commands, contains the invocation context
-            config_name (str, optional): the name of the config file, will be fuzzy matched to an actula config. Defaults to 'all'.
+        NOT IMPLEMENTED
         """
-        available_configs = await self._get_available_configs()
-        requested_configs = []
-        if config_name.casefold() == 'all':
-            requested_configs = [conf_file_name for key, conf_file_name in available_configs.items()]
-
-        else:
-            _req_config_path = await self._match_config_name(config_name)
-            requested_configs.append(os.path.basename(_req_config_path))
-
-        if requested_configs == []:
-            # TODO: make as embed
-            await ctx.send(f'I was **NOT** able to find a config named `{config_name}`!\nTry again with `all` as argument, or request the available configs with the command `list_configs`')
-        else:
-            for req_config in requested_configs:
-                _msg = f"Here is the file for the requested config `{req_config}`"
-                _file = await self._config_file_to_discord_file(req_config)
-                # TODO: make as embed
-                await ctx.send(_msg, file=_file)
-            log.info("requested configs (%s) send to %s", ", ".join(requested_configs), ctx.author.name)
+        await self.bot.not_implemented(ctx)
 
     @ commands.command(aliases=get_aliases("overwrite_config_from_file"))
     @commands.is_owner()
     @log_invoker(log, 'critical')
     async def overwrite_config_from_file(self, ctx):
         """
-        Accepts and config file as attachments and replaces the existing config with it.
-        Config File need to have the matching name to overwrite.
-
-        Args:
-            ctx ([discord.ext.commands.Context]): mandatory argument for discord bot commands, contains the invocation context
+        NOT IMPLEMENTED
         """
-        if len(ctx.message.attachments) > 1:
-            # TODO: Test Embed
-            _embed = await self.bot.make_generic_embed(title="Too many Attachments",
-                                                             description='please only send a single file with the command')
-            await ctx.send(**_embed)
-            return
-
-        _file = ctx.message.attachments[0]
-        _file_name = _file.filename
-        config_name = os.path.splitext(_file_name)[0]
-        _config_path = await self._match_config_name(config_name)
-        if _config_path is None:
-            # TODO: Test Embed
-            _embed = await self.bot.make_generic_embed(title="Config Name not found",
-                                                             description=f'could not find a config that fuzzy matches `{config_name}`')
-            await ctx.send(**_embed)
-            return
-        old_config_content = readit(_config_path)
-        await _file.save(_config_path)
-        new_config_content = readit(_config_path)
-        for cfg in self.all_configs:
-            cfg.read()
-        # TODO: Test Embed
-        _embed = await self.bot.make_generic_embed(title="Config Saved!",
-                                                         description=f'saved your file as `{os.path.basename(_config_path)}`',
-                                                         footer={'text': "You may have to reload the Cogs or restart the bot for it to take effect!"})
-        await ctx.send(**_embed)
-
-        if self.notify_when_changed is True:
-            await self.changed_config_uploaded(ctx, config_name, old_config_content, new_config_content)
+        await self.bot.not_implemented(ctx)
 
     @commands.command(aliases=get_aliases("change_setting_to"))
     @commands.is_owner()
     async def change_setting_to(self, ctx, config, section, option, value):
         """
-        Command to change a single config setting.
-
-        Args:
-            ctx ([discord.ext.commands.Context]): mandatory argument for discord bot commands, contains the invocation context
-            config (str): the config name, will be fuzzy matched
-            section (str): config section name
-            option (str): config option name
-            value (str): new value to set
+        NOT IMPLEMENTED
         """
-
-        if config.casefold() in ['base_config', 'cogs_config']:
-            if config.casefold() == 'base_config':
-                _config = BASE_CONFIG
-            elif config.casefold() == 'cogs_config':
-                _config = COGS_CONFIG
-
-            if section in _config.sections():
-                log.debug(f"{_config=}")
-                _config.read()
-
-                _config.set(section, option, value)
-                _config.save()
-                await ctx.send(f"change the setting '{option}' in section '{section}' to '{value}'")
-            else:
-                await ctx.send('no such section in the specified config')
-        else:
-            await ctx.send('config you specified does not exist!')
+        await self.bot.not_implemented(ctx)
 
     @commands.command(aliases=get_aliases("show_config_content"))
     @commands.is_owner()
     async def show_config_content(self, ctx: commands.Context, config_name: str = "all"):
-
-        config_name = config_name.casefold()
-        requested_configs = []
-        if config_name == 'all':
-            requested_configs = self.all_configs
-        elif config_name in ['cogs_config', 'cogs', 'cogsconfig']:
-            requested_configs.append(COGS_CONFIG)
-        elif config_name in ['base_config', "base", "baseconfig"]:
-            requested_configs.append(BASE_CONFIG)
-        for config in requested_configs:
-            fields = []
-            defaults = config.defaults()
-            default_values = [ZERO_WIDTH]
-            if defaults:
-                for key, value in defaults.items():
-                    default_values.append(f"__{key}__ \t=\t *{value}*")
-                default_values += ['-' * 20, ZERO_WIDTH]
-                fields.append(self.bot.field_item('__**DEFAULT**__', '\n'.join(default_values), False))
-            for section in config.sections():
-                options_values = [ZERO_WIDTH]
-                for option in config.options(section):
-                    if option not in defaults:
-                        options_values.append(f"__{option}__ \t=\t *{config.get(section, option)}*")
-                    else:
-                        options_values.append("")
-                options_values += ['-' * 50, ZERO_WIDTH]
-                fields.append(self.bot.field_item(f"__**{section.upper()}**__", ZERO_WIDTH + '\n'.join([opt for opt in options_values if opt != ""]), False))
-            embed = await self.bot.make_generic_embed(title=str(config), description='here are the sections, options and values for the config', fields=fields, footer="not_set", thumbnail="https://icon-library.com/images/configuration-icon/configuration-icon-13.jpg")
-            await ctx.send(**embed)
+        """
+        NOT IMPLEMENTED
+        """
+        await self.bot.not_implemented(ctx)
 
     @commands.command(aliases=get_aliases("show_config_content_raw"))
     @commands.is_owner()
     async def show_config_content_raw(self, ctx: commands.Context, config_name: str = "all"):
-
-        available_configs = await self._get_available_configs()
-        requested_configs = []
-        if config_name.casefold() == 'all':
-            requested_configs = [conf_file_name for key, conf_file_name in available_configs.items()]
-
-        else:
-            _req_config_path = await self._match_config_name(config_name)
-            requested_configs.append(os.path.basename(_req_config_path))
-
-        if requested_configs == []:
-            # TODO: make as embed
-            await ctx.send(f'I was **NOT** able to find a config named `{config_name}`!\nTry again with `all` as argument, or request the available configs with the command `list_configs`')
-        else:
-            for req_config in requested_configs:
-                embed = await self.bot.make_generic_embed(thumbnail='no_thumbnail', title=os.path.splitext(os.path.basename(APPDATA[req_config]))[0].upper(), description=f"```ini\n{readit(APPDATA[req_config])}\n```")
-                await ctx.send(**embed)
+        """
+        NOT IMPLEMENTED
+        """
+        await self.bot.not_implemented(ctx)
 
     @auto_meta_info_command(enabled=get_command_enabled("add_alias"))
     @owner_or_admin()
     @log_invoker(log, 'critical')
     async def add_alias(self, ctx: commands.Context, command_name: str, alias: str):
+        """
+        Adds an alias for a command.
 
+        Alias has to be unique and not spaces.
+
+        Args:
+            command_name (str): name of the command
+            alias (str): the new alias.
+
+        Example:
+            @AntiPetros add_alias flip_coin flip_it
+        """
         await self.refresh_command_aliases()
         if command_name not in self.aliases:
             await ctx.send(f"I was not able to find the command with the name '{command_name}'")

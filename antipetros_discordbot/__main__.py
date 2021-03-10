@@ -19,11 +19,12 @@ from datetime import datetime
 import click
 from dotenv import load_dotenv
 import gidlogger as glog
-from antipetros_discordbot.utility.misc import generate_base_cogs_config, generate_help_data, save_commands
+from antipetros_discordbot.utility.misc import generate_base_cogs_config, generate_help_data
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.data_gathering import save_cog_command_data
 # endregion[Imports]
 
 # region [TODO]
@@ -148,7 +149,7 @@ def command_info_run(output_file, verbose):
     """
     Cli command to start up the bot, collect bot-commands extended info, but not connect to discord.
 
-    collected in `/docs/resources/data` as `commands.json`, `command_help.json`
+    collected in `/docs/resources/data` as `commands_data.json`
 
     """
     os.environ['INFO_RUN'] = "1"
@@ -157,7 +158,7 @@ def command_info_run(output_file, verbose):
     anti_petros_bot = AntiPetrosBot()
     for cog_name, cog_object in anti_petros_bot.cogs.items():
         print(f"Collecting command-info for '{cog_name}'")
-        save_commands(cog_object, output_file=output_file)
+        save_cog_command_data(cog_object, output_file=output_file)
     print('#' * 15 + ' finished collecting command-infos ' + '#' * 15)
 
 
@@ -195,10 +196,9 @@ def bot_help_data_run(output_file, verbose):
         logging.disable(logging.CRITICAL)
     anti_petros_bot = AntiPetrosBot()
     for cog_name, cog_object in anti_petros_bot.cogs.items():
-        cog_states = get_cog_states(cog_object)
-        if CogState.FOR_DEBUG not in cog_states and CogState.WORKING in cog_states:
-            print(f"Collecting help-data for '{cog_name}'")
-            generate_help_data(cog_object, output_file=output_file)
+
+        print(f"Collecting help-data for '{cog_name}'")
+        generate_help_data(cog_object, output_file=output_file)
     print('#' * 15 + ' finished collecting help-data ' + '#' * 15)
 
 
