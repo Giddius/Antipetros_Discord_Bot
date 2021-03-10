@@ -606,7 +606,7 @@ def commit_push(c):
     os.chdir(main_dir_from_git())
     c.run("git add .", echo=True)
     sleep(1)
-    c.run('git commit -am "🎆 Release"', echo=True)
+    c.run('git commit -am "🎆🎆 Release 🎆🎆"', echo=True)
     sleep(1)
     c.run('git push', echo=True)
     sleep(1)
