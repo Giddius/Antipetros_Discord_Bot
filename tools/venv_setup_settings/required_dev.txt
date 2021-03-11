@@ -15,6 +15,7 @@ jupyter
 language_tool_python
 markdown2
 matplotlib
+mdformat
 mdutils
 memory-profiler
 numpy==1.19.3
@@ -38,4 +39,3 @@ stdlib-list
 tomlkit
 vulture
 win10toast
-mdformat

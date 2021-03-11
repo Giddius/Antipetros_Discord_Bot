@@ -178,6 +178,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @auto_meta_info_command(enabled=get_command_enabled("current_online_server"))
     @allowed_channel_and_allowed_role_2()
+    @commands.cooldown(1, 120, commands.BucketType.member)
     async def current_online_server(self, ctx: commands.Context):
         """
         Shows all server of the Antistasi Community, that are currently online.
@@ -213,7 +214,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
                         mod_list_command = self.bot.get_command('get_newest_mod_data')
                         await ctx.send(**embed_data)
-                        await ctx.invoke(mod_list_command, server_item.name)
+                        # await ctx.invoke(mod_list_command, server_item.name)
                         await asyncio.sleep(0.5)
                 except asyncio.exceptions.TimeoutError:
                     server_item.is_online = False

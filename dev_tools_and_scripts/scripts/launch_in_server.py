@@ -29,6 +29,7 @@ def get_version():
 ANTIPETROS_START_CMD = f"nohup antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NEXTCLOUD_USERNAME')} -np {os.getenv('NEXTCLOUD_PASSWORD')} &"
 ANTIPETROS_UPDATE_CMD = "python3.9 -m pip install --force-reinstall antipetros_discordbot"
 ANTIPETROS_UPDATE_CMD_VERSION = ANTIPETROS_UPDATE_CMD + '==' + get_version()
+ANTIPETROS_CLEAN_COMMAND = ''
 
 USERNAME = 'root'
 PWD = os.getenv('DEVANTISTASI_AUXILIARY_KEY')
@@ -80,5 +81,8 @@ if __name__ == '__main__':
 
     # run_command(f"antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NEXTCLOUD_USERNAME')} -np {os.getenv('NEXTCLOUD_PASSWORD')}")
     # sleep(30)
-    # run_command('antipetrosbot stop')
+    run_command('antipetrosbot stop')
+    sleep(30)
+    run_command(ANTIPETROS_UPDATE_CMD_VERSION)
+    sleep(10)
     run_command(ANTIPETROS_START_CMD)
