@@ -100,8 +100,14 @@ class AntistasiInformer(SubSupportBase):
     async def retrieve_antistasi_member(self, user_id):
         return await self.antistasi_guild.fetch_member(user_id)
 
+    def sync_channel_from_name(self, channel_name):
+        return {channel.name.casefold(): channel for channel in self.antistasi_guild.channels}.get(channel_name.casefold())
+
     async def channel_from_name(self, channel_name):
         return {channel.name.casefold(): channel for channel in self.antistasi_guild.channels}.get(channel_name.casefold())
+
+    def sync_channel_from_id(self, channel_id: int):
+        return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)
 
     async def channel_from_id(self, channel_id: int):
         return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)

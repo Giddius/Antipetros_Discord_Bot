@@ -7,6 +7,41 @@ class AntiPetrosBaseError(Exception):
     pass
 
 
+class ClassAttributesNotSetError(AntiPetrosBaseError):
+    def __init__(self, missing_attr_name: str):
+        self.missing_attr = missing_attr_name
+        self.msg = f"mandatory class attribute '{self.missing_attr}' is None"
+        super().__init__(self.msg)
+
+
+class FaqParseError(AntiPetrosBaseError):
+    pass
+
+
+class FaqNumberParseError(FaqParseError):
+    def __init__(self, raw_content: str, jump_url: str) -> None:
+        self.raw_content = raw_content
+        self.url = jump_url
+        self.msg = f"unable to parse number from FAQ '{self.url}'"
+        super().__init__(self.msg)
+
+
+class FaqQuestionParseError(FaqParseError):
+    def __init__(self, raw_content: str, jump_url: str) -> None:
+        self.raw_content = raw_content
+        self.url = jump_url
+        self.msg = f"unable to parse question from FAQ '{self.url}'"
+        super().__init__(self.msg)
+
+
+class FaqAnswerParseError(FaqParseError):
+    def __init__(self, raw_content: str, jump_url: str) -> None:
+        self.raw_content = raw_content
+        self.url = jump_url
+        self.msg = f"unable to parse answer from FAQ '{self.url}'"
+        super().__init__(self.msg)
+
+
 class MissingNeededAttributeError(AntiPetrosBaseError):
     def __init__(self, attr_name, cog) -> None:
         self.cog = cog
