@@ -68,6 +68,23 @@ $$$TOC$$$
 {% endblock %}
 
 
+{% block admin_lead_only_command_list %}
+
+{% for cogname, value in current_cogs.items() %}
+{% if 'FOR_DEBUG' not in value.state %}
+{% for command_name, command_value in value.commands.items() %}
+{% if 'owner_or_admin' in command_value.checks %}
+
+- [{{ command_name }}](#__{{ command_name }}__)
+
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+
+{% endblock %}
+
+
 {% block misc %}
 
 {% if misc %}

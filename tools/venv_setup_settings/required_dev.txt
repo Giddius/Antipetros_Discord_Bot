@@ -38,3 +38,4 @@ stdlib-list
 tomlkit
 vulture
 win10toast
+mdformat

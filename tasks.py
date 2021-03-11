@@ -14,7 +14,7 @@ import re
 from jinja2 import Environment, FileSystemLoader
 from collections import namedtuple
 from win10toast import ToastNotifier
-
+import mdformat
 GIT_EXE = shutil.which('git.exe')
 
 
@@ -473,6 +473,50 @@ def set_requirements(c):
     os.chdir(old_cwd)
 
 
+def get_cog_misc_data():
+    text_file_regex = re.compile(r"\n?(?P<key_words>[\w\s]+).*?\=.*?(?P<value_words>.*?(?=(?:\n[^\n]*?\=)|$))", re.DOTALL)
+    content = readit(FILES.get('cogs_misc.txt'))
+    results = {}
+    for match_data in COMMAND_TEXT_FILE_REGEX.finditer(content):
+        if match_data:
+            key_word = match_data.group('key_words').strip().casefold()
+            results[key_word] = '\n'.join(line.strip() for line in match_data.group('value_words').splitlines() if not line.startswith('#'))
+
+    return results
+
+
+def create_cog_info_tocs(content):
+    _headings = {}
+    for line in content.splitlines():
+        if line.strip().startswith('##') or line.strip().startswith('<p align="center"><h'):
+            if '<p align="center">' in line:
+                heading_match = ALT_ALT_HEADING_REGEX.search(line)
+            else:
+                heading_match = HEADING_REGEX.search(line)
+            level, name = heading_match.groups()
+            if level.startswith('<'):
+                level = '#' * int(level.replace('<', '').replace('h', '').replace('>', ''))
+            if name.casefold() not in ['toc', 'commands:'] and 2 <= len(level) <= 5:
+                _headings[name.strip().strip('_*').strip()] = (len(level) - 1, name.replace(' ', '-').lower())
+    template = JINJA_ENV.get_template('tocs_template.md.jinja')
+    return template.render(tocs=_headings)
+
+
+@task
+def make_cogs_info(c):
+    cog_info_file = pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'cogs', 'README.md')
+    command_data = loadjson(FILES.get('command_data.json'))
+    template_data = {'cog_image_location': "art/finished/images/cog_icon.png",
+                     'current_cogs': command_data,
+                     'misc': get_cog_misc_data()}
+    template = JINJA_ENV.get_template('cogs_info_template_vers_1.md.jinja')
+    result_string = template.render(template_data)
+    toc_string = create_cog_info_tocs(result_string)
+    result = result_string.replace('$$$TOC$$$', toc_string)
+    with open(cog_info_file, 'w') as f:
+        f.write(result)
+
+
 def get_subcommands(c, script_name):
     _out = {}
     raw_data = activator_run(c, f"{script_name} --help", hide=True).stdout
@@ -576,7 +620,7 @@ def create_tocs(content, max_level=3):
     return template.render(tocs=_headings)
 
 
-@task(collect_data)
+@task(collect_data, make_cogs_info)
 def make_readme(c):
     bot_info_data = loadjson(FILES.get('bot_info.json'))
     command_data = loadjson(FILES.get('command_data.json'))
@@ -600,51 +644,8 @@ def make_readme(c):
     result_string = template.render(template_data)
     toc_string = create_tocs(result_string)
     result = result_string.replace('$$$TOC$$$', toc_string)
-    with open(pathmaker(THIS_FILE_DIR, 'README.md'), 'w') as f:
-        f.write(result)
-
-
-def get_cog_misc_data():
-    text_file_regex = re.compile(r"\n?(?P<key_words>[\w\s]+).*?\=.*?(?P<value_words>.*?(?=(?:\n[^\n]*?\=)|$))", re.DOTALL)
-    content = readit(FILES.get('cogs_misc.txt'))
-    results = {}
-    for match_data in COMMAND_TEXT_FILE_REGEX.finditer(content):
-        if match_data:
-            key_word = match_data.group('key_words').strip().casefold()
-            results[key_word] = '\n'.join(line.strip() for line in match_data.group('value_words').splitlines() if not line.startswith('#'))
-
-    return results
-
-
-def create_cog_info_tocs(content):
-    _headings = {}
-    for line in content.splitlines():
-        if line.strip().startswith('##') or line.strip().startswith('<p align="center"><h'):
-            if '<p align="center">' in line:
-                heading_match = ALT_ALT_HEADING_REGEX.search(line)
-            else:
-                heading_match = HEADING_REGEX.search(line)
-            level, name = heading_match.groups()
-            if level.startswith('<'):
-                level = '#' * int(level.replace('<', '').replace('h', '').replace('>', ''))
-            if name.casefold() not in ['toc', 'commands:'] and 2 <= len(level) <= 5:
-                _headings[name.strip().strip('_*').strip()] = (len(level) - 1, name.replace(' ', '-').lower())
-    template = JINJA_ENV.get_template('tocs_template.md.jinja')
-    return template.render(tocs=_headings)
-
-
-@task
-def make_cogs_info(c):
-    cog_info_file = pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'cogs', 'README.md')
-    command_data = loadjson(FILES.get('command_data.json'))
-    template_data = {'cog_image_location': "art/finished/images/cog_icon.png",
-                     'current_cogs': command_data,
-                     'misc': get_cog_misc_data()}
-    template = JINJA_ENV.get_template('cogs_info_template_vers_1.md.jinja')
-    result_string = template.render(template_data)
-    toc_string = create_cog_info_tocs(result_string)
-    result = result_string.replace('$$$TOC$$$', toc_string)
-    with open(cog_info_file, 'w') as f:
+    output_file = pathmaker(THIS_FILE_DIR, 'README.md')
+    with open(output_file, 'w') as f:
         f.write(result)
 
 
