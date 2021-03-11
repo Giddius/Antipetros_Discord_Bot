@@ -37,7 +37,7 @@ __**Bot-Name:**__
 
 __**Version:**__
 
-> 1.1.2
+> 1.1.4
 
 
 
@@ -52,7 +52,7 @@ __**Version:**__
 ### PyPi
 
 ```shell
-pip install antipetros_discordbot==1.1.2
+pip install antipetros_discordbot==1.1.4
 ```
 
 
@@ -141,7 +141,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *delete.msg*, *delete+msg*, *delete-msg*, *deletemsg*
+    - **aliases:** *deletemsg*, *delete-msg*, *delete.msg*, *delete+msg*
     
 
     - **is hidden:** True
@@ -214,7 +214,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *getnewestlogs*, *get.newest.logs*, *get+newest+logs*, *get-newest-logs*
+    - **aliases:** *get.newest.logs*, *getnewestlogs*, *get-newest-logs*, *get+newest+logs*
     
 
     - **is hidden:** False
@@ -241,7 +241,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *get.newest.mod.data*, *getnewestmoddata*, *get+newest+mod+data*, *get-newest-mod-data*
+    - **aliases:** *get+newest+mod+data*, *getnewestmoddata*, *get.newest.mod.data*, *get-newest-mod-data*
     
 
     - **is hidden:** False
@@ -296,7 +296,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *add-to-blacklist*, *addtoblacklist*, *add+to+blacklist*, *add.to.blacklist*
+    - **aliases:** *addtoblacklist*, *add.to.blacklist*, *add-to-blacklist*, *add+to+blacklist*
     
 
     - **is hidden:** True
@@ -313,7 +313,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *add.who.is.phrase*, *add+who+is+phrase*, *addwhoisphrase*, *add-who-is-phrase*
+    - **aliases:** *add+who+is+phrase*, *addwhoisphrase*, *add-who-is-phrase*, *add.who.is.phrase*
     
 
     - **is hidden:** True
@@ -330,7 +330,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *all.aliases*, *all+aliases*, *all-aliases*, *allaliases*
+    - **aliases:** *all.aliases*, *all-aliases*, *all+aliases*, *allaliases*
     
 
     - **is hidden:** True
@@ -347,7 +347,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *invocationprefixes*, *invocation.prefixes*, *invocation-prefixes*, *invocation+prefixes*
+    - **aliases:** *invocationprefixes*, *invocation+prefixes*, *invocation-prefixes*, *invocation.prefixes*
     
 
     - **is hidden:** True
@@ -364,7 +364,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *life.check*, *life-check*, *are-you-there*, *life+check*, *you_dead?*, *lifecheck*, *poke-with-stick*
+    - **aliases:** *life+check*, *lifecheck*, *are-you-there*, *life.check*, *you_dead?*, *life-check*, *poke-with-stick*
     
 
     - **is hidden:** True
@@ -381,7 +381,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *remove.from.blacklist*, *remove-from-blacklist*, *removefromblacklist*, *remove+from+blacklist*
+    - **aliases:** *remove-from-blacklist*, *remove+from+blacklist*, *remove.from.blacklist*, *removefromblacklist*
     
 
     - **is hidden:** True
@@ -398,7 +398,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *self-announcement*, *self+announcement*, *selfannouncement*, *self.announcement*
+    - **aliases:** *self+announcement*, *self-announcement*, *self.announcement*, *selfannouncement*
     
 
     - **is hidden:** True
@@ -425,7 +425,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *send+log+file*, *send.log.file*, *sendlogfile*, *send-log-file*
+    - **aliases:** *send+log+file*, *send.log.file*, *send-log-file*, *sendlogfile*
     
 
     - **is hidden:** True
@@ -442,7 +442,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *telluptime*, *tell.uptime*, *tell+uptime*, *tell-uptime*
+    - **aliases:** *telluptime*, *tell-uptime*, *tell.uptime*, *tell+uptime*
     
 
     - **is hidden:** True
@@ -512,7 +512,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *current.online.server*, *currentonlineserver*, *current-online-server*, *current+online+server*
+    - **aliases:** *current+online+server*, *currentonlineserver*, *current-online-server*, *current.online.server*
     
 
     - **is hidden:** False
@@ -556,7 +556,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *excludefromserverstatusnotification*, *exclude-from-server-status-notification*, *exclude.from.server.status.notification*, *exclude+from+server+status+notification*
+    - **aliases:** *exclude+from+server+status+notification*, *exclude-from-server-status-notification*, *exclude.from.server.status.notification*, *excludefromserverstatusnotification*
     
 
     - **is hidden:** False
@@ -573,7 +573,7 @@ pip install antipetros_discordbot==1.1.2
     
 
     
-    - **aliases:** *undoexcludefromserverstatusnotification*, *undo.exclude.from.server.status.notification*, *undo+exclude+from+server+status+notification*, *undo-exclude-from-server-status-notification*
+    - **aliases:** *undoexcludefromserverstatusnotification*, *undo+exclude+from+server+status+notification*, *undo-exclude-from-server-status-notification*, *undo.exclude.from.server.status.notification*
     
 
     - **is hidden:** False
@@ -644,7 +644,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *addalias*, *add+alias*, *add.alias*, *add-alias*
+    - **aliases:** *add-alias*, *add+alias*, *addalias*, *add.alias*
     
 
     - **is hidden:** True
@@ -841,7 +841,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *post+faq+by+number*, *post.faq.by.number*, *post-faq-by-number*, *postfaqbynumber*, *faq*
+    - **aliases:** *post-faq-by-number*, *faq*, *postfaqbynumber*, *post.faq.by.number*, *post+faq+by+number*
     
 
     - **is hidden:** False
@@ -903,7 +903,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *abort+give+away*, *abort-give-away*, *abort.give.away*, *abortgiveaway*
+    - **aliases:** *abort+give+away*, *abort-give-away*, *abortgiveaway*, *abort.give.away*
     
 
     - **is hidden:** True
@@ -942,7 +942,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *finish+give+away*, *finish-give-away*, *finishgiveaway*, *finish.give.away*
+    - **aliases:** *finish-give-away*, *finish.give.away*, *finish+give+away*, *finishgiveaway*
     
 
     - **is hidden:** True
@@ -1008,7 +1008,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *add-stamp*, *addstamp*, *add.stamp*, *add+stamp*
+    - **aliases:** *addstamp*, *add-stamp*, *add+stamp*, *add.stamp*
     
 
     - **is hidden:** False
@@ -1030,7 +1030,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *available.stamps*, *available+stamps*, *availablestamps*, *available-stamps*
+    - **aliases:** *availablestamps*, *available.stamps*, *available-stamps*, *available+stamps*
     
 
     - **is hidden:** False
@@ -1056,7 +1056,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *member.avatar*, *memberavatar*, *member-avatar*, *member+avatar*
+    - **aliases:** *member.avatar*, *member+avatar*, *memberavatar*, *member-avatar*
     
 
     - **is hidden:** False
@@ -1082,7 +1082,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *stamp-image*, *stamp.image*, *stampimage*, *stamp+image*
+    - **aliases:** *stamp.image*, *stamp-image*, *stampimage*, *stamp+image*
     
 
     - **is hidden:** False
@@ -1140,7 +1140,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *flipcoin*, *flip*, *flip.coin*, *flip+coin*, *flip-coin*, *coinflip*
+    - **aliases:** *flip*, *coinflip*, *flipcoin*, *flip+coin*, *flip-coin*, *flip.coin*
     
 
     - **is hidden:** False
@@ -1169,7 +1169,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *make-figlet*, *make+figlet*, *make.figlet*, *makefiglet*
+    - **aliases:** *make-figlet*, *makefiglet*, *make.figlet*, *make+figlet*
     
 
     - **is hidden:** False
@@ -1188,7 +1188,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *show-user-info*, *show+user+info*, *showuserinfo*, *show.user.info*
+    - **aliases:** *showuserinfo*, *show+user+info*, *show-user-info*, *show.user.info*
     
 
     - **is hidden:** False
@@ -1210,7 +1210,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *the-dragon*, *the.dragon*, *the+dragon*, *thedragon*
+    - **aliases:** *thedragon*, *the+dragon*, *the.dragon*, *the-dragon*
     
 
     - **is hidden:** False
@@ -1239,7 +1239,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *urbandictionary*, *urban+dictionary*, *urban.dictionary*, *urban-dictionary*
+    - **aliases:** *urban.dictionary*, *urban+dictionary*, *urban-dictionary*, *urbandictionary*
     
 
     - **is hidden:** False
@@ -1300,7 +1300,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *getcommandstats*, *get+command+stats*, *get-command-stats*, *get.command.stats*
+    - **aliases:** *get+command+stats*, *get.command.stats*, *get-command-stats*, *getcommandstats*
     
 
     - **is hidden:** True
@@ -1337,7 +1337,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *report.latency*, *report-latency*, *report+latency*, *reportlatency*
+    - **aliases:** *report.latency*, *report+latency*, *report-latency*, *reportlatency*
     
 
     - **is hidden:** True
@@ -1354,7 +1354,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *reportmemory*, *report-memory*, *report.memory*, *report+memory*
+    - **aliases:** *report-memory*, *reportmemory*, *report.memory*, *report+memory*
     
 
     - **is hidden:** True
@@ -1409,7 +1409,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *purgeantipetros*, *purge+antipetros*, *purge-antipetros*, *purge.antipetros*
+    - **aliases:** *purgeantipetros*, *purge+antipetros*, *purge.antipetros*, *purge-antipetros*
     
 
     - **is hidden:** True
@@ -1615,7 +1615,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *createsubscriptionchannel*, *create+subscription+channel*, *create.subscription.channel*, *create-subscription-channel*
+    - **aliases:** *createsubscriptionchannel*, *create.subscription.channel*, *create+subscription+channel*, *create-subscription-channel*
     
 
     - **is hidden:** True
@@ -1632,7 +1632,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *new+topic*, *new.topic*, *new-topic*, *newtopic*
+    - **aliases:** *new+topic*, *new-topic*, *new.topic*, *newtopic*
     
 
     - **is hidden:** True
@@ -1710,7 +1710,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *checktemplate*, *check.template*, *check-template*, *check+template*
+    - **aliases:** *check+template*, *checktemplate*, *check-template*, *check.template*
     
 
     - **is hidden:** False
@@ -1763,7 +1763,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *available.languages*, *available-languages*, *availablelanguages*, *available+languages*
+    - **aliases:** *available+languages*, *available.languages*, *available-languages*, *availablelanguages*
     
 
     - **is hidden:** False

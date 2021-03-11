@@ -7,7 +7,7 @@ import os
 from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands
-
+import discord
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -104,11 +104,10 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     @ auto_meta_info_command(enabled=True)
     @owner_or_admin()
     @log_invoker(log, "critical")
-    async def delete_msg(self, ctx, msg_id: int):
+    async def delete_msg(self, ctx, *msgs: discord.Message):
+        for msg in msgs:
 
-        channel = ctx.channel
-        message = await channel.fetch_message(msg_id)
-        await message.delete()
+            await msg.delete()
         await ctx.message.delete()
 
     def __repr__(self):

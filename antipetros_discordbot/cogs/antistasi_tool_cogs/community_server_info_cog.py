@@ -221,6 +221,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @auto_meta_info_command(enabled=get_command_enabled("current_players"))
     @allowed_channel_and_allowed_role_2()
+    @commands.cooldown(1, 120, commands.BucketType.member)
     async def current_players(self, ctx: commands.Context, *, server: str):
         """
         Show all players that are currently online on one of the Antistasi Community Server.
@@ -260,7 +261,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
             await ctx.send(f"The server, `{server}` is currently not online")
             server_holder.is_online = False
 
-    @auto_meta_info_command(enabled=get_command_enabled(''))
+    @auto_meta_info_command(enabled=get_command_enabled('exclude_from_server_status_notification'))
     @allowed_channel_and_allowed_role_2()
     @log_invoker(log, 'critical')
     async def exclude_from_server_status_notification(self, ctx: commands.Context, server_name: str):
@@ -273,7 +274,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await self._add_to_server_status_change_exclusions(server_name)
         await ctx.send(f'Excluded {server_name} from status change notifications')
 
-    @auto_meta_info_command(enabled=get_command_enabled(''))
+    @auto_meta_info_command(enabled=get_command_enabled('undo_exclude_from_server_status_notification'))
     @allowed_channel_and_allowed_role_2()
     @log_invoker(log, 'critical')
     async def undo_exclude_from_server_status_notification(self, ctx: commands.Context, server_name: str):

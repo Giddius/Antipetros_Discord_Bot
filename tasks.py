@@ -649,19 +649,27 @@ def make_readme(c):
         f.write(result)
 
 
-@task
-def commit_push(c):
+def commit_push(c, typus='fix'):
+    if typus == 'release':
+        msg = "🎆🎆 Release 🎆🎆"
+    elif typus == 'fix':
+        msg = "🛠️ fix"
+    elif typus == 'update':
+        msg = "🏷️ update"
+    else:
+        msg = "🍱 misc"
     os.chdir(main_dir_from_git())
     c.run("git add .", echo=True)
     sleep(1)
-    c.run('git commit -am "🎆🎆 Release 🎆🎆"', echo=True)
+    c.run(f'git commit -am "{msg}"', echo=True)
     sleep(1)
     c.run('git push', echo=True)
     sleep(1)
 
 
-@task(pre=[clean_repo, collect_data, store_userdata, increment_version, set_requirements, make_readme, commit_push])
-def build(c):
+@task(pre=[clean_repo, collect_data, store_userdata, increment_version, set_requirements, make_readme])
+def build(c, typus='fix'):
+    commit_push(c, typus)
     os.chdir(main_dir_from_git())
     c.run("flit publish", echo=True)
     NOTIFIER.show_toast(title=f"Finished Building {PROJECT_NAME}", icon_path=r"art/finished/icons/pip.ico", duration=15, msg=f"Published {PROJECT_NAME}, Version {get_package_version()} to PyPi")

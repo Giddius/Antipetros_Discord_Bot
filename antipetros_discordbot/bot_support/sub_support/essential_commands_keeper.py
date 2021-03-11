@@ -111,9 +111,9 @@ class EssentialCommandsKeeper(SubSupportBase):
             await ctx.message.delete(delay=float(_delete_time))
 
     @owner_or_admin()
-    async def shutdown(self, ctx):
+    async def shutdown(self, ctx, *, reason: str = 'No reason given'):
         try:
-            log.debug('shutdown command received from "%s"', ctx.author.name)
+            log.debug('shutdown command received from "%s" with reason: "%s"', ctx.author.name, reason)
             started_at = self.support.start_time
 
             started_at_string = arrow.get(started_at).format('YYYY-MM-DD HH:mm:ss')

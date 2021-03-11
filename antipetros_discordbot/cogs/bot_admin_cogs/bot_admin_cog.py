@@ -4,7 +4,7 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from textwrap import dedent
 import random
 import asyncio
@@ -81,6 +81,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self.latest_who_is_triggered_time = datetime.utcnow()
 
         glog.class_init_notification(log, self)
 # region [Setup]
@@ -124,16 +125,23 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         if channel.name.casefold() not in self.allowed_channels(command_name):
             return False
         if any(trigger_phrase.replace('%BOT_NAME%', self.bot.display_name).casefold() in msg.content.casefold() for trigger_phrase in self.who_is_trigger_phrases):
-            image = self.bot.portrait_url
-            embed_data = await self.bot.make_generic_embed(title=f'WHO IS {self.bot.display_name.upper()}', description='I am an custom made Bot for this community!',
-                                                           fields=[self.bot.field_item(name='What I can do', value=f'Get a description of my features by using `@{self.bot.display_name} help`', inline=False),
-                                                                   self.bot.field_item(name='Who created me', value=f'I was created by {self.bot.creator.member_object.mention}, for the Antistasi Community')],
-                                                           image=image,
-                                                           thumbnail=None)
-            await msg.reply(**embed_data, delete_after=60)
+            log.debug('who_is_this_bot_listener triggered')
+            if datetime.utcnow() > self.latest_who_is_triggered_time + timedelta(minutes=1):
+                image = self.bot.portrait_url
+                embed_data = await self.bot.make_generic_embed(title=f'WHO IS {self.bot.display_name.upper()}', description='I am an custom made Bot for this community!',
+                                                               fields=[self.bot.field_item(name='What I can do', value=f'Get a description of my features by using `@{self.bot.display_name} help`', inline=False),
+                                                                       self.bot.field_item(name='Who created me', value=f'I was created by {self.bot.creator.member_object.mention}, for the Antistasi Community')],
+                                                               image=image,
+                                                               thumbnail=None)
+                await msg.reply(**embed_data, delete_after=60)
+                log.info("'%s' was triggered by '%s' in '%s'", command_name, msg.author.name, msg.channel.name)
+                self.latest_who_is_triggered_time = datetime.utcnow()
+            else:
+                await msg.delete()
 
     @auto_meta_info_command(enabled=True)
     @owner_or_admin()
+    @log_invoker(log, "warning")
     async def add_who_is_phrase(self, ctx, *, phrase: str):
         current_phrases = self.who_is_trigger_phrases
 
@@ -265,8 +273,10 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
                 if old_file.is_file() and old_file.name.endswith('.log'):
                     discord_file = discord.File(old_file.path)
                     await ctx.send(file=discord_file)
+        log.warning("%s log file%s was requested by '%s'", which_logs, 's' if which_logs == 'all' else '', ctx.author.name)
 
     @auto_meta_info_command(enabled=True)
+    @commands.is_owner()
     async def invocation_prefixes(self, ctx: commands.Context):
         prefixes = self.bot.command_prefix(self.bot, ctx.message)
         prefixes = sorted(prefixes, key=lambda x: '@' in x, reverse=True)
@@ -288,6 +298,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         await ctx.message.delete()
 
     @auto_meta_info_command(enabled=True)
+    @commands.is_owner()
     async def all_aliases(self, ctx: commands.Context):
         all_aliases = []
         for command in self.bot.walk_commands():

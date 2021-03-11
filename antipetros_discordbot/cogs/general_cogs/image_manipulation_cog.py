@@ -97,6 +97,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self._get_stamps()
         glog.class_init_notification(log, self)
 
 
@@ -110,7 +111,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
-        return
+        self._get_stamps()
         log.debug('cog "%s" was updated', str(self))
 
 # endregion[Setup]
@@ -142,9 +143,10 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
     def _get_stamps(self):
         self.stamps = {}
         for file in os.scandir(self.stamp_location):
-            if os.path.isfile(file.path) is True and os.path.splitext(file.name)[1] in self.allowed_stamp_formats:
+            if os.path.isfile(file.path) is True:
                 name = file.name.split('.')[0].replace(' ', '_').strip().upper()
                 self.stamps[name] = file.path
+                log.debug("loaded stamp image '%s' from path '%s'", name, file.path)
 
     def _get_stamp_image(self, stamp_name, stamp_opacity):
         image = Image.open(self.stamps.get(stamp_name))
@@ -348,7 +350,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         """
         avatar_image = await self.get_avatar_from_user(ctx.author)
         stamp = self.avatar_stamp
-        modified_avatar = await self.bot.execute_in_thread(self._to_bottom_right, avatar_image, stamp, self.avatar_stamp_fraction)
+        modified_avatar = await self.bot.execute_in_thread(self._to_bottom_center, avatar_image, stamp, self.avatar_stamp_fraction)
 
         name = f"{ctx.author.name}_Member_avatar"
         await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**")  # change completion line to "Pledge your allegiance to the Antistasi Rebellion!"?
