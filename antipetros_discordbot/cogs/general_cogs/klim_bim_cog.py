@@ -12,6 +12,7 @@ from textwrap import dedent
 from discord.ext import commands
 from discord import AllowedMentions
 from pyfiglet import Figlet
+import discord
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
@@ -224,6 +225,15 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
         await ctx.send(f"```fix\n{new_text}\n```")
         await ctx.message.delete()
+
+    @auto_meta_info_command(enabled=get_command_enabled("show_user_info"))
+    @allowed_channel_and_allowed_role_2(False)
+    async def show_user_info(self, ctx, user: discord.Member = None):
+        user = ctx.author if user is None else user
+        embed_data = await self._user_info_to_embed(user)
+        await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+
 # endregion [Commands]
 
 # region [DataStorage]
@@ -237,6 +247,30 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 # endregion [Embeds]
 
 # region [HelperMethods]
+
+    async def _user_info_to_embed(self, user: discord.Member):
+        # seperator = '⸻⸻⸻⸻⸻'
+        master_sort_table = {"id": 0, 'top_role': 4, 'roles': 5, 'premium_since': 3, 'created_at': 1, 'joined_at': 2, 'raw_status': 6, 'activity': 7, "guild_permissions": 8}
+        seperator = ''
+        fields = []
+        for attr in sorted(self.user_info_to_show, key=master_sort_table.get):
+            name = '__**' + attr.replace('_', ' ').title() + f'**__'
+            value = self.user_info_transform_table.get(attr)(getattr(user, attr))
+            if attr in ["joined_at", 'activity', 'top_role', "created_at", 'activity', "raw_status"]:
+                in_line = True
+            else:
+                in_line = False
+            if attr in ["created_at", "joined_at", "guild_permissions", 'premium_since', 'raw_status', 'activity']:
+                sep = ''
+            else:
+                sep = seperator
+            fields.append(self.bot.field_item(name=name, value=f"{value}\n{sep}", inline=in_line))
+        fields.append(self.bot.field_item(name='On Mobile?', value='📱' if user.is_on_mobile() is True else '💻'))
+        return await self.bot.make_generic_embed(title=ZERO_WIDTH,
+                                                 thumbnail=user.avatar_url,
+                                                 author={"name": user.display_name, 'icon_url': user.avatar_url},
+                                                 fields=fields,
+                                                 footer={'text': 'You want the bot to fetch more or other data? Contact Giddi!'})
 
 
 # endregion [HelperMethods]

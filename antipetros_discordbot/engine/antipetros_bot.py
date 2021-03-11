@@ -411,8 +411,8 @@ class AntiPetrosBot(commands.Bot):
     @property
     def portrait_url(self):
         if self.display_name.casefold() == 'antidevtros':
-            return "https://i.postimg.cc/Fhm9NJfX/Anti-DEVtros.png"
-        return "https://i.postimg.cc/WjBNYyT3/Anti-Petros.png"
+            return "https://raw.githubusercontent.com/official-antistasi-community/Antipetros_Discord_Bot/development/art/finished/images/AntiDEVtros.png"
+        return "https://raw.githubusercontent.com/official-antistasi-community/Antipetros_Discord_Bot/development/art/finished/images/AntiPetros_for_readme.png"
 
     def blacklisted_user_ids(self):
         for user_item in self.blacklisted_users:
