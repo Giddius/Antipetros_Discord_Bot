@@ -20,7 +20,7 @@ from tempfile import TemporaryDirectory
 from functools import partial
 from concurrent.futures import ThreadPoolExecutor
 from dateparser import parse as date_parse
-from asyncio import get_event_loop,
+from asyncio import get_event_loop
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
 import discord

@@ -123,7 +123,7 @@
 
 
 
-- **aliases:** *delete-msg*, *delete+msg*, *deletemsg*, *delete.msg*
+- **aliases:** *delete+msg*, *delete.msg*, *delete-msg*, *deletemsg*
 
 
 - **is hidden:** True
@@ -180,7 +180,7 @@
 
 
 
-- **aliases:** *getnewestlogs*, *get+newest+logs*, *get-newest-logs*, *get.newest.logs*
+- **aliases:** *get+newest+logs*, *getnewestlogs*, *get-newest-logs*, *get.newest.logs*
 
 
 - **is hidden:** False
@@ -263,7 +263,7 @@
 
 
 
-- **aliases:** *add.who.is.phrase*, *add+who+is+phrase*, *addwhoisphrase*, *add-who-is-phrase*
+- **aliases:** *addwhoisphrase*, *add.who.is.phrase*, *add+who+is+phrase*, *add-who-is-phrase*
 
 
 - **is hidden:** True
@@ -280,7 +280,7 @@
 
 
 
-- **aliases:** *all-aliases*, *all.aliases*, *all+aliases*, *allaliases*
+- **aliases:** *all-aliases*, *all.aliases*, *allaliases*, *all+aliases*
 
 
 - **is hidden:** True
@@ -297,7 +297,7 @@
 
 
 
-- **aliases:** *invocationprefixes*, *invocation+prefixes*, *invocation.prefixes*, *invocation-prefixes*
+- **aliases:** *invocationprefixes*, *invocation-prefixes*, *invocation+prefixes*, *invocation.prefixes*
 
 
 - **is hidden:** True
@@ -314,7 +314,7 @@
 
 
 
-- **aliases:** *life-check*, *life+check*, *lifecheck*, *are-you-there*, *you_dead?*, *poke-with-stick*, *life.check*
+- **aliases:** *lifecheck*, *life.check*, *you_dead?*, *life-check*, *are-you-there*, *life+check*, *poke-with-stick*
 
 
 - **is hidden:** True
@@ -331,7 +331,7 @@
 
 
 
-- **aliases:** *remove+from+blacklist*, *removefromblacklist*, *remove-from-blacklist*, *remove.from.blacklist*
+- **aliases:** *remove-from-blacklist*, *removefromblacklist*, *remove+from+blacklist*, *remove.from.blacklist*
 
 
 - **is hidden:** True
@@ -348,7 +348,7 @@
 
 
 
-- **aliases:** *self.announcement*, *self+announcement*, *self-announcement*, *selfannouncement*
+- **aliases:** *self+announcement*, *self.announcement*, *selfannouncement*, *self-announcement*
 
 
 - **is hidden:** True
@@ -375,7 +375,7 @@
 
 
 
-- **aliases:** *sendlogfile*, *send.log.file*, *send-log-file*, *send+log+file*
+- **aliases:** *send+log+file*, *sendlogfile*, *send.log.file*, *send-log-file*
 
 
 - **is hidden:** True
@@ -392,7 +392,7 @@
 
 
 
-- **aliases:** *tell+uptime*, *telluptime*, *tell.uptime*, *tell-uptime*
+- **aliases:** *tell+uptime*, *tell-uptime*, *tell.uptime*, *telluptime*
 
 
 - **is hidden:** True
@@ -446,7 +446,7 @@
 
 
 
-- **aliases:** *currentonlineserver*, *current+online+server*, *current.online.server*, *current-online-server*
+- **aliases:** *current+online+server*, *current.online.server*, *currentonlineserver*, *current-online-server*
 
 
 - **is hidden:** False
@@ -473,7 +473,7 @@
 
 
 
-- **aliases:** *currentplayers*, *current-players*, *current.players*, *current+players*
+- **aliases:** *current+players*, *current-players*, *current.players*, *currentplayers*
 
 
 - **is hidden:** False
@@ -490,7 +490,7 @@
 
 
 
-- **aliases:** *excludefromserverstatusnotification*, *exclude-from-server-status-notification*, *exclude.from.server.status.notification*, *exclude+from+server+status+notification*
+- **aliases:** *exclude+from+server+status+notification*, *exclude.from.server.status.notification*, *exclude-from-server-status-notification*, *excludefromserverstatusnotification*
 
 
 - **is hidden:** False
@@ -507,7 +507,7 @@
 
 
 
-- **aliases:** *undo.exclude.from.server.status.notification*, *undo+exclude+from+server+status+notification*, *undoexcludefromserverstatusnotification*, *undo-exclude-from-server-status-notification*
+- **aliases:** *undo-exclude-from-server-status-notification*, *undoexcludefromserverstatusnotification*, *undo.exclude.from.server.status.notification*, *undo+exclude+from+server+status+notification*
 
 
 - **is hidden:** False
@@ -562,7 +562,7 @@
 
 
 
-- **aliases:** *add-alias*, *add+alias*, *addalias*, *add.alias*
+- **aliases:** *add-alias*, *addalias*, *add+alias*, *add.alias*
 
 
 - **is hidden:** True
@@ -627,7 +627,7 @@
 
 
 
-- **aliases:** *list+configs*, *list-configs*, *list.configs*, *listconfigs*
+- **aliases:** *list+configs*, *list.configs*, *listconfigs*, *list-configs*
 
 
 - **is hidden:** True
@@ -743,7 +743,7 @@
 
 
 
-- **aliases:** *postfaqbynumber*, *faq*, *post-faq-by-number*, *post+faq+by+number*, *post.faq.by.number*
+- **aliases:** *post-faq-by-number*, *postfaqbynumber*, *faq*, *post.faq.by.number*, *post+faq+by+number*
 
 
 - **is hidden:** False
@@ -789,7 +789,7 @@
 
 
 
-- **aliases:** *abort.give.away*, *abortgiveaway*, *abort-give-away*, *abort+give+away*
+- **aliases:** *abort.give.away*, *abort-give-away*, *abortgiveaway*, *abort+give+away*
 
 
 - **is hidden:** True
@@ -806,7 +806,7 @@
 
 
 
-- **aliases:** *creategiveaway*, *create+giveaway*, *giveaway*, *create-giveaway*, *create.giveaway*
+- **aliases:** *create.giveaway*, *creategiveaway*, *giveaway*, *create-giveaway*, *create+giveaway*
 
 
 - **is hidden:** True
@@ -828,7 +828,7 @@
 
 
 
-- **aliases:** *finishgiveaway*, *finish.give.away*, *finish+give+away*, *finish-give-away*
+- **aliases:** *finish+give+away*, *finish-give-away*, *finish.give.away*, *finishgiveaway*
 
 
 - **is hidden:** True
@@ -878,7 +878,7 @@
 
 
 
-- **aliases:** *add+stamp*, *add.stamp*, *add-stamp*, *addstamp*
+- **aliases:** *add-stamp*, *addstamp*, *add.stamp*, *add+stamp*
 
 
 - **is hidden:** False
@@ -900,7 +900,7 @@
 
 
 
-- **aliases:** *available-stamps*, *availablestamps*, *available.stamps*, *available+stamps*
+- **aliases:** *availablestamps*, *available+stamps*, *available-stamps*, *available.stamps*
 
 
 - **is hidden:** False
@@ -953,7 +953,7 @@
 
 
 
-- **aliases:** *stamp-image*, *stampimage*, *stamp.image*, *stamp+image*
+- **aliases:** *stamp-image*, *stamp+image*, *stampimage*, *stamp.image*
 
 
 - **is hidden:** False
@@ -995,7 +995,7 @@
 
 
 
-- **aliases:** *flip+coin*, *flip*, *flip.coin*, *coinflip*, *flipcoin*, *flip-coin*
+- **aliases:** *flip*, *flipcoin*, *flip-coin*, *flip.coin*, *coinflip*, *flip+coin*
 
 
 - **is hidden:** False
@@ -1024,7 +1024,7 @@
 
 
 
-- **aliases:** *makefiglet*, *make.figlet*, *make-figlet*, *make+figlet*
+- **aliases:** *make.figlet*, *make+figlet*, *make-figlet*, *makefiglet*
 
 
 - **is hidden:** False
@@ -1043,7 +1043,7 @@
 
 
 
-- **aliases:** *show+user+info*, *showuserinfo*, *show.user.info*, *show-user-info*
+- **aliases:** *show-user-info*, *show+user+info*, *show.user.info*, *showuserinfo*
 
 
 - **is hidden:** False
@@ -1065,7 +1065,7 @@
 
 
 
-- **aliases:** *the-dragon*, *the+dragon*, *thedragon*, *the.dragon*
+- **aliases:** *the.dragon*, *thedragon*, *the-dragon*, *the+dragon*
 
 
 - **is hidden:** False
@@ -1094,7 +1094,7 @@
 
 
 
-- **aliases:** *urban+dictionary*, *urban-dictionary*, *urban.dictionary*, *urbandictionary*
+- **aliases:** *urban-dictionary*, *urbandictionary*, *urban+dictionary*, *urban.dictionary*
 
 
 - **is hidden:** False
@@ -1139,7 +1139,7 @@
 
 
 
-- **aliases:** *getcommandstats*, *get+command+stats*, *get.command.stats*, *get-command-stats*
+- **aliases:** *getcommandstats*, *get-command-stats*, *get.command.stats*, *get+command+stats*
 
 
 - **is hidden:** True
@@ -1176,7 +1176,7 @@
 
 
 
-- **aliases:** *reportlatency*, *report+latency*, *report-latency*, *report.latency*
+- **aliases:** *report+latency*, *reportlatency*, *report-latency*, *report.latency*
 
 
 - **is hidden:** True
@@ -1193,7 +1193,7 @@
 
 
 
-- **aliases:** *reportmemory*, *report+memory*, *report.memory*, *report-memory*
+- **aliases:** *report+memory*, *report-memory*, *reportmemory*, *report.memory*
 
 
 - **is hidden:** True
@@ -1232,7 +1232,7 @@
 
 
 
-- **aliases:** *purge-antipetros*, *purge+antipetros*, *purgeantipetros*, *purge.antipetros*
+- **aliases:** *purge+antipetros*, *purge.antipetros*, *purgeantipetros*, *purge-antipetros*
 
 
 - **is hidden:** True
@@ -1406,7 +1406,7 @@
 
 
 
-- **aliases:** *create.subscription.channel*, *create-subscription-channel*, *create+subscription+channel*, *createsubscriptionchannel*
+- **aliases:** *create.subscription.channel*, *create-subscription-channel*, *createsubscriptionchannel*, *create+subscription+channel*
 
 
 - **is hidden:** True
@@ -1423,7 +1423,7 @@
 
 
 
-- **aliases:** *new+topic*, *new-topic*, *newtopic*, *new.topic*
+- **aliases:** *newtopic*, *new+topic*, *new-topic*, *new.topic*
 
 
 - **is hidden:** True
@@ -1485,7 +1485,7 @@
 
 
 
-- **aliases:** *check-template*, *check+template*, *check.template*, *checktemplate*
+- **aliases:** *check-template*, *check.template*, *check+template*, *checktemplate*
 
 
 - **is hidden:** False
@@ -1522,7 +1522,7 @@
 
 
 
-- **aliases:** *available-languages*, *available.languages*, *available+languages*, *availablelanguages*
+- **aliases:** *availablelanguages*, *available+languages*, *available-languages*, *available.languages*
 
 
 - **is hidden:** False
