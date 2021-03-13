@@ -219,8 +219,7 @@ class EmbedBuilder(SubSupportBase):
         generic_embed = Embed(title=str(kwargs.get("title", self.default_title)),
                               description=str(kwargs.get('description', self.default_description)),
                               color=self._validate_color(kwargs.get('color', self.default_color)),
-                              timestamp=self._validate_timestamp(kwargs.get('timestamp', self.default_timestamp)),
-                              type=self._validate_type(kwargs.get('type', self.default_type)))
+                              timestamp=self._validate_timestamp(kwargs.get('timestamp', self.default_timestamp)))
 
         image, image_file = self._validate_image(kwargs.get('image', None))
         files.append(image_file)
@@ -230,7 +229,7 @@ class EmbedBuilder(SubSupportBase):
         if author is not None:
             generic_embed.set_author(**author)
         if footer is not None:
-            footer['text'] = f"{ZERO_WIDTH}\n" + footer['text'] + f"\n{ZERO_WIDTH}\n{ZERO_WIDTH}"
+            footer['text'] = f"{ZERO_WIDTH}\n" + footer['text']
             generic_embed.set_footer(**footer)
         if thumbnail is not None:
             generic_embed.set_thumbnail(url=thumbnail)
@@ -358,15 +357,15 @@ class EmbedBuilder(SubSupportBase):
 
     @property
     def default_type(self):
-        """
-        """
         return 'rich'
 
     async def if_ready(self):
         self.special_authors = {'bot_author': {'name': self.bot.display_name, 'url': self.bot.github_url, 'icon_url': self.bot.user.avatar_url},
-                                'default_author': self.default_author}
+                                'default_author': self.default_author,
+                                'armahosts': {'name': 'Server Provided by ARMAHOSTS🔗', "url": self.bot.armahosts_url, 'icon_url': self.bot.armahosts_icon}}
         self.special_footers = {'feature_request_footer': {'text': "For feature suggestions and feature request, contact @Giddi".title(), "icon_url": self.bot.creator.member_object.avatar_url},
-                                'default_footer': self.default_footer}
+                                'default_footer': self.default_footer,
+                                'armahosts': {'text': self.bot.armahosts_footer_text + '\n' + self.bot.armahosts_url}}
         self.replacement_map = {"$BOT_NAME$": self.bot.display_name}
         self.collect_embed_build_recipes()
         log.debug("'%s' sub_support is READY", str(self))

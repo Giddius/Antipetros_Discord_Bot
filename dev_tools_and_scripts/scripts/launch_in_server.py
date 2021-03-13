@@ -75,16 +75,27 @@ def run_command(command: str):
                 print(stdout_line, end="")
 
 
-if __name__ == '__main__':
-    # copy_script()
-    # run_command(ANTIPETROS_UPDATE_CMD_VERSION)
-    # sleep(10)
+# if __name__ == '__main__':
+#     # copy_script()
+#     # run_command(ANTIPETROS_UPDATE_CMD_VERSION)
+#     # sleep(10)
 
-    # run_command(f"antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NEXTCLOUD_USERNAME')} -np {os.getenv('NEXTCLOUD_PASSWORD')}")
-    # sleep(30)
-    # run_command('antipetrosbot stop')
+#     # run_command(f"antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NEXTCLOUD_USERNAME')} -np {os.getenv('NEXTCLOUD_PASSWORD')}")
+#     # sleep(30)
+#     # run_command('antipetrosbot stop')
+def update_launch():
     run_command(PID_KILL_COMMAND)
     sleep(10)
     run_command(ANTIPETROS_UPDATE_CMD_VERSION)
     sleep(10)
     run_command(ANTIPETROS_START_CMD)
+
+
+def launch():
+    run_command(PID_KILL_COMMAND)
+    sleep(10)
+    run_command(ANTIPETROS_START_CMD)
+
+
+if __name__ == '__main__':
+    launch()

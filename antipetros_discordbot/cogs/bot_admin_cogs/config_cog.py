@@ -295,8 +295,6 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
         await self.save_command_aliases()
         await ctx.send(f"successfully added '{alias}' to the command aliases of '{command_name}'")
         await self.bot.reload_cog_from_command_name(command_name)
-        if self.notify_when_changed is True:
-            await self.notify(AddedAliasChangeEvent(ctx, command_name, alias))
         await self.bot.creator.member_object.send(f"A new alias was set by `{ctx.author.name}`\n**Command:** {command_name}\n**New Alias:** {alias}")
 
 # endregion [Commands]
@@ -307,7 +305,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
         roles = await self.get_notify_roles()
         embed_data = await event.as_embed_message()
         if self.notify_via.casefold() == 'dm':
-            member_to_notify = list(set([role.members for role in roles]))
+            member_to_notify = list({role.members for role in roles})
             for member in member_to_notify:
                 await member.send(**embed_data)
 

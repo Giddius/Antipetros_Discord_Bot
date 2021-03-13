@@ -7,6 +7,7 @@ from datetime import datetime
 from textwrap import dedent
 from collections import namedtuple
 import re
+from typing import Union, List, Set, Tuple, Dict
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, tasks
 
@@ -64,9 +65,7 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.CRASHING | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-06 03:32:39",
-                             "05703df4faf098a7f3f5cea49c51374b3225162318b081075eb0745cc36ddea6ff11d2f4afae1ac706191e8db881e005104ddabe5ba80687ac239ede160c3178")}
+                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.CRASHING | CogState.DOCUMENTATION_MISSING,)}
 
     required_config_data = dedent("""
                                   """)
@@ -112,7 +111,13 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
     def registered_workshop_items(self):
         return [self.workshop_item(**item) for item in loadjson(self.registered_workshop_items_file)]
 
-
+    @property
+    def notify_members(self):
+        members = [self.bot.creator.member_object]
+        member_ids = COGS_CONFIG.retrieve(self.config_name, "notify_member_ids", typus=List[int], direct_fallback=[])
+        for member_id in member_ids:
+            members.append(self.bot.sync_member_by_id(member_id))
+        return list(set(members))
 # endregion [Properties]
 
 # region [Setup]
@@ -187,7 +192,9 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 # region [HelperMethods]
 
     async def notify_update(self, old_item, new_item):
-        print(f"{new_item.title} had an update")
+        log.info(f"{new_item.title} had an update")
+        for member in self.notify_members:
+            await member.send(f"{new_item.title} had an update")
 
     async def _add_item_to_registered_items(self, item):
         data = loadjson(self.registered_workshop_items_file)

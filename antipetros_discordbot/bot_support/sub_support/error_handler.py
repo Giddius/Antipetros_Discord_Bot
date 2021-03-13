@@ -118,14 +118,12 @@ class ErrorHandler(SubSupportBase):
 
     async def handle_errors(self, ctx, error):
         error_traceback = '\n'.join(traceback.format_exception(error, value=error, tb=None))
-        log.critical('#' * 10)
-        log.critical(error)
+
         log.error(error)
-        log.critical(error_traceback)
-        log.critical('#' * 10)
+
         await self.error_handle_table.get(type(error), self._default_handle_error)(ctx, error, error_traceback)
         if ctx.channel.type is ChannelType.text and ctx.command is not None:
-            log.error("Error '%s' was caused by '%s' on the command '%s' with args '%s' and traceback --> %s", error.__class__.__name__, ctx.author.name, ctx.command.name, ctx.args, error_traceback)
+            log.error("Error '%s' was caused by '%s' on the content '%s' with args '%s' and traceback --> %s", error.__class__.__name__, ctx.author.name, ctx.message.content, ctx.args, error_traceback)
             if self.delete_invoking_messages is True:
                 await ctx.message.delete()
 
@@ -179,7 +177,7 @@ class ErrorHandler(SubSupportBase):
 
     async def _handle_max_concurrency(self, ctx, error, error_traceback):
 
-        await ctx.channel.send(embed=await self.error_reply_embed(ctx, error, 'STOP SPAMMING!', f'{ctx.author.mention}\n{ZERO_WIDTH}\n **Your mother was a hamster and your father smelled of elderberries!**', error_traceback=error_traceback), delete_after=self.delete_reply_after)
+        await ctx.channel.send(embed=await self.error_reply_embed(ctx, error, 'STOP SPAMMING!', f'{ctx.author.mention}\n{ZERO_WIDTH}\n **There can ever only be one instance of this command running, please wait till it has finished**', error_traceback=error_traceback), delete_after=self.delete_reply_after)
         await ctx.message.delete()
 
     async def _handle_command_on_cooldown(self, ctx, error, error_traceback):

@@ -3,6 +3,7 @@ import sys
 import os
 import subprocess
 import shutil
+from datetime import datetime, timedelta
 from pprint import pprint
 from time import time, sleep
 import json
@@ -15,7 +16,42 @@ from jinja2 import Environment, FileSystemLoader
 from collections import namedtuple
 from win10toast import ToastNotifier
 import mdformat
+from textwrap import dedent
+from rich import print as rprint, inspect as rinspect, progress_bar
+from rich.progress import track
+from timeit import Timer, timeit
+from zipfile import ZipFile, ZIP_LZMA
 GIT_EXE = shutil.which('git.exe')
+
+
+SCRATCH_BOILER = dedent("""
+                # region[Imports]
+
+                import os
+                import subprocess
+                import shutil
+                import sys
+                from inspect import getmembers, isclass, isfunction
+                from pprint import pprint, pformat
+                from typing import Union, Dict, Set, List, Tuple
+                from datetime import tzinfo, datetime, timezone, timedelta
+                from icecream import ic
+                import re
+                from dotenv import load_dotenv
+                from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+                import random
+                from functools import wraps, lru_cache, singledispatch, total_ordering, partial
+                from contextlib import contextmanager
+                from collections import Counter, ChainMap, deque, namedtuple, defaultdict
+                from enum import Enum, unique, Flag, auto
+                from rich import print as rprint, inspect as rinspect
+                from time import time, sleep
+                from timeit import Timer, timeit
+                from textwrap import dedent
+                from antipetros_discordbot.utility.gidtools_functions import writejson, writeit, readit, pathmaker, loadjson, clearit, pickleit, get_pickled
+
+                # endregion [Imports]
+                """).strip()
 
 
 def readit(in_file, per_lines=False, in_encoding='utf-8', in_errors=None):
@@ -102,7 +138,9 @@ FOLDER = {'docs': pathmaker(THIS_FILE_DIR, 'docs'),
           'docs_templates': pathmaker(THIS_FILE_DIR, 'docs', 'resources', 'templates'),
           'images': pathmaker(THIS_FILE_DIR, 'art', 'finished', 'images'),
           'gifs': pathmaker(THIS_FILE_DIR, 'art', 'finished', 'gifs'),
-          'docs_raw_text': pathmaker(THIS_FILE_DIR, 'docs', 'resources', 'raw_text')}
+          'docs_raw_text': pathmaker(THIS_FILE_DIR, 'docs', 'resources', 'raw_text'),
+          'scratches': pathmaker(THIS_FILE_DIR, 'tools', 'scratches'),
+          'archived_scratches': pathmaker(THIS_FILE_DIR, 'misc', 'archive', 'archived_scratches')}
 
 FILES = {'bot_info.json': pathmaker(FOLDER.get('docs_data'), 'bot_info.json'),
          'command_data.json': pathmaker(FOLDER.get('docs_data'), 'command_data.json'),
@@ -111,7 +149,8 @@ FILES = {'bot_info.json': pathmaker(FOLDER.get('docs_data'), 'bot_info.json'),
          'command_data.json': pathmaker(FOLDER.get('docs_data'), 'command_data.json'),
          'external_dependencies.json': pathmaker(FOLDER.get('docs_data'), 'external_dependencies.json'),
          'cogs_misc.txt': pathmaker(FOLDER.get('docs_raw_text'), 'cogs_misc.txt'),
-         'cogs_info.md': pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'cogs', 'cogs_info.md')}
+         'cogs_info.md': pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'cogs', 'cogs_info.md'),
+         'archived_scratches_content_table.json': pathmaker(FOLDER.get('archived_scratches'), 'archived_scratches_content_table.json')}
 
 HEADING_REGEX = re.compile(r"(?P<level>\#+)\s*(?P<name>.*)")
 ALT_HEADING_REGEX = re.compile(r"(?P<level>\#+).*\[(?P<name>.*)\]")
@@ -119,6 +158,14 @@ ALT_ALT_HEADING_REGEX = re.compile(r'(?P<level>\<h\d\>)(?P<name>.*?)\<')
 SUB_COMMAND_REGEX = re.compile(r"Commands:\n(?P<sub_commands>.*)", re.DOTALL)
 SUB_COMMAND_NAME_VALUE_REGEX = re.compile(r"(?P<name>[\w\-]+)\s+(?P<description>.*)")
 JINJA_ENV = Environment(loader=FileSystemLoader(FOLDER.get('docs_templates')))
+
+
+def file_name_timestamp(with_brackets=False):
+    now = datetime.now()
+    timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+    if with_brackets is True:
+        return f"[{timestamp}]"
+    return timestamp
 
 
 def flit_data(to_get: str):
@@ -673,3 +720,58 @@ def build(c, typus='fix'):
     os.chdir(main_dir_from_git())
     c.run("flit publish", echo=True)
     NOTIFIER.show_toast(title=f"Finished Building {PROJECT_NAME}", icon_path=r"art/finished/icons/pip.ico", duration=15, msg=f"Published {PROJECT_NAME}, Version {get_package_version()} to PyPi")
+    from dev_tools_and_scripts.scripts.launch_in_server import update_launch
+    update_launch()
+
+
+def get_alternative_name(name, number=0):
+    if number == 0:
+        mod_name = name
+    else:
+        mod_name = f"{name}_{number}"
+
+    if mod_name.casefold() in {file.name.split('.')[0].casefold() for file in os.scandir(FOLDER.get('scratches')) if file.is_file() and file.name.endswith('.py')}:
+        return get_alternative_name(name, number + 1)
+    return mod_name
+
+
+@task
+def new_scratch(c, prefix=None):
+    if os.path.isdir(FOLDER.get('scratches')) is False:
+        os.makedirs(FOLDER.get('scratches'))
+    name = "scratch" if prefix is None else f"{prefix}_scratch"
+    file_name = get_alternative_name(name) + '.py'
+    full_path = pathmaker(FOLDER.get('scratches'), file_name)
+    with open(full_path, 'w') as f:
+        f.write(SCRATCH_BOILER + '\n\n\n\n')
+        f.write("if __name__ == '__main__':\n")
+        f.write("\tpass\n")
+
+
+def extend_content_table(archive_name, file_paths):
+    name = archive_name.split('.')[0]
+    scratch_folder = pathmaker(FOLDER.get('scratches'))
+    content_table = loadjson(FILES.get('archived_scratches_content_table.json'))
+    content_table[name] = [file_path[1] for file_path in file_paths]
+    writejson(content_table, FILES.get('archived_scratches_content_table.json'))
+
+
+@task
+def archive_scratches(c):
+    scratch_folder = pathmaker(FOLDER.get('scratches'))
+    archive_name = f"scratches_{file_name_timestamp(False)}.zip"
+    archive_path = pathmaker(FOLDER.get('archived_scratches'), archive_name)
+    file_paths = []
+    for dirname, folderlist, filelist in os.walk(scratch_folder):
+        if '__pycache__' not in dirname and '.git' not in dirname:
+            for file in filelist:
+                path = pathmaker(dirname, file)
+                rel_path = pathmaker(os.path.relpath(path, scratch_folder))
+                file_paths.append((path, rel_path))
+    extend_content_table(archive_name, file_paths)
+    with ZipFile(archive_path, 'w', compression=ZIP_LZMA) as zippy:
+        for full_path, relative_path in track(file_paths, description='archiving scratches folder...'):
+            rprint(f"archiving file [bold green][u]{relative_path}[/u][/bold green]")
+            zippy.write(full_path, relative_path)
+    shutil.rmtree(scratch_folder)
+    os.makedirs(scratch_folder)

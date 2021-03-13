@@ -51,6 +51,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_community_server_info_cog import CommunityServerInfo
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 # endregion[Imports]
 
 # region [TODO]
@@ -145,7 +146,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Loops]
 
-    @tasks.loop(minutes=5)
+    @tasks.loop(minutes=2)
     async def check_server_status_loop(self):
         if self.check_server_status_loop_first_run is True:
             log.debug('postponing loop "check_server_status_loop", as it should not run directly at the beginning')
@@ -198,21 +199,27 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                         player_count = info.player_count
                         max_players = info.max_players
                         map_name = info.map_name
-                        ping = info.ping
+                        ping = round(float(info.ping), ndigits=3)
                         game = info.game
-                        password_needed = info.password_protected
+                        password_needed = "YES 🔐" if info.password_protected is True else 'NO 🔓'
                         server_name = info.server_name
                         embed_data = await self.bot.make_generic_embed(title=server_name,
-                                                                       description=f"__**Server Address:**__ {server_item.address}\n__**Port:**__ {server_item.port}\n",
                                                                        thumbnail=self.server_symbol,
-                                                                       fields=[self.bot.field_item(name="**Current Map**", value=map_name),
-                                                                               self.bot.field_item(name="**Players**", value=f"{player_count}/{max_players}"),
-                                                                               self.bot.field_item(name="**Ping**", value=ping),
-                                                                               self.bot.field_item(name="**Game**", value=game),
-                                                                               self.bot.field_item(name="**Password Required**", value=f"{password_needed}"),
-                                                                               self.bot.field_item(name='Battlemetrics', value=server_item.battlemetrics_url)])
+                                                                       fields=[self.bot.field_item(name="Server Address", value=str(server_item.address), inline=True),
+                                                                               self.bot.field_item(name="Port", value=str(server_item.port), inline=True),
+                                                                               self.bot.field_item(name="Teamspeak", value=f"38.65.5.151  {ZERO_WIDTH}  **OR**  {ZERO_WIDTH}  antistasi.armahosts.com"),
+                                                                               self.bot.field_item(name="━━━━━━━━━━━━", value=ZERO_WIDTH, inline=False),
+                                                                               self.bot.field_item(name="Game", value=game, inline=True),
+                                                                               self.bot.field_item(name="Players", value=f"{player_count}/{max_players}", inline=True),
+                                                                               self.bot.field_item(name="Ping", value=str(ping), inline=True),
+                                                                               self.bot.field_item(name="Map", value=map_name, inline=True),
+                                                                               self.bot.field_item(name="Password", value=f"{password_needed}", inline=True),
+                                                                               self.bot.field_item(name='Battlemetrics', value="🔗 " + embed_hyperlink('link to Battlemetrics', server_item.battlemetrics_url), inline=True)],
+                                                                       author="armahosts",
+                                                                       footer="armahosts",
+                                                                       color="blue")
 
-                        mod_list_command = self.bot.get_command('get_newest_mod_data')
+                        # mod_list_command = self.bot.get_command('get_newest_mod_data')
                         await ctx.send(**embed_data)
                         # await ctx.invoke(mod_list_command, server_item.name)
                         await asyncio.sleep(0.5)

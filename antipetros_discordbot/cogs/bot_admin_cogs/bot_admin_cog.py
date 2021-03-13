@@ -97,7 +97,6 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
 # endregion [Setup]
 
-
     @property
     def alive_phrases(self):
         if os.path.isfile(self.alive_phrases_file) is False:
@@ -136,8 +135,8 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
                 await msg.reply(**embed_data, delete_after=60)
                 log.info("'%s' was triggered by '%s' in '%s'", command_name, msg.author.name, msg.channel.name)
                 self.latest_who_is_triggered_time = datetime.utcnow()
-            else:
-                await msg.delete()
+
+            await msg.delete()
 
     @auto_meta_info_command(enabled=True)
     @owner_or_admin()

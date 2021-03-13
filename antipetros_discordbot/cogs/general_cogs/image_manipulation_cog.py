@@ -19,7 +19,7 @@ from discord.ext import commands, flags
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.misc import make_config_name, alt_seconds_to_pretty
 from antipetros_discordbot.utility.enums import WatermarkPosition
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, log_invoker, has_attachments
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
@@ -105,7 +105,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         self._get_stamps()
         log.debug('setup for cog "%s" finished', str(self))
@@ -139,6 +138,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 
 # endregion[Properties]
+
 
     def _get_stamps(self):
         self.stamps = {}
@@ -247,6 +247,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
             embed = discord.Embed(title=message_title, description=message_text, color=self.support.cyan.discord_color, timestamp=datetime.now(tz=timezone("Europe/Berlin")), type='image')
             embed.set_author(name='AntiPetros', icon_url="https://www.der-buntspecht-shop.de/wp-content/uploads/Baumwollstoff-Camouflage-olivegruen-2.jpg")
             embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
+            if delete_after is not None:
+                embed.add_field(name='This Message will self destruct', value=f"in {alt_seconds_to_pretty(delete_after)}")
             await ctx.send(embed=embed, file=file, delete_after=delete_after)
 
     @flags.add_flag("--stamp-image", "-si", type=str, default='ASLOGO')
@@ -353,7 +355,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         modified_avatar = await self.bot.execute_in_thread(self._to_bottom_center, avatar_image, stamp, self.avatar_stamp_fraction)
 
         name = f"{ctx.author.name}_Member_avatar"
-        await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**")  # change completion line to "Pledge your allegiance to the Antistasi Rebellion!"?
+        await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**", delete_after=300)  # change completion line to "Pledge your allegiance to the Antistasi Rebellion!"?
+        await ctx.message.delete()
 
     async def get_avatar_from_user(self, user):
         avatar = user.avatar_url
@@ -405,6 +408,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

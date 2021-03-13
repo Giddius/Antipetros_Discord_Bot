@@ -82,7 +82,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
                  'experiment_css_1.css': (APPDATA['experiment_css_1.css'], 'experiment_css_1.css'),
                  'experiment_3.css': (APPDATA['experiment_3.css'], 'experiment_3.css')}
 
-    auto_accept_user_file = APPDATA["auto_accept_suggestion_users.json"]
+    auto_accept_user_file = pathmaker(APPDATA["json_data"],"auto_accept_suggestion_users.json")
 
     docattrs = {'show_in_readme': True,
                 'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,

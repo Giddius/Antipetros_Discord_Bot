@@ -11,7 +11,7 @@ import os
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+import discord
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
@@ -68,6 +68,18 @@ class AntistasiInformer(SubSupportBase):
         return BASE_CONFIG.retrieve('antistasi_info', 'invite_url', typus=str, direct_fallback='')
 
     @property
+    def armahosts_url(self):
+        return BASE_CONFIG.retrieve('antistasi_info', 'armahosts_url', typus=str, direct_fallback='https://www.armahosts.com/')
+
+    @property
+    def armahosts_icon(self):
+        return BASE_CONFIG.retrieve('antistasi_info', 'armahosts_icon', typus=str, direct_fallback='https://pictures.alignable.com/eyJidWNrZXQiOiJhbGlnbmFibGV3ZWItcHJvZHVjdGlvbiIsImtleSI6ImJ1c2luZXNzZXMvbG9nb3Mvb3JpZ2luYWwvNzEwMzQ1MC9BUk1BSE9TVFMtV29ybGRzLUJsdWVJY29uTGFyZ2UucG5nIiwiZWRpdHMiOnsiZXh0cmFjdCI6eyJsZWZ0IjowLCJ0b3AiOjE0Miwid2lkdGgiOjIwNDgsImhlaWdodCI6MjA0OH0sInJlc2l6ZSI6eyJ3aWR0aCI6MTgyLCJoZWlnaHQiOjE4Mn0sImV4dGVuZCI6eyJ0b3AiOjAsImJvdHRvbSI6MCwibGVmdCI6MCwicmlnaHQiOjAsImJhY2tncm91bmQiOnsiciI6MjU1LCJnIjoyNTUsImIiOjI1NSwiYWxwaGEiOjF9fX19')
+
+    @property
+    def armahosts_footer_text(self):
+        return BASE_CONFIG.retrieve('antistasi_info', 'amahosts_footer_text', typus=str, direct_fallback='We thank ARMAHOSTS for providing the Server')
+
+    @property
     def filesize_limit(self):
         return self.antistasi_guild.filesize_limit
 
@@ -111,6 +123,9 @@ class AntistasiInformer(SubSupportBase):
 
     async def channel_from_id(self, channel_id: int):
         return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)
+
+    def sync_member_by_id(self, member_id: int) -> discord.Member:
+        return {member.id: member for member in self.antistasi_guild.members}.get(member_id, None)
 
     async def member_by_name(self, member_name):
         return {member.name.casefold(): member for member in self.antistasi_guild.members}.get(member_name.casefold(), None)

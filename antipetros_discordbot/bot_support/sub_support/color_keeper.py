@@ -104,9 +104,9 @@ class ColorKeeper(SubSupportBase):
         if color_name in self.colors:
             return self.colors[color_name].discord_color
         scorer = fuzz.token_set_ratio
-        fuzz_match = fuzzprocess.extractOne(color_name, [color.name for color in self.colors], scorer=scorer)
+        fuzz_match = fuzzprocess.extractOne(color_name, [color for color in self.colors], scorer=scorer)
         if fuzz_match is None:
-            raise FuzzyMatchError(color_name, scorer, data=[color.name for color in self.colors])
+            raise FuzzyMatchError(color_name, scorer, data=[color for color in self.colors])
         return self.colors[fuzz_match[0]].discord_color
 
     @property

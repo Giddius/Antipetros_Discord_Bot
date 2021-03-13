@@ -31,6 +31,7 @@ from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
 from antipetros_discordbot.utility.gidtools_functions import get_pickled, loadjson, pathmaker, readit, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.cogs import BOT_ADMIN_COG_PATHS, DISCORD_ADMIN_COG_PATHS, DEV_COG_PATHS
+from antipetros_discordbot.utility.replacements.help_replacement import BaseCustomHelpCommand
 # endregion[Imports]
 
 
@@ -73,6 +74,7 @@ class AntiPetrosBot(commands.Bot):
 
 # endregion[ClassAttributes]
 
+
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
@@ -82,7 +84,7 @@ class AntiPetrosBot(commands.Bot):
                          command_prefix='$$',
                          activity=self.activity_from_config(),
                          intents=self.get_intents(),
-                         ** kwargs)
+                         **kwargs)
         self.token = token
         self.help_invocation = help_invocation
         self.description = readit(APPDATA['bot_description.md'])
@@ -168,8 +170,9 @@ class AntiPetrosBot(commands.Bot):
         self._watch_for_shutdown_trigger.start()
         self._watch_for_config_changes.start()
         self._watch_for_alias_changes.start()
-        log.info("Bot is ready")
         log.info("Debug Session: %s", self.is_debug)
+        log.info("Bot is ready")
+        await self.creator.member_object.send('I am ready!')
 
     async def handle_previous_shutdown_msg(self):
         if os.path.isfile(self.shutdown_message_pickle_file):
