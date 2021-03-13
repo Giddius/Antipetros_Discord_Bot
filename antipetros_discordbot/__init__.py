@@ -1,7 +1,7 @@
 """
 A Discord Bot for the Antistasi (ArmA 3) Community Discord Server
 """
-__version__ = '1.1.6'
+__version__ = '1.1.7'
 
 import os
 from importlib.metadata import metadata
@@ -33,6 +33,7 @@ def set_env():
 
     os.environ['APP_NAME'] = metadata(__name__).get('name')
     os.environ['AUTHOR_NAME'] = metadata(__name__).get('author')
+    os.environ['ANTIPETROS_VERSION'] = metadata(__name__).get('version')
     os.environ['BASE_FOLDER'] = MAIN_DIR
     os.environ['LOG_FOLDER'] = MAIN_DIR
     os.chdir(old_cd)

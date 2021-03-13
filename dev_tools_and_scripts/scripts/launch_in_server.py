@@ -85,17 +85,17 @@ def run_command(command: str):
 #     # run_command('antipetrosbot stop')
 def update_launch():
     run_command(PID_KILL_COMMAND)
-    sleep(10)
+    sleep(120)
     run_command(ANTIPETROS_UPDATE_CMD_VERSION)
-    sleep(10)
+    sleep(60)
     run_command(ANTIPETROS_START_CMD)
 
 
 def launch():
     run_command(PID_KILL_COMMAND)
-    sleep(10)
+    sleep(120)
     run_command(ANTIPETROS_START_CMD)
 
 
 if __name__ == '__main__':
-    launch()
+    update_launch()
