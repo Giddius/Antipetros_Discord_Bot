@@ -28,6 +28,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
+from antipetros_discordbot.utility.exceptions import ParameterError
 # endregion[Imports]
 
 # region [TODO]
@@ -89,6 +90,20 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
                                     WatermarkPosition.Center | WatermarkPosition.Center: self._to_center_center,
                                     WatermarkPosition.Center | WatermarkPosition.Bottom: self._to_bottom_center,
                                     WatermarkPosition.Center | WatermarkPosition.Top: self._to_top_center}
+        self.stamp_pos_functions_by_num = {'3': self._to_bottom_right,
+                                           '9': self._to_top_right,
+                                           '6': self._to_center_right,
+                                           '1': self._to_bottom_left,
+                                           '7': self._to_top_left,
+                                           '4': self._to_center_left,
+                                           '5': self._to_center_center,
+                                           '2': self._to_bottom_center,
+                                           '8': self._to_top_center}
+        self.position_normalization_table = {'top': ['upper', 'above', 'up', 't', 'u'],
+                                             'bottom': ['down', 'lower', 'b', 'base'],
+                                             'center': ['middle', 'c', 'm'],
+                                             'left': ['l'],
+                                             'right': ['r']}
         # self.base_map_image = Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v3_2000_w_outposts.png")
         # self.outpost_overlay = {'city': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_city_marker.png"),
         #                         'volcano': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_volcano_marker.png"),
@@ -104,6 +119,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 # endregion[Init]
 
 # region [Setup]
+
 
     async def on_ready_setup(self):
         self._get_stamps()
@@ -138,7 +154,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 
 # endregion[Properties]
-
 
     def _get_stamps(self):
         self.stamps = {}
@@ -338,9 +353,14 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
                 embed.set_image(url=f"attachment://{name}.png")
                 await ctx.send(embed=embed, file=_file, delete_after=120)
 
-    @auto_meta_info_command(enabled=get_command_enabled("member_avatar"))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
-    @commands.cooldown(1, 300, commands.BucketType.member)
+    async def _member_avatar_helper(self, user: discord.Member, placement: callable, opacity: float):
+        avatar_image = await self.get_avatar_from_user(user)
+        stamp = self._get_stamp_image('ASLOGO', opacity)
+        modified_avatar = await self.bot.execute_in_thread(placement, avatar_image, stamp, self.avatar_stamp_fraction)
+        return modified_avatar
+
+    @commands.group(case_insensitive=True)
+    @allowed_channel_and_allowed_role_2()
     async def member_avatar(self, ctx):
         """
         Stamps the avatar of a Member with the Antistasi Crest.
@@ -350,10 +370,49 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         Example:
             @AntiPetros member_avatar
         """
-        avatar_image = await self.get_avatar_from_user(ctx.author)
-        stamp = self.avatar_stamp
-        modified_avatar = await self.bot.execute_in_thread(self._to_bottom_center, avatar_image, stamp, self.avatar_stamp_fraction)
 
+    @member_avatar.command()
+    async def for_discord(self, ctx):
+        modified_avatar = await self._member_avatar_helper(ctx.author, self._to_center_center, 0.66)
+        name = f"{ctx.author.name}_Member_avatar"
+        await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**", delete_after=300)  # change completion line to "Pledge your allegiance to the Antistasi Rebellion!"?
+        await ctx.message.delete()
+
+    @member_avatar.command()
+    async def for_github(self, ctx):
+        modified_avatar = await self._member_avatar_helper(ctx.author, self._to_bottom_center, 1)
+        name = f"{ctx.author.name}_Member_avatar"
+        await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**", delete_after=300)  # change completion line to "Pledge your allegiance to the Antistasi Rebellion!"?
+        await ctx.message.delete()
+
+    @member_avatar.command()
+    async def by_num(self, ctx, numberpad: str):
+        if len(numberpad) > 1:
+            await ctx.send('please only enter a single digit for numberpad position, please retry!')
+            return
+        if numberpad == '0':
+            await ctx.send('0 is not a valid position, please try again!')
+            return
+        func = self.stamp_pos_functions_by_num.get(numberpad)
+        modified_avatar = await self._member_avatar_helper(ctx.author, func, 1)
+        name = f"{ctx.author.name}_Member_avatar"
+        await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**", delete_after=300)  # change completion line to "Pledge your allegiance to the Antistasi Rebellion!"?
+        await ctx.message.delete()
+
+    async def _normalize_pos(self, pos: str):
+        pos = pos.casefold()
+        if pos not in self.position_normalization_table:
+            for key, value in self.position_normalization_table.items():
+                if pos in value:
+                    return key
+        raise ParameterError('image_position', pos)
+
+    @member_avatar.command()
+    async def by_place(self, ctx, first_pos: str, second_pos: str):
+        first_pos = await self._normalize_pos(first_pos)
+        second_pos = await self._normalize_pos(second_pos)
+        func = self.stamp_pos_functions.get(self.stamp_positions.get(first_pos) | self.stamp_positions.get(second_pos))
+        modified_avatar = await self._member_avatar_helper(ctx.author, func, 1)
         name = f"{ctx.author.name}_Member_avatar"
         await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**", delete_after=300)  # change completion line to "Pledge your allegiance to the Antistasi Rebellion!"?
         await ctx.message.delete()
@@ -408,7 +467,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

@@ -77,6 +77,14 @@ class DuplicateNameError(AntiPetrosBaseError):
         super().__init__(self.msg)
 
 
+class ParameterError(AntiPetrosBaseError):
+    def __init__(self, parameter_name: str, parameter_value) -> None:
+        self.name = parameter_name
+        self.value = parameter_value
+        self.msg = f"'{self.value}' is not a valid input for '{self.name}'"
+        super().__init__(self.msg)
+
+
 class BaseExtendedCommandError(CommandError):
     pass
 
