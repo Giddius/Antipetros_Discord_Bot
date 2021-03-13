@@ -27,7 +27,7 @@ def get_version():
 
 
 ANTIPETROS_START_CMD = f"nohup antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NEXTCLOUD_USERNAME')} -np {os.getenv('NEXTCLOUD_PASSWORD')} &"
-ANTIPETROS_UPDATE_CMD = "python3.9 -m pip install --force-reinstall antipetros_discordbot"
+ANTIPETROS_UPDATE_CMD = "python3.9 -m pip install --upgrade antipetros_discordbot"
 ANTIPETROS_UPDATE_CMD_VERSION = ANTIPETROS_UPDATE_CMD + '==' + get_version()
 PID_GREP = 'ps -ef|grep "[a]ntipetros"'
 PID_KILL_COMMAND = "kill $(ps aux | grep '[a]ntipetros' | awk '{print $2}')"
@@ -85,17 +85,17 @@ def run_command(command: str):
 #     # run_command('antipetrosbot stop')
 def update_launch():
     run_command(PID_KILL_COMMAND)
-    sleep(10)
+    sleep(120)
     run_command(ANTIPETROS_UPDATE_CMD_VERSION)
-    sleep(10)
+    sleep(60)
     run_command(ANTIPETROS_START_CMD)
 
 
 def launch():
     run_command(PID_KILL_COMMAND)
-    sleep(10)
+    sleep(120)
     run_command(ANTIPETROS_START_CMD)
 
 
 if __name__ == '__main__':
-    launch()
+    update_launch()
