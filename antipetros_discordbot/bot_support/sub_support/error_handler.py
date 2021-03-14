@@ -24,7 +24,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, async_split_camel_case_string
-from antipetros_discordbot.utility.exceptions import MissingAttachmentError, NotNecessaryRole, IsNotTextChannelError, NotNecessaryDmId, NotAllowedChannelError, NotNecessaryRole
+from antipetros_discordbot.utility.exceptions import MissingAttachmentError, NotNecessaryRole, IsNotTextChannelError, NotNecessaryDmId, NotAllowedChannelError, NotNecessaryRole, ParseDiceLineError
 from antipetros_discordbot.utility.gidtools_functions import loadjson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -82,7 +82,8 @@ class ErrorHandler(SubSupportBase):
                                    NotNecessaryDmId: self._handle_not_necessary_dm_id,
                                    NotAllowedChannelError: self._handle_not_allowed_channel,
                                    NotNecessaryRole: self._handle_not_necessary_role,
-                                   commands.errors.CommandNotFound: self._handle_command_not_found}
+                                   commands.errors.CommandNotFound: self._handle_command_not_found,
+                                   ParseDiceLineError: self._handle_dice_line_error}
         self.cooldown_data = CoolDownDict()
 
         glog.class_init_notification(log, self)
@@ -175,6 +176,17 @@ class ErrorHandler(SubSupportBase):
                                                                                                         f'{ctx.author.mention}\n{ZERO_WIDTH}\n **You tried to invoke `{ctx.command.name}` with an wrong argument**\n{ZERO_WIDTH}\n```shell\n{ctx.command.name} {ctx.command.signature}\n```',
                                                                                                         error_traceback=None))
 
+    async def _handle_dice_line_error(self, ctx, error, error_traceback):
+        embed = await self.error_reply_embed(ctx,
+                                             error,
+                                             title='unable to parse input',
+                                             msg='Please only use the format `1d6`')
+
+        embed.add_field(name="Amount", value='`1` number is the amount of dice to roll')
+        embed.add_field(name="Type of dice", value="`dx` is type of dice")
+        embed.add_field(name="Just like in every Tabletop or RPG", value=ZERO_WIDTH, inline=False)
+        await ctx.channel.send(delete_after=self.delete_reply_after, embed=embed)
+
     async def _handle_max_concurrency(self, ctx, error, error_traceback):
 
         await ctx.channel.send(embed=await self.error_reply_embed(ctx, error, 'STOP SPAMMING!', f'{ctx.author.mention}\n{ZERO_WIDTH}\n **There can ever only be one instance of this command running, please wait till it has finished**', error_traceback=error_traceback), delete_after=self.delete_reply_after)
@@ -197,7 +209,7 @@ class ErrorHandler(SubSupportBase):
     async def error_reply_embed(self, ctx, error, title, msg, error_traceback=None):
         embed = Embed(title=title, description=f"{ZERO_WIDTH}\n{msg}\n{ZERO_WIDTH}", color=self.support.color('red').int, timestamp=datetime.utcnow())
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('warning'))
-        embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+        # embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
         if error_traceback is not None:
             embed.add_field(name='Traceback', value=str(error_traceback)[0:500])
         if ctx.command is not None:

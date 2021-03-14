@@ -10,8 +10,8 @@ import random
 import asyncio
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
-from discord.ext import commands
-
+from discord.ext import commands, tasks
+import gc
 from icecream import ic
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
@@ -87,7 +87,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 # region [Setup]
 
     async def on_ready_setup(self):
-
+        self.garbage_clean_loop.start()
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -97,6 +97,16 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
 # endregion [Setup]
 
+
+# region [Loops]
+
+    @tasks.loop(hours=1)
+    async def garbage_clean_loop(self):
+        log.info('running garbage clean')
+        x = gc.collect()
+        log.info('Garbage Clean collected "%s"', x)
+
+# endregion[Loops]
 
     @property
     def alive_phrases(self):
@@ -314,6 +324,18 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
         await self.bot.split_to_messages(ctx, '\n\n'.join(all_aliases), split_on='\n\n')
 
+    def cog_check(self, ctx):
+        return True
+
+    async def cog_command_error(self, ctx, error):
+        pass
+
+    async def cog_before_invoke(self, ctx):
+        pass
+
+    async def cog_after_invoke(self, ctx):
+        pass
+
     def __repr__(self):
         return f"{self.qualified_name}({self.bot.user.name})"
 
@@ -321,6 +343,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         return self.qualified_name
 
     def cog_unload(self):
+        self.garbage_clean_loop.stop()
         log.debug("Cog '%s' UNLOADED!", str(self))
 
 # region[Main_Exec]

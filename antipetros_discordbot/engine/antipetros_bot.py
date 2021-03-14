@@ -213,7 +213,7 @@ class AntiPetrosBot(commands.Bot):
                     name, extension = os.path.basename(change_path).split('.')
                     if extension.casefold() == 'trigger':
                         if name.casefold() == 'shutdown':
-                            await self.close()
+                            await self.shutdown_mechanic()
                         elif name.casefold() == 'emergency_shutdown':
                             sys.exit()
 

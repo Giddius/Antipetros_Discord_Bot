@@ -38,3 +38,4 @@ webdavclient3
 Flask
 Flask-Discord
 twitchAPI
+python-youtube

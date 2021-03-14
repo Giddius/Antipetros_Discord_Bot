@@ -8,11 +8,16 @@ import secrets
 import asyncio
 from urllib.parse import quote as urlquote
 from textwrap import dedent
+from functools import reduce
+from io import BytesIO
+import re
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands
 from discord import AllowedMentions
 from pyfiglet import Figlet
+from PIL import Image, ImageDraw, ImageFont
 import discord
+
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
@@ -24,6 +29,8 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
+from antipetros_discordbot.utility.gidtools_functions import bytes2human
+from antipetros_discordbot.utility.exceptions import ParseDiceLineError
 # endregion[Imports]
 
 # region [TODO]
@@ -74,7 +81,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
     required_config_data = dedent("""
                                         coin_image_heads = https://i.postimg.cc/XY4fhCf5/antipetros-coin-head.png,
                                         coin_image_tails = https://i.postimg.cc/HsQ0B2yH/antipetros-coin-tails.png""")
-
+    dice_statement_regex = re.compile(r"(?P<amount>\d+)(?P<dice_type>d\d+)", re.IGNORECASE)
     # endregion [ClassAttributes]
 
     # region [Init]
@@ -85,6 +92,15 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self.dice_mapping = {
+            'd4': {'sides': 4},
+            'd6': {'sides': 6},
+            'd8': {'sides': 8},
+            'd10': {'sides': 10},
+            'd12': {'sides': 12},
+            'd20': {'sides': 20},
+            'd100': {'sides': 100}
+        }
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -233,16 +249,95 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         embed_data = await self._user_info_to_embed(user)
         await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
+    @staticmethod
+    def paste_together(*images):
+        amount = len(images)
+        spacing = 51
+        b_image = Image.new('RGBA', ((512 * amount) + (spacing * amount), 512), color=(0, 0, 0, 0))
+        current_x = 0
+        for image in images:
+            b_image.paste(image, (current_x, 0))
+            current_x += image.size[0] + spacing
+        return b_image
+
+    async def parse_dice_line(self, dice_line: str):
+        _out = []
+        statements = dice_line.split()
+        for statement in statements:
+            statement_match = self.dice_statement_regex.search(statement)
+            if statement_match:
+                _out.append((int(statement_match.group('amount')), statement_match.group('dice_type')))
+            else:
+                raise ParseDiceLineError(statement)
+        return _out
+
+    @staticmethod
+    async def _roll_the_dice(sides):
+        return secrets.randbelow(sides) + 1
+
+    @staticmethod
+    def _get_dice_images(result_image_file_paths):
+        return map(Image.open, result_image_file_paths)
+
+    @auto_meta_info_command(enabled=get_command_enabled('roll_dice'))
+    @allowed_channel_and_allowed_role_2(True)
+    async def roll_dice(self, ctx, *, dice_line: str):
+        dice_limit = 100
+        results = {}
+
+        result_image_files = []
+        parsed_dice_line = await self.parse_dice_line(dice_line)
+
+        if sum(item[0] for item in parsed_dice_line) > dice_limit:
+            await ctx.send(f"Amount of overall dice `{sum(item[1] for item in self.parse_dice_line(dice_line))}` is over the limit of `{dice_limit}`, aborting!")
+            return
+
+        for amount, type_of_dice in await self.parse_dice_line(dice_line):
+            mod_type_of_dice = type_of_dice.casefold()
+
+            if mod_type_of_dice not in self.dice_mapping:
+                await ctx.reply(f"I dont know dice of the type `{type_of_dice}`!")
+                return
+
+            sides_of_die = self.dice_mapping[mod_type_of_dice].get('sides')
+            if mod_type_of_dice not in results:
+                results[mod_type_of_dice] = []
+            for i in range(amount):
+                roll_result = await self._roll_the_dice(sides_of_die)
+                results[mod_type_of_dice].append(roll_result)
+                result_image_files.append(APPDATA[f"{mod_type_of_dice}_{roll_result}.png"])
+                await asyncio.sleep(0)
+
+            await asyncio.sleep(0)
+
+        random.shuffle(result_image_files)
+        result_images = await self.bot.execute_in_thread(self._get_dice_images, result_image_files)
+        result_image = await self.bot.execute_in_thread(self.paste_together, *result_images)
+        result_dict = {key: sum(value) for key, value in results.items()}
+        result_combined = sum(value for key, value in result_dict.items())
+        fields = [self.bot.field_item(name="Sum", value='`' + str(result_combined) + '`', inline=False)]
+        # for key, value in results.items():
+        #     fields.append(self.bot.field_item(name=key, value='`' + ', '.join(str(item) for item in value) + '`', inline=True))
+        embed_data = await self.bot.make_generic_embed(title='You rolled...',
+                                                       fields=fields,
+                                                       thumbnail='no_thumbnail',
+                                                       image=result_image)
+        # with BytesIO() as image_bytes:
+        #     result_image.save(image_bytes, 'PNG', optimize=True)
+        #     log.debug("image file has a size of %s", bytes2human(image_bytes.tell(), annotate=True))
+        #     image_bytes.seek(0)
+        #     filename = "dice_roll.png"
+        #     file = discord.File(image_bytes, filename)
+        await ctx.send(**embed_data)
+
 
 # endregion [Commands]
 
 # region [DataStorage]
 
-
 # endregion [DataStorage]
 
 # region [Embeds]
-
 
 # endregion [Embeds]
 
@@ -254,7 +349,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         seperator = ''
         fields = []
         for attr in sorted(self.user_info_to_show, key=master_sort_table.get):
-            name = '__**' + attr.replace('_', ' ').title() + f'**__'
+            name = '__**' + attr.replace('_', ' ').title() + '**__'
             value = self.user_info_transform_table.get(attr)(getattr(user, attr))
             if attr in ["joined_at", 'activity', 'top_role', "created_at", 'activity', "raw_status"]:
                 in_line = True

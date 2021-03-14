@@ -134,6 +134,11 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
+class ServerStatusChange(Enum):
+    TO_ON = auto()
+    TO_OFF = auto()
+
+
 class CommunityServerInfo:
     timeout = 1
     battle_metrics_mapping = {'mainserver_1': "https://www.battlemetrics.com/servers/arma3/10560386",

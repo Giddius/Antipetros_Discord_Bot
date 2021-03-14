@@ -188,6 +188,12 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
     @auto_meta_info_command(enabled=True)
     @owner_or_admin()
+    async def initial_memory_use(self, ctx):
+        initial_memory = os.getenv('INITIAL_MEMORY_USAGE')
+        await ctx.send(bytes2human(int(initial_memory), annotate=True))
+
+    @auto_meta_info_command(enabled=True)
+    @owner_or_admin()
     async def report_latency(self, ctx, with_graph: bool = True, since_last_hours: int = 24):
         report_data = []
         for item in list(self.latency_data.copy()):

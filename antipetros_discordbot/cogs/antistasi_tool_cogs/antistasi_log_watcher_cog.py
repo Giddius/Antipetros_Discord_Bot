@@ -223,7 +223,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role_2()
     @commands.cooldown(1, 120, commands.BucketType.member)
-    async def get_newest_mod_data(self, ctx: commands.Context, server: str = 'server'):
+    async def get_newest_mod_data(self, ctx: commands.Context, server: str = 'mainserver_1'):
         """
         Gets the required mods for the Server.
 
@@ -238,6 +238,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
         mod_server = server.casefold()
         if mod_server not in self.server:
             await ctx.send(f"unknown server `{server}`")
+            return
         folder_item = self.server[mod_server]
         log_item = await folder_item.get_newest_log_file('Server', 1)
         log_item = log_item[0]
@@ -258,7 +259,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role_2()
-    async def get_newest_logs(self, ctx, server: str, sub_folder: str, amount: int = 1):
+    async def get_newest_logs(self, ctx, server: str = 'mainserver_1', sub_folder: str = 'server', amount: int = 1):
         """
         Gets the newest log files from the Dev Drive.
 

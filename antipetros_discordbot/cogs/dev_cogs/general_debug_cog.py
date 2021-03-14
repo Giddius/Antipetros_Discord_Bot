@@ -22,7 +22,7 @@ from webdav3.client import Client
 from icecream import ic
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+from dateparser import parse as date_parse
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, only_giddi
@@ -37,7 +37,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.exceptions import NotAllowedChannelError
-
+from pyyoutube import Api
 # endregion [Imports]
 
 # region [Logging]
@@ -461,6 +461,35 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     @auto_meta_info_command()
     async def check_not_allowed_channel(self, ctx):
         raise NotAllowedChannelError(ctx, ['dev-thrash'])
+
+    @auto_meta_info_command()
+    async def get_antistasi_youtube_videos(self, ctx):
+        base_youtube_watch_url = "https://www.youtube.com/watch?v="
+        api = Api(api_key=os.getenv('GOOGLE_API_KEY'))
+        channel = api.get_channel_info(channel_id="UCsh0jHpXZyv3MlXvCGj_OfQ")
+        uploads = channel.items[0].contentDetails.relatedPlaylists.uploads
+        playlist = api.get_playlist_items(playlist_id=uploads, count=None)
+        vids = []
+        for item in playlist.items:
+            title = item.snippet.title
+            link = base_youtube_watch_url + str(item.contentDetails.videoId)
+            description = item.snippet.description
+            image = item.snippet.thumbnails.maxres
+            if image is None:
+                image = item.snippet.thumbnails.high
+            if image is None:
+                image = item.snippet.thumbnails.standard
+            if image is None:
+                image = item.snippet.thumbnails.medium
+            if image is None:
+                image = item.snippet.thumbnails.default
+            image = image.url
+            date = date_parse(item.contentDetails.videoPublishedAt)
+            vids.append((title, date, link, description, image))
+        vids = sorted(vids, key=lambda x: x[0], reverse=True)
+        for item in vids:
+            embed_data = await self.bot.make_generic_embed(title=item[0], description=item[3] + '\n\n' + item[2], image=str(item[4]), timestamp=item[1])
+            await ctx.send(**embed_data)
 
     @auto_meta_info_command()
     @only_giddi()

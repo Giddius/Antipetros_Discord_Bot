@@ -215,7 +215,7 @@ def allowed_requester(cog, data_type: str):
 
         command_name = command if isinstance(command, str) else command.name
 
-        option_name = command_name + COMMAND_CONFIG_SUFFIXES.get(data_type)[0]
+        option_name = command_name + COMMAND_CONFIG_SUFFIXES.get(data_type)[0].replace(' ', '_')
         fallback_option = DEFAULT_CONFIG_OPTION_NAMES.get(data_type)
         if data_type == 'dm_ids':
             return COGS_CONFIG.retrieve(cog_section_name, option_name, typus=Set[str], fallback_option=fallback_option, mod_func=mod_func_all_in_int)
