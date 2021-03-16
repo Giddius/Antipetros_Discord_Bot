@@ -112,14 +112,12 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-        self._get_stamps()
         glog.class_init_notification(log, self)
 
 
 # endregion[Init]
 
 # region [Setup]
-
 
     async def on_ready_setup(self):
         self._get_stamps()
@@ -155,6 +153,22 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 # endregion[Properties]
 
+# region [Commands]
+
+
+# endregion[Commands]
+
+# region [HelperMethods]
+
+
+# endregion[HelperMethods]
+
+# region [Listener]
+
+
+# endregion[Listener]
+
+
     def _get_stamps(self):
         self.stamps = {}
         for file in os.scandir(self.stamp_location):
@@ -164,6 +178,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
                 log.debug("loaded stamp image '%s' from path '%s'", name, file.path)
 
     def _get_stamp_image(self, stamp_name, stamp_opacity):
+        stamp_name = stamp_name.upper()
         image = Image.open(self.stamps.get(stamp_name))
         alpha = image.split()[3]
         alpha = ImageEnhance.Brightness(alpha).enhance(stamp_opacity)
@@ -360,7 +375,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         return modified_avatar
 
     @commands.group(case_insensitive=True)
-    @allowed_channel_and_allowed_role_2()
     async def member_avatar(self, ctx):
         """
         Stamps the avatar of a Member with the Antistasi Crest.
@@ -372,6 +386,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         """
 
     @member_avatar.command()
+    @allowed_channel_and_allowed_role_2()
     async def for_discord(self, ctx):
         modified_avatar = await self._member_avatar_helper(ctx.author, self._to_center_center, 0.66)
         name = f"{ctx.author.name}_Member_avatar"
@@ -467,6 +482,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

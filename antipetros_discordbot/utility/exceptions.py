@@ -77,14 +77,6 @@ class DuplicateNameError(AntiPetrosBaseError):
         super().__init__(self.msg)
 
 
-class ParameterError(AntiPetrosBaseError):
-    def __init__(self, parameter_name: str, parameter_value) -> None:
-        self.name = parameter_name
-        self.value = parameter_value
-        self.msg = f"'{self.value}' is not a valid input for '{self.name}'"
-        super().__init__(self.msg)
-
-
 class BaseExtendedCommandError(CommandError):
     pass
 
@@ -146,4 +138,19 @@ class NotNecessaryDmId(BaseExtendedCommandError):
         self.command_name = ctx.command
         self.alias_used = ctx.invoked_with
         self.msg = f"You do not have the necessary Permission to invoke the Dm command '{self.command_name}' (alias used: '{self.alias_used}')!"
+        super().__init__(self.msg)
+
+
+class ParameterError(BaseExtendedCommandError):
+    def __init__(self, parameter_name: str, parameter_value) -> None:
+        self.name = parameter_name
+        self.value = parameter_value
+        self.msg = f"'{self.value}' is not a valid input for '{self.name}'"
+        super().__init__(self.msg)
+
+
+class ParseDiceLineError(BaseExtendedCommandError):
+    def __init__(self, statement) -> None:
+        self.statement = statement
+        self.msg = f"Unable to parse dice input '{self.statement}'"
         super().__init__(self.msg)

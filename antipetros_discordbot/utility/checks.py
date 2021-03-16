@@ -215,7 +215,7 @@ def allowed_requester(cog, data_type: str):
 
         command_name = command if isinstance(command, str) else command.name
 
-        option_name = command_name + COMMAND_CONFIG_SUFFIXES.get(data_type)[0]
+        option_name = command_name + COMMAND_CONFIG_SUFFIXES.get(data_type)[0].replace(' ', '_')
         fallback_option = DEFAULT_CONFIG_OPTION_NAMES.get(data_type)
         if data_type == 'dm_ids':
             return COGS_CONFIG.retrieve(cog_section_name, option_name, typus=Set[str], fallback_option=fallback_option, mod_func=mod_func_all_in_int)
@@ -224,12 +224,18 @@ def allowed_requester(cog, data_type: str):
     return _allowed_data
 
 
-def owner_or_admin():
+def owner_or_admin(allowe_in_dm: bool = False):
     async def predicate(ctx: commands.Context):
         if await ctx.bot.is_owner(ctx.author):
             return True
-        if 'Admin' in ctx.author.roles:
-            return True
+        if ctx.channel.type is discord.ChannelType.text:
+            if 'admin' in {role.name.casefold() for role in ctx.author.roles}:
+                return True
+        elif ctx.channel.type is discord.ChannelType.private and allowe_in_dm is True:
+            member = ctx.bot.sync_member_by_id(ctx.author.id)
+            if 'admin' in {role.name.casefold() for role in member.roles}:
+                return True
+
         return False
     return commands.check(predicate)
 

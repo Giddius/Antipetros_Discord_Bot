@@ -50,7 +50,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from antipetros_discordbot.auxiliary_classes.for_cogs.aux_community_server_info_cog import CommunityServerInfo
+from antipetros_discordbot.auxiliary_classes.for_cogs.aux_community_server_info_cog import CommunityServerInfo, ServerStatusChange
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 # endregion[Imports]
 
@@ -163,10 +163,10 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                 log.debug("Server %s IS NOT online", server_holder.name)
             if server_holder.name not in self.server_status_change_exclusions:
                 if server_holder.is_online is True and prev_is_online is False:
-                    await self.notification_channel.send(f'**Server __{server_holder.name}__ was started and is now online!**')
+                    await self.server_status_notification(server_holder, 'on')
 
                 elif server_holder.is_online is False and prev_is_online is True:
-                    await self.notification_channel.send(f'**Server __{server_holder.name}__ was stoped and is not online anymore!**')
+                    await self.server_status_notification(server_holder, 'off')
 
 # endregion [Loops]
 
@@ -176,6 +176,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command(enabled=get_command_enabled("current_online_server"))
     @allowed_channel_and_allowed_role_2()
@@ -301,6 +302,13 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
+    async def server_status_notification(self, server_item: CommunityServerInfo, switched_to_status: ServerStatusChange):
+        status_message = "Was switched ON" if switched_to_status is ServerStatusChange.TO_ON else "Was switched OFF"
+        embed_data = await self.bot.make_generic_embed(title=server_item.name.replace('_', ' ').title(), description=status_message,
+                                                       fields=[self.bot.field_item(name='UTC Time', value=datetime.utcnow().strftime(self.bot.std_date_time_format)),
+                                                               self.bot.field_item(name='Reason', value=ZERO_WIDTH)])
+        await self.notification_channel.send(**embed_data)
 
     async def _initialise_server_holder(self):
         self.servers = []

@@ -153,18 +153,16 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
     async def _emoji_translate_checks(self, payload):
         command_name = "emoji_translate_listener"
         channel = self.bot.get_channel(payload.channel_id)
+        if channel.type is not discord.ChannelType.text:
+            return False
+        if self.allowed_channels(command_name) != ['all'] and channel.name.casefold() not in self.allowed_channels(command_name):
+            return False
 
         if get_command_enabled(command_name) is False:
             return False
 
         member = payload.member
         if member.bot is True:
-            return False
-
-        channel = self.bot.get_channel(payload.channel_id)
-        if channel.type is not discord.ChannelType.text:
-            return False
-        if self.allowed_channels(command_name) != ['all'] and channel.name.casefold() not in self.allowed_channels(command_name):
             return False
 
         emoji_name = normalize_emoji(payload.emoji.name)

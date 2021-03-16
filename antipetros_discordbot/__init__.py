@@ -6,7 +6,7 @@ __version__ = '1.1.7'
 import os
 from importlib.metadata import metadata
 from dotenv import load_dotenv
-
+from psutil import virtual_memory
 MAIN_DIR = os.path.abspath(os.path.dirname(__file__))
 if os.path.islink(MAIN_DIR) is True:
 
@@ -26,7 +26,7 @@ def set_env():
     if os.path.isfile(dev_indicator_env_path):
         load_dotenv(dev_indicator_env_path)
         os.environ['IS_DEV'] = 'true'
-        # os.environ['PYTHONASYNCIODEBUG'] = "1"
+        os.environ['PYTHONASYNCIODEBUG'] = "1"
 
     else:
         os.environ['IS_DEV'] = 'false'
@@ -40,4 +40,7 @@ def set_env():
     os.environ['DISABLE_IMPORT_LOGCALLS'] = "1"
 
 
+_mem_item = virtual_memory()
+memory_in_use = _mem_item.total - _mem_item.available
+os.environ['INITIAL_MEMORY_USAGE'] = str(memory_in_use)
 set_env()

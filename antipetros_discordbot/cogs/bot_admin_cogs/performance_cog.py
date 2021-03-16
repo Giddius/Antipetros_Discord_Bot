@@ -174,17 +174,11 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             embed.set_image(url=_url)
             await channel.send(embed=embed, file=_file)
 
-    @ memory_measure_loop.before_loop
-    async def before_memory_measure_loop(self):
-        await self.bot.wait_until_ready()
-
-    @ latency_measure_loop.before_loop
-    async def before_latency_measure_loop(self):
-        await self.bot.wait_until_ready()
-
-    @ report_data_loop.before_loop
-    async def before_report_data_loop(self):
-        await self.bot.wait_until_ready()
+    @auto_meta_info_command(enabled=True)
+    @owner_or_admin()
+    async def initial_memory_use(self, ctx):
+        initial_memory = os.getenv('INITIAL_MEMORY_USAGE')
+        await ctx.send(bytes2human(int(initial_memory), annotate=True))
 
     @auto_meta_info_command(enabled=True)
     @owner_or_admin()

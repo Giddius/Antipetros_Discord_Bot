@@ -22,7 +22,7 @@ from webdav3.client import Client
 from icecream import ic
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+from dateparser import parse as date_parse
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, only_giddi
@@ -37,7 +37,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.exceptions import NotAllowedChannelError
-
+from pyyoutube import Api
 # endregion [Imports]
 
 # region [Logging]
@@ -100,6 +100,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         self.bob_user = None
         self.antidevtros_member = None
         self.antipetros_member = None
+        self.edit_embed_message = None
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
@@ -463,6 +464,35 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         raise NotAllowedChannelError(ctx, ['dev-thrash'])
 
     @auto_meta_info_command()
+    async def get_antistasi_youtube_videos(self, ctx):
+        base_youtube_watch_url = "https://www.youtube.com/watch?v="
+        api = Api(api_key=os.getenv('GOOGLE_API_KEY'))
+        channel = api.get_channel_info(channel_id="UCsh0jHpXZyv3MlXvCGj_OfQ")
+        uploads = channel.items[0].contentDetails.relatedPlaylists.uploads
+        playlist = api.get_playlist_items(playlist_id=uploads, count=None)
+        vids = []
+        for item in playlist.items:
+            title = item.snippet.title
+            link = base_youtube_watch_url + str(item.contentDetails.videoId)
+            description = item.snippet.description
+            image = item.snippet.thumbnails.maxres
+            if image is None:
+                image = item.snippet.thumbnails.high
+            if image is None:
+                image = item.snippet.thumbnails.standard
+            if image is None:
+                image = item.snippet.thumbnails.medium
+            if image is None:
+                image = item.snippet.thumbnails.default
+            image = image.url
+            date = date_parse(item.contentDetails.videoPublishedAt)
+            vids.append((title, date, link, description, image))
+        vids = sorted(vids, key=lambda x: x[0], reverse=True)
+        for item in vids:
+            embed_data = await self.bot.make_generic_embed(title=item[0], description=item[3] + '\n\n' + item[2], image=str(item[4]), timestamp=item[1])
+            await ctx.send(**embed_data)
+
+    @auto_meta_info_command()
     @only_giddi()
     async def get_all_from_embed_user(self, ctx):
         async with ctx.typing():
@@ -502,6 +532,29 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                     f.write('\n'.join(msg_names))
                 file = discord.File(path)
                 await ctx.send(file=file)
+
+    @auto_meta_info_command()
+    async def init_edit_embed_check(self, ctx: commands.Context):
+        embed_data = await self.bot.make_generic_embed(title='Testing Embed Editing', description="This is the original",
+                                                       fields=[self.bot.field_item(name='embed field', value='this is original'),
+                                                               self.bot.field_item(name="another field", value='this is also an original')],
+                                                       timestamp=datetime.strptime('1989-04-23_23-23-23', "%Y-%m-%d_%H-%M-%S"),
+                                                       thumbnail="under_construction")
+
+        self.edit_embed_message = await ctx.send(**embed_data)
+
+    @auto_meta_info_command()
+    async def change_edit_embed_check(self, ctx: commands.Context):
+        if self.edit_embed_message is None:
+            await ctx.send('edit_embed_message is None')
+            return
+        embed_data = await self.bot.make_generic_embed(title='Testing Embed Editing', description="This is the changed",
+                                                       fields=[self.bot.field_item(name='embed field', value='changed this'),
+                                                               self.bot.field_item(name="another field", value='this is also changed')],
+                                                       timestamp=datetime.utcnow(),
+                                                       thumbnail="data")
+        await asyncio.sleep(10)
+        await self.edit_embed_message.edit(**embed_data)
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))

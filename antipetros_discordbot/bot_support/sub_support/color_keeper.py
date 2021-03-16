@@ -101,6 +101,8 @@ class ColorKeeper(SubSupportBase):
 
     def get_discord_color(self, color_name: str):
         color_name = color_name.casefold()
+        if color_name == 'random':
+            color_name = self.random_color
         if color_name in self.colors:
             return self.colors[color_name].discord_color
         scorer = fuzz.token_set_ratio

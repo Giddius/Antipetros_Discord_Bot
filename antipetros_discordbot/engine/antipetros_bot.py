@@ -74,7 +74,6 @@ class AntiPetrosBot(commands.Bot):
 
 # endregion[ClassAttributes]
 
-
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
@@ -213,7 +212,7 @@ class AntiPetrosBot(commands.Bot):
                     name, extension = os.path.basename(change_path).split('.')
                     if extension.casefold() == 'trigger':
                         if name.casefold() == 'shutdown':
-                            await self.close()
+                            await self.shutdown_mechanic()
                         elif name.casefold() == 'emergency_shutdown':
                             sys.exit()
 
@@ -315,8 +314,9 @@ class AntiPetrosBot(commands.Bot):
         await super().close()
         time.sleep(2)
 
-    @ staticmethod
-    def activity_from_config(option='standard_activity'):
+    def activity_from_config(self, option='standard_activity'):
+        if self.is_debug is True:
+            return discord.Activity(name='🚬 Getting Debugged Hard', type=discord.ActivityType.playing)
         activity_dict = {'playing': discord.ActivityType.playing,
                          'watching': discord.ActivityType.watching,
                          'listening': discord.ActivityType.listening,

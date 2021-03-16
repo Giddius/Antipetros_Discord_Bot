@@ -25,6 +25,7 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.data_gathering import save_cog_command_data
+
 # endregion[Imports]
 
 # region [TODO]
@@ -49,8 +50,8 @@ COGS_CONFIG.save()
 def filter_asyncio_call(record: logging.LogRecord):
     """
     filters the asyncio logger to only log calls that show if something is blocking.
-
     """
+
     if record.getMessage().startswith('Executing'):
         return 1
     return 0
@@ -113,7 +114,6 @@ def configure_logger():
     return _log
 
 
-log = configure_logger()
 # endregion[Logging]
 
 
@@ -130,7 +130,6 @@ def get_cog_states(cog_object):
 def cli():
     """
     dummy function to initiate click group.
-
     """
 
 
@@ -138,7 +137,6 @@ def cli():
 def collect_data():
     """
     dummy function to initiate click group.
-
     """
 
 
@@ -150,7 +148,6 @@ def command_info_run(output_file, verbose):
     Cli command to start up the bot, collect bot-commands extended info, but not connect to discord.
 
     collected in `/docs/resources/data` as `commands_data.json`
-
     """
     os.environ['INFO_RUN'] = "1"
     if verbose is False:
@@ -170,7 +167,6 @@ def config_data_run(output_file, verbose):
     Cli command to start up the bot, collect config prototype files, but not connect to discord.
 
     collected in `/docs/resources/prototype_files` as `standard_cogs_config.ini`, `standard_base_config.ini`
-
     """
     os.environ['INFO_RUN'] = "1"
     if verbose is False:
@@ -189,7 +185,6 @@ def bot_help_data_run(output_file, verbose):
     Cli command to start up the bot, collect help info data, but not connect to discord.
 
     collected in `/docs/resources/data` as `command_help.json`
-
     """
     os.environ['INFO_RUN'] = "1"
     if verbose is False:
@@ -225,8 +220,8 @@ def stop():
     Cli way of autostoping the bot.
     Writes a file to a specific folder that acts like a shutdown trigger (bot watches the folder)
     afterwards deletes the file. Used as redundant way to shut down if other methods fail, if this fails, the server has to be restarted.
-
     """
+    logging.shutdown()
     shutdown_trigger_path = pathmaker(APPDATA['shutdown_trigger'], 'shutdown.trigger')
     writeit(shutdown_trigger_path, 'shutdown')
     sleep(10)
@@ -266,6 +261,7 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
         nextcloud_username([str]): username for dev_drive on nextcloud
         nexctcloud_password([str]): password for dev_drive on nextcloud
     """
+    log = configure_logger()
     log.info(glog.NEWRUN())
     if nextcloud_username is not None:
         os.environ['NEXTCLOUD_USERNAME'] = nextcloud_username
@@ -279,6 +275,7 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
 
 # endregion [Main_function]
 # region [Main_Exec]
+
 if __name__ == '__main__':
     if os.getenv('IS_DEV') == 'true':
         load_dotenv('token.env')

@@ -80,6 +80,11 @@ class EssentialCommandsKeeper(SubSupportBase):
         if user.id == 155149108183695360 and author.id in [self.bot.id, self.bot.creator.id]:
             await reaction.remove(user)
 
+    @property
+    def shutdown_message_channel(self):
+        channel_name = BASE_CONFIG.retrieve("shutdown_message", "channel_name", typus=str, direct_fallback='bot-testing')
+        return self.bot.sync_channel_from_name(channel_name)
+
     @commands.is_owner()
     async def reload_all_ext(self, ctx):
         BASE_CONFIG.read()
@@ -112,8 +117,11 @@ class EssentialCommandsKeeper(SubSupportBase):
 
     @owner_or_admin()
     async def shutdown(self, ctx, *, reason: str = 'No reason given'):
+        log.debug('shutdown command received from "%s" with reason: "%s"', ctx.author.name, reason)
+        await self.shutdown_mechanic()
+
+    async def shutdown_mechanic(self):
         try:
-            log.debug('shutdown command received from "%s" with reason: "%s"', ctx.author.name, reason)
             started_at = self.support.start_time
 
             started_at_string = arrow.get(started_at).format('YYYY-MM-DD HH:mm:ss')
@@ -124,8 +132,8 @@ class EssentialCommandsKeeper(SubSupportBase):
                                                           image=BASE_CONFIG.retrieve('shutdown_message', 'image', typus=str, direct_fallback="https://i.ytimg.com/vi/YATREe6dths/maxresdefault.jpg"),
                                                           type=self.support.embed_types_enum.Image,
                                                           fields=[self.support.field_item(name='Online since', value=str(started_at_string), inline=False), self.support.field_item(name='Online for', value=str(online_duration), inline=False)])
-
-            last_shutdown_message = await ctx.send(**embed)
+            channel = self.shutdown_message_channel
+            last_shutdown_message = await channel.send(**embed)
             pickleit({"message_id": last_shutdown_message.id, "channel_id": last_shutdown_message.channel.id}, self.shutdown_message_pickle_file)
 
         except Exception as error:
