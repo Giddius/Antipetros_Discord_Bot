@@ -307,7 +307,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         status_message = "Was switched ON" if switched_to_status is ServerStatusChange.TO_ON else "Was switched OFF"
         embed_data = await self.bot.make_generic_embed(title=server_item.name.replace('_', ' ').title(), description=status_message,
                                                        fields=[self.bot.field_item(name='UTC Time', value=datetime.utcnow().strftime(self.bot.std_date_time_format)),
-                                                               self.bot.field_item(name='Reason', value="")])
+                                                               self.bot.field_item(name='Reason', value=ZERO_WIDTH)])
         await self.notification_channel.send(**embed_data)
 
     async def _initialise_server_holder(self):

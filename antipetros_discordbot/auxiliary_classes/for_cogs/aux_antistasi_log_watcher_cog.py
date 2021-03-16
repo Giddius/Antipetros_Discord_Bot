@@ -17,7 +17,7 @@ import random
 from typing import Union
 from datetime import datetime
 from tempfile import TemporaryDirectory
-from functools import partial
+from functools import partial, cached_property
 from concurrent.futures import ThreadPoolExecutor
 from dateparser import parse as date_parse
 from asyncio import get_event_loop
@@ -46,7 +46,7 @@ from asyncio import get_event_loop
 # from natsort import natsorted
 
 # from fuzzywuzzy import fuzz, process
-from async_property import async_property
+from async_property import async_property, async_cached_property
 from webdav3.client import Client
 # * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
@@ -76,6 +76,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.regexes import LOG_NAME_DATE_TIME_REGEX, LOG_SPLIT_REGEX, MOD_TABLE_START_REGEX, MOD_TABLE_END_REGEX, MOD_TABLE_LINE_REGEX
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.misc import SIZE_CONV_BY_SHORT_NAME
+from antipetros_discordbot.utility.general_decorator import debug_timing_log
 # endregion[Imports]
 
 # region [TODO]
@@ -136,7 +137,7 @@ class LogFile:
                     _out.append({key: value.strip() for key, value in line_match.groupdict().items()})
             return [item.get('mod_dir') for item in _out if item.get('official') == 'false' and item.get("mod_name") not in ["@members", "@TaskForceEnforcer", "@utility"]]
 
-    @property
+    @cached_property
     def warning_size_threshold(self):
         limit = COGS_CONFIG.retrieve('antistasi_log_watcher', 'log_file_warning_size_threshold', typus=str, direct_fallback='200mb')
         match_result = self.size_string_regex.search(limit)
@@ -148,7 +149,7 @@ class LogFile:
     def size_pretty(self):
         return bytes2human(self.size, annotate=True)
 
-    @property
+    @cached_property
     def created_pretty(self):
         return self.created.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -244,7 +245,7 @@ class LogServer:
         for sub_folder_name in sub_folder_names:
             sub_folder_name = sub_folder_name.strip('/')
             if sub_folder_name != self.name:
-                self.sub_folder[sub_folder_name] = sorted(await self.get_file_infos(sub_folder_name), key=lambda x: x.modified, reverse=True)
+                self.sub_folder[sub_folder_name] = await asyncio.to_thread(partial(sorted, await self.get_file_infos(sub_folder_name), key=lambda x: x.modified, reverse=True))
             await asyncio.sleep(0)
         log.info(self.path + ' collected subfolder: ' + ', '.join([key for key in self.sub_folder]))
 
@@ -277,13 +278,13 @@ class LogServer:
         _temp_holder = {}
         for sub_folder_name in self.sub_folder:
             _temp_holder[sub_folder_name] = await self.get_file_infos(sub_folder_name, raw=True)
-            await asyncio.sleep(random.randint(0, 1))
+            await asyncio.sleep(0)
         for sub_folder_name in self.sub_folder:
             for new_log_item_data in _temp_holder[sub_folder_name]:
                 await self.update_log_items(sub_folder_name, **new_log_item_data)
 
-            self.sub_folder[sub_folder_name] = sorted(self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True)
-            await asyncio.sleep(random.randint(0, 1))
+            self.sub_folder[sub_folder_name] = await asyncio.to_thread(partial(sorted, self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True))
+            await asyncio.sleep(0)
 
     async def update_log_items(self, sub_folder_name, ** data_kwargs):
         path = data_kwargs.get('path')
@@ -301,7 +302,7 @@ class LogServer:
         else:
             new_log_item = self.log_item(**data_kwargs)
             self.sub_folder[sub_folder_name].append(new_log_item)
-            self.sub_folder[sub_folder_name] = sorted(self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True)
+            self.sub_folder[sub_folder_name] = await asyncio.to_thread(partial(sorted, self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True))
             log.info("!NEW LOG ITEM! added new log_item '%s' to LogServer('%s', '%s')", new_log_item.name, self.name, sub_folder_name)
 
     async def sort(self):

@@ -282,6 +282,14 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
     @auto_meta_info_command(enabled=get_command_enabled('roll_dice'))
     @allowed_channel_and_allowed_role_2(True)
     async def roll_dice(self, ctx, *, dice_line: str):
+        """
+        Roll Dice and get the result also as Image.
+
+        All standard DnD Dice are available, d4, d6, d8, d10, d12, d20, d100.
+
+        Args:
+            dice_line (str): the dice you want to roll in the format `2d6`, first number is amount. Multiple different dice can be rolled, just seperate them by a space `2d6 4d20 1d4`.
+        """
         dice_limit = 100
         results = {}
 

@@ -189,7 +189,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
             log.debug("updating log files for '%s'", folder_name)
             await folder_item.update()
             await folder_item.sort()
-            await asyncio.sleep(5)
+            await asyncio.sleep(0)
 
     async def check_oversized_logs(self):
         for folder_name, folder_item in self.server.items():
@@ -204,7 +204,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
                     await self.notify_oversized_log(item)
                     await self.add_to_already_notified(item.etag)
 
-            await asyncio.sleep(10)
+            await asyncio.sleep(0)
 
 # endregion [Loops]
 

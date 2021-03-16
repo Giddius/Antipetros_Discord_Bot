@@ -100,6 +100,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         self.bob_user = None
         self.antidevtros_member = None
         self.antipetros_member = None
+        self.edit_embed_message = None
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
@@ -531,6 +532,29 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                     f.write('\n'.join(msg_names))
                 file = discord.File(path)
                 await ctx.send(file=file)
+
+    @auto_meta_info_command()
+    async def init_edit_embed_check(self, ctx: commands.Context):
+        embed_data = await self.bot.make_generic_embed(title='Testing Embed Editing', description="This is the original",
+                                                       fields=[self.bot.field_item(name='embed field', value='this is original'),
+                                                               self.bot.field_item(name="another field", value='this is also an original')],
+                                                       timestamp=datetime.strptime('1989-04-23_23-23-23', "%Y-%m-%d_%H-%M-%S"),
+                                                       thumbnail="under_construction")
+
+        self.edit_embed_message = await ctx.send(**embed_data)
+
+    @auto_meta_info_command()
+    async def change_edit_embed_check(self, ctx: commands.Context):
+        if self.edit_embed_message is None:
+            await ctx.send('edit_embed_message is None')
+            return
+        embed_data = await self.bot.make_generic_embed(title='Testing Embed Editing', description="This is the changed",
+                                                       fields=[self.bot.field_item(name='embed field', value='changed this'),
+                                                               self.bot.field_item(name="another field", value='this is also changed')],
+                                                       timestamp=datetime.utcnow(),
+                                                       thumbnail="data")
+        await asyncio.sleep(10)
+        await self.edit_embed_message.edit(**embed_data)
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))
