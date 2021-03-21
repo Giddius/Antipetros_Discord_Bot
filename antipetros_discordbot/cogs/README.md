@@ -28,6 +28,7 @@
         - [send_log_file](#__send_log_file__)        
         - [tell_uptime](#__tell_uptime__)        
         - [tell_version](#__tell_version__)    
+    - [BotFeedbackCog](#botfeedbackcog)    
     - [CommunityServerInfoCog](#communityserverinfocog)        
         - [current_online_server](#__current_online_server__)        
         - [current_players](#__current_players__)        
@@ -48,18 +49,24 @@
         - [create_giveaway](#__create_giveaway__)        
         - [finish_give_away](#__finish_give_away__)    
     - [ImageManipulatorCog](#imagemanipulatorcog)        
+        - [add_font](#__add_font__)        
         - [add_stamp](#__add_stamp__)        
         - [available_stamps](#__available_stamps__)        
+        - [list_fonts](#__list_fonts__)        
         - [member_avatar](#__member_avatar__)        
-        - [stamp_image](#__stamp_image__)    
+        - [stamp_image](#__stamp_image__)        
+        - [text_to_image](#__text_to_image__)    
     - [KlimBimCog](#klimbimcog)        
+        - [choose_random](#__choose_random__)        
         - [flip_coin](#__flip_coin__)        
         - [make_figlet](#__make_figlet__)        
+        - [roll_dice](#__roll_dice__)        
         - [show_user_info](#__show_user_info__)        
         - [the_dragon](#__the_dragon__)        
         - [urban_dictionary](#__urban_dictionary__)    
     - [PerformanceCog](#performancecog)        
         - [get_command_stats](#__get_command_stats__)        
+        - [initial_memory_use](#__initial_memory_use__)        
         - [report](#__report__)        
         - [report_latency](#__report_latency__)        
         - [report_memory](#__report_memory__)    
@@ -74,8 +81,18 @@
         - [request_my_data](#__request_my_data__)        
         - [unsave_suggestion](#__unsave_suggestion__)    
     - [SubscriptionCog](#subscriptioncog)        
-        - [create_subscription_channel](#__create_subscription_channel__)        
-        - [new_topic](#__new_topic__)    
+        - [new_topic](#__new_topic__)        
+        - [remove_topic](#__remove_topic__)        
+        - [topic_template](#__topic_template__)        
+        - [unsubscribe](#__unsubscribe__)    
+    - [TeamRosterCog](#teamrostercog)        
+        - [delete_and_redo_team_roster](#__delete_and_redo_team_roster__)        
+        - [force_update_team_roster](#__force_update_team_roster__)        
+        - [initialize_team_roster](#__initialize_team_roster__)        
+        - [team_roster_change_description](#__team_roster_change_description__)        
+        - [team_roster_change_extra_role](#__team_roster_change_extra_role__)        
+        - [team_roster_change_image](#__team_roster_change_image__)        
+        - [team_roster_change_join_description](#__team_roster_change_join_description__)    
     - [TemplateCheckerCog](#templatecheckercog)        
         - [check_template](#__check_template__)    
     - [TranslateCog](#translatecog)        
@@ -124,7 +141,7 @@
 
 
 
-- **aliases:** *delete-msg*, *deletemsg*, *delete.msg*, *delete+msg*
+- **aliases:** *delete+msg*, *delete.msg*, *delete-msg*, *deletemsg*
 
 
 - **is hidden:** True
@@ -208,7 +225,7 @@
 
 
 
-- **aliases:** *getnewestmoddata*, *get-newest-mod-data*, *get+newest+mod+data*, *get.newest.mod.data*
+- **aliases:** *get-newest-mod-data*, *get.newest.mod.data*, *get+newest+mod+data*, *getnewestmoddata*
 
 
 - **is hidden:** False
@@ -247,7 +264,7 @@
 
 
 
-- **aliases:** *add-to-blacklist*, *add+to+blacklist*, *add.to.blacklist*, *addtoblacklist*
+- **aliases:** *add-to-blacklist*, *addtoblacklist*, *add.to.blacklist*, *add+to+blacklist*
 
 
 - **is hidden:** True
@@ -264,7 +281,7 @@
 
 
 
-- **aliases:** *add.who.is.phrase*, *addwhoisphrase*, *add-who-is-phrase*, *add+who+is+phrase*
+- **aliases:** *add.who.is.phrase*, *add-who-is-phrase*, *addwhoisphrase*, *add+who+is+phrase*
 
 
 - **is hidden:** True
@@ -298,7 +315,7 @@
 
 
 
-- **aliases:** *invocation+prefixes*, *invocation.prefixes*, *invocation-prefixes*, *invocationprefixes*
+- **aliases:** *invocation.prefixes*, *invocation-prefixes*, *invocation+prefixes*, *invocationprefixes*
 
 
 - **is hidden:** True
@@ -315,7 +332,7 @@
 
 
 
-- **aliases:** *are-you-there*, *poke-with-stick*, *life+check*, *life-check*, *life.check*, *you_dead?*, *lifecheck*
+- **aliases:** *life.check*, *poke-with-stick*, *lifecheck*, *are-you-there*, *you_dead?*, *life-check*, *life+check*
 
 
 - **is hidden:** True
@@ -332,7 +349,7 @@
 
 
 
-- **aliases:** *removefromblacklist*, *remove+from+blacklist*, *remove.from.blacklist*, *remove-from-blacklist*
+- **aliases:** *remove-from-blacklist*, *removefromblacklist*, *remove+from+blacklist*, *remove.from.blacklist*
 
 
 - **is hidden:** True
@@ -349,7 +366,7 @@
 
 
 
-- **aliases:** *self-announcement*, *self+announcement*, *selfannouncement*, *self.announcement*
+- **aliases:** *selfannouncement*, *self.announcement*, *self-announcement*, *self+announcement*
 
 
 - **is hidden:** True
@@ -376,7 +393,7 @@
 
 
 
-- **aliases:** *send+log+file*, *send-log-file*, *sendlogfile*, *send.log.file*
+- **aliases:** *sendlogfile*, *send-log-file*, *send.log.file*, *send+log+file*
 
 
 - **is hidden:** True
@@ -393,7 +410,7 @@
 
 
 
-- **aliases:** *tell+uptime*, *tell.uptime*, *telluptime*, *tell-uptime*
+- **aliases:** *tell.uptime*, *tell+uptime*, *tell-uptime*, *telluptime*
 
 
 - **is hidden:** True
@@ -410,7 +427,7 @@
 
 
 
-- **aliases:** *tell-version*, *tellversion*, *tell.version*, *tell+version*
+- **aliases:** *tell+version*, *tellversion*, *tell-version*, *tell.version*
 
 
 - **is hidden:** True
@@ -422,6 +439,36 @@
 
 <br>
 
+
+
+---
+
+
+
+
+### BotFeedbackCog
+
+- __Config Name__
+    bot_feedback
+
+- __Description__
+    WiP
+
+- __Cog States__
+```diff
+- EMPTY
+
+- DOCUMENTATION_MISSING
+
+- CRASHING
+
+- OUTDATED
+
+- FEATURE_MISSING
+
+- UNTESTED
+```
+#### Commands:
 
 
 ---
@@ -464,7 +511,7 @@
 
 
 
-- **aliases:** *current-online-server*, *current+online+server*, *currentonlineserver*, *current.online.server*
+- **aliases:** *current.online.server*, *currentonlineserver*, *current-online-server*, *current+online+server*
 
 
 - **is hidden:** False
@@ -491,7 +538,7 @@
 
 
 
-- **aliases:** *current-players*, *currentplayers*, *current.players*, *current+players*
+- **aliases:** *currentplayers*, *current.players*, *current-players*, *current+players*
 
 
 - **is hidden:** False
@@ -525,7 +572,7 @@
 
 
 
-- **aliases:** *undo.exclude.from.server.status.notification*, *undo+exclude+from+server+status+notification*, *undoexcludefromserverstatusnotification*, *undo-exclude-from-server-status-notification*
+- **aliases:** *undoexcludefromserverstatusnotification*, *undo.exclude.from.server.status.notification*, *undo+exclude+from+server+status+notification*, *undo-exclude-from-server-status-notification*
 
 
 - **is hidden:** False
@@ -580,7 +627,7 @@
 
 
 
-- **aliases:** *add.alias*, *addalias*, *add+alias*, *add-alias*
+- **aliases:** *addalias*, *add.alias*, *add+alias*, *add-alias*
 
 
 - **is hidden:** True
@@ -645,7 +692,7 @@
 
 
 
-- **aliases:** *list.configs*, *list+configs*, *list-configs*, *listconfigs*
+- **aliases:** *listconfigs*, *list+configs*, *list-configs*, *list.configs*
 
 
 - **is hidden:** True
@@ -761,7 +808,7 @@
 
 
 
-- **aliases:** *faq*, *post-faq-by-number*, *postfaqbynumber*, *post.faq.by.number*, *post+faq+by+number*
+- **aliases:** *postfaqbynumber*, *post+faq+by+number*, *post-faq-by-number*, *faq*, *post.faq.by.number*
 
 
 - **is hidden:** False
@@ -807,7 +854,7 @@
 
 
 
-- **aliases:** *abort+give+away*, *abort-give-away*, *abort.give.away*, *abortgiveaway*
+- **aliases:** *abort-give-away*, *abort.give.away*, *abort+give+away*, *abortgiveaway*
 
 
 - **is hidden:** True
@@ -824,7 +871,7 @@
 
 
 
-- **aliases:** *creategiveaway*, *giveaway*, *create-giveaway*, *create+giveaway*, *create.giveaway*
+- **aliases:** *giveaway*, *create.giveaway*, *creategiveaway*, *create+giveaway*, *create-giveaway*
 
 
 - **is hidden:** True
@@ -846,7 +893,7 @@
 
 
 
-- **aliases:** *finish.give.away*, *finishgiveaway*, *finish-give-away*, *finish+give+away*
+- **aliases:** *finish-give-away*, *finish+give+away*, *finish.give.away*, *finishgiveaway*
 
 
 - **is hidden:** True
@@ -885,6 +932,23 @@
 ```
 #### Commands:
 
+##### __add_font__
+
+
+
+- **aliases:** *add-font*, *add+font*, *add.font*, *addfont*
+
+
+- **is hidden:** False
+
+- **usage:**
+    ```python
+    None
+    ```
+
+<br>
+
+
 ##### __add_stamp__
 
 - **help:**
@@ -896,7 +960,7 @@
 
 
 
-- **aliases:** *addstamp*, *add+stamp*, *add.stamp*, *add-stamp*
+- **aliases:** *add+stamp*, *add.stamp*, *add-stamp*, *addstamp*
 
 
 - **is hidden:** False
@@ -918,7 +982,7 @@
 
 
 
-- **aliases:** *available-stamps*, *available.stamps*, *available+stamps*, *availablestamps*
+- **aliases:** *available-stamps*, *availablestamps*, *available.stamps*, *available+stamps*
 
 
 - **is hidden:** False
@@ -929,6 +993,23 @@
     ```
 
 ![](/art/finished/gifs/available_stamps_command.gif)
+
+<br>
+
+
+##### __list_fonts__
+
+
+
+- **aliases:** *list-fonts*, *list.fonts*, *list+fonts*, *listfonts*
+
+
+- **is hidden:** False
+
+- **usage:**
+    ```python
+    None
+    ```
 
 <br>
 
@@ -971,7 +1052,7 @@
 
 
 
-- **aliases:** *stamp.image*, *stamp+image*, *stamp-image*, *stampimage*
+- **aliases:** *stamp.image*, *stamp-image*, *stamp+image*, *stampimage*
 
 
 - **is hidden:** False
@@ -979,6 +1060,23 @@
 - **usage:**
     ```python
     @AntiPetros stamp_image -si ASLOGO -fp bottom -sp right -so 0.5 -f 0.25
+    ```
+
+<br>
+
+
+##### __text_to_image__
+
+
+
+- **aliases:** *text+to+image*, *texttoimage*, *text.to.image*, *text-to-image*
+
+
+- **is hidden:** False
+
+- **usage:**
+    ```python
+    None
     ```
 
 <br>
@@ -1004,6 +1102,38 @@
 ```
 #### Commands:
 
+##### __choose_random__
+
+- **help:**
+
+        Selects random items from a semi-colon(`;`) seperated list. No limit on how many items the list can have, except for Discord character limit.
+        
+        Amount of item to select can be set by specifying a number before the list. Defaults to selecting only 1 item. Max amount is 25.
+        
+        Args:
+        
+            choices (str): input list as semi-colon seperated list.
+            select_amount (Optional[int], optional): How many items to select. Defaults to 1.
+        
+        Example:
+            `@AntiPetros 2 this is the first item; this is the second; this is the third`
+
+
+
+
+- **aliases:** *choose+random*, *chooserandom*, *choose-random*, *choose.random*
+
+
+- **is hidden:** False
+
+- **usage:**
+    ```python
+    None
+    ```
+
+<br>
+
+
 ##### __flip_coin__
 
 - **help:**
@@ -1013,7 +1143,7 @@
 
 
 
-- **aliases:** *flip.coin*, *flipcoin*, *flip+coin*, *coinflip*, *flip-coin*, *flip*
+- **aliases:** *flip-coin*, *flipcoin*, *flip*, *flip.coin*, *coinflip*, *flip+coin*
 
 
 - **is hidden:** False
@@ -1042,7 +1172,7 @@
 
 
 
-- **aliases:** *make+figlet*, *make-figlet*, *makefiglet*, *make.figlet*
+- **aliases:** *make.figlet*, *makefiglet*, *make-figlet*, *make+figlet*
 
 
 - **is hidden:** False
@@ -1057,11 +1187,38 @@
 <br>
 
 
+##### __roll_dice__
+
+- **help:**
+
+        Roll Dice and get the result also as Image.
+        
+        All standard DnD Dice are available, d4, d6, d8, d10, d12, d20, d100.
+        
+        Args:
+            dice_line (str): the dice you want to roll in the format `2d6`, first number is amount. Multiple different dice can be rolled, just seperate them by a space `2d6 4d20 1d4`.
+
+
+
+
+- **aliases:** *roll.dice*, *roll-dice*, *rolldice*, *roll+dice*
+
+
+- **is hidden:** False
+
+- **usage:**
+    ```python
+    None
+    ```
+
+<br>
+
+
 ##### __show_user_info__
 
 
 
-- **aliases:** *showuserinfo*, *show-user-info*, *show+user+info*, *show.user.info*
+- **aliases:** *show+user+info*, *show.user.info*, *showuserinfo*, *show-user-info*
 
 
 - **is hidden:** False
@@ -1083,7 +1240,7 @@
 
 
 
-- **aliases:** *the.dragon*, *the-dragon*, *thedragon*, *the+dragon*
+- **aliases:** *thedragon*, *the.dragon*, *the+dragon*, *the-dragon*
 
 
 - **is hidden:** False
@@ -1112,7 +1269,7 @@
 
 
 
-- **aliases:** *urban-dictionary*, *urban+dictionary*, *urban.dictionary*, *urbandictionary*
+- **aliases:** *urbandictionary*, *urban+dictionary*, *urban-dictionary*, *urban.dictionary*
 
 
 - **is hidden:** False
@@ -1157,7 +1314,24 @@
 
 
 
-- **aliases:** *get+command+stats*, *get.command.stats*, *getcommandstats*, *get-command-stats*
+- **aliases:** *get.command.stats*, *get+command+stats*, *getcommandstats*, *get-command-stats*
+
+
+- **is hidden:** True
+
+- **usage:**
+    ```python
+    None
+    ```
+
+<br>
+
+
+##### __initial_memory_use__
+
+
+
+- **aliases:** *initial-memory-use*, *initial.memory.use*, *initial+memory+use*, *initialmemoryuse*
 
 
 - **is hidden:** True
@@ -1194,7 +1368,7 @@
 
 
 
-- **aliases:** *reportlatency*, *report.latency*, *report+latency*, *report-latency*
+- **aliases:** *reportlatency*, *report-latency*, *report+latency*, *report.latency*
 
 
 - **is hidden:** True
@@ -1211,7 +1385,7 @@
 
 
 
-- **aliases:** *report-memory*, *report+memory*, *report.memory*, *reportmemory*
+- **aliases:** *report.memory*, *reportmemory*, *report-memory*, *report+memory*
 
 
 - **is hidden:** True
@@ -1250,7 +1424,7 @@
 
 
 
-- **aliases:** *purgeantipetros*, *purge.antipetros*, *purge+antipetros*, *purge-antipetros*
+- **aliases:** *purge-antipetros*, *purge+antipetros*, *purgeantipetros*, *purge.antipetros*
 
 
 - **is hidden:** True
@@ -1410,7 +1584,7 @@
     subscription
 
 - __Description__
-    Soon
+    Organizes Topic so they can be subscribed and mentioned selectively.
 
 - __Cog States__
 ```diff
@@ -1420,11 +1594,11 @@
 ```
 #### Commands:
 
-##### __create_subscription_channel__
+##### __new_topic__
 
 
 
-- **aliases:** *create.subscription.channel*, *createsubscriptionchannel*, *create-subscription-channel*, *create+subscription+channel*
+- **aliases:** *newtopic*, *new+topic*, *new-topic*, *new.topic*
 
 
 - **is hidden:** True
@@ -1437,14 +1611,195 @@
 <br>
 
 
-##### __new_topic__
+##### __remove_topic__
 
 
 
-- **aliases:** *new-topic*, *new+topic*, *new.topic*, *newtopic*
+- **aliases:** *remove+topic*, *remove-topic*, *remove.topic*, *removetopic*
 
 
 - **is hidden:** True
+
+- **usage:**
+    ```python
+    None
+    ```
+
+<br>
+
+
+##### __topic_template__
+
+
+
+- **aliases:** *topic-template*, *topic.template*, *topictemplate*, *topic+template*
+
+
+- **is hidden:** True
+
+- **usage:**
+    ```python
+    None
+    ```
+
+<br>
+
+
+##### __unsubscribe__
+
+
+
+
+- **is hidden:** True
+
+- **usage:**
+    ```python
+    None
+    ```
+
+<br>
+
+
+
+---
+
+
+
+
+### TeamRosterCog
+
+- __Config Name__
+    team_roster
+
+- __Description__
+    WiP
+
+- __Cog States__
+```diff
+- EMPTY
+
+- DOCUMENTATION_MISSING
+
+- CRASHING
+
+- OUTDATED
+
+- FEATURE_MISSING
+
+- UNTESTED
+```
+#### Commands:
+
+##### __delete_and_redo_team_roster__
+
+
+
+- **aliases:** *delete-and-redo-team-roster*, *deleteandredoteamroster*, *delete+and+redo+team+roster*, *delete.and.redo.team.roster*
+
+
+- **is hidden:** False
+
+- **usage:**
+    ```python
+    None
+    ```
+
+<br>
+
+
+##### __force_update_team_roster__
+
+
+
+- **aliases:** *forceupdateteamroster*, *force+update+team+roster*, *force.update.team.roster*, *force-update-team-roster*
+
+
+- **is hidden:** False
+
+- **usage:**
+    ```python
+    None
+    ```
+
+<br>
+
+
+##### __initialize_team_roster__
+
+
+
+- **aliases:** *initializeteamroster*, *initialize-team-roster*, *initialize+team+roster*, *initialize.team.roster*
+
+
+- **is hidden:** False
+
+- **usage:**
+    ```python
+    None
+    ```
+
+<br>
+
+
+##### __team_roster_change_description__
+
+
+
+- **aliases:** *team-roster-change-description*, *team+roster+change+description*, *teamrosterchangedescription*, *team.roster.change.description*
+
+
+- **is hidden:** False
+
+- **usage:**
+    ```python
+    None
+    ```
+
+<br>
+
+
+##### __team_roster_change_extra_role__
+
+
+
+- **aliases:** *team+roster+change+extra+role*, *team.roster.change.extra.role*, *team-roster-change-extra-role*, *teamrosterchangeextrarole*
+
+
+- **is hidden:** False
+
+- **usage:**
+    ```python
+    None
+    ```
+
+<br>
+
+
+##### __team_roster_change_image__
+
+
+
+- **aliases:** *team-roster-change-image*, *team+roster+change+image*, *team.roster.change.image*, *teamrosterchangeimage*
+
+
+- **is hidden:** False
+
+- **usage:**
+    ```python
+    None
+    ```
+
+<br>
+
+
+##### __team_roster_change_join_description__
+
+
+
+- **aliases:** *teamrosterchangejoindescription*, *team.roster.change.join.description*, *team+roster+change+join+description*, *team-roster-change-join-description*
+
+
+- **is hidden:** False
 
 - **usage:**
     ```python
@@ -1503,7 +1858,7 @@
 
 
 
-- **aliases:** *check.template*, *checktemplate*, *check-template*, *check+template*
+- **aliases:** *check-template*, *check.template*, *checktemplate*, *check+template*
 
 
 - **is hidden:** False
@@ -1540,7 +1895,7 @@
 
 
 
-- **aliases:** *availablelanguages*, *available-languages*, *available.languages*, *available+languages*
+- **aliases:** *available.languages*, *availablelanguages*, *available+languages*, *available-languages*
 
 
 - **is hidden:** False
@@ -1672,6 +2027,10 @@
 
 
 
+
+
+
+
 - [add_alias](#__add_alias__)
 
 
@@ -1712,6 +2071,20 @@
 
 
 
+- [add_font](#__add_font__)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1739,6 +2112,12 @@
 
 
 - [get_command_stats](#__get_command_stats__)
+
+
+
+
+
+- [initial_memory_use](#__initial_memory_use__)
 
 
 
@@ -1794,7 +2173,25 @@
 
 
 
-- [create_subscription_channel](#__create_subscription_channel__)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

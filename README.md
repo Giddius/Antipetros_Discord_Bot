@@ -37,7 +37,7 @@ __**Bot-Name:**__
 
 __**Version:**__
 
-> 1.1.7
+> 1.1.8
 
 
 
@@ -52,7 +52,7 @@ __**Version:**__
 ### PyPi
 
 ```shell
-pip install antipetros_discordbot==1.1.7
+pip install antipetros_discordbot==1.1.8
 ```
 
 
@@ -141,7 +141,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *delete-msg*, *deletemsg*, *delete.msg*, *delete+msg*
+    - **aliases:** *delete+msg*, *delete.msg*, *delete-msg*, *deletemsg*
     
 
     - **is hidden:** True
@@ -241,7 +241,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *getnewestmoddata*, *get-newest-mod-data*, *get+newest+mod+data*, *get.newest.mod.data*
+    - **aliases:** *get-newest-mod-data*, *get.newest.mod.data*, *get+newest+mod+data*, *getnewestmoddata*
     
 
     - **is hidden:** False
@@ -296,7 +296,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *add-to-blacklist*, *add+to+blacklist*, *add.to.blacklist*, *addtoblacklist*
+    - **aliases:** *add-to-blacklist*, *addtoblacklist*, *add.to.blacklist*, *add+to+blacklist*
     
 
     - **is hidden:** True
@@ -313,7 +313,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *add.who.is.phrase*, *addwhoisphrase*, *add-who-is-phrase*, *add+who+is+phrase*
+    - **aliases:** *add.who.is.phrase*, *add-who-is-phrase*, *addwhoisphrase*, *add+who+is+phrase*
     
 
     - **is hidden:** True
@@ -347,7 +347,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *invocation+prefixes*, *invocation.prefixes*, *invocation-prefixes*, *invocationprefixes*
+    - **aliases:** *invocation.prefixes*, *invocation-prefixes*, *invocation+prefixes*, *invocationprefixes*
     
 
     - **is hidden:** True
@@ -364,7 +364,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *are-you-there*, *poke-with-stick*, *life+check*, *life-check*, *life.check*, *you_dead?*, *lifecheck*
+    - **aliases:** *life.check*, *poke-with-stick*, *lifecheck*, *are-you-there*, *you_dead?*, *life-check*, *life+check*
     
 
     - **is hidden:** True
@@ -381,7 +381,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *removefromblacklist*, *remove+from+blacklist*, *remove.from.blacklist*, *remove-from-blacklist*
+    - **aliases:** *remove-from-blacklist*, *removefromblacklist*, *remove+from+blacklist*, *remove.from.blacklist*
     
 
     - **is hidden:** True
@@ -398,7 +398,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *self-announcement*, *self+announcement*, *selfannouncement*, *self.announcement*
+    - **aliases:** *selfannouncement*, *self.announcement*, *self-announcement*, *self+announcement*
     
 
     - **is hidden:** True
@@ -425,7 +425,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *send+log+file*, *send-log-file*, *sendlogfile*, *send.log.file*
+    - **aliases:** *sendlogfile*, *send-log-file*, *send.log.file*, *send+log+file*
     
 
     - **is hidden:** True
@@ -442,7 +442,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *tell+uptime*, *tell.uptime*, *telluptime*, *tell-uptime*
+    - **aliases:** *tell.uptime*, *tell+uptime*, *tell-uptime*, *telluptime*
     
 
     - **is hidden:** True
@@ -459,7 +459,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *tell-version*, *tellversion*, *tell.version*, *tell+version*
+    - **aliases:** *tell+version*, *tellversion*, *tell-version*, *tell.version*
     
 
     - **is hidden:** True
@@ -470,6 +470,52 @@ pip install antipetros_discordbot==1.1.7
         ```
     
     <br>
+
+
+
+</blockquote>
+
+</details>
+
+---
+
+
+
+### <p align="center"><b>[BotFeedbackCog](antipetros_discordbot/cogs/bot_admin_cogs/bot_feedback_cog.py)</b></p>
+
+<details><summary><b>Description</b></summary>
+
+
+
+
+#### Short Description
+
+<blockquote>WiP</blockquote>
+
+#### Config Name
+
+<blockquote>bot_feedback</blockquote>
+
+
+#### Cog State Tags
+
+```diff
+- EMPTY
+
+- DOCUMENTATION_MISSING
+
+- CRASHING
+
+- OUTDATED
+
+- FEATURE_MISSING
+
+- UNTESTED
+```
+
+</details>
+
+<details><summary><b>Commands</b></summary><blockquote>
 
 
 
@@ -529,7 +575,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *current-online-server*, *current+online+server*, *currentonlineserver*, *current.online.server*
+    - **aliases:** *current.online.server*, *currentonlineserver*, *current-online-server*, *current+online+server*
     
 
     - **is hidden:** False
@@ -556,7 +602,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *current-players*, *currentplayers*, *current.players*, *current+players*
+    - **aliases:** *currentplayers*, *current.players*, *current-players*, *current+players*
     
 
     - **is hidden:** False
@@ -590,7 +636,7 @@ pip install antipetros_discordbot==1.1.7
     
 
     
-    - **aliases:** *undo.exclude.from.server.status.notification*, *undo+exclude+from+server+status+notification*, *undoexcludefromserverstatusnotification*, *undo-exclude-from-server-status-notification*
+    - **aliases:** *undoexcludefromserverstatusnotification*, *undo.exclude.from.server.status.notification*, *undo+exclude+from+server+status+notification*, *undo-exclude-from-server-status-notification*
     
 
     - **is hidden:** False
@@ -661,7 +707,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *add.alias*, *addalias*, *add+alias*, *add-alias*
+    - **aliases:** *addalias*, *add.alias*, *add+alias*, *add-alias*
     
 
     - **is hidden:** True
@@ -726,7 +772,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *list.configs*, *list+configs*, *list-configs*, *listconfigs*
+    - **aliases:** *listconfigs*, *list+configs*, *list-configs*, *list.configs*
     
 
     - **is hidden:** True
@@ -858,7 +904,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *faq*, *post-faq-by-number*, *postfaqbynumber*, *post.faq.by.number*, *post+faq+by+number*
+    - **aliases:** *postfaqbynumber*, *post+faq+by+number*, *post-faq-by-number*, *faq*, *post.faq.by.number*
     
 
     - **is hidden:** False
@@ -920,7 +966,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *abort+give+away*, *abort-give-away*, *abort.give.away*, *abortgiveaway*
+    - **aliases:** *abort-give-away*, *abort.give.away*, *abort+give+away*, *abortgiveaway*
     
 
     - **is hidden:** True
@@ -937,7 +983,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *creategiveaway*, *giveaway*, *create-giveaway*, *create+giveaway*, *create.giveaway*
+    - **aliases:** *giveaway*, *create.giveaway*, *creategiveaway*, *create+giveaway*, *create-giveaway*
     
 
     - **is hidden:** True
@@ -959,7 +1005,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *finish.give.away*, *finishgiveaway*, *finish-give-away*, *finish+give+away*
+    - **aliases:** *finish-give-away*, *finish+give+away*, *finish.give.away*, *finishgiveaway*
     
 
     - **is hidden:** True
@@ -1014,6 +1060,23 @@ commands are hidden from the help command.</blockquote>
 <details><summary><b>Commands</b></summary><blockquote>
 
 
+- **ADD_FONT**
+    
+
+    
+    - **aliases:** *add-font*, *add+font*, *add.font*, *addfont*
+    
+
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
 - **ADD_STAMP**
     
     - **help:**
@@ -1025,7 +1088,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *addstamp*, *add+stamp*, *add.stamp*, *add-stamp*
+    - **aliases:** *add+stamp*, *add.stamp*, *add-stamp*, *addstamp*
     
 
     - **is hidden:** False
@@ -1047,7 +1110,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *available-stamps*, *available.stamps*, *available+stamps*, *availablestamps*
+    - **aliases:** *available-stamps*, *availablestamps*, *available.stamps*, *available+stamps*
     
 
     - **is hidden:** False
@@ -1058,6 +1121,23 @@ commands are hidden from the help command.</blockquote>
         ```
     
     ![](art/finished/gifs/available_stamps_command.gif)
+    
+    <br>
+
+
+- **LIST_FONTS**
+    
+
+    
+    - **aliases:** *list-fonts*, *list.fonts*, *list+fonts*, *listfonts*
+    
+
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        None
+        ```
     
     <br>
 
@@ -1100,7 +1180,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *stamp.image*, *stamp+image*, *stamp-image*, *stampimage*
+    - **aliases:** *stamp.image*, *stamp-image*, *stamp+image*, *stampimage*
     
 
     - **is hidden:** False
@@ -1108,6 +1188,23 @@ commands are hidden from the help command.</blockquote>
     - **usage:**
         ```python
         @AntiPetros stamp_image -si ASLOGO -fp bottom -sp right -so 0.5 -f 0.25
+        ```
+    
+    <br>
+
+
+- **TEXT_TO_IMAGE**
+    
+
+    
+    - **aliases:** *text+to+image*, *texttoimage*, *text.to.image*, *text-to-image*
+    
+
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        None
         ```
     
     <br>
@@ -1149,6 +1246,38 @@ commands are hidden from the help command.</blockquote>
 <details><summary><b>Commands</b></summary><blockquote>
 
 
+- **CHOOSE_RANDOM**
+    
+    - **help:**
+
+        Selects random items from a semi-colon(`;`) seperated list. No limit on how many items the list can have, except for Discord character limit.
+        
+        Amount of item to select can be set by specifying a number before the list. Defaults to selecting only 1 item. Max amount is 25.
+        
+        Args:
+        
+            choices (str): input list as semi-colon seperated list.
+            select_amount (Optional[int], optional): How many items to select. Defaults to 1.
+        
+        Example:
+            `@AntiPetros 2 this is the first item; this is the second; this is the third`
+
+    
+
+    
+    - **aliases:** *choose+random*, *chooserandom*, *choose-random*, *choose.random*
+    
+
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
 - **FLIP_COIN**
     
     - **help:**
@@ -1158,7 +1287,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *flip.coin*, *flipcoin*, *flip+coin*, *coinflip*, *flip-coin*, *flip*
+    - **aliases:** *flip-coin*, *flipcoin*, *flip*, *flip.coin*, *coinflip*, *flip+coin*
     
 
     - **is hidden:** False
@@ -1187,7 +1316,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *make+figlet*, *make-figlet*, *makefiglet*, *make.figlet*
+    - **aliases:** *make.figlet*, *makefiglet*, *make-figlet*, *make+figlet*
     
 
     - **is hidden:** False
@@ -1202,11 +1331,38 @@ commands are hidden from the help command.</blockquote>
     <br>
 
 
+- **ROLL_DICE**
+    
+    - **help:**
+
+        Roll Dice and get the result also as Image.
+        
+        All standard DnD Dice are available, d4, d6, d8, d10, d12, d20, d100.
+        
+        Args:
+            dice_line (str): the dice you want to roll in the format `2d6`, first number is amount. Multiple different dice can be rolled, just seperate them by a space `2d6 4d20 1d4`.
+
+    
+
+    
+    - **aliases:** *roll.dice*, *roll-dice*, *rolldice*, *roll+dice*
+    
+
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
 - **SHOW_USER_INFO**
     
 
     
-    - **aliases:** *showuserinfo*, *show-user-info*, *show+user+info*, *show.user.info*
+    - **aliases:** *show+user+info*, *show.user.info*, *showuserinfo*, *show-user-info*
     
 
     - **is hidden:** False
@@ -1228,7 +1384,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *the.dragon*, *the-dragon*, *thedragon*, *the+dragon*
+    - **aliases:** *thedragon*, *the.dragon*, *the+dragon*, *the-dragon*
     
 
     - **is hidden:** False
@@ -1257,7 +1413,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *urban-dictionary*, *urban+dictionary*, *urban.dictionary*, *urbandictionary*
+    - **aliases:** *urbandictionary*, *urban+dictionary*, *urban-dictionary*, *urban.dictionary*
     
 
     - **is hidden:** False
@@ -1318,7 +1474,24 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *get+command+stats*, *get.command.stats*, *getcommandstats*, *get-command-stats*
+    - **aliases:** *get.command.stats*, *get+command+stats*, *getcommandstats*, *get-command-stats*
+    
+
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
+- **INITIAL_MEMORY_USE**
+    
+
+    
+    - **aliases:** *initial-memory-use*, *initial.memory.use*, *initial+memory+use*, *initialmemoryuse*
     
 
     - **is hidden:** True
@@ -1355,7 +1528,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *reportlatency*, *report.latency*, *report+latency*, *report-latency*
+    - **aliases:** *reportlatency*, *report-latency*, *report+latency*, *report.latency*
     
 
     - **is hidden:** True
@@ -1372,7 +1545,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *report-memory*, *report+memory*, *report.memory*, *reportmemory*
+    - **aliases:** *report.memory*, *reportmemory*, *report-memory*, *report+memory*
     
 
     - **is hidden:** True
@@ -1427,7 +1600,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *purgeantipetros*, *purge.antipetros*, *purge+antipetros*, *purge-antipetros*
+    - **aliases:** *purge-antipetros*, *purge+antipetros*, *purgeantipetros*, *purge.antipetros*
     
 
     - **is hidden:** True
@@ -1600,7 +1773,7 @@ commands are hidden from the help command.</blockquote>
 
 
 
-### <p align="center"><b>[SubscriptionCog](antipetros_discordbot/cogs/discord_admin_cogs/subscription_cog.py)</b></p>
+### <p align="center"><b>[SubscriptionCog](antipetros_discordbot/cogs/special_channels_cogs/subscription_cog.py)</b></p>
 
 <details><summary><b>Description</b></summary>
 
@@ -1609,7 +1782,7 @@ commands are hidden from the help command.</blockquote>
 
 #### Short Description
 
-<blockquote>Soon</blockquote>
+<blockquote>Organizes Topic so they can be subscribed and mentioned selectively.</blockquote>
 
 #### Config Name
 
@@ -1629,11 +1802,11 @@ commands are hidden from the help command.</blockquote>
 <details><summary><b>Commands</b></summary><blockquote>
 
 
-- **CREATE_SUBSCRIPTION_CHANNEL**
+- **NEW_TOPIC**
     
 
     
-    - **aliases:** *create.subscription.channel*, *createsubscriptionchannel*, *create-subscription-channel*, *create+subscription+channel*
+    - **aliases:** *newtopic*, *new+topic*, *new-topic*, *new.topic*
     
 
     - **is hidden:** True
@@ -1646,14 +1819,211 @@ commands are hidden from the help command.</blockquote>
     <br>
 
 
-- **NEW_TOPIC**
+- **REMOVE_TOPIC**
     
 
     
-    - **aliases:** *new-topic*, *new+topic*, *new.topic*, *newtopic*
+    - **aliases:** *remove+topic*, *remove-topic*, *remove.topic*, *removetopic*
     
 
     - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
+- **TOPIC_TEMPLATE**
+    
+
+    
+    - **aliases:** *topic-template*, *topic.template*, *topictemplate*, *topic+template*
+    
+
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
+- **UNSUBSCRIBE**
+    
+
+    
+
+    - **is hidden:** True
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
+
+</blockquote>
+
+</details>
+
+---
+
+
+
+### <p align="center"><b>[TeamRosterCog](antipetros_discordbot/cogs/special_channels_cogs/team_roster_cog.py)</b></p>
+
+<details><summary><b>Description</b></summary>
+
+
+
+
+#### Short Description
+
+<blockquote>WiP</blockquote>
+
+#### Config Name
+
+<blockquote>team_roster</blockquote>
+
+
+#### Cog State Tags
+
+```diff
+- EMPTY
+
+- DOCUMENTATION_MISSING
+
+- CRASHING
+
+- OUTDATED
+
+- FEATURE_MISSING
+
+- UNTESTED
+```
+
+</details>
+
+<details><summary><b>Commands</b></summary><blockquote>
+
+
+- **DELETE_AND_REDO_TEAM_ROSTER**
+    
+
+    
+    - **aliases:** *delete-and-redo-team-roster*, *deleteandredoteamroster*, *delete+and+redo+team+roster*, *delete.and.redo.team.roster*
+    
+
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
+- **FORCE_UPDATE_TEAM_ROSTER**
+    
+
+    
+    - **aliases:** *forceupdateteamroster*, *force+update+team+roster*, *force.update.team.roster*, *force-update-team-roster*
+    
+
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
+- **INITIALIZE_TEAM_ROSTER**
+    
+
+    
+    - **aliases:** *initializeteamroster*, *initialize-team-roster*, *initialize+team+roster*, *initialize.team.roster*
+    
+
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
+- **TEAM_ROSTER_CHANGE_DESCRIPTION**
+    
+
+    
+    - **aliases:** *team-roster-change-description*, *team+roster+change+description*, *teamrosterchangedescription*, *team.roster.change.description*
+    
+
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
+- **TEAM_ROSTER_CHANGE_EXTRA_ROLE**
+    
+
+    
+    - **aliases:** *team+roster+change+extra+role*, *team.roster.change.extra.role*, *team-roster-change-extra-role*, *teamrosterchangeextrarole*
+    
+
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
+- **TEAM_ROSTER_CHANGE_IMAGE**
+    
+
+    
+    - **aliases:** *team-roster-change-image*, *team+roster+change+image*, *team.roster.change.image*, *teamrosterchangeimage*
+    
+
+    - **is hidden:** False
+
+    - **usage:**
+        ```python
+        None
+        ```
+    
+    <br>
+
+
+- **TEAM_ROSTER_CHANGE_JOIN_DESCRIPTION**
+    
+
+    
+    - **aliases:** *teamrosterchangejoindescription*, *team.roster.change.join.description*, *team+roster+change+join+description*, *team-roster-change-join-description*
+    
+
+    - **is hidden:** False
 
     - **usage:**
         ```python
@@ -1728,7 +2098,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *check.template*, *checktemplate*, *check-template*, *check+template*
+    - **aliases:** *check-template*, *check.template*, *checktemplate*, *check+template*
     
 
     - **is hidden:** False
@@ -1781,7 +2151,7 @@ commands are hidden from the help command.</blockquote>
     
 
     
-    - **aliases:** *availablelanguages*, *available-languages*, *available.languages*, *available+languages*
+    - **aliases:** *available.languages*, *availablelanguages*, *available+languages*, *available-languages*
     
 
     - **is hidden:** False
@@ -1901,6 +2271,8 @@ commands are hidden from the help command.</blockquote>
 
 - **pyfiglet** *0.8.post1*
 
+- **python-youtube** *0.7.0*
+
 - **python_a2s** *1.3.0*
 
 - **python_dotenv** *0.15.0*
@@ -1910,6 +2282,8 @@ commands are hidden from the help command.</blockquote>
 - **rich** *9.13.0*
 
 - **tldextract** *3.1.0*
+
+- **validator_collection** *1.5.0*
 
 - **watchgod** *0.6*
 
@@ -1949,6 +2323,21 @@ MIT
 
 ### Future Plans
 
+
+- pr logging
+    PR team cog for all the logging, Youtube twitch twitter.
+
+- database
+    migrating all the json files to an sql lite DB
+
+- startup info
+    auto updating server info in startup info, need to figure out how to seperate development from production with this one
+
+- github wiki
+    Automatically create and modify github Wiki
+
+- cogs template
+    fix Cogs Template and add `new_cog` invoke task
 
 
 
