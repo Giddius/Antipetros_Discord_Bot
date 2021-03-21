@@ -343,19 +343,19 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @commands.Cog.listener(name="on_member_update")
     async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):
-        pass
+        await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_create")
     async def role_added_listener(self, role: discord.Role):
-        pass
+        await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_delete")
     async def role_removed_listener(self, role: discord.Role):
-        pass
+        await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_update")
     async def role_updated_listener(self, before: discord.Role, after: discord.Role):
-        pass
+        await self._update_team_roster()
 
 # endregion [Listener]
 
@@ -486,6 +486,10 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [HelperMethods]
 
+    async def _update_team_roster(self):
+        for team_item in self.team_items:
+            await team_item.update()
+        await self.update_last_changed_message()
 
     async def _send_updated_embed(self, ctx: commands.Context, team_item: TeamItem, field: str):
         embed_data = await self.bot.make_generic_embed(title=f'{field} updated', description=f"{field} for Team `{team_item.name}` was updated!",

@@ -733,10 +733,12 @@ def build(c, typus='fix'):
     commit_push(c, typus)
     os.chdir(main_dir_from_git())
     c.run("flit publish", echo=True)
-    NOTIFIER.show_toast(title=f"Finished Building {PROJECT_NAME}", icon_path=r"art/finished/icons/pip.ico", duration=15, msg=f"Published {PROJECT_NAME}, Version {get_package_version()} to PyPi")
     from dev_tools_and_scripts.scripts.launch_in_server import update_launch
+    print("Waiting for 5 min before updating Antipetros from PyPi")
+    sleep(300)
+    print("finishe waiting")
     update_launch()
-
+    NOTIFIER.show_toast(title=f"Finished Building {PROJECT_NAME}", icon_path=r"art/finished/icons/pip.ico", duration=15, msg=f"Published {PROJECT_NAME}, Version {get_package_version()} to PyPi")
 
 def get_alternative_name(name, number=0):
     if number == 0:

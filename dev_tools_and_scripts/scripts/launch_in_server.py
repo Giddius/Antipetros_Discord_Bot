@@ -85,10 +85,15 @@ def run_command(command: str):
 #     # sleep(30)
 #     # run_command('antipetrosbot stop')
 def update_launch():
+    print("stoping bot via stop file")
     run_command(ANTIPETROS_STOP_CMD)
+    print("waiting 2 minutes to let the bot shut down completely")
     sleep(120)
+    print("updating bot from PyPi")
     run_command(ANTIPETROS_UPDATE_CMD_VERSION)
+    print("Waiting 1 minute before launching bot")
     sleep(60)
+    print("Launching bot")
     run_command(ANTIPETROS_START_CMD)
 
 
