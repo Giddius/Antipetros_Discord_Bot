@@ -311,6 +311,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
         self.last_changed_message = None
         TeamItem.config_name = self.config_name
         TeamItem.bot = self.bot
+        self.is_ready = False
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -322,9 +323,11 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         await self.bot.antistasi_guild.chunk(cache=True)
         await self._load_team_items()
+        self.is_ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -340,21 +343,33 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Listener]
 
-
     @commands.Cog.listener(name="on_member_update")
     async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):
-        await self._update_team_roster()
+        if self.is_ready is False:
+            return
+        if before.roles != after.roles:
+            log.debug("updating Team Roster because role on Member was changed")
+            await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_create")
     async def role_added_listener(self, role: discord.Role):
+        if self.is_ready is False:
+            return
+        log.debug("updating Team Roster because new role was created")
         await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_delete")
     async def role_removed_listener(self, role: discord.Role):
+        if self.is_ready is False:
+            return
+        log.debug("updating Team Roster because role was deleted")
         await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_update")
     async def role_updated_listener(self, before: discord.Role, after: discord.Role):
+        if self.is_ready is False:
+            return
+        log.debug("updating Team Roster because role was modifed")
         await self._update_team_roster()
 
 # endregion [Listener]
@@ -485,6 +500,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
 
     async def _update_team_roster(self):
         for team_item in self.team_items:

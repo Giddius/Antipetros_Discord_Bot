@@ -115,6 +115,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -137,6 +138,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 # endregion [Listener]
 
 # region [Commands]
+
 
     @ auto_meta_info_command(enabled=get_command_enabled('the_dragon'))
     @ allowed_channel_and_allowed_role_2()
@@ -245,6 +247,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
     @auto_meta_info_command(enabled=get_command_enabled("show_user_info"))
     @allowed_channel_and_allowed_role_2(False)
+    @commands.cooldown(1, 60, commands.BucketType.member)
     async def show_user_info(self, ctx, user: discord.Member = None):
         user = ctx.author if user is None else user
         embed_data = await self._user_info_to_embed(user)
@@ -300,6 +303,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
     @auto_meta_info_command(enabled=get_command_enabled('roll_dice'))
     @allowed_channel_and_allowed_role_2(True)
+    @commands.cooldown(1, 120, commands.BucketType.channel)
     async def roll_dice(self, ctx, *, dice_line: str):
         """
         Roll Dice and get the result also as Image.
@@ -350,6 +354,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
     @auto_meta_info_command(enabled=get_command_enabled('choose_random'))
     @allowed_channel_and_allowed_role_2(in_dm_allowed=True)
+    @commands.cooldown(1, 120, commands.BucketType.channel)
     async def choose_random(self, ctx: commands.Context, select_amount: Optional[int] = 1, *, choices: str):
         """
         Selects random items from a semi-colon(`;`) seperated list. No limit on how many items the list can have, except for Discord character limit.
@@ -438,6 +443,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

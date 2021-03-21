@@ -99,10 +99,11 @@ def update_launch():
 
 def launch():
     run_command(ANTIPETROS_STOP_CMD)
-    sleep(120)
+    sleep(60)
     run_command(ANTIPETROS_START_CMD)
 
 
 if __name__ == '__main__':
-    sleep(30)
-    run_command(ANTIPETROS_START_CMD)
+    # sleep(30)
+    # run_command(ANTIPETROS_START_CMD)
+    launch()
