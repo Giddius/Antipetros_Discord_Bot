@@ -112,6 +112,10 @@ class ColorKeeper(SubSupportBase):
         return self.colors[fuzz_match[0]].discord_color
 
     @property
+    def fake_colorless(self):
+        return Color.from_rgb(54, 57, 63)
+
+    @property
     def random_color(self):
         return random.choice(self.color_item_list)
 

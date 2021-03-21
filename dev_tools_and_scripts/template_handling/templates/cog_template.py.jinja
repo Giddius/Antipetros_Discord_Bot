@@ -14,7 +14,7 @@ import queue
 import logging
 import platform
 import subprocess
-from enum import Enum, Flag, auto
+from enum import Enum, Flag, auto, unique
 from time import sleep
 from pprint import pprint, pformat
 from typing import Union, TYPE_CHECKING
@@ -33,6 +33,7 @@ from io import BytesIO
 from textwrap import dedent
 
 # * Third Party Imports -->
+from icecream import ic
 # import requests
 # import pyperclip
 # import matplotlib.pyplot as plt
@@ -53,23 +54,21 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, save_commands, CogConfigReadOnly, make_config_name, is_even
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2
-from antipetros_discordbot.utility.named_tuples import CITY_ITEM, COUNTRY_ITEM
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+from antipetros_discordbot.utility.emoji_handling import normalize_emoji
+from antipetros_discordbot.utility.parsing import parse_command_text_file
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
-{% for extra_import in cog_item.extra_imports %}
-{{ extra_import }}
-{% endfor %}
 
 # endregion[Imports]
 
@@ -97,7 +96,7 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "{{ cog_item.name }}"
+COG_NAME = "{{ cog_name }}"
 
 CONFIG_NAME = make_config_name(COG_NAME)
 
@@ -111,20 +110,16 @@ _from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 
 # endregion [Helper]
 
-class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}'name': COG_NAME, "description":""{% if cog_item.all_com_attr %}, {% endif %}{% for com_attr_name, com_attr_value in cog_item.all_com_attr.items() %}'{{ com_attr_name }}': {{ com_attr_value }}{{ ", " if not loop.last }}{% endfor %}{{ "}" }}):
+class {{ cog_name }}(commands.Cog, command_attrs={{ "{" }}'name': COG_NAME {{ "}" }}):
     """
-    [summary]
-
-    [extended_summary]
-
+    WiP
     """
 # region [ClassAttributes]
 
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
-            'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
-                            "{{ timestamp }}")}
+            'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
 
     required_config_data = dedent("""
                                     """).strip('\n')
@@ -207,11 +202,8 @@ class {{ cog_item.name }}(commands.Cog, command_attrs={{ "{" }}'name': COG_NAME,
         pass
 
 
-
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))
-
-
 
 
     def __repr__(self):
@@ -228,7 +220,7 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker({{ cog_item.name }}(bot)))
+    bot.add_cog(attribute_checker({{ cog_name }}(bot)))
 
 
 # region [Main_Exec]

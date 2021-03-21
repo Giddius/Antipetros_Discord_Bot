@@ -25,7 +25,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.checks import owner_or_admin
+from antipetros_discordbot.utility.checks import owner_or_admin, log_invoker
 # endregion[Imports]
 
 # region [TODO]
@@ -117,7 +117,8 @@ class EssentialCommandsKeeper(SubSupportBase):
 
     @owner_or_admin()
     async def shutdown(self, ctx, *, reason: str = 'No reason given'):
-        log.debug('shutdown command received from "%s" with reason: "%s"', ctx.author.name, reason)
+        log.critical('shutdown command received from "%s" with reason: "%s"', ctx.author.name, reason)
+        await ctx.message.delete()
         await self.shutdown_mechanic()
 
     async def shutdown_mechanic(self):

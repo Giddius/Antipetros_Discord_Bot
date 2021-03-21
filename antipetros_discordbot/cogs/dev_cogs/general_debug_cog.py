@@ -556,6 +556,94 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await asyncio.sleep(10)
         await self.edit_embed_message.edit(**embed_data)
 
+    @auto_meta_info_command()
+    async def pr_log_entries(self, ctx: commands.Context):
+        base_youtube_watch_url = "https://www.youtube.com/watch?v="
+        api = Api(api_key=os.getenv('GOOGLE_API_KEY'))
+        channel = api.get_channel_info(channel_id="UCsh0jHpXZyv3MlXvCGj_OfQ")
+        uploads = channel.items[0].contentDetails.relatedPlaylists.uploads
+        playlist = api.get_playlist_items(playlist_id=uploads, count=None)
+        vids = []
+        for item in playlist.items:
+            title = item.snippet.title
+            link = base_youtube_watch_url + str(item.contentDetails.videoId)
+            description = item.snippet.description
+            image = item.snippet.thumbnails.maxres
+            if image is None:
+                image = item.snippet.thumbnails.high
+            if image is None:
+                image = item.snippet.thumbnails.standard
+            if image is None:
+                image = item.snippet.thumbnails.medium
+            if image is None:
+                image = item.snippet.thumbnails.default
+            image = image.url
+            date = date_parse(item.contentDetails.videoPublishedAt)
+            vids.append((title, date, link, description, image))
+        vids = sorted(vids, key=lambda x: x[1], reverse=True)
+        newest = vids[0]
+        await ctx.send(f"""**Platform:** Youtube
+**Activity:** Video
+**Additional info:** New Video was posted by `here the name if written in the description`\nTitle -> {newest[0]}\nLink -> {newest[2]}""")
+        await ctx.send(f"{ZERO_WIDTH}\n" * 10)
+        await asyncio.sleep(5)
+        embed_data = await self.bot.make_generic_embed(title='PR Log Entry',
+                                                       fields=[self.bot.field_item(name="Platform", value="Youtube"),
+                                                               self.bot.field_item(name="Activity", value="New Video"),
+                                                               self.bot.field_item(name="Video title", value=newest[0]),
+                                                               self.bot.field_item(name="Video Link", value=newest[2])],
+                                                       timestamp=newest[1],
+                                                       thumbnail="youtube_logo",
+                                                       image=newest[4],
+                                                       author={"name": "here would be the author from the description", "icon_url": "https://i.postimg.cc/QsBWC6n1/bertha.png"},
+                                                       footer={'text': "the timestamp at the bottom is the timestampt the video is posted not the time this message is posted, author above would show the author of the video.\nsadly not be able to embed the video, but if I post a second message afterwards with just the video link it posts an auto embed."})
+
+        entry_message = await ctx.send(**embed_data)
+        # pr_lead_member = await self.bot.retrieve_antistasi_member(225100859674066945)
+
+        pr_lead_member = self.bot.creator.member_object
+        embed_data = await self.bot.make_generic_embed(title='NEW PR Log Entry',
+                                                       description="This is to show you how it can auto notify",
+                                                       fields=[self.bot.field_item(name="Platform", value="Youtube"),
+                                                               self.bot.field_item(name="Activity", value="New Video"),
+                                                               self.bot.field_item(name="link to entry", value=entry_message.jump_url)],
+                                                       timestamp=newest[1],
+                                                       thumbnail="youtube_logo",
+                                                       author={"name": "here would be the author from the description", "icon_url": "https://i.postimg.cc/QsBWC6n1/bertha.png"},
+                                                       footer={'text': "the timestamp at the bottom is the timestampt the video is posted not the time this message is posted, author above would show the author of the video.\nsadly not be able to embed the video, but if I post a second message afterwards with just the video link it posts an auto embed."})
+
+        await pr_lead_member.send(**embed_data)
+
+    @auto_meta_info_command()
+    async def post_role_call(self, ctx: commands.Context):
+        role_description = """Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."""
+
+        role_join_description = """Liber nusquam insolens has ei, appetere accusamus intellegam id ius. Vivendum intellegat et qui, ei denique consequuntur vix."""
+
+        role_data = {}
+        await ctx.send(f'{ZERO_WIDTH}\n__**Team Roster**__\n\n{ZERO_WIDTH}')
+        for role in await self.bot.antistasi_guild.fetch_roles():
+            if role.name.casefold() not in ['@everyone', 'member', 'trial members', 'server sponsors', 'nitro booster', 'giveawaybot', 'dyno', 'bots', 'old timer', 'steamworkshopalerts', 'call', 'muted', 'raid-helper', 'dcall', 'antidevtros'] and not role.name.casefold().endswith(' lead') and not role.name.casefold().endswith(' helper'):
+                role_data[role] = {"position": role.position, 'members': [], 'lead_role': None, "helper_role": None, 'description': role_description, 'how_to_join': role_join_description}
+                for member in role.members:
+                    role_data[role]['members'].append(member)
+                lead_role = await self.bot.role_from_string(role.name + ' Lead')
+                if lead_role:
+                    role_data[role]['lead_role'][lead_role] = list(member for member in lead_role.members)
+                helper_role = await self.bot.role_from_string(role.name.replace(' Team', ' Helper'))
+                if helper_role:
+                    role_data[role]['helper_role'][helper_role] = list(member for member in helper_role.members)
+
+        role_data = {key: value for key, value in sorted(role_data.items(), key=lambda x: x[1].get('position'), reverse=True)}
+        for role, data in role_data.items():
+            await ctx.send(f"{role.mention}\n" + "═" * len(role.mention) + f"\n**What do they do:**\n```fix\n{data.get('description').strip()}\n```\n**How to join:**\n```fix\n{data.get('how_to_join')}\n```\n{ZERO_WIDTH}", allowed_mentions=discord.AllowedMentions.none())
+            if data.get('members'):
+                await ctx.send('\n\n' + '\n'.join(f"{member.mention} {member.display_name}" for member in data.get('members')), allowed_mentions=discord.AllowedMentions.none())
+            for sub_role, sub_members in data.get('sub_roles').items():
+                await ctx.send('\n' + '⋱' * len(sub_role.mention) + f'\n{sub_role.mention}\n\n' + '\n'.join(f"{member.mention} {member.display_name}" for member in sub_members), allowed_mentions=discord.AllowedMentions.none())
+
+            await ctx.send(f'{ZERO_WIDTH}\n' + '░' * 20 + f'\n\n{ZERO_WIDTH}')
+
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))
 

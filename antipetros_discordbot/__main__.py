@@ -52,7 +52,7 @@ def filter_asyncio_call(record: logging.LogRecord):
     filters the asyncio logger to only log calls that show if something is blocking.
     """
 
-    if record.getMessage().startswith('Executing'):
+    if record.for_asyncio_enabled is True:
         return 1
     return 0
 
@@ -106,6 +106,20 @@ def configure_logger():
     _log = glog.main_logger(_log_file, log_level, other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata"], log_to=log_stdout, in_back_up=in_back_up)
     asyncio_logger = logging.getLogger('asyncio')
     asyncio_logger.addFilter(filter_asyncio_call)
+    old_record_factory = logging.getLogRecordFactory()
+
+    def asyncio_mod_message_factory(*args, **kwargs):
+        record = old_record_factory(*args, **kwargs)
+        if record.name == 'asyncio' and record.msg.startswith('Executing'):
+            old_msg = record.msg
+            new_msg = '!' * 10 + " " + "Loop was blocked for " + old_msg.split(" took ")[-1] + ' ' + '!' * 10
+            record.msg = new_msg
+            record.args = record.args[-1]
+            record.for_asyncio_enabled = True
+        else:
+            record.for_asyncio_enabled = False
+        return record
+    logging.setLogRecordFactory(asyncio_mod_message_factory)
     if use_logging is False:
         logging.disable(logging.CRITICAL)
     if os.getenv('IS_DEV') == 'yes':

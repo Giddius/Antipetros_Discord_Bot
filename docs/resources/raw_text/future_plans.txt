@@ -1,0 +1,10 @@
+PR logging = PR team cog for all the logging, Youtube twitch twitter.
+
+Database = migrating all the json files to an sql lite DB
+
+Startup Info = auto updating server info in startup info, need to figure out how to seperate development from production with this one
+
+Github Wiki = Automatically create and modify github Wiki
+
+Cogs template = fix Cogs Template and add `new_cog` invoke task
+

@@ -130,6 +130,9 @@ class AntistasiInformer(SubSupportBase):
     async def member_by_name(self, member_name):
         return {member.name.casefold(): member for member in self.antistasi_guild.members}.get(member_name.casefold(), None)
 
+    def sync_role_from_string(self, role_name: str):
+        return {role.name.casefold(): role for role in self.antistasi_guild.roles}.get(role_name.casefold())
+
     async def role_from_string(self, role_name):
         return {role.name.casefold(): role for role in self.antistasi_guild.roles}.get(role_name.casefold())
 

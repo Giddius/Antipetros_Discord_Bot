@@ -235,10 +235,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
         Example:
             @AntiPetros get_newest_mod_data mainserver_1
         """
-        mod_server = server.casefold()
-        if mod_server not in self.server:
-            await ctx.send(f"unknown server `{server}`")
-            return
+        mod_server = server if server in self.server else fuzzprocess.extractOne(server, list(self.server))[0]
         folder_item = self.server[mod_server]
         log_item = await folder_item.get_newest_log_file('Server', 1)
         log_item = log_item[0]

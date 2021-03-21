@@ -82,7 +82,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
                  'experiment_css_1.css': (APPDATA['experiment_css_1.css'], 'experiment_css_1.css'),
                  'experiment_3.css': (APPDATA['experiment_3.css'], 'experiment_3.css')}
 
-    auto_accept_user_file = pathmaker(APPDATA["json_data"],"auto_accept_suggestion_users.json")
+    auto_accept_user_file = pathmaker(APPDATA["json_data"], "auto_accept_suggestion_users.json")
 
     docattrs = {'show_in_readme': True,
                 'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
@@ -111,6 +111,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         self.command_emojis = None
         self.categories_emojis = None
         self.vote_emojis = None
+
         glog.class_init_notification(log, self)
 
 
@@ -169,6 +170,8 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
     @ property
     def auto_accept_user_dict(self):
+        if os.path.isfile(self.auto_accept_user_file) is False:
+            writejson({}, self.auto_accept_user_file)
         return loadjson(self.auto_accept_user_file)
 
     async def get_team_from_emoji(self, emoji_name):
@@ -478,7 +481,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         extra_data_value = ['No attachments detected'] if suggestion_item.extra_data is None else suggestion_item.extra_data[0]
         embed.add_field(name='Attachments', value=f"`{extra_data_value}`")
         embed.set_footer(text=DEFAULT_FOOTER)
-        writejson(embed.to_dict(), "suggestion_saved_embed.json")
         return embed
 
     async def make_changed_category_embed(self, message, category):
@@ -487,14 +489,14 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         embed.add_field(name="New Category:", value=category, inline=False)
         embed.add_field(name="Suggestion:", value=message.jump_url, inline=False)
         embed.set_footer(text=DEFAULT_FOOTER)
-        writejson(embed.to_dict(), "suggestion_changed_category_embed.json")
+
         return embed
 
     async def make_already_saved_embed(self):
         embed = discord.Embed(title="**This Suggestion was already saved!**", description="I did not save the Suggestion as I have it already saved", color=0xe04d7e)
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('not_possible', None))
         embed.set_footer(text=DEFAULT_FOOTER)
-        writejson(embed.to_dict(), "suggestion_already_daved_embed.json")
+
         return embed
 
 
@@ -537,7 +539,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
                  'yes' if extra_data is not None else 'no')
 
         if was_saved is True:
-            await channel.send(embed=await self.make_add_success_embed(suggestion_item))
+            await channel.send(embed=await self.make_add_success_embed(suggestion_item), delete_after=120)
         return True
 
     async def _remove_previous_categories(self, target_message, new_emoji_name):

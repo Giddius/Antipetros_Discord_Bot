@@ -99,4 +99,5 @@ def launch():
 
 
 if __name__ == '__main__':
-    update_launch()
+    sleep(30)
+    run_command(ANTIPETROS_START_CMD)

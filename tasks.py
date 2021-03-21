@@ -1,4 +1,4 @@
-from invoke import task
+from invoke import task, Collection
 import sys
 import os
 import subprocess
@@ -21,6 +21,8 @@ from rich import print as rprint, inspect as rinspect, progress_bar
 from rich.progress import track
 from timeit import Timer, timeit
 from zipfile import ZipFile, ZIP_LZMA
+
+
 GIT_EXE = shutil.which('git.exe')
 
 
@@ -140,7 +142,8 @@ FOLDER = {'docs': pathmaker(THIS_FILE_DIR, 'docs'),
           'gifs': pathmaker(THIS_FILE_DIR, 'art', 'finished', 'gifs'),
           'docs_raw_text': pathmaker(THIS_FILE_DIR, 'docs', 'resources', 'raw_text'),
           'scratches': pathmaker(THIS_FILE_DIR, 'tools', 'scratches'),
-          'archived_scratches': pathmaker(THIS_FILE_DIR, 'misc', 'archive', 'archived_scratches')}
+          'archived_scratches': pathmaker(THIS_FILE_DIR, 'misc', 'archive', 'archived_scratches'),
+          'cogs': pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'cogs')}
 
 FILES = {'bot_info.json': pathmaker(FOLDER.get('docs_data'), 'bot_info.json'),
          'command_data.json': pathmaker(FOLDER.get('docs_data'), 'command_data.json'),
@@ -215,7 +218,8 @@ def activator_run(c, command, echo=True, **kwargs):
 @task
 def clean_repo(c):
     to_clean_folder = ['logs', 'dist']
-    to_clean_files = []
+    to_clean_files = ['antipetros_permission_dump.json',
+                      'antidevtros_permission_dump.json']
     main_dir = THIS_FILE_DIR
     for dirname, folderlist, filelist in os.walk(main_dir):
         if all(excl_folder.casefold() not in dirname.casefold() for excl_folder in ['.git', '.vscode']):
@@ -283,7 +287,17 @@ def clean_userdata(c, dry_run=False):
     data_pack_path = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "init_userdata\data_pack")
 
     folder_to_clear = ['archive', 'user_env_files', 'env_files', 'performance_data', 'stats', 'database', 'debug', 'temp_files']
-    files_to_clear = ["auto_accept_suggestion_users.json", "blacklist.json", "give_aways.json", "registered_steam_workshop_items.json", "notified_log_files.json", "blacklist.json", "registered_timezones.json", "who_is_trigger_phrases.json"]
+    files_to_clear = ["auto_accept_suggestion_users.json",
+                      "blacklist.json",
+                      "give_aways.json",
+                      "registered_steam_workshop_items.json",
+                      "notified_log_files.json",
+                      "blacklist.json",
+                      "registered_timezones.json",
+                      "who_is_trigger_phrases.json",
+                      "team_items.json",
+                      "subscription_topics_data.json",
+                      "bot_feature_suggestions.json"]
 
     if dry_run is True:
         print('')
@@ -775,3 +789,24 @@ def archive_scratches(c):
             zippy.write(full_path, relative_path)
     shutil.rmtree(scratch_folder)
     os.makedirs(scratch_folder)
+
+
+@task
+def new_cog(c, name, category="general"):
+    code_template_environment = Environment(loader=FileSystemLoader(pathmaker(THIS_FILE_DIR, "dev_tools_and_scripts", "template_handling", "templates")))
+    folder_name = category.lower().replace(' ', '_') + '_cogs'
+    folder_path = pathmaker(FOLDER.get('cogs'), folder_name)
+
+    if os.path.isdir(folder_path) is False:
+        os.makedirs(folder_path)
+        with open(pathmaker(folder_path, '__init__.py'), 'w') as f:
+            f.write('')
+
+    cog_file_name = name.lower() + '_cog.py'
+    cog_path = pathmaker(folder_path, cog_file_name)
+    if os.path.isfile(cog_path) is True:
+        raise FileExistsError(cog_path)
+
+    template = code_template_environment.get_template("cog_template.py.jinja")
+    with open(cog_path, 'w') as f:
+        f.write(template.render(cog_name=name.replace('_', ' ').title().replace(' ', '') + "Cog"))

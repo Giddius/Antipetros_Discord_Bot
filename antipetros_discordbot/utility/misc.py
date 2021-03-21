@@ -12,8 +12,11 @@ from inspect import getclosurevars
 
 # * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
+from validator_collection import validators
+import validator_collection
 import discord
 from discord.ext import commands
+from aiohttp.client_exceptions import ClientConnectionError
 # * Gid Imports ----------------------------------------------------------------------------------------->
 # * Gid Imports -->
 import gidlogger as glog
@@ -378,3 +381,42 @@ def make_config_name(name):
 
 def is_even(number: int):
     return not number & 1
+
+
+async def delete_message_if_text_channel(ctx: commands.Context):
+    try:
+        if ctx.channel.type is discord.ChannelType.text:
+            await ctx.message.delete()
+    except discord.errors.HTTPException as error:
+        log.error(error)
+
+
+async def check_if_url(possible_url: str):
+    """
+    checks if input `possible_url` is and valid url.
+
+    Appends "https://" in front of it beforehand. (maybe not necessary).
+
+    Args:
+        possible_url `str`: The string to check.
+
+    Returns:
+        `bool`: `True` if it is and valid url.
+    """
+    if not possible_url.startswith('http://') and not possible_url.startswith('https://'):
+        possible_url = 'https://' + possible_url
+    try:
+        validators.url(possible_url)
+        return True
+    except validator_collection.errors.InvalidURLError:
+        return False
+
+
+async def url_is_alive(bot, url, check_if_github=False):
+    try:
+        async with bot.aio_request_session.get(url) as _response:
+            if check_if_github is True and _response.headers.get('Server') != 'GitHub.com':
+                return False
+            return _response.status_code != 404
+    except ClientConnectionError:
+        return False

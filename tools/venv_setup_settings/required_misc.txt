@@ -39,3 +39,4 @@ Flask
 Flask-Discord
 twitchAPI
 python-youtube
+validator-collection

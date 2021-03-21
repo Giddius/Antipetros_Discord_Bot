@@ -21,6 +21,7 @@ from pytz import timezone
 from discord import File
 from discord import Color as DiscordColor
 from discord import Embed
+from discord.ext import commands, tasks
 from dateparser import parse as date_parse
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
@@ -81,6 +82,7 @@ class EmbedBuilder(SubSupportBase):
     embed_data_folder = pathmaker(APPDATA['fixed_data'], "embed_data")
     standard_embed_symbols_file = pathmaker(APPDATA["embed_data"], "embed_symbols.json")
     default_embed_data_file = pathmaker(APPDATA['default_embed_data.json'])
+    error_embed_base_data_file = pathmaker(APPDATA['embed_data'], "error_embed_values.json")
     embed_types_enum = EmbedType
     allowed_embed_types = [embed_type_member.value for embed_type_member in EmbedType]
     datetime_parser = date_parse
@@ -111,6 +113,8 @@ class EmbedBuilder(SubSupportBase):
         elif isinstance(color, str):
             if color == 'random':
                 return self.bot.random_color.discord_color
+            elif color == 'colorless':
+                return self.bot.fake_colorless
             else:
                 try:
                     return self.bot.get_discord_color(color)
@@ -259,11 +263,22 @@ class EmbedBuilder(SubSupportBase):
         file_path = pathmaker(APPDATA["saved_embeds"], file_name)
         writejson(embed.to_dict(), file_path)
 
-    async def make_static_embed(self, category, name):
+    async def make_cancelled_embed(self):
         pass
 
-    async def make_embed(self, typus, **kwargs):
+    async def make_confirmed_embed(self):
         pass
+
+    async def make_error_embed(self, ctx: commands.Context, error):
+        base_data = self.error_embed_base_data
+        embed = Embed(title=f"Error with Command {ctx.command}",
+                      description=error.msg,
+                      color=base_data.get('color'),
+                      timestamp=datetime.utcnow())
+
+        embed.set_thumbnail(url=base_data.get('thumbnail_url'))
+        embed.set_author(self.special_authors.get('bot_author'))
+        return embed
 
     def collect_embed_build_recipes(self):
         self.embed_build_recipes = {}
@@ -271,6 +286,12 @@ class EmbedBuilder(SubSupportBase):
         for method_name, method_object in getmembers(self.__class__):
             if method_name.startswith('_embed_recipe_'):
                 self.embed_build_recipes[method_name.replace("_embed_recipe_", "")] = getattr(self, method_name)
+
+    @property
+    def error_embed_base_data(self):
+        if os.path.isfile(self.error_embed_base_data_file) is False:
+            writejson({}, self.error_embed_base_data_file)
+        return loadjson(self.error_embed_base_data_file)
 
     @property
     def standard_embed_symbols(self):

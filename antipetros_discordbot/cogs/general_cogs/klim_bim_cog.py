@@ -4,6 +4,7 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import random
+from math import ceil
 import secrets
 import asyncio
 from urllib.parse import quote as urlquote
@@ -11,8 +12,10 @@ from textwrap import dedent
 from functools import reduce
 from io import BytesIO
 import re
+from typing import Optional
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands
+from icecream import ic
 from discord import AllowedMentions
 from pyfiglet import Figlet
 from PIL import Image, ImageDraw, ImageFont
@@ -112,7 +115,6 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -135,7 +137,6 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 # endregion [Listener]
 
 # region [Commands]
-
 
     @ auto_meta_info_command(enabled=get_command_enabled('the_dragon'))
     @ allowed_channel_and_allowed_role_2()
@@ -252,12 +253,22 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
     @staticmethod
     def paste_together(*images):
         amount = len(images)
-        spacing = 51
-        b_image = Image.new('RGBA', ((512 * amount) + (spacing * amount), 512), color=(0, 0, 0, 0))
+        spacing = 25
+        dice_per_line = 10
+        if amount <= 10:
+            b_image_size = ((images[0].size[0] * amount) + (spacing * amount), images[0].size[1])
+        else:
+            b_image_size = ((images[0].size[0] * dice_per_line) + (spacing * dice_per_line), (images[0].size[1] * ceil(amount / dice_per_line)) + (spacing * ceil(amount / dice_per_line)))
+        b_image = Image.new('RGBA', b_image_size, color=(0, 0, 0, 0))
         current_x = 0
-        for image in images:
-            b_image.paste(image, (current_x, 0))
+        current_y = 0
+        for index, image in enumerate(images):
+            b_image.paste(image, (current_x, current_y))
             current_x += image.size[0] + spacing
+            if (index + 1) % dice_per_line == 0:
+                current_x = 0
+                current_y += image.size[1] + spacing
+
         return b_image
 
     async def parse_dice_line(self, dice_line: str):
@@ -277,7 +288,15 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
     @staticmethod
     def _get_dice_images(result_image_file_paths):
-        return map(Image.open, result_image_file_paths)
+        images = [Image.open(dice_image) for dice_image in result_image_file_paths]
+        return images
+
+    @staticmethod
+    def _sum_dice_results(in_result):
+        result_dict = {key: sum(value) for key, value in in_result.items()}
+        result_combined = sum(value for key, value in result_dict.items())
+
+        return result_combined
 
     @auto_meta_info_command(enabled=get_command_enabled('roll_dice'))
     @allowed_channel_and_allowed_role_2(True)
@@ -297,47 +316,87 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         parsed_dice_line = await self.parse_dice_line(dice_line)
 
         if sum(item[0] for item in parsed_dice_line) > dice_limit:
-            await ctx.send(f"Amount of overall dice `{sum(item[1] for item in self.parse_dice_line(dice_line))}` is over the limit of `{dice_limit}`, aborting!")
+            await ctx.send(f"Amount of overall dice `{sum(item[1] for item in await self.parse_dice_line(dice_line))}` is over the limit of `{dice_limit}`, aborting!", delete_after=120)
             return
 
         for amount, type_of_dice in await self.parse_dice_line(dice_line):
             mod_type_of_dice = type_of_dice.casefold()
 
             if mod_type_of_dice not in self.dice_mapping:
-                await ctx.reply(f"I dont know dice of the type `{type_of_dice}`!")
+                await ctx.reply(f"I dont know dice of the type `{type_of_dice}`!", delete_after=120)
                 return
 
             sides_of_die = self.dice_mapping[mod_type_of_dice].get('sides')
             if mod_type_of_dice not in results:
                 results[mod_type_of_dice] = []
+
             for i in range(amount):
                 roll_result = await self._roll_the_dice(sides_of_die)
                 results[mod_type_of_dice].append(roll_result)
                 result_image_files.append(APPDATA[f"{mod_type_of_dice}_{roll_result}.png"])
                 await asyncio.sleep(0)
 
-            await asyncio.sleep(0)
-
-        random.shuffle(result_image_files)
+        await self.bot.execute_in_thread(random.shuffle, result_image_files)
         result_images = await self.bot.execute_in_thread(self._get_dice_images, result_image_files)
         result_image = await self.bot.execute_in_thread(self.paste_together, *result_images)
-        result_dict = {key: sum(value) for key, value in results.items()}
-        result_combined = sum(value for key, value in result_dict.items())
+        result_combined = await self.bot.execute_in_thread(self._sum_dice_results, results)
         fields = [self.bot.field_item(name="Sum", value='`' + str(result_combined) + '`', inline=False)]
-        # for key, value in results.items():
-        #     fields.append(self.bot.field_item(name=key, value='`' + ', '.join(str(item) for item in value) + '`', inline=True))
+
         embed_data = await self.bot.make_generic_embed(title='You rolled...',
                                                        fields=fields,
                                                        thumbnail='no_thumbnail',
                                                        image=result_image)
-        # with BytesIO() as image_bytes:
-        #     result_image.save(image_bytes, 'PNG', optimize=True)
-        #     log.debug("image file has a size of %s", bytes2human(image_bytes.tell(), annotate=True))
-        #     image_bytes.seek(0)
-        #     filename = "dice_roll.png"
-        #     file = discord.File(image_bytes, filename)
         await ctx.send(**embed_data)
 
+    @auto_meta_info_command(enabled=get_command_enabled('choose_random'))
+    @allowed_channel_and_allowed_role_2(in_dm_allowed=True)
+    async def choose_random(self, ctx: commands.Context, select_amount: Optional[int] = 1, *, choices: str):
+        """
+        Selects random items from a semi-colon(`;`) seperated list. No limit on how many items the list can have, except for Discord character limit.
+
+        Amount of item to select can be set by specifying a number before the list. Defaults to selecting only 1 item. Max amount is 25.
+
+        Args:
+
+            choices (str): input list as semi-colon seperated list.
+            select_amount (Optional[int], optional): How many items to select. Defaults to 1.
+
+        Example:
+            `@AntiPetros 2 this is the first item; this is the second; this is the third`
+        """
+        if select_amount > 25:
+            embed_data = await self.bot.make_generic_embed(title="Amount too high",
+                                                           description="Maximum value for `selection_amount` is 25.",
+                                                           thumbnail="cancelled",
+                                                           footer={'text': "The Discord Embed field limit is the reason for this."},
+                                                           color='colorless')
+            await ctx.reply(**embed_data, delete_after=120)
+            return
+        async with ctx.typing():
+            random.seed(None)
+            await asyncio.sleep(1)
+            choices = choices.strip(';')
+            choice_items = [choice.strip() for choice in choices.split(';') if choice.strip() != '']
+            if select_amount > len(choice_items):
+                embed_data = await self.bot.make_generic_embed(title="Items to select greater than items",
+                                                               description="The number of items to select from the list is greater than the amount of items in the list",
+                                                               thumbnail="cancelled",
+                                                               color='colorless')
+                await ctx.reply(**embed_data, delete_after=120)
+                return
+            result = random.sample(choice_items, k=select_amount)
+            fields = []
+            description = ''
+            if select_amount > 1:
+                for result_number, result_item in enumerate(result):
+                    fields.append(self.bot.field_item(name=f"No. {result_number+1}", value=f"⇒ *{result_item}*"))
+            else:
+                description = f'⇒ *{result[0]}*'
+            embed_data = await self.bot.make_generic_embed(title=f'{ctx.invoked_with.title()} Results',
+                                                           description=description,
+                                                           fields=fields,
+                                                           thumbnail="random")
+            await ctx.reply(**embed_data)
 
 # endregion [Commands]
 
@@ -379,7 +438,6 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

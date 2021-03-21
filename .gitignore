@@ -633,3 +633,5 @@ art/WiP
 /antipetros_discordbot/nextcloud.env
 /tools/_project_devmeta.env
 /.unotes
+antipetros_discordbot/init_userdata/data_pack/fonts
+antipetros_discordbot/init_userdata/data_pack/image_files

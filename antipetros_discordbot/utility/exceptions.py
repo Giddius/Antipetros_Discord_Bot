@@ -42,6 +42,23 @@ class FaqAnswerParseError(FaqParseError):
         super().__init__(self.msg)
 
 
+class NeededConfigValueMissing(AntiPetrosBaseError):
+    def __init__(self, option_name, section_name, class_name) -> None:
+        self.option_name = option_name
+        self.section_name = section_name
+        self.class_name = class_name
+        self.msg = f"The option '{self.option_name}' was not set in section '{self.section_name}' and is needed for the class '{self.class_name}'"
+        super().__init__(self.msg)
+
+
+class NeededClassAttributeNotSet(AntiPetrosBaseError):
+    def __init__(self, attr_name: str, class_name: str):
+        self.attr_name = attr_name
+        self.class_name = class_name
+        self.msg = f"The class attribute '{self.attr_name}' was not set in the class '{self.class_name}'!"
+        super().__init__(self.msg)
+
+
 class MissingNeededAttributeError(AntiPetrosBaseError):
     def __init__(self, attr_name, cog) -> None:
         self.cog = cog

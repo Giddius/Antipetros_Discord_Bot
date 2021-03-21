@@ -11,7 +11,7 @@ import sys
 import time
 import asyncio
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
@@ -65,9 +65,11 @@ class AntiPetrosBot(commands.Bot):
 
     creator = CreatorMember('Giddi', 576522029470056450, None, None)
     executor = ThreadPoolExecutor(6, thread_name_prefix='Bot_Thread')
+    process_executor = ProcessPoolExecutor(max_workers=3)
     discord_admin_cog_import_path = "antipetros_discordbot.cogs.discord_admin_cogs.discord_admin_cog"
     bot_feature_suggestion_folder = APPDATA["bot_feature_suggestion_data"]
     bot_feature_suggestion_json_file = APPDATA['bot_feature_suggestions.json']
+    testing_channel = BASE_CONFIG.retrieve("debug", "current_testing_channel", typus=str, direct_fallback='bot-testing')
     essential_cog_paths = BOT_ADMIN_COG_PATHS + DISCORD_ADMIN_COG_PATHS
     dev_cog_paths = DEV_COG_PATHS
 
@@ -83,11 +85,13 @@ class AntiPetrosBot(commands.Bot):
                          command_prefix='$$',
                          activity=self.activity_from_config(),
                          intents=self.get_intents(),
-                         **kwargs)
+                         fetch_offline_members=True,
+                         ** kwargs)
         self.token = token
         self.help_invocation = help_invocation
         self.description = readit(APPDATA['bot_description.md'])
         self.support = BotSupporter(self)
+        self.support.recruit_subsupports()
         self.max_message_length = 1900
         self.commands_executed = 0
         self.bot_member = None
@@ -99,7 +103,6 @@ class AntiPetrosBot(commands.Bot):
         self.github_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot"
         self.used_startup_message = None
 
-        self.support.recruit_subsupports()
         user_not_blacklisted(self, log)
         if is_test is False:
             self._setup()
@@ -153,6 +156,7 @@ class AntiPetrosBot(commands.Bot):
     async def on_ready(self):
         log.info('%s has connected to Discord!', self.user.name)
         log.info('Bot is currently rate limited: %s', str(self.is_ws_ratelimited()))
+        await self.antistasi_guild.chunk(cache=True)
         await self._get_bot_info()
         await self._start_sessions()
         await self.wait_until_ready()
@@ -171,10 +175,9 @@ class AntiPetrosBot(commands.Bot):
         self._watch_for_alias_changes.start()
         log.info("Debug Session: %s", self.is_debug)
         log.info("Bot is ready")
-        await self.creator.member_object.send('I am ready!')
 
     async def handle_previous_shutdown_msg(self):
-        if os.path.isfile(self.shutdown_message_pickle_file):
+        if self.is_debug is False and os.path.isfile(self.shutdown_message_pickle_file):
             last_shutdown_message = get_pickled(self.shutdown_message_pickle_file)
             channel_id = last_shutdown_message.get('channel_id')
             message_id = last_shutdown_message.get('message_id')
@@ -222,8 +225,13 @@ class AntiPetrosBot(commands.Bot):
         await self.process_commands(message)
 
     async def send_startup_message(self):
+        if self.is_debug is True:
+            channel = await self.channel_from_name(self.testing_channel)
+            embed_data = await self.make_generic_embed(title=f"{self.display_name} is Ready",
+                                                       fields=[self.bot.field_item(name='Is Debug Session', value=str(self.is_debug))])
+            await channel.send(**embed_data, delete_after=60)
+            return
         channel = await self.channel_from_name(BASE_CONFIG.get('startup_message', 'channel'))
-
         delete_time = 60 if self.is_debug is True else BASE_CONFIG.getint('startup_message', 'delete_after')
         delete_time = None if delete_time <= 0 else delete_time
         title = f"**{BASE_CONFIG.get('startup_message', 'title').title()}**"
@@ -304,6 +312,7 @@ class AntiPetrosBot(commands.Bot):
 
         log.info("shutting down executor")
         self.executor.shutdown()
+        self.process_executor.shutdown()
         for session in self.clients_to_close:
             await session.close()
             log.info("'%s' was shut down", str(session))
@@ -447,6 +456,9 @@ class AntiPetrosBot(commands.Bot):
 
     async def execute_in_thread(self, func, *args, **kwargs):
         return await self.loop.run_in_executor(self.executor, func, *args, **kwargs)
+
+    async def execute_in_process(self, func, *args, **kwargs):
+        return await self.loop.run_in_executor(self.process_executor, func, *args, **kwargs)
 
     async def save_feature_suggestion_extra_data(self, data_name, data_content):
         path = pathmaker(self.bot_feature_suggestion_folder, data_name)

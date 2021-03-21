@@ -38,7 +38,7 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, seconds_to_pretty, alt_seconds_to_pretty
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState
@@ -51,11 +51,12 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_community_server_info_cog import CommunityServerInfo, ServerStatusChange
-from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+
 # endregion[Imports]
 
 # region [TODO]
 
+# TODO: Refractor current online server out of method so it can be used with the loop and the command
 
 # endregion [TODO]
 
@@ -96,6 +97,8 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     config_name = CONFIG_NAME
     base_server_info_file = APPDATA['base_server_info.json']
     server_status_change_exclusions_file = pathmaker(APPDATA['json_data'], 'server_status_change_exclusions.json')
+    starter_info_message_pickle = pathmaker(APPDATA['misc'], 'starter_info_msg_data.pkl')
+    starter_info_channel_id = 449643062516383747
     server_symbol = "https://i.postimg.cc/dJgyvGH7/server-symbol.png"
     docattrs = {'show_in_readme': True,
                 'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
@@ -116,6 +119,9 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         self.servers = None
         self.notification_channel = None
         self.check_server_status_loop_first_run = True
+        self.starter_info_message = None
+        CommunityServerInfo.bot = self.bot
+        CommunityServerInfo.config_name = self.config_name
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -135,6 +141,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     async def on_ready_setup(self):
         self.notification_channel = await self.bot.channel_from_name('bot-testing')
         await self._initialise_server_holder()
+        # await self._try_to_get_starter_info_message(self)
         self.check_server_status_loop.start()
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -145,6 +152,17 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Setup]
 
 # region [Loops]
+
+    @tasks.loop(minutes=15)
+    async def starter_info_loop(self):
+
+        if self.starter_info_message is None:
+            channel = await self.bot.channel_from_id(self.starter_info_channel_id)
+            if self.bot.is_debug is True:
+                channel = await self.bot.channel_from_id(645930607683174401)
+            await self._post_starter_info_message(channel)
+        else:
+            await self._update_starter_info_message()
 
     @tasks.loop(minutes=2)
     async def check_server_status_loop(self):
@@ -176,7 +194,6 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command(enabled=get_command_enabled("current_online_server"))
     @allowed_channel_and_allowed_role_2()
@@ -230,7 +247,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @auto_meta_info_command(enabled=get_command_enabled("current_players"))
     @allowed_channel_and_allowed_role_2()
     @commands.cooldown(1, 120, commands.BucketType.member)
-    async def current_players(self, ctx: commands.Context, *, server: str):
+    async def current_players(self, ctx: commands.Context, *, server: str = "mainserver_1"):
         """
         Show all players that are currently online on one of the Antistasi Community Server.
 
@@ -245,10 +262,10 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         mod_server = server.strip().replace(' ', '_')
         server_holder = {server_item.name.casefold(): server_item for server_item in self.servers}.get(mod_server.casefold(), None)
         if server_holder is None:
-            await ctx.send(f"Can't find a server nammed {server}")
+            await ctx.send(f"Can't find a server nammed {server}", delete_after=120)
             return
         if server_holder.is_online is False:
-            await ctx.send(f"The server, `{server}` is currently not online")
+            await ctx.send(f"The server, `{server}` is currently not online", delete_after=120)
             return
         try:
             player_data = await server_holder.get_players()
@@ -264,10 +281,11 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                                                                                 description=f"Current map is __**{info.map_name}**__",
                                                                                 footer={'text': f"Amount Players is {info.player_count}"},
                                                                                 fields=fields):
-                await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+                await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none(), delete_after=120)
         except asyncio.exceptions.TimeoutError:
-            await ctx.send(f"The server, `{server}` is currently not online")
+            await ctx.send(f"The server, `{server}` is currently not online", delete_after=120)
             server_holder.is_online = False
+        await ctx.message.delete()
 
     @auto_meta_info_command(enabled=get_command_enabled('exclude_from_server_status_notification'))
     @allowed_channel_and_allowed_role_2()
@@ -307,7 +325,8 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         status_message = "Was switched ON" if switched_to_status is ServerStatusChange.TO_ON else "Was switched OFF"
         embed_data = await self.bot.make_generic_embed(title=server_item.name.replace('_', ' ').title(), description=status_message,
                                                        fields=[self.bot.field_item(name='UTC Time', value=datetime.utcnow().strftime(self.bot.std_date_time_format)),
-                                                               self.bot.field_item(name='Reason', value=ZERO_WIDTH)])
+                                                               self.bot.field_item(name='Reason', value=ZERO_WIDTH)],
+                                                       thumbnail="server")
         await self.notification_channel.send(**embed_data)
 
     async def _initialise_server_holder(self):
@@ -330,6 +349,14 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         existing_data = self.server_status_change_exclusions
         existing_data.remove(server_name.casefold())
         writejson(existing_data, self.server_status_change_exclusions_file)
+
+    async def _try_to_get_starter_info_message(self):
+        if os.path.isfile(self.starter_info_message_pickle) is True:
+            data = get_pickled(self.starter_info_message_pickle)
+            channel = await self.bot.channel_from_id(data.get('channel_id'))
+            self.starter_info_message = await channel.fetch_message(data.get('message_id'))
+        else:
+            self.starter_info_message = None
 
 # endregion [HelperMethods]
 

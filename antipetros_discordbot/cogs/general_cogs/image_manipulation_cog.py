@@ -12,7 +12,7 @@ from tempfile import TemporaryDirectory
 from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageDraw, ImageFont, ImageFilter
 from pytz import timezone
 from discord.ext import commands, flags
 # * Gid Imports ----------------------------------------------------------------------------------------->
@@ -21,7 +21,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name, alt_seconds_to_pretty
 from antipetros_discordbot.utility.enums import WatermarkPosition
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, log_invoker, has_attachments
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, log_invoker, has_attachments, owner_or_admin
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -29,6 +29,8 @@ from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.exceptions import ParameterError
+from antipetros_discordbot.utility.image_manipulation import make_perfect_fontsize, find_min_fontsize, get_text_dimensions
+
 # endregion[Imports]
 
 # region [TODO]
@@ -149,6 +151,14 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
     def avatar_stamp(self):
         stamp_name = COGS_CONFIG.retrieve(CONFIG_NAME, 'avatar_stamp', direct_fallback='aslogo').upper()
         return self._get_stamp_image(stamp_name, 1)
+
+    @property
+    def fonts(self):
+        fonts = {}
+        for file in os.scandir(APPDATA['fonts']):
+            if file.is_file() and file.name.endswith('ttf'):
+                fonts[file.name.split('.')[0].casefold()] = pathmaker(file.path)
+        return fonts
 
 
 # endregion[Properties]
@@ -480,9 +490,93 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         await self.bot.creator.member_object.send(f"New stamp was added by `{ctx.author.name}`", file=await attachment.to_file())
         self._get_stamps()
 
+    def draw_text_line(self, image: Image, text_line: str, top_space: int, in_font: ImageFont.FreeTypeFont):
+        width, height = image.size
+        pfont = in_font
+        draw = ImageDraw.Draw(image)
+        w, h = draw.textsize(text_line, font=pfont)
+        draw.text(((width - w) / 2, h + top_space), text_line, fill=(0, 0, 0), stroke_width=width // 150, stroke_fill=(50, 200, 25), font=pfont)
+
+        return image, top_space + h + (height // 20)
+
+    def draw_text_center(self, image: Image, text: str, in_font: ImageFont.FreeTypeFont):
+        width, height = image.size
+        pfont = in_font
+        draw = ImageDraw.Draw(image)
+        w, h = draw.textsize(text, font=pfont)
+        draw.text(((width - w) / 2, (height - h) / 2), text, fill=(0, 0, 0), stroke_width=width // 150, stroke_fill=(204, 255, 204), font=pfont)
+
+        return image
+
+    @auto_meta_info_command(enabled=get_command_enabled('text_to_image'))
+    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @has_attachments(1)
+    async def text_to_image(self, ctx: commands.Context, font: str, *, text: str):
+        mod_font_name = font.split('.')[0].casefold()
+        if mod_font_name not in self.fonts:
+            embed_data = await self.bot.make_generic_embed(title='Unkown Font', description=f"No font available with the name `{font}`.\nYou may have to add it via `@AntiPetros add_font`",
+                                                           thumbnail="cancelled")
+            await ctx.send(**embed_data, delete_after=120)
+            return
+
+        image_attachment = ctx.message.attachments[0]
+        if image_attachment.filename.split('.')[-1].casefold() not in ['jpeg', 'png', 'jpg', 'tga']:
+            embed_data = await self.bot.make_generic_embed(title="Wrong Image Format", description=f"Image need to be either `jpeg`, `png` or `tga` and not `{image_attachment.filename.split('.')[-1]}`",
+                                                           thumbnail="cancelled")
+            await ctx.send(**embed_data, delete_after=120)
+            return
+
+        with TemporaryDirectory() as tempdir:
+            imagefilepath = pathmaker(tempdir, image_attachment.filename)
+            await image_attachment.save(imagefilepath)
+            base_image = Image.open(imagefilepath)
+            base_image.load()
+        width, height = base_image.size
+        image_font = await self.bot.execute_in_thread(find_min_fontsize, self.fonts.get(mod_font_name), [line for line in text.splitlines() if line != ''], width, height)
+        top_space = 0
+        for line in text.splitlines():
+            if line == '':
+                top_space += ((height // 20) * 2)
+            else:
+                base_image, top_space = await self.bot.execute_in_thread(self.draw_text_line, base_image, line, top_space, image_font)
+        await self._send_image(ctx, base_image, image_attachment.filename.split('.')[0] + '_with_text.png', "Modified Image", message_text="Here is your image with pasted Text", image_format='png')
+
+    @auto_meta_info_command(enabled=get_command_enabled('add_font'))
+    @owner_or_admin()
+    @has_attachments(1)
+    async def add_font(self, ctx: commands.Context):
+        font_attachment = ctx.message.attachments[0]
+        if font_attachment.filename.split('.')[-1] != 'ttf':
+            embed_data = await self.bot.make_generic_embed(title='Wrong input filetype', description=f"Attachment has to be a Truetype Font (extension: `.ttf`) and not `.{font_attachment.filename.split('.')[-1]}`",
+                                                           thumbnail="not_possible")
+            await ctx.send(**embed_data, delete_after=120)
+            return
+        new_path = pathmaker(APPDATA['fonts'], font_attachment.filename)
+        await font_attachment.save(new_path)
+        embed_data = await self.bot.make_generic_embed(title="Added new Font", description=f"Font `{font_attachment.filename}` was successfully saved!",
+                                                       thumbnail="save")
+        await ctx.send(**embed_data, delete_after=300)
+
+    async def _make_font_preview(self, font_name, font_path):
+        b_image = Image.new('RGBA', (512, 512), color=(256, 256, 256, 0))
+        image_font = await self.bot.execute_in_thread(make_perfect_fontsize, font_path, font_name, 512, 512)
+        preview_image = await self.bot.execute_in_thread(self.draw_text_center, b_image, font_name, image_font)
+        return preview_image
+
+    @auto_meta_info_command(enabled=get_command_enabled('add_font'))
+    @allowed_channel_and_allowed_role_2()
+    async def list_fonts(self, ctx: commands.Context):
+        embed = discord.Embed(title="Available Fonts")
+        await ctx.send(embed=embed, delete_after=60)
+        for font_name, font_path in self.fonts.items():
+
+            embed_data = await self.bot.make_generic_embed(title=font_name, image=await self._make_font_preview(font_name, font_path), thumbnail=None)
+            await ctx.send(**embed_data, delete_after=60)
+
+        await asyncio.sleep(60)
+        await ctx.message.delete()
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
