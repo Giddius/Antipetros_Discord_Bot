@@ -34,6 +34,13 @@ class FaqQuestionParseError(FaqParseError):
         super().__init__(self.msg)
 
 
+class TeamMemberRoleNotFoundError(AntiPetrosBaseError):
+    def __init__(self, team_name: str) -> None:
+        self.team_name = team_name
+        self.msg = f"No Member Role found for Team {self.team_name}"
+        super().__init__(self.msg)
+
+
 class FaqAnswerParseError(FaqParseError):
     def __init__(self, raw_content: str, jump_url: str) -> None:
         self.raw_content = raw_content

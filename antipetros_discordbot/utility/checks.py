@@ -172,7 +172,7 @@ def allowed_channel_and_allowed_role_2(in_dm_allowed: bool = False):
                 allowed_channel_names = allowed_channel_names(command)
             allowed_channel_names = allowed_channel_names + ['bot-testing']
             log.debug("allowed_channel_names for '%s': %s", command.name, str(allowed_channel_names))
-            if allowed_channel_names != ['all'] and channel.name.casefold() not in allowed_channel_names:
+            if 'all' not in allowed_channel_names and channel.name.casefold() not in allowed_channel_names:
                 raise NotAllowedChannelError(ctx, allowed_channel_names)
 
             if await bot.is_owner(author):

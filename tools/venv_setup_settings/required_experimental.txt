@@ -14,3 +14,4 @@ pyvis
 sqlalchemy
 vendorize
 wikitextparser
+opencv-contrib-python

@@ -65,7 +65,7 @@ from antipetros_discordbot.utility.replacements.command_replacement import auto_
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
-from antipetros_discordbot.utility.exceptions import NeededClassAttributeNotSet, NeededConfigValueMissing
+from antipetros_discordbot.utility.exceptions import NeededClassAttributeNotSet, NeededConfigValueMissing, TeamMemberRoleNotFoundError
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -241,6 +241,9 @@ class TeamItem:
         return text
 
     async def create_messages(self):
+        if self.member_role is None:
+            log.warning("No Member Role found for Team '%s', Not creating message for this Team", self.name)
+            raise TeamMemberRoleNotFoundError
         log.debug("Creating Team Roster Header for '%s'", self.name)
         self.header_message = await self.channel.send(embed=await self.header_embed(), allowed_mentions=discord.AllowedMentions.none())
         await asyncio.sleep(1)
@@ -249,6 +252,10 @@ class TeamItem:
         log.debug("Finished Team Roster messages creation for '%s'", self.name)
 
     async def update(self):
+        if self.member_role is None:
+            log.warning("No Member Role found for Team '%s', Removing Team messages!", self.name)
+            await self.delete_messages()
+            raise TeamMemberRoleNotFoundError
         if self.header_message is None:
             raise AttributeError(f"No header_message set for Team '{self.name}'")
         if self.all_member_list_message is None:
@@ -279,6 +286,9 @@ class TeamItem:
         return team_item
 
     async def delete_messages(self):
+        if self.header_message is None or self.all_member_list_message is None:
+            log.warning("no messages set for Team '%s'", self.name)
+            return
         log.debug('Removing Team roster message of Team "%s"', self.name)
         await self.header_message.delete()
         await self.all_member_list_message.delete()
@@ -395,7 +405,11 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
                 self.team_items.append(TeamItem(team_name, channel))
             self.team_items = sorted(self.team_items, key=lambda x: x.max_postition, reverse=True)
             for item in self.team_items:
-                await item.create_messages()
+                try:
+                    await item.create_messages()
+                except TeamMemberRoleNotFoundError:
+                    self.team_items.remove(item)
+
             await asyncio.sleep(5)
             await self.create_last_changed_message(channel)
             await self._save_team_items()
@@ -407,7 +421,11 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @log_invoker(log, 'critical')
     async def force_update_team_roster(self, ctx: commands.Context):
         for team_item in self.team_items:
-            await team_item.update()
+            try:
+                await team_item.update()
+            except TeamMemberRoleNotFoundError:
+                self.team_items.remove(team_item)
+                await self._save_team_items()
         await self.update_last_changed_message()
         await ctx.author.send('Updated Team Roster!')
 
@@ -504,7 +522,11 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     async def _update_team_roster(self):
         for team_item in self.team_items:
-            await team_item.update()
+            try:
+                await team_item.update()
+            except TeamMemberRoleNotFoundError:
+                self.team_items.remove(team_item)
+                await self._save_team_items()
         await self.update_last_changed_message()
 
     async def _send_updated_embed(self, ctx: commands.Context, team_item: TeamItem, field: str):
