@@ -121,6 +121,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
     async def on_ready_setup(self):
         FaqItem.bot = self.bot
+        FaqItem.faq_channel = self.faq_channel
         FaqItem.question_parse_emoji = self.q_emoji
         FaqItem.answer_parse_emoji = self.a_emoji
         FaqItem.config_name = self.config_name

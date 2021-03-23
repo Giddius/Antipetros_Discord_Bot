@@ -118,7 +118,6 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 # endregion [Init]
 # region [Setup]
 
-
     async def on_ready_setup(self):
         self.command_emojis = await self.get_command_emojis()
         self.categories_emojis = await self.get_categories_emojis()
@@ -132,6 +131,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
 # endregion[Setup]
 # region [Properties]
+
 
     async def get_command_emojis(self):
         _out = await self.data_storage_handler.get_save_emojis()
@@ -191,10 +191,9 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
         channel = self.bot.get_channel(payload.channel_id)
         emoji = payload.emoji
-        try:
-            message = await channel.fetch_message(payload.message_id)
-        except discord.errors.NotFound:
-            return False
+
+        message = await channel.fetch_message(payload.message_id)
+
         if message.author.bot is True:
             return False
 
@@ -223,39 +222,42 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
     @ commands.Cog.listener(name="on_raw_reaction_add")
     async def suggestion_reaction_listener(self, payload):
-        channel = self.bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
+        try:
+            channel = self.bot.get_channel(payload.channel_id)
+            message = await channel.fetch_message(payload.message_id)
 
-        emoji_name = normalize_emoji(payload.emoji.name)
-        if emoji_name in [self.vote_emojis['upvote'], self.vote_emojis['downvote']] and message.id in await self.saved_messages():
-            await self._change_votes(message, emoji_name)
-        if await self._suggestion_listen_checks(payload) is False:
+            emoji_name = normalize_emoji(payload.emoji.name)
+            if emoji_name in [self.vote_emojis['upvote'], self.vote_emojis['downvote']] and message.id in await self.saved_messages():
+                await self._change_votes(message, emoji_name)
+
+                if await self._suggestion_listen_checks(payload) is False:
+                    return
+
+            reaction_user = await self.bot.fetch_user(payload.user_id)
+
+            if emoji_name in [value for key, value in self.command_emojis.items()]:
+                team = await self.get_team_from_emoji(emoji_name)
+                is_new = await self._new_suggestion(channel, message, reaction_user, team)
+                if str(message.author.id) not in self.auto_accept_user_dict and is_new is True:
+                    _embed_data = await self.bot.make_generic_embed(title="Your suggestion has been saved by the dev team",
+                                                                    description="The devs have saved your in their Database to locate it more easily",
+                                                                    thumbnail="save",
+                                                                    fields=[self.bot.field_item(name="If You Do Not Want This", value=f"DM me: `@{self.bot.display_name} unsave_suggestion {message.id}`", inline=False),
+                                                                            self.bot.field_item(name="If You Want To See All Data Saved From You", value=f"DM me: `@{self.bot.display_name} request_my_data`", inline=False),
+                                                                            self.bot.field_item(name="If You Want To Have All Data Saved From You Deleted", value=f"DM me: `@{self.bot.display_name} remove_all_userdata`", inline=False),
+                                                                            self.bot.field_item(name="If you dont want to receive this message anymore íf your suggestion is saved", value=f"DM me: `@{self.bot.display_name} auto_accept_suggestions`")])
+                    await message.author.send(**_embed_data)
+
+            elif emoji_name in self.categories_emojis and message.id in await self.saved_messages():
+                log.debug('category change triggered')
+                await self._change_category(channel, message, emoji_name)
+
+        except discord.errors.NotFound:
             return
-
-        reaction_user = await self.bot.fetch_user(payload.user_id)
-
-        if emoji_name in [value for key, value in self.command_emojis.items()]:
-            team = await self.get_team_from_emoji(emoji_name)
-            is_new = await self._new_suggestion(channel, message, reaction_user, team)
-            if str(message.author.id) not in self.auto_accept_user_dict and is_new is True:
-                _embed_data = await self.bot.make_generic_embed(title="Your suggestion has been saved by the dev team",
-                                                                description="The devs have saved your in their Database to locate it more easily",
-                                                                thumbnail="save",
-                                                                fields=[self.bot.field_item(name="If You Do Not Want This", value=f"DM me: `@{self.bot.display_name} unsave_suggestion {message.id}`", inline=False),
-                                                                        self.bot.field_item(name="If You Want To See All Data Saved From You", value=f"DM me: `@{self.bot.display_name} request_my_data`", inline=False),
-                                                                        self.bot.field_item(name="If You Want To Have All Data Saved From You Deleted", value=f"DM me: `@{self.bot.display_name} remove_all_userdata`", inline=False),
-                                                                        self.bot.field_item(name="If you dont want to receive this message anymore íf your suggestion is saved", value=f"DM me: `@{self.bot.display_name} auto_accept_suggestions`")])
-                await message.author.send(**_embed_data)
-
-        elif emoji_name in self.categories_emojis and message.id in await self.saved_messages():
-            log.debug('category change triggered')
-            await self._change_category(channel, message, emoji_name)
-
 
 # endregion [Listener]
 
 # region [Commands]
-
 
     @ commands.command(aliases=get_aliases("mark_discussed"), enabled=get_command_enabled("mark_discussed"))
     @ allowed_channel_and_allowed_role_2(in_dm_allowed=True)
@@ -457,6 +459,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
 # region [Embeds]
 
+
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -503,6 +506,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 # endregion [Embeds]
 
 # region [HelperMethods]
+
 
     async def _collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)

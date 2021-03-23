@@ -189,6 +189,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
 # region [Properties]
 
+
     @property
     def subscription_channel(self):
         name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
@@ -208,24 +209,28 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     @commands.Cog.listener(name='on_raw_reaction_add')
     async def subscription_reaction(self, payload):
-        channel = self.bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
-        if message not in [topic.message for topic in self.topics]:
+        try:
+            channel = self.bot.get_channel(payload.channel_id)
+            message = await channel.fetch_message(payload.message_id)
+            if message not in [topic.message for topic in self.topics]:
+                return
+            topic = {topic.message: topic for topic in self.topics}.get(message)
+            emoji_name = normalize_emoji(payload.emoji.name)
+            if emoji_name != normalize_emoji(topic.emoji):
+                for reaction in message.reactions:
+                    if normalize_emoji(str(reaction.emoji)) != normalize_emoji(topic.emoji):
+                        await message.clear_reaction(reaction.emoji)
+                return
+            reaction_user = await self.bot.retrieve_antistasi_member(payload.user_id)
+            if reaction_user.bot is True:
+                return
+            if topic.role in reaction_user.roles:
+                return
+            await self._give_topic_role(reaction_user, topic)
+            await self.sucess_subscribed_embed(reaction_user, topic)
+
+        except discord.errors.NotFound:
             return
-        topic = {topic.message: topic for topic in self.topics}.get(message)
-        emoji_name = normalize_emoji(payload.emoji.name)
-        if emoji_name != normalize_emoji(topic.emoji):
-            for reaction in message.reactions:
-                if normalize_emoji(str(reaction.emoji)) != normalize_emoji(topic.emoji):
-                    await message.clear_reaction(reaction.emoji)
-            return
-        reaction_user = await self.bot.retrieve_antistasi_member(payload.user_id)
-        if reaction_user.bot is True:
-            return
-        if topic.role in reaction_user.roles:
-            return
-        await self._give_topic_role(reaction_user, topic)
-        await self.sucess_subscribed_embed(reaction_user, topic)
 
     @commands.Cog.listener(name='on_raw_reaction_remove')
     async def unsubscription_reaction(self, payload):
@@ -252,7 +257,6 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 # endregion[Listener]
 
 # region [Helper]
-
 
     async def _add_topic_data(self, topic_item):
         current_data = self.topic_data
@@ -387,7 +391,6 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 # endregion[Helper]
 
 # region [Commands]
-
 
     @auto_meta_info_command(enabled=get_command_enabled('remove_topic'))
     @commands.is_owner()

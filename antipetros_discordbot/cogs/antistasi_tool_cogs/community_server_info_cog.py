@@ -122,6 +122,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         self.starter_info_message = None
         CommunityServerInfo.bot = self.bot
         CommunityServerInfo.config_name = self.config_name
+        self.log_watcher_cog = None
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -141,6 +142,8 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     async def on_ready_setup(self):
         self.notification_channel = await self.bot.channel_from_name('bot-testing')
         await self._initialise_server_holder()
+        self.log_watcher_cog = await self.bot.cog_by_name("AntistasiLogWatcherCog")
+
         # await self._try_to_get_starter_info_message(self)
         self.check_server_status_loop.start()
         log.debug('setup for cog "%s" finished', str(self))
@@ -195,7 +198,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
-    @auto_meta_info_command(enabled=get_command_enabled("current_online_server"))
+    @auto_meta_info_command(enabled=get_command_enabled("current_online_server"), aliases=['server?'])
     @allowed_channel_and_allowed_role_2()
     @commands.cooldown(1, 120, commands.BucketType.member)
     async def current_online_server(self, ctx: commands.Context):
@@ -238,7 +241,8 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                                                                        color="blue")
 
                         # mod_list_command = self.bot.get_command('get_newest_mod_data')
-                        await ctx.send(**embed_data)
+                        async with self.log_watcher_cog.get_newest_mod_data_only_file(server_item.name) as html_file:
+                            await ctx.send(**embed_data, file=html_file)
                         # await ctx.invoke(mod_list_command, server_item.name)
                         await asyncio.sleep(0.5)
                 except asyncio.exceptions.TimeoutError:

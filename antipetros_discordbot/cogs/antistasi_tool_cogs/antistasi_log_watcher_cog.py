@@ -10,6 +10,7 @@ from zipfile import ZipFile, ZIP_LZMA
 from tempfile import TemporaryDirectory
 from textwrap import dedent
 from typing import Iterable, Union, List
+from contextlib import asynccontextmanager
 # * Third Party Imports -->
 # import requests
 # import pyperclip
@@ -219,6 +220,24 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
     def _transform_mod_name(self, mod_name: str):
         mod_name = mod_name.removeprefix('@')
         return mod_name
+
+    @asynccontextmanager
+    async def get_newest_mod_data_only_file(self, server: str = 'mainserver_1'):
+        mod_server = server if server in self.server else fuzzprocess.extractOne(server, list(self.server))[0]
+        folder_item = self.server[mod_server]
+        log_item = await folder_item.get_newest_log_file('Server', 1)
+        log_item = log_item[0]
+        mod_data = await log_item.mod_data
+        templ_data = []
+        template = self.jinja_env.get_template('arma_required_mods.html.jinja')
+        for item in mod_data:
+            transformed_mod_name = self._transform_mod_name(item)
+            templ_data.append(self.mod_lookup_data.get(transformed_mod_name))
+        with TemporaryDirectory() as tempdir:
+            html_path = pathmaker(tempdir, f"{mod_server}_mods.html")
+            writeit(html_path, template.render(req_mods=templ_data, server_name=server.replace('_', ' ')))
+            html_file = discord.File(html_path)
+            yield html_file
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role_2()

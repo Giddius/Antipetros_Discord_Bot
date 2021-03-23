@@ -178,3 +178,19 @@ class ParseDiceLineError(BaseExtendedCommandError):
         self.statement = statement
         self.msg = f"Unable to parse dice input '{self.statement}'"
         super().__init__(self.msg)
+
+
+class CustomEmojiError(BaseExtendedCommandError):
+    def __init__(self, custom_emoji_name: str, problem: str):
+        self.custom_emoji_name = custom_emoji_name
+        self.problem = problem
+        self.msg = f"Error with custom emoji '{self.custom_emoji_name}': {self.problem}"
+        super().__init__(self.msg)
+
+
+class NameInUseError(BaseExtendedCommandError):
+    def __init__(self, name: str, typus: str):
+        self.name = name
+        self.typus = typus
+        self.msg = f"The Name {self.name} is already in use for {self.typus} items"
+        super().__init__(self.msg)

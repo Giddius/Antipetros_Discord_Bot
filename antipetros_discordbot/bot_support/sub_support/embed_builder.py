@@ -83,6 +83,7 @@ class EmbedBuilder(SubSupportBase):
     standard_embed_symbols_file = pathmaker(APPDATA["embed_data"], "embed_symbols.json")
     default_embed_data_file = pathmaker(APPDATA['default_embed_data.json'])
     error_embed_base_data_file = pathmaker(APPDATA['embed_data'], "error_embed_values.json")
+    image_thumbnail_data_file = pathmaker(APPDATA['debug'], 'embe_image_thumbnail_data.json')
     embed_types_enum = EmbedType
     allowed_embed_types = [embed_type_member.value for embed_type_member in EmbedType]
     datetime_parser = date_parse
@@ -254,8 +255,22 @@ class EmbedBuilder(SubSupportBase):
             _out["file"] = files[0]
         elif len(files) > 1:
             _out['files'] = files
-
+        await self.save_image_and_thumbnail(generic_embed)
         return _out
+
+    async def save_image_and_thumbnail(self, embed):
+        if self.bot.is_debug is False:
+            return
+        data = loadjson(self.image_thumbnail_data_file)
+        image_url = embed.image.url if embed.image is not None else None
+        thumbnail_url = embed.thumbnail.url if embed.thumbnail is not None else None
+
+        if image_url is not None and str(image_url) != "Embed.Empty":
+            data.append(str(image_url))
+        if thumbnail_url is not None and str(thumbnail_url) != "Embed.Empty":
+            data.append(str(thumbnail_url))
+        data = list(set(data))
+        writejson(data, self.image_thumbnail_data_file)
 
     async def save_embed_as_json(self, embed, save_name: str = None):
         save_name = embed.title if save_name is None else save_name
@@ -277,7 +292,7 @@ class EmbedBuilder(SubSupportBase):
                       timestamp=datetime.utcnow())
 
         embed.set_thumbnail(url=base_data.get('thumbnail_url'))
-        embed.set_author(self.special_authors.get('bot_author'))
+        embed.set_author(**self.special_authors.get('bot_author'))
         return embed
 
     def collect_embed_build_recipes(self):
@@ -304,6 +319,8 @@ class EmbedBuilder(SubSupportBase):
 
     def _ensure_folder_exists(self):
         create_folder(self.embed_data_folder)
+        if os.path.isfile(self.image_thumbnail_data_file) is False:
+            writejson([], self.image_thumbnail_data_file)
 
     @property
     def default_inline_value(self):

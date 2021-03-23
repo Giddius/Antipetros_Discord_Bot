@@ -9,6 +9,7 @@ from textwrap import dedent
 from functools import wraps, partial
 from concurrent.futures import ThreadPoolExecutor
 from inspect import getclosurevars
+import json
 
 # * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
@@ -388,7 +389,7 @@ async def delete_message_if_text_channel(ctx: commands.Context):
         if ctx.channel.type is discord.ChannelType.text:
             await ctx.message.delete()
     except discord.errors.HTTPException as error:
-        log.error(error)
+        log.error(error.text)
 
 
 async def check_if_url(possible_url: str):
@@ -420,3 +421,12 @@ async def url_is_alive(bot, url, check_if_github=False):
             return _response.status_code != 404
     except ClientConnectionError:
         return False
+
+
+async def dict_from_attached_json(attachment: discord.Attachment):
+    if not attachment.filename.endswith('.json'):
+        # TODO: Custom Error
+        raise TypeError("needs to be json file")
+    byte_data = await attachment.read()
+    data = byte_data.decode('utf-8')
+    return json.loads(data)

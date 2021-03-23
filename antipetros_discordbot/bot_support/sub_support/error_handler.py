@@ -24,7 +24,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, async_split_camel_case_string
-from antipetros_discordbot.utility.exceptions import MissingAttachmentError, NotNecessaryRole, IsNotTextChannelError, NotNecessaryDmId, NotAllowedChannelError, NotNecessaryRole, ParseDiceLineError
+from antipetros_discordbot.utility.exceptions import MissingAttachmentError, NotNecessaryRole, IsNotTextChannelError, NotNecessaryDmId, NotAllowedChannelError, NotNecessaryRole, ParseDiceLineError, NameInUseError, CustomEmojiError
 from antipetros_discordbot.utility.gidtools_functions import loadjson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -83,7 +83,10 @@ class ErrorHandler(SubSupportBase):
                                    NotAllowedChannelError: self._handle_not_allowed_channel,
                                    NotNecessaryRole: self._handle_not_necessary_role,
                                    commands.errors.CommandNotFound: self._handle_command_not_found,
-                                   ParseDiceLineError: self._handle_dice_line_error}
+                                   ParseDiceLineError: self._handle_dice_line_error,
+                                   NameInUseError: self._handle_name_in_use_error,
+                                   CustomEmojiError: self._handle_custom_emoji_error
+                                   }
         self.cooldown_data = CoolDownDict()
 
         glog.class_init_notification(log, self)
@@ -134,6 +137,12 @@ class ErrorHandler(SubSupportBase):
         if ctx.channel.type is ChannelType.text:
             await ctx.reply(f'The command had an unspecified __**ERROR**__\n please send {self.bot.creator.member_object.mention} a DM of what exactly you did when the error occured.', delete_after=120, allowed_mentions=discord.AllowedMentions.none())
             await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error), error_traceback=error_traceback))
+
+    async def _handle_name_in_use_error(self, ctx, error, error_traceback):
+        await ctx.send(embed=await self.bot.make_error_embed(ctx, error), delete_after=60)
+
+    async def _handle_custom_emoji_error(self, ctx, error, error_traceback):
+        await ctx.send(embed=await self.bot.make_error_embed(ctx, error), delete_after=60)
 
     async def _handle_command_not_found(self, ctx, error, error_traceback):
         wrong_command_name = ctx.invoked_with

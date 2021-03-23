@@ -147,14 +147,18 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        channel = self.bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
-        for item in await self.give_aways:
-            if payload.message_id == item.message.id and normalize_emoji(payload.emoji.name) != normalize_emoji(item.enter_emoji):
-                for reaction in message.reactions:
-                    if normalize_emoji(str(reaction.emoji)) != normalize_emoji(item.enter_emoji):
-                        await message.clear_reaction(reaction.emoji)
-
+        try:
+            channel = self.bot.get_channel(payload.channel_id)
+            message = await channel.fetch_message(payload.message_id)
+            if message.author.bot is True:
+                return
+            for item in await self.give_aways:
+                if payload.message_id == item.message.id and normalize_emoji(payload.emoji.name) != normalize_emoji(item.enter_emoji):
+                    for reaction in message.reactions:
+                        if normalize_emoji(str(reaction.emoji)) != normalize_emoji(item.enter_emoji):
+                            await message.clear_reaction(reaction.emoji)
+        except discord.errors.NotFound:
+            return
 
 # endregion [Listener]
 

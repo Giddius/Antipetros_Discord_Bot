@@ -76,6 +76,7 @@ class AntiPetrosBot(commands.Bot):
 
 # endregion[ClassAttributes]
 
+
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
@@ -175,6 +176,7 @@ class AntiPetrosBot(commands.Bot):
         self._watch_for_alias_changes.start()
         log.info("Debug Session: %s", self.is_debug)
         log.info("Bot is ready")
+        log.info('%s End of Setup Procedures %s', '+-+' * 15, '+-+' * 15)
 
     async def handle_previous_shutdown_msg(self):
         if self.is_debug is False and os.path.isfile(self.shutdown_message_pickle_file):
@@ -350,6 +352,9 @@ class AntiPetrosBot(commands.Bot):
     @ update_check_loop.before_loop
     async def before_update_check_loop(self):
         await self.wait_until_ready()
+
+    async def cog_by_name(self, query_cog_name: str):
+        return {cog_name.casefold(): cog for cog_name, cog in self.cogs.items()}.get(query_cog_name.casefold())
 
     def all_cog_commands(self):
         for cog_name, cog_object in self.cogs.items():

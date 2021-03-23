@@ -37,6 +37,11 @@ USERNAME = 'root'
 PWD = os.getenv('DEVANTISTASI_AUXILIARY_KEY')
 channel_files_to_close = []
 install_script = "install_python_3_9_deadsnake.sh"
+STATEMENT_MARKER = '#' * 15
+
+
+def print_statement(in_text: str):
+    print(f"\n{STATEMENT_MARKER}\n{in_text}\n{STATEMENT_MARKER}\n")
 
 
 @contextmanager
@@ -85,15 +90,19 @@ def run_command(command: str):
 #     # sleep(30)
 #     # run_command('antipetrosbot stop')
 def update_launch():
-    print("stoping bot via stop file")
+    print('*' * 30)
+    print_statement("Waiting for 5 min before updating Antipetros from PyPi")
+    sleep(300)
+    print_statement("finished waiting")
+    print_statement("stoping bot via stop file")
     run_command(ANTIPETROS_STOP_CMD)
-    print("waiting 2 minutes to let the bot shut down completely")
+    print_statement("waiting 2 minutes to let the bot shut down completely")
     sleep(120)
-    print("updating bot from PyPi")
+    print_statement("updating bot from PyPi")
     run_command(ANTIPETROS_UPDATE_CMD_VERSION)
-    print("Waiting 1 minute before launching bot")
+    print_statement("Waiting 1 minute before launching bot")
     sleep(60)
-    print("Launching bot")
+    print_statement("Launching bot")
     run_command(ANTIPETROS_START_CMD)
 
 

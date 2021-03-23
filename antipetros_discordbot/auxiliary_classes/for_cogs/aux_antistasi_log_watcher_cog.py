@@ -110,7 +110,6 @@ class LogFile:
     size_string_regex = re.compile(r"(?P<number>\d+)\s?(?P<unit>\w+)")
 
     def __init__(self, created, etag, isdir, modified, name, path, size):
-
         self.etag = etag.strip('"')
         self.isdir = isdir
         self.modified = date_parse(modified, settings={'TIMEZONE': 'UTC'})
@@ -121,6 +120,8 @@ class LogFile:
         self.size = int(size)
         self.server_name = self.path.split('/')[1]
         self.sub_folder_name = self.path.split('/')[2]
+        self.latest_parsed_time = None
+        self.campaign_id = 000000
 
     @async_property
     async def mod_data(self):
@@ -195,15 +196,16 @@ class LogFile:
             size = int(size)
         if isinstance(modified, str):
             modified = date_parse(modified)
+
         # if first is True:
-            # current_time = datetime.utcnow()
-            # log.debug(ic.format(self.path))
-            # log.debug(ic.format(current_time.strftime("%Y-%m-%d %H:%M:%S")))
-            # log.debug(ic.format(modified.strftime("%Y-%m-%d %H:%M:%S")))
-            # log.debug(ic.format(self.modified.strftime("%Y-%m-%d %H:%M:%S")))
-            # log.debug(ic.format(size))
-            # log.debug(ic.format(self.size))
-            # log.debug('#' * 50 + '\n\n')
+        # current_time = datetime.utcnow()
+        # log.debug(ic.format(self.path))
+        # log.debug(ic.format(current_time.strftime("%Y-%m-%d %H:%M:%S")))
+        # log.debug(ic.format(modified.strftime("%Y-%m-%d %H:%M:%S")))
+        # log.debug(ic.format(self.modified.strftime("%Y-%m-%d %H:%M:%S")))
+        # log.debug(ic.format(size))
+        # log.debug(ic.format(self.size))
+        # log.debug('#' * 50 + '\n\n')
 
         if self.size != size or self.modified < modified:
             self.size = size

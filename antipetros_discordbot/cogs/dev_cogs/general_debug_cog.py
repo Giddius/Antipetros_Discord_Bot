@@ -24,8 +24,8 @@ from icecream import ic
 import gidlogger as glog
 from dateparser import parse as date_parse
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data
-from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, only_giddi
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data, dict_from_attached_json
+from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, only_giddi, has_attachments
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -238,17 +238,43 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     def __str__(self):
         return self.qualified_name
 
+    @auto_meta_info_command()
+    async def pin_multiple_messages(self, ctx: commands.Context, reason: str, *messages: discord.Message):
+        if ctx.channel.name.casefold() not in ['bot-testing', 'bot-development']:
+            await ctx.reply(f"Command only usable in {', '.join(['bot-testing', 'bot-development'])}", delete_after=30)
+            await ctx.message.delete()
+            return
+
+        log.debug(f"Reason for pinning message: {reason=}")
+        for message in messages:
+            await message.pin(reason=reason)
+        await ctx.message.delete()
+
     @auto_meta_info_command(aliases=['pin'])
     async def pin_message(self, ctx: commands.Context, *, reason: str):
         if ctx.channel.name.casefold() not in ['bot-testing', 'bot-development']:
+            await ctx.reply(f"Command only usable in {', '.join(['bot-testing', 'bot-development'])}", delete_after=30)
+            await ctx.message.delete()
             return
         if ctx.message.reference.resolved is None:
-            await ctx.send('you need to reply to a message, that should be pinned, aborting!')
+            await ctx.send('you need to reply to a message, that should be pinned, aborting!', delete_after=30)
+            await ctx.message.delete()
             return
         message = ctx.message.reference.resolved
-        log.debug(f"{reason=}")
+        log.debug(f"Reason for pinning message: {reason=}")
         await message.pin(reason=reason)
         await ctx.message.delete()
+
+    @auto_meta_info_command(enabled=True)
+    @has_attachments(1)
+    @log_invoker(log, 'info')
+    async def make_embed(self, ctx: commands.Context):
+        attachment = ctx.message.attachments[0]
+        embed_dict = await dict_from_attached_json(attachment)
+        print(embed_dict.get('embed'))
+        embed = discord.Embed.from_dict(embed_dict.get('embed'))
+        print(embed)
+        await ctx.send(embed=embed)
 
     @auto_meta_info_command(aliases=['unpin'])
     async def unpin_message(self, ctx: commands.Context, *, reason: str):

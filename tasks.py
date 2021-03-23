@@ -297,7 +297,8 @@ def clean_userdata(c, dry_run=False):
                       "who_is_trigger_phrases.json",
                       "team_items.json",
                       "subscription_topics_data.json",
-                      "bot_feature_suggestions.json"]
+                      "bot_feature_suggestions.json",
+                      "message_reaction_instructions_dat.json"]
 
     if dry_run is True:
         print('')
@@ -365,7 +366,7 @@ def subreadme_toc(c, output_file=None):
 
 
 @task
-def increment_version(c, increment_part='patch'):
+def increment_version(c, increment_part='minor'):
     init_file = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "__init__.py")
     with open(init_file, 'r') as f:
         content = f.read()
@@ -734,11 +735,10 @@ def build(c, typus='fix'):
     os.chdir(main_dir_from_git())
     c.run("flit publish", echo=True)
     from dev_tools_and_scripts.scripts.launch_in_server import update_launch
-    print("Waiting for 5 min before updating Antipetros from PyPi")
-    sleep(300)
-    print("finishe waiting")
+
     update_launch()
     NOTIFIER.show_toast(title=f"Finished Building {PROJECT_NAME}", icon_path=r"art/finished/icons/pip.ico", duration=15, msg=f"Published {PROJECT_NAME}, Version {get_package_version()} to PyPi")
+
 
 def get_alternative_name(name, number=0):
     if number == 0:

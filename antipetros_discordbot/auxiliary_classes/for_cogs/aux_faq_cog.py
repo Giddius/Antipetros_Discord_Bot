@@ -59,6 +59,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class FaqItem:
     bot = None
+    faq_channel = None
     question_parse_emoji = "🇶"
     answer_parse_emoji = "🇦"
     question_emoji = None
@@ -111,7 +112,8 @@ class FaqItem:
         answer_match = self.answer_regex.search(self._raw_content)
         if answer_match:
             answer_emoji = self.answer_parse_emoji if self.answer_emoji is None else self.answer_emoji
-            return f"{answer_emoji} {answer_match.group('answer').strip()}"
+            answer = answer_match.group('answer').strip()
+            return f"{answer_emoji} {answer}"
         else:
             raise FaqAnswerParseError(self._raw_content, self.url)
 
@@ -160,13 +162,12 @@ class FaqItem:
         return image
 
     async def to_embed_data(self):
-        author = {"name": f"FAQ No {self.number}", "url": self.url, "icon_url": self.antistasi_icon}
+        author = {"name": f"FAQ No {self.number} 🔗", "url": self.url, "icon_url": self.antistasi_icon}
         return await self.bot.make_generic_embed(author=author,
                                                  thumbnail=await self.number_image,
                                                  image=await self.image,
                                                  title=await self.question,
-                                                 description=await self.answer,
-                                                 footer="not_set",
+                                                 description=await self.answer + '\n\n' + self.faq_channel.mention,
                                                  timestamp=self.creation_date_time,
                                                  color="random")
 
