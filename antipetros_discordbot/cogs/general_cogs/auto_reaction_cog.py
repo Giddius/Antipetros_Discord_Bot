@@ -184,7 +184,8 @@ class WordReactionInstruction(BaseReactionInstruction):
         self.exceptions = {
             'by_role': [],
             'by_channel': [],
-            'by_user': []
+            'by_user': [],
+            'by_category': []
         }
         self.sort_exceptions(exceptions)
         super().__init__(name, emojis)
@@ -207,6 +208,10 @@ class WordReactionInstruction(BaseReactionInstruction):
                 excepted_member = {member.id: member for member in self.bot.antistasi_guild.members}.get(item[1])
                 if excepted_member is not None:
                     self.exceptions['by_user'].append(excepted_member)
+            elif item[0] == 'by_category':
+                except_category = {category.id: category for category in self.bot.antistasi_guild.categories}.get(item[1])
+                if except_category is not None:
+                    self.exceptions['by_category'].append(except_category)
 
     @property
     def word(self):
@@ -217,6 +222,9 @@ class WordReactionInstruction(BaseReactionInstruction):
         for key, value in self.exceptions.items():
             if key == 'by_role':
                 if any(role in value for role in msg.author.roles):
+                    return False
+            elif key == 'by_category':
+                if msg.channel.category in value:
                     return False
             elif key == 'by_channel':
                 if msg.channel in value:
@@ -265,7 +273,6 @@ class WordReactionInstruction(BaseReactionInstruction):
     async def from_dict(cls, **kwargs):
         word = kwargs.get('word')
         case_insensitive = kwargs.get('case_insensitive', False)
-        wrap_in_spaces = kwargs.get('wrap_in_spaces', False)
         converted_emojis = []
         custom_emojis = {emoji.name: emoji for emoji in cls.bot.antistasi_guild.emojis}
         for emoji in kwargs.get('emojis'):
@@ -342,7 +349,6 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_message')
     async def add_reaction_to_message_sorter_listener(self, msg: discord.Message):
         try:
@@ -357,6 +363,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command()
     @owner_or_admin(False)
@@ -420,7 +427,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
             await ctx.send(f'Could not find Word Reaction instruction item with the name `{instruction_name}`, exceptions can only be added to WORD REACTION INSTRUCTIONS', delete_after=120)
             await delete_message_if_text_channel(ctx)
             return
-        if typus.casefold() not in ['role', 'channel', 'user']:
+        if typus.casefold() not in ['role', 'channel', 'user', 'category']:
             await ctx.send(f"Unknown exception typus `{typus}`, has to be one of: `role`, `channel`, `user`", delete_after=120)
             await delete_message_if_text_channel(ctx)
             return
