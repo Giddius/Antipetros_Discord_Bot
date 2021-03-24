@@ -711,13 +711,13 @@ def make_readme(c):
         f.write(result)
 
 
-def commit_push(c, typus='fix'):
+def commit_push(c, typus='fix', description=None):
     if typus == 'release':
         msg = "🎆🎆 Release 🎆🎆"
     elif typus == 'fix':
-        msg = "🛠️ fix"
+        msg = "🛠️ fix" + f" {description}" if description is not None else "🛠️ fix"
     elif typus == 'update':
-        msg = "🏷️ update"
+        msg = "🏷️ update" + f" {description}" if description is not None else "🏷️ update"
     else:
         msg = "🍱 misc"
     os.chdir(main_dir_from_git())
@@ -730,8 +730,8 @@ def commit_push(c, typus='fix'):
 
 
 @task(pre=[clean_repo, collect_data, store_userdata, increment_version, set_requirements, make_readme])
-def build(c, typus='fix'):
-    commit_push(c, typus)
+def build(c, typus='fix', description=None):
+    commit_push(c, typus, description)
     os.chdir(main_dir_from_git())
     c.run("flit publish", echo=True)
     from dev_tools_and_scripts.scripts.launch_in_server import update_launch

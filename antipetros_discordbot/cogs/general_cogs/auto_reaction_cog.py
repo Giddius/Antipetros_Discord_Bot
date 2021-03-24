@@ -392,7 +392,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
             return
         emojis = [await self._handle_custom_emoji_input(emoji) for emoji in emojis]
         exceptions = await self._handle_exceptions_data(exceptions)
-        item = WordReactionInstruction(name=name, word=word, case_insensitive=True, wrap_in_spaces=True, emojis=emojis, exceptions=exceptions)
+        item = WordReactionInstruction(name=name, word=word, case_insensitive=True, emojis=emojis, exceptions=exceptions)
         self.reaction_instructions.append(item)
         await self._save_reaction_instruction()
         first_embed = discord.Embed(title='Added Word Auto Reaction', description="Added the following word auto reaction item")

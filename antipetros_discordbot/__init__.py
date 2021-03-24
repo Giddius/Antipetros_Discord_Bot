@@ -1,7 +1,7 @@
 """
 A Discord Bot for the Antistasi (ArmA 3) Community Discord Server
 """
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 import os
 from importlib.metadata import metadata
