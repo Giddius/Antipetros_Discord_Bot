@@ -16,7 +16,7 @@ import discord
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, log_invoker, has_attachments
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState
@@ -92,7 +92,8 @@ class TopicItem:
                            EmbedFieldItem(name='Subscriber Role', value=self.mention),
                            EmbedFieldItem(name="Created by", value=self.creator.mention)],
                 "color": self.color,
-                "image": self.image}
+                "image": self.image,
+                "thumbnail": "subscription"}
 
     @property
     def creation_time(self):
@@ -104,7 +105,7 @@ class TopicItem:
     def mention(self):
         if self.role is None:
             return f"`@{self.name}_Subscriber`"
-        return self.mention
+        return self.role.mention
 
     @classmethod
     async def from_data(cls,
@@ -258,6 +259,12 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
 # region [Helper]
 
+    async def _get_header_message(self):
+        msg_id = COGS_CONFIG.retrieve(self.config_name, 'header_message_id', typus=int, direct_fallback=0)
+        if msg_id == 0:
+            return None
+        return await self.subscription_channel.fetch_message(msg_id)
+
     async def _add_topic_data(self, topic_item):
         current_data = self.topic_data
         current_data.append(await topic_item.serialize())
@@ -303,16 +310,19 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         """
         log.debug(f"Trying to create role '{topic_item.name}_Subscriber'")
         new_role = await self.bot.antistasi_guild.create_role(name=f"{topic_item.name}_Subscriber", permissions=discord.Permissions.none(), mentionable=True, color=self.bot.get_discord_color(topic_item.color), reason=f"Subscribe-able Topic creation, topic: '{topic_item.name}'")
-        await new_role.edit(position=0, reason=f"Subscribe-able Topic creation, topic: '{topic_item.name}'")
+        # await new_role.edit(position=0, reason=f"Subscribe-able Topic creation, topic: '{topic_item.name}'")
         topic_item.role = new_role
         log.debug(f"finished creating role '{topic_item.name}_Subscriber'")
 
-    async def _create_topic_subscription_header(self, ctx: commands.Context):
+    async def _create_topic_subscription_header_embed(self):
         embed_data = await self.bot.make_generic_embed(title="Topic Subscription", description=COGS_CONFIG.retrieve(self.config_name, 'header_description', typus=str, direct_fallback=''),
-                                                       fields=[self.bot.field_item(name='How to subscribe', value="Just press the emoji under the message for the topic you want to subscribe"),
-                                                               self.bot.field_item(name='How to unsubscribe', value="Just press the emoji again to remove the emoji, you will be automatically unsubscribed"),
-                                                               self.bot.field_item(name='How does it work', value="After subscribing you will get a role assigned, if there is an announcment for that topic, it will ping the role and therefore you")])
-        await self.subscription_channel.send(**embed_data)
+                                                       fields=[self.bot.field_item(name='How to subscribe', value=">>> " + COGS_CONFIG.retrieve(self.config_name, 'header_how_to_subscribe_text', typus=str, direct_fallback='')),
+                                                               self.bot.field_item(name='How to unsubscribe', value=">>> " + COGS_CONFIG.retrieve(self.config_name, 'header_how_to_unsubscribe_text', typus=str, direct_fallback='')),
+                                                               self.bot.field_item(name='How does it work', value=">>> " + COGS_CONFIG.retrieve(self.config_name, 'header_how_does_it_work_text', typus=str, direct_fallback=''))],
+                                                       color=COGS_CONFIG.retrieve(self.config_name, 'header_color', typus=str, direct_fallback='gray'),
+                                                       thumbnail=COGS_CONFIG.retrieve(self.config_name, 'header_thumbnail', typus=str, direct_fallback='antistasi_logo'))
+
+        return embed_data
 
     async def _get_subscription_channel(self):
         name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
@@ -337,7 +347,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                                                        thumbnail="subscribed",
                                                        fields=[self.bot.field_item(name="Subscription Role", value=f"For this purpose you have been assigne the Role {topic.mention}", inline=False),
                                                                self.bot.field_item(name="Unsubscribe", value=f"To Unsubscribe just remove your emoji from the subscription post [link to post]({topic.message.jump_url})", inline=False),
-                                                               self.bot.field_item(name="Unsubscribe Command", value=f"You can also use the command `@AntiPetros unsubscribe [{topic.name}]`]", inline=False)])
+                                                               self.bot.field_item(name="Unsubscribe Command", value=f"You can also use the command `@AntiPetros unsubscribe {topic.name}`", inline=False)])
         await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     async def sucess_unsubscribed_embed(self, member: discord.Member, topic: TopicItem):
@@ -392,9 +402,25 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
 # region [Commands]
 
+
+    @auto_meta_info_command(enabled=get_command_enabled('create_subscription_channel_header'))
+    @commands.is_owner()
+    async def create_subscription_channel_header(self, ctx: commands.Context):
+        embed_data = await self._create_topic_subscription_header_embed()
+        header_message = await self.subscription_channel.send(**embed_data)
+        COGS_CONFIG.set(self.config_name, 'header_message_id', str(header_message.id))
+        await delete_message_if_text_channel(ctx)
+
     @auto_meta_info_command(enabled=get_command_enabled('remove_topic'))
     @commands.is_owner()
-    @commands.dm_only()
+    async def update_subscription_channel_header(self, ctx: commands.Context):
+        embed_data = await self._create_topic_subscription_header_embed()
+        header_message = await self._get_header_message()
+        await header_message.edit(**embed_data)
+        await delete_message_if_text_channel(ctx)
+
+    @auto_meta_info_command(enabled=get_command_enabled('remove_topic'))
+    @commands.is_owner()
     async def remove_topic(self, ctx: commands.context, topic_name: str):
         topic_item = {item.name.casefold(): item for item in self.topics}.get(topic_name.casefold(), None)
         if await self._confirm_topic_creation_deletion(ctx, topic_item, 'removal') is False:
@@ -406,11 +432,10 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             await ctx.message.delete()
         log.info(f"Topic '{topic_item.name}' was removed, by {ctx.author.display_name}")
 
-    @auto_meta_info_command(enabled=get_command_enabled('add_topic'))
+    @auto_meta_info_command(enabled=get_command_enabled('new_topic'))
     @commands.is_owner()
-    @commands.dm_only()
     @has_attachments(1)
-    async def new_topic(self, ctx: commands.Context):
+    async def new_topic(self, ctx: commands.Context, topic_creator_id: int = None):
         if self.subscription_channel is None:
             await ctx.send('No subscription Channel set in Config!')
             return
@@ -426,7 +451,14 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         if command_data.get('emoji') in [None, ""]:
             await ctx.send('Missing required field:\n-__**Emoji**__\n\naborting!"')
             return
-        item = TopicItem(command_data.get('name'), command_data.get('emoji'), ctx.author, self.subscription_channel, description=command_data.get("description", ""), color=command_data.get('color'), image=command_data.get('image'))
+        if topic_creator_id is None:
+            topic_creator = ctx.author
+        else:
+            topic_creator = await self.bot.retrieve_antistasi_member(topic_creator_id)
+        if topic_creator is None:
+            await ctx.send(f'Unable to find Creator with id `{topic_creator_id}`')
+            return
+        item = TopicItem(command_data.get('name'), command_data.get('emoji'), topic_creator, self.subscription_channel, description=command_data.get("description", ""), color=command_data.get('color'), image=command_data.get('image'))
         if await self._confirm_topic_creation_deletion(ctx, item, 'creation') is False:
             return
         await self._create_topic_role(item)
@@ -445,17 +477,17 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             # TODO: Custom Error and handling
             await ctx.send(f'unable to find a Topic with the name `{topic_name}`')
             return
-        if topic_item.role not in ctx.author.roles:
+        member = await self.bot.retrieve_antistasi_member(ctx.author.id)
+        if topic_item.role not in member.roles:
             # TODO: Custom Error and handling
             await ctx.send(f'You are currently not subscribed to the topic `{topic_name}`')
             return
-        await self._remove_subscription_reaction(ctx.author, topic_item)
-        await self._remove_topic_role(ctx.author, topic_item)
-        await self.sucess_unsubscribed_embed(ctx.author, topic_item)
+        await self._remove_subscription_reaction(member, topic_item)
+        await self._remove_topic_role(member, topic_item)
+        await self.sucess_unsubscribed_embed(member, topic_item)
 
     @auto_meta_info_command(enabled=True)
-    @commands.dm_only()
-    @commands.is_owner()
+    @owner_or_admin()
     async def topic_template(self, ctx: commands.Context, with_example: str = None):
         embed_data = await self.bot.make_generic_embed(title="Topic Template File",
                                                        description='Please use this file to create a topic. You can then use the filled File as an attachment for the command `@AntiPetros new_topic`.\nPlease obey the following rules!',
@@ -479,6 +511,13 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             await ctx.send(files=[template_file, example_file])
         else:
             await ctx.send(file=template_file)
+
+    # @auto_meta_info_command(hidden=True, enabled=True)
+    # @owner_or_admin()
+    # async def delete_test_role(self, ctx: commands.Context, role: discord.Role):
+    #     role_name = role.name
+    #     await role.delete(reason='Was for testing, and threw an error, cleaning up')
+    #     await ctx.send(f"`{role_name}` was removed", delete_after=60)
 
 # endregion[Commands]
 

@@ -85,6 +85,9 @@ class CommandStatistician(SubSupportBase):
             self.stats_holder.append(self.command_invoked_stats)
             log.debug("'%s' command staff soldier was READY", str(self))
 
+    async def get_amount_invoked_overall(self):
+        return self.command_invoked_stats.sum_data.get('overall', {}).get('successful', 0)
+
     async def get_todays_invoke_data(self):
         overall_data = self.command_invoked_stats.sum_data.get(date_today())
         data = '\n'.join(f"**{key}**: *{str(value)}*" for key, value in overall_data.items() if value != 0)

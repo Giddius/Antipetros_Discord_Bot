@@ -34,6 +34,7 @@ from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name, normalize_emoji
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.exceptions import NotAllowedChannelError
@@ -669,6 +670,19 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                 await ctx.send('\n' + '⋱' * len(sub_role.mention) + f'\n{sub_role.mention}\n\n' + '\n'.join(f"{member.mention} {member.display_name}" for member in sub_members), allowed_mentions=discord.AllowedMentions.none())
 
             await ctx.send(f'{ZERO_WIDTH}\n' + '░' * 20 + f'\n\n{ZERO_WIDTH}')
+
+    @auto_meta_info_command()
+    async def get_roles(self, ctx: commands.Context):
+        _out = {}
+        for role in self.bot.antistasi_guild.roles:
+            _out[role.name] = {'position': role.position, 'id': role.id, 'mentionable': role.mentionable}
+
+        writejson(_out, 'all_roles.json')
+
+    @auto_meta_info_command()
+    async def check_message_mention(self, ctx: commands.Context, message: discord.Message):
+        embed_data = await self.bot.make_generic_embed(title='This is a test', description=embed_hyperlink('test', message.jump_url))
+        await ctx.send(**embed_data)
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))
