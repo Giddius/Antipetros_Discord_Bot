@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 # * Third Party Imports --------------------------------------------------------------------------------->
 import arrow
 import PIL.Image
+import discord
 from pytz import timezone
 from discord import File
 from discord import Color as DiscordColor
@@ -214,9 +215,11 @@ class EmbedBuilder(SubSupportBase):
             yield _embed_data
             is_first = False
 
-    async def make_generic_embed(self, author: Union[str, dict] = None, footer: Union[str, dict] = None, fields: List[EmbedFieldItem] = None, **kwargs):
+    async def make_generic_embed(self, author: Union[str, dict, discord.Member] = None, footer: Union[str, dict] = None, fields: List[EmbedFieldItem] = None, **kwargs):
         if isinstance(author, str):
             author = self.special_authors.get(author, self.default_author) if author != 'not_set' else None
+        elif isinstance(author, discord.Member):
+            author = {"name": author.display_name, "icon_url": author.avatar_url}
         if isinstance(footer, str):
             footer = self.special_footers.get(footer, self.default_footer) if footer != 'not_set' else None
 
@@ -224,7 +227,8 @@ class EmbedBuilder(SubSupportBase):
         generic_embed = Embed(title=str(kwargs.get("title", self.default_title)),
                               description=str(kwargs.get('description', self.default_description)),
                               color=self._validate_color(kwargs.get('color', self.default_color)),
-                              timestamp=self._validate_timestamp(kwargs.get('timestamp', self.default_timestamp)))
+                              timestamp=self._validate_timestamp(kwargs.get('timestamp', self.default_timestamp)),
+                              url=kwargs.get('url'))
 
         image, image_file = self._validate_image(kwargs.get('image', None))
         files.append(image_file)
@@ -233,6 +237,7 @@ class EmbedBuilder(SubSupportBase):
 
         if author is not None:
             generic_embed.set_author(**author)
+
         if footer is not None:
             footer['text'] = f"{ZERO_WIDTH}\n" + footer['text']
             generic_embed.set_footer(**footer)

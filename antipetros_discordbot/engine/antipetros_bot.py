@@ -15,6 +15,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
+from discord.ext.commands import MinimalHelpCommand
 from watchgod import Change, awatch
 from discord.ext import tasks, commands
 
@@ -87,6 +88,7 @@ class AntiPetrosBot(commands.Bot):
                          activity=self.activity_from_config(),
                          intents=self.get_intents(),
                          fetch_offline_members=True,
+                         help_command=MinimalHelpCommand(),
                          ** kwargs)
         self.token = token
         self.help_invocation = help_invocation

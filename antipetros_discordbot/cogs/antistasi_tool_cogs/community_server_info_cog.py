@@ -198,7 +198,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
-    @auto_meta_info_command(enabled=get_command_enabled("current_online_server"), aliases=['server?'])
+    @auto_meta_info_command(enabled=get_command_enabled("current_online_server"), aliases=['server', 'servers'])
     @allowed_channel_and_allowed_role_2()
     @commands.cooldown(1, 120, commands.BucketType.member)
     async def current_online_server(self, ctx: commands.Context):

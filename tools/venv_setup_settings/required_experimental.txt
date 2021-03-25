@@ -5,6 +5,7 @@ disputils
 imperfect
 log_calls
 marshmallow-sqlalchemy
+opencv-contrib-python
 peewee
 pyexlatex
 pypika
@@ -14,4 +15,3 @@ pyvis
 sqlalchemy
 vendorize
 wikitextparser
-opencv-contrib-python

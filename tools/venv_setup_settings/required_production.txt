@@ -11,6 +11,7 @@ beautifulsoup4==4.9.3
 click==7.1.2
 cryptography==3.3.1
 dateparser==1.0.0
+discord-flags==2.1.1
 dpytest==0.0.22
 emoji==1.1.0
 fuzzywuzzy==0.18.0
@@ -33,4 +34,3 @@ tldextract==3.1.0
 validator_collection==1.5.0
 watchgod==0.6
 webdavclient3==3.14.5
-discord-flags==2.1.1

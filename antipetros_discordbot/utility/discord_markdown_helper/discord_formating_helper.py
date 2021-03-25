@@ -7,4 +7,4 @@ def discord_key_value_text(key: str, value: str, width: int = 25, specifier: str
 
 
 def embed_hyperlink(name, url):
-    return f"[{name}]({url})"
+    return f"[{name}]({url})🔗"

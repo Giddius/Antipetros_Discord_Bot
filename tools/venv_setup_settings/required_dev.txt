@@ -7,6 +7,7 @@ docstr-coverage
 doit
 fabric
 grip
+handout
 icecream
 invoke
 ipython
@@ -39,4 +40,3 @@ stdlib-list
 tomlkit
 vulture
 win10toast
-handout

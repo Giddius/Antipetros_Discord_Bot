@@ -248,6 +248,14 @@ def only_giddi():
     return commands.check(predicate)
 
 
+def only_bob():
+    async def predicate(ctx: commands.Context):
+        if ctx.author.id == "346595708180103170":
+            return True
+        return False
+    return commands.check(predicate)
+
+
 # region[Main_Exec]
 if __name__ == '__main__':
     pass

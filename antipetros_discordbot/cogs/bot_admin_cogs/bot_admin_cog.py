@@ -147,8 +147,6 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
                 log.info("'%s' was triggered by '%s' in '%s'", command_name, msg.author.name, msg.channel.name)
                 self.latest_who_is_triggered_time = datetime.utcnow()
 
-            await msg.delete()
-
     @auto_meta_info_command(enabled=True)
     @owner_or_admin()
     async def tell_version(self, ctx: commands.Context):
