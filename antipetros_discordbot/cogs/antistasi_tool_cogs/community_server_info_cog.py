@@ -158,7 +158,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @tasks.loop(minutes=15)
     async def starter_info_loop(self):
-
+        await self.bot.wait_until_ready()
         if self.starter_info_message is None:
             channel = await self.bot.channel_from_id(self.starter_info_channel_id)
             if self.bot.is_debug is True:
@@ -169,6 +169,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @tasks.loop(minutes=2)
     async def check_server_status_loop(self):
+        await self.bot.wait_until_ready()
         if self.check_server_status_loop_first_run is True:
             log.debug('postponing loop "check_server_status_loop", as it should not run directly at the beginning')
             self.check_server_status_loop_first_run = False
@@ -200,7 +201,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @auto_meta_info_command(enabled=get_command_enabled("current_online_server"), aliases=['server', 'servers'])
     @allowed_channel_and_allowed_role_2()
-    @commands.cooldown(1, 120, commands.BucketType.member)
+    @commands.cooldown(1, 120, commands.BucketType.channel)
     async def current_online_server(self, ctx: commands.Context):
         """
         Shows all server of the Antistasi Community, that are currently online.

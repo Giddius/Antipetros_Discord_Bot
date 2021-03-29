@@ -26,3 +26,5 @@ sudo apt-get install -y libsdl-pango-dev
 sudo apt install python3-testresources -y
 
 python3.9 -m pip install --upgrade pip
+
+python3.9 -m pip install python-Levenshtein-wheels

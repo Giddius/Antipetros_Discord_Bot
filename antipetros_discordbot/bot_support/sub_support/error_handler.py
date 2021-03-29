@@ -120,6 +120,11 @@ class ErrorHandler(SubSupportBase):
             _msg = _msg.replace(orig_word, mod_word)
         return _msg
 
+    async def handle_base_errors(self, event_method, *args, **kwargs):
+        kwarg_string = ', '.join(f"{key}: {str(value)}" for key, value in kwargs.items())
+        arg_string = ', '.join(str(arg) for arg in args)
+        log.error(f"{event_method} - '{arg_string}' - '{kwarg_string}'")
+
     async def handle_errors(self, ctx, error):
         error_traceback = '\n'.join(traceback.format_exception(error, value=error, tb=None))
 
@@ -210,7 +215,7 @@ class ErrorHandler(SubSupportBase):
             return
         await self.cooldown_data.add(ctx, error)
         embed_data = await self.bot.make_generic_embed(title=f'Command is on Cooldown for the scope of {error.cooldown.type.name.upper()}',
-                                                       thumbnail="https://www.seekpng.com/png/full/896-8968896_cooldown-cooldown-car-air-conditioning-icon.png",
+                                                       thumbnail="cooldown",
                                                        description=msg)
         await ctx.reply(**embed_data, delete_after=error.retry_after)
         await ctx.message.delete()

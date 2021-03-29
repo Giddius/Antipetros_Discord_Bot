@@ -27,7 +27,7 @@ from dateparser import parse as date_parse
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data, dict_from_attached_json
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, only_giddi, has_attachments
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson
+from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState
@@ -39,6 +39,7 @@ from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.exceptions import NotAllowedChannelError
 from pyyoutube import Api
+from inspect import getmembers, getsourcefile, getsource, getsourcelines, getfullargspec, getmodule, getcallargs, getabsfile, getmodulename, getdoc, getfile, cleandoc, classify_class_attrs
 # endregion [Imports]
 
 # region [Logging]
@@ -229,6 +230,25 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         writejson(embed_dict, pathmaker(APPDATA["saved_embeds"], f"{message.id}.json"))
         await ctx.send(f'saved embed from message {message.id}')
 
+    async def _get_unique_save_message_path(self, name: str, in_format: str, in_round: int = 0):
+        if in_round == 0:
+            full_name = f"{name}.{in_format}"
+        else:
+            full_name = f"{name}_{in_round}.{in_format}"
+        path = pathmaker(APPDATA['temp_files'], full_name)
+        if os.path.isfile(path) is True:
+            return await self._get_unique_save_message_path(name=name, in_format=in_format, in_round=in_round + 1)
+        return path
+
+    @auto_meta_info_command()
+    async def save_message(self, ctx: commands.context, channel_id: int, message_id: int, file_format: str = 'md'):
+        channel = await self.bot.channel_from_id(channel_id)
+        message = await channel.fetch_message(message_id)
+        path = await self._get_unique_save_message_path('saved_message', file_format)
+        content = message.content
+        writeit(path, content)
+        await ctx.send(f'message saved as `{os.path.basename(path)}`', delete_after=60)
+
     @auto_meta_info_command()
     async def quick_latency(self, ctx):
         await ctx.send(f"{round(self.bot.latency * 1000)} ms")
@@ -347,8 +367,9 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await ctx.send(**embed_data)
 
     @ commands.command()
-    async def get_prefixes(self, ctx: commands.Context, message: discord.Message):
-        prefixes = await self.bot.get_prefix(message)
+    async def get_prefixes(self, ctx: commands.Context):
+        prefixes = await self.bot.get_prefix(ctx.message)
+        prefixes = list(set([prefix.strip() for prefix in prefixes]))
         await ctx.send(str(prefixes))
 
     # @ commands.command()
@@ -683,6 +704,22 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     async def check_message_mention(self, ctx: commands.Context, message: discord.Message):
         embed_data = await self.bot.make_generic_embed(title='This is a test', description=embed_hyperlink('test', message.jump_url))
         await ctx.send(**embed_data)
+
+    async def better_rel_path(self, in_path: str):
+        in_path = pathmaker(in_path)
+        in_path_parts = in_path.split('/')
+        while in_path_parts[0] != 'antipetros_discordbot':
+            _ = in_path_parts.pop(0)
+        return pathmaker(*in_path_parts)
+
+    @auto_meta_info_command()
+    async def get_cog_info(self, ctx: commands.Context, cog_name: str):
+        cog = await self.bot.cog_by_name(cog_name)
+        await ctx.send('\n'.join(command.name for command in cog.get_commands()))
+
+        await ctx.send(await self.better_rel_path(getsourcefile(cog.__class__)))
+
+        await ctx.send(cleandoc(getdoc(cog)))
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))

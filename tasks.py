@@ -366,7 +366,7 @@ def subreadme_toc(c, output_file=None):
 
 
 @task
-def increment_version(c, increment_part='patch'):
+def increment_version(c, increment_part='minor'):
     init_file = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "__init__.py")
     with open(init_file, 'r') as f:
         content = f.read()

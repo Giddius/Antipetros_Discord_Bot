@@ -9,6 +9,7 @@ import asyncio
 from datetime import datetime
 import random
 from tempfile import TemporaryDirectory
+from copy import deepcopy
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands
 import discord
@@ -26,6 +27,7 @@ from antipetros_discordbot.utility.replacements.command_replacement import auto_
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
+
 # endregion[Imports]
 
 # region [TODO]
@@ -210,6 +212,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     @commands.Cog.listener(name='on_raw_reaction_add')
     async def subscription_reaction(self, payload):
+        await self.bot.wait_until_ready()
         try:
             channel = self.bot.get_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
@@ -235,25 +238,30 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     @commands.Cog.listener(name='on_raw_reaction_remove')
     async def unsubscription_reaction(self, payload):
-        channel = self.bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
-        if message not in [topic.message for topic in self.topics]:
-            return
-        topic = {topic.message: topic for topic in self.topics}.get(message)
-        emoji_name = normalize_emoji(payload.emoji.name)
-        if emoji_name != normalize_emoji(topic.emoji):
-            for reaction in message.reactions:
-                if normalize_emoji(str(reaction.emoji)) != normalize_emoji(topic.emoji):
-                    await message.clear_reaction(reaction.emoji)
-            return
-        reaction_user = await self.bot.retrieve_antistasi_member(payload.user_id)
-        if reaction_user.bot is True:
-            return
-        if topic.role not in reaction_user.roles:
-            return
-        await self._remove_topic_role(reaction_user, topic)
-        await self.sucess_unsubscribed_embed(reaction_user, topic)
+        await self.bot.wait_until_ready()
+        try:
+            channel = self.bot.get_channel(payload.channel_id)
 
+            message = await channel.fetch_message(payload.message_id)
+
+            if message not in [topic.message for topic in self.topics]:
+                return
+            topic = {topic.message: topic for topic in self.topics}.get(message)
+            emoji_name = normalize_emoji(payload.emoji.name)
+            if emoji_name != normalize_emoji(topic.emoji):
+                for reaction in message.reactions:
+                    if normalize_emoji(str(reaction.emoji)) != normalize_emoji(topic.emoji):
+                        await message.clear_reaction(reaction.emoji)
+                return
+            reaction_user = await self.bot.retrieve_antistasi_member(payload.user_id)
+            if reaction_user.bot is True:
+                return
+            if topic.role not in reaction_user.roles:
+                return
+            await self._remove_topic_role(reaction_user, topic)
+            await self.sucess_unsubscribed_embed(reaction_user, topic)
+        except discord.errors.NotFound:
+            return
 
 # endregion[Listener]
 
@@ -275,6 +283,10 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         current_data.remove(await topic_item.serialize())
         writejson(current_data, self.topics_data_file)
 
+    async def _save_topic_data(self):
+        writejson([await item.serialize() for item in self.topics], self.topics_data_file)
+        await self._load_topic_items()
+
     async def _clear_other_emojis(self, topic_item):
         pass
 
@@ -293,6 +305,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         log.info(f"assigned role {topic_item.role.name} to {member.display_name}")
 
     async def _load_topic_items(self):
+        self.topics = []
         data = self.topic_data
         for item in data:
             topic_item = await TopicItem.from_data(self.bot, self.subscription_channel, **item)
@@ -397,11 +410,13 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             await ctx.send(**embed_data)
             return True
 
+    async def _update_topic_embed(self, topic_item: TopicItem):
+        embed_data = await self.bot.make_generic_embed(**topic_item.embed_data)
+        await topic_item.message.edit(**embed_data)
 
 # endregion[Helper]
 
 # region [Commands]
-
 
     @auto_meta_info_command(enabled=get_command_enabled('create_subscription_channel_header'))
     @commands.is_owner()
@@ -468,6 +483,20 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         if ctx.channel.type is discord.ChannelType.text:
             await ctx.message.delete()
         log.info(f"Topic '{item.name}' was created, by {ctx.author.display_name}")
+
+    @auto_meta_info_command()
+    @commands.is_owner()
+    @has_attachments(1)
+    async def modify_topic_embed(self, ctx: commands.Context, topic_name: str, setting: str, value: str):
+        allowed_setting_names = ['color', 'image', 'description']
+        if setting.casefold() not in allowed_setting_names:
+            await ctx.send(f'Setting {setting} is not a valid setting to modify, aborting!')
+            return
+        topic_item = {item.name.casefold(): item for item in self.topics}.get(topic_name.casefold(), None)
+
+        setattr(topic_item, setting.casefold(), value)
+        await self._update_topic_embed(topic_item)
+        await self._save_topic_data()
 
     @auto_meta_info_command(enabled=True)
     @commands.dm_only()

@@ -182,6 +182,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
         The translated message is then send to you via DM.
 
         """
+        await self.bot.wait_until_ready()
         if await self._emoji_translate_checks(payload) is False:
             return
         channel = self.bot.get_channel(payload.channel_id)

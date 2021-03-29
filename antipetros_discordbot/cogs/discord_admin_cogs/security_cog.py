@@ -182,6 +182,7 @@ class SecurityCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
     @ commands.Cog.listener(name="on_message")
     async def attachment_scanner_listener(self, message: discord.Message):
+        await self.bot.wait_until_ready()
         if message.channel.type is not ChannelType.text:
             return
         if get_command_enabled("attachment_scanner_listener") is False or len(message.attachments) == 0 or await self._attachment_scanner_exclusion_check(message) is True:

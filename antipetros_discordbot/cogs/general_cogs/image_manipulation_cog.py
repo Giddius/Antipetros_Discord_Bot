@@ -121,6 +121,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         self._get_stamps()
         log.debug('setup for cog "%s" finished', str(self))
@@ -178,14 +179,12 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 # endregion[Listener]
 
-
     def _get_stamps(self):
         self.stamps = {}
         for file in os.scandir(self.stamp_location):
             if os.path.isfile(file.path) is True:
                 name = file.name.split('.')[0].replace(' ', '_').strip().upper()
                 self.stamps[name] = file.path
-                log.debug("loaded stamp image '%s' from path '%s'", name, file.path)
 
     def _get_stamp_image(self, stamp_name, stamp_opacity):
         stamp_name = stamp_name.upper()

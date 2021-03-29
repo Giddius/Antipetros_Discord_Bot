@@ -222,6 +222,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
     @ commands.Cog.listener(name="on_raw_reaction_add")
     async def suggestion_reaction_listener(self, payload):
+        await self.bot.wait_until_ready()
         try:
             channel = self.bot.get_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)

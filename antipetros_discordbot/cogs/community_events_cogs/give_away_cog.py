@@ -126,12 +126,14 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
     @tasks.loop(seconds=30, reconnect=True)
     async def check_give_away_ended_loop(self):
+        await self.bot.wait_until_ready()
         for give_away_event in await self.give_aways:
             if datetime.utcnow() >= give_away_event.end_date_time:
                 await self.give_away_finished(give_away_event)
 
     @tasks.loop(seconds=5, reconnect=True)
     async def clean_emojis_from_reaction(self):
+        await self.bot.wait_until_ready()
         try:
             for give_away_event in await self.give_aways:
                 for reaction in give_away_event.message.reactions:
@@ -147,6 +149,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
+        await self.bot.wait_until_ready()
         try:
             channel = self.bot.get_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)

@@ -154,6 +154,21 @@ def collect_data():
     """
 
 
+@cli.command(name='get-path')
+@click.option('--file', '-f', default=None, type=str)
+def get_path(file):
+    """
+    Get remote path to the User data dir or files withing.
+
+    Args:
+        file (str): name of the file you want to get the path of, if this is not given ,the path to the userdata folder is returned.
+    """
+    if file is None:
+        print(APPDATA)
+    else:
+        print(APPDATA[file])
+
+
 @collect_data.command(name='command')
 @click.option('--output-file', '-o', default=None)
 @click.option('--verbose', '-v', type=bool, default=False)
@@ -285,6 +300,7 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
     anti_petros_bot = AntiPetrosBot(token=token)
 
     anti_petros_bot.run()
+    log.info('~+~' * 20 + ' finished shutting down! ' + '~+~' * 20)
 
 
 # endregion [Main_function]

@@ -7,6 +7,8 @@ from dotenv import find_dotenv, load_dotenv
 from paramiko import SSHClient, AutoAddPolicy
 from ftplib import FTP
 import subprocess
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, readit, writeit
+import json
 
 
 def get_base_path():
@@ -30,6 +32,7 @@ ANTIPETROS_STOP_CMD = "antipetrosbot stop"
 ANTIPETROS_START_CMD = f"nohup antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NEXTCLOUD_USERNAME')} -np {os.getenv('NEXTCLOUD_PASSWORD')} &"
 ANTIPETROS_UPDATE_CMD = "python3.9 -m pip install --upgrade antipetros_discordbot"
 ANTIPETROS_UPDATE_CMD_VERSION = ANTIPETROS_UPDATE_CMD + '==' + get_version()
+ANTIPETROS_GET_PATH_CMD = "antipetrosbot get-path"
 PID_GREP = 'ps -ef|grep "[a]ntipetros"'
 PID_KILL_COMMAND = "kill $(ps aux | grep '[a]ntipetros' | awk '{print $2}')"
 
@@ -38,6 +41,8 @@ PWD = os.getenv('DEVANTISTASI_AUXILIARY_KEY')
 channel_files_to_close = []
 install_script = "install_python_3_9_deadsnake.sh"
 STATEMENT_MARKER = '#' * 15
+
+JSON_TO_SYNC = [r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\init_userdata\data_pack\fixed_data\embed_data\embed_symbols.json"]
 
 
 def print_statement(in_text: str):
@@ -51,6 +56,13 @@ def start_client():
     client.connect(hostname="192.248.189.227", username=USERNAME, password=PWD)
     yield client
     client.close()
+
+
+@contextmanager
+def start_sftp(client):
+    sftp = client.open_sftp()
+    yield sftp
+    sftp.close()
 
 
 def copy_script():
@@ -68,6 +80,33 @@ def copy_script():
             if not stdout_line:
                 break
             print(stdout_line, end="")
+
+
+def get_file_location(client, file_name: str):
+    stdin, stdout, stderr = client.exec_command(ANTIPETROS_GET_PATH_CMD + f' -f "{file_name}"' + ' 2>&1')
+    output = stdout.read().decode('utf-8')
+    return output.strip()
+
+
+def update_json(local_content, remote_content):
+    if isinstance(local_content, dict):
+        return remote_content | local_content
+    if isinstance(local_content, list):
+        return list(set(remote_content + local_content))
+
+
+def sync_json(file_path):
+    with start_client() as client:
+        file_name = os.path.basename(file_path)
+        content_local = loadjson(file_path)
+        server_file_location = get_file_location(client, file_name)
+        with start_sftp(client) as sftp:
+            remote_file = sftp.file(server_file_location, 'r')
+            content_remote = json.loads(remote_file.read())
+            remote_file.close()
+            remote_file = sftp.file(server_file_location, 'w')
+            json.dump(update_json(content_local, content_remote), remote_file)
+            remote_file.close()
 
 
 def run_command(command: str):
@@ -100,6 +139,12 @@ def update_launch():
     sleep(120)
     print_statement("updating bot from PyPi")
     run_command(ANTIPETROS_UPDATE_CMD_VERSION)
+    sleep(30)
+    print_statement('syncing json files')
+    for json_file in JSON_TO_SYNC:
+        print(f"syncing {os.path.basename(json_file)}")
+        sync_json(json_file)
+        sleep(5)
     print_statement("Waiting 1 minute before launching bot")
     sleep(60)
     print_statement("Launching bot")
@@ -108,11 +153,12 @@ def update_launch():
 
 def launch():
     run_command(ANTIPETROS_STOP_CMD)
-    sleep(30)
+    sleep(120)
     run_command(ANTIPETROS_START_CMD)
 
 
 if __name__ == '__main__':
     # sleep(30)
     # run_command(ANTIPETROS_START_CMD)
-    launch()
+    # launch()
+    sync_json(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\init_userdata\data_pack\fixed_data\embed_data\embed_symbols.json")

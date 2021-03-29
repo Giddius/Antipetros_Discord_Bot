@@ -351,6 +351,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @commands.Cog.listener(name='on_message')
     async def add_reaction_to_message_sorter_listener(self, msg: discord.Message):
+        await self.bot.wait_until_ready()
         try:
             if msg.author.bot is True:
                 return

@@ -145,18 +145,21 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
     @commands.Cog.listener(name='on_message')
     async def faq_message_added_listener(self, message):
+        await self.bot.wait_until_ready()
         channel = message.channel
         if channel is self.faq_channel:
             await self.collect_raw_faq_data()
 
     @commands.Cog.listener(name='on_raw_message_delete')
     async def faq_message_deleted_listener(self, payload):
+        await self.bot.wait_until_ready()
         channel = channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
             await self.collect_raw_faq_data()
 
     @commands.Cog.listener(name='on_raw_message_edit')
     async def faq_message_edited_listener(self, payload):
+        await self.bot.wait_until_ready()
         channel = channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
             await self.collect_raw_faq_data()

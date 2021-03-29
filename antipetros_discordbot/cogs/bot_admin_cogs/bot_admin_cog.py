@@ -102,6 +102,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
     @tasks.loop(hours=1)
     async def garbage_clean_loop(self):
+        await self.bot.wait_until_ready()
         log.info('running garbage clean')
         x = gc.collect()
         log.info('Garbage Clean collected "%s"', x)
@@ -125,6 +126,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
     @commands.Cog.listener(name='on_message')
     async def who_is_this_bot_listener(self, msg: discord.Message):
+        await self.bot.wait_until_ready()
         command_name = "who_is_this_bot_listener"
         if get_command_enabled(command_name) is False:
             return

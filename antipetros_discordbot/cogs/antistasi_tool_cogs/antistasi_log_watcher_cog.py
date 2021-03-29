@@ -175,8 +175,9 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Loops]
 
-    @tasks.loop(minutes=5)
+    @tasks.loop(minutes=5, reconnect=True)
     async def update_log_file_data_loop(self):
+        await self.bot.wait_until_ready()
         if self.update_log_file_data_loop_is_first_loop is True:
             log.debug('postponing loop "update_log_file_data_loop", as it should not run directly at the beginning')
             self.update_log_file_data_loop_is_first_loop = False

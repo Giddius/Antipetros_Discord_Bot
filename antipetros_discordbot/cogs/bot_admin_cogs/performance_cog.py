@@ -121,6 +121,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def latency_measure_loop(self):
+        await self.bot.wait_until_ready()
         start_time = time.time()
         log.info("measuring latency")
         now = datetime.utcnow()
@@ -134,6 +135,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def memory_measure_loop(self):
+        await self.bot.wait_until_ready()
         start_time = time.time()
         log.info("measuring memory usage")
         now = datetime.utcnow()
@@ -154,7 +156,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
     @tasks.loop(**DATA_DUMP_INTERVALL, reconnect=True)
     async def report_data_loop(self):
-
+        await self.bot.wait_until_ready()
         # TODO: limit amount of saved data, maybe archive it
         if datetime.utcnow() <= self.start_time + timedelta(seconds=DATA_COLLECT_INTERVALL * 2):
             return

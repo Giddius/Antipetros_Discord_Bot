@@ -81,7 +81,7 @@ class AntiPetrosBot(commands.Bot):
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
-        super().__init__(owner_ids={self.creator.id, 413109712695984130, 122348088319803392, 346595708180103170},
+        super().__init__(owner_ids={self.creator.id, 122348088319803392, 346595708180103170, 262095121527472128},
                          case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'),
                          self_bot=False,
                          command_prefix='$$',
@@ -102,8 +102,8 @@ class AntiPetrosBot(commands.Bot):
         self.all_bot_roles = None
         self.current_day = datetime.utcnow().day
         self.clients_to_close = []
-        self.on_command_error = None
         self.github_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot"
+        self.wiki_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki"
         self.used_startup_message = None
 
         user_not_blacklisted(self, log)
@@ -192,6 +192,7 @@ class AntiPetrosBot(commands.Bot):
 
     async def set_delayed_bot_attributes(self):
         self.on_command_error = self.support.handle_errors
+        # self.on_error = self.support.handle_base_errors
 
     @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_config_changes(self):

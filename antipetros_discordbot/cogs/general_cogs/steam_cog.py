@@ -137,6 +137,7 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 
     @tasks.loop(minutes=5, reconnect=True)
     async def check_for_updates(self):
+        await self.bot.wait_until_ready()
         for item in self.registered_workshop_items:
             log.debug("checking steam_workshop_item '%s' for possible update", item.title)
             new_item = await self._get_fresh_item_data(item.id)
