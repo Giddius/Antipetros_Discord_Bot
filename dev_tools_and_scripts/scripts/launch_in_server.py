@@ -135,30 +135,33 @@ def update_launch():
     print_statement("finished waiting")
     print_statement("stoping bot via stop file")
     run_command(ANTIPETROS_STOP_CMD)
-    print_statement("waiting 2 minutes to let the bot shut down completely")
-    sleep(120)
+    print_statement("waiting 1 minutes to let the bot shut down completely")
+    sleep(60)
     print_statement("updating bot from PyPi")
     run_command(ANTIPETROS_UPDATE_CMD_VERSION)
-    sleep(30)
+    sleep(15)
     print_statement('syncing json files')
     for json_file in JSON_TO_SYNC:
         print(f"syncing {os.path.basename(json_file)}")
         sync_json(json_file)
         sleep(5)
-    print_statement("Waiting 1 minute before launching bot")
-    sleep(60)
+    print_statement("Waiting 30 seconds before launching bot")
+    sleep(30)
     print_statement("Launching bot")
     run_command(ANTIPETROS_START_CMD)
 
 
-def launch():
+def restart():
     run_command(ANTIPETROS_STOP_CMD)
-    sleep(120)
+    sleep(60)
+    run_command(ANTIPETROS_START_CMD)
+
+
+def launch():
     run_command(ANTIPETROS_START_CMD)
 
 
 if __name__ == '__main__':
     # sleep(30)
     # run_command(ANTIPETROS_START_CMD)
-    # launch()
-    sync_json(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\init_userdata\data_pack\fixed_data\embed_data\embed_symbols.json")
+    restart()

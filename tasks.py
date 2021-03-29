@@ -366,7 +366,7 @@ def subreadme_toc(c, output_file=None):
 
 
 @task
-def increment_version(c, increment_part='minor'):
+def increment_version(c, increment_part='patch'):
     init_file = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "__init__.py")
     with open(init_file, 'r') as f:
         content = f.read()
@@ -812,3 +812,9 @@ def new_cog(c, name, category="general"):
     template = code_template_environment.get_template("cog_template.py.jinja")
     with open(cog_path, 'w') as f:
         f.write(template.render(cog_name=name.replace('_', ' ').title().replace(' ', '') + "Cog"))
+
+
+@task
+def bot_restart(c):
+    from dev_tools_and_scripts.scripts.launch_in_server import restart
+    restart()

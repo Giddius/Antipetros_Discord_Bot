@@ -15,3 +15,5 @@ pyvis
 sqlalchemy
 vendorize
 wikitextparser
+tabulate
+Flask-WTF

@@ -158,10 +158,11 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Setup]
 
     async def on_ready_setup(self):
-
+        log.info("%s 'on_ready_setup' cog_method was called %s", '-' * 20, '-' * 20)
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
+        log.info("%s 'update' cog_method was called with typus: '%s' %s", '-' * 20, typus, '-' * 20)
         return
         log.debug('cog "%s" was updated', str(self))
 
@@ -179,6 +180,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
+
     @auto_meta_info_command(enabled=get_command_enabled('info_bot'))
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     async def info_bot(self, ctx: commands.Context):
@@ -191,7 +193,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                 "Release Date": (datetime(year=2021, month=3, day=11).strftime("%a the %d. of %b, %Y"), True),
                 "Version": (str(os.getenv('ANTIPETROS_VERSION')), True),
                 "Uptime": (self.uptime, True),
-                "Current Latency": (f"{round(self.bot.latency * 1000)} s", True),
+                "Current Latency": (f"{round(self.bot.latency * 1000)} ms", True),
                 "Created By": (self.bot.creator.member_object.mention, True),
                 "Github Link": (embed_hyperlink('Github Repo', self.bot.github_url), True),
                 "Wiki": (embed_hyperlink('Github Wiki', self.bot.wiki_url), True),
@@ -201,7 +203,8 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
         fields = []
         for key, value in data.items():
-            fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
+            if value:
+                fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
         embed_data = await self.bot.make_generic_embed(title=name,
                                                        description=self.bot.description,
                                                        image=self.bot.portrait_url,
@@ -221,8 +224,8 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         if description is None:
             description = "This Guild has no description set"
 
-        data = {'Amount of Channels overall': (len([channel for channel in as_guild.channels if channel.type is not discord.ChannelType.category]), True),
-                'Amount of Text Channels': (len(as_guild.text_channels), True),
+        data = {'Amount of Channels overall': (len([channel for channel in as_guild.channels if channel.type is not discord.ChannelType.category and not channel.name.casefold().startswith('ticket-')]), True),
+                'Amount of Text Channels': (len([channel for channel in as_guild.text_channels if channel.type is not discord.ChannelType.category and not channel.name.casefold().startswith('ticket-')]), True),
                 'Amount of Voice Channels': (len(as_guild.voice_channels), True),
                 "Amount Members": (len(as_guild.members), True),
                 'Amount Custom Emojis': (len(as_guild.emojis), True),
@@ -241,7 +244,8 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
         fields = []
         for key, value in data.items():
-            fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
+            if value:
+                fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
 
         embed_data = await self.bot.make_generic_embed(title=as_guild.name, url="https://antistasi.de/", description=description, thumbnail=thumbnail, fields=fields, image=image)
         info_msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
@@ -287,7 +291,8 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                     'Permissions': (permissions, False)}
             fields = []
             for key, value in data.items():
-                fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
+                if value:
+                    fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
             embed_data = await self.bot.make_generic_embed(title=member.name, description=f"The one and only {member.mention}", thumbnail=str(member.avatar_url), fields=fields, color=member.color)
 
             await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
@@ -300,6 +305,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
 
     async def _get_allowed_channels(self):
         indicator_permissions = ['read_messages', 'send_messages', 'manage_messages', 'add_reactions']

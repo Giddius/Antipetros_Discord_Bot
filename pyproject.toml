@@ -37,6 +37,7 @@ exclude = [
     "art",
     "dev_tools_and_scripts",
     "pytest_coverage",
+    "antipetros_website",
 ]
 
 # endregion [flit]
