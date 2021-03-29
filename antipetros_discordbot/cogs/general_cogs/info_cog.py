@@ -203,7 +203,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
         fields = []
         for key, value in data.items():
-            if value:
+            if value[0] not in ['', None]:
                 fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
         embed_data = await self.bot.make_generic_embed(title=name,
                                                        description=self.bot.description,
@@ -244,7 +244,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
         fields = []
         for key, value in data.items():
-            if value:
+            if value[0] not in ['', None]:
                 fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
 
         embed_data = await self.bot.make_generic_embed(title=as_guild.name, url="https://antistasi.de/", description=description, thumbnail=thumbnail, fields=fields, image=image)
@@ -257,19 +257,28 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
             member = ctx.author
             all_true_permissions = [str(permission) for permission, value in iter(member.guild_permissions) if value is True]
             permissions = "```css\n" + ', '.join(sorted(all_true_permissions)) + '\n```'
+            devices = []
+            if member.mobile_status not in [discord.Status.offline, discord.Status.invisible]:
+                devices.append('📱 Mobile')
+            if member.desktop_status not in [discord.Status.offline, discord.Status.invisible]:
+                devices.append('🖥️ Desktop')
+            if member.web_status not in [discord.Status.offline, discord.Status.invisible]:
+                devices.append('🌐 Web')
 
             data = {'Id': (f"`{member.id}`", True),
                     'Activity': (str(member.activity), False),
                     'Status': (member.raw_status, True),
-                    "Device": ('🖥️ Desktop' if member.is_on_mobile() is False else '📱 Mobile', True),
+                    "Device": ('\n'.join(devices), True),
                     'Roles': ('\n'.join(role.mention for role in sorted(member.roles, key=lambda x: x.position, reverse=True) if "everyone" not in role.name.casefold()), False),
                     'Account Created': (member.created_at.strftime("%H:%M:%S on the %Y.%b.%d"), True),
                     'Joined Antistasi Guild': (member.joined_at.strftime("%H:%M:%S on %a the %Y.%b.%d"), True),
                     'Join Position': (self.join_rankdict.get(member), True),
                     'Permissions': (permissions, False)}
             fields = []
+
             for key, value in data.items():
-                fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
+                if value[0] not in ['', None]:
+                    fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
             embed_data = await self.bot.make_generic_embed(title=member.name, description=f"The one and only {member.mention}", thumbnail=str(member.avatar_url), fields=fields, color=member.color)
             await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
@@ -291,7 +300,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                     'Permissions': (permissions, False)}
             fields = []
             for key, value in data.items():
-                if value:
+                if value[0] not in ['', None]:
                     fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
             embed_data = await self.bot.make_generic_embed(title=member.name, description=f"The one and only {member.mention}", thumbnail=str(member.avatar_url), fields=fields, color=member.color)
 

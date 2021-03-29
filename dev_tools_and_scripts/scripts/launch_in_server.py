@@ -131,7 +131,11 @@ def run_command(command: str):
 def update_launch():
     print('*' * 30)
     print_statement("Waiting for 5 min before updating Antipetros from PyPi")
-    sleep(300)
+    to_go = 5
+    for i in range(5):
+        sleep(60)
+        if i != 4:
+            print_statement(f"{to_go - (i+1)} minutes to go")
     print_statement("finished waiting")
     print_statement("stoping bot via stop file")
     run_command(ANTIPETROS_STOP_CMD)
