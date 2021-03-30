@@ -36,7 +36,7 @@ from pytz import timezone
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, seconds_to_pretty, alt_seconds_to_pretty
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, seconds_to_pretty, alt_seconds_to_pretty, delete_message_if_text_channel
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -99,6 +99,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     server_status_change_exclusions_file = pathmaker(APPDATA['json_data'], 'server_status_change_exclusions.json')
     starter_info_message_pickle = pathmaker(APPDATA['misc'], 'starter_info_msg_data.pkl')
     starter_info_channel_id = 449643062516383747
+    announcements_channel_id = 449553298366791690
     server_symbol = "https://i.postimg.cc/dJgyvGH7/server-symbol.png"
     docattrs = {'show_in_readme': True,
                 'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
@@ -134,6 +135,10 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         if os.path.isfile(self.server_status_change_exclusions_file) is False:
             writejson([], self.server_status_change_exclusions_file)
         return loadjson(self.server_status_change_exclusions_file)
+
+    @property
+    def server_message_remove_time(self):
+        return COGS_CONFIG.retrieve(self.config_name, 'server_message_delete_after_seconds', typus=int, direct_fallback=300)
 
 # endregion [Properties]
 
@@ -201,7 +206,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @auto_meta_info_command(enabled=get_command_enabled("current_online_server"), aliases=['server', 'servers'])
     @allowed_channel_and_allowed_role_2()
-    @commands.cooldown(1, 120, commands.BucketType.channel)
+    @commands.cooldown(1, 60, commands.BucketType.channel)
     async def current_online_server(self, ctx: commands.Context):
         """
         Shows all server of the Antistasi Community, that are currently online.
@@ -213,6 +218,15 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         """
         exclude = COGS_CONFIG.retrieve(self.config_name, 'exclude_from_show_online', typus=List[str], direct_fallback=["Testserver_3", 'Eventserver'])
         exclude = set(map(lambda x: x.casefold(), exclude))
+        if all(server_item.is_online is False for server_item in self.servers if server_item.name not in exclude):
+            announcements_channel = await self.bot.channel_from_id(self.announcements_channel_id)
+            embed_data = await self.bot.make_generic_embed(title='All Server seem to be offline',
+                                                           description=f'Please look in {announcements_channel.mention} if there is information regarding the Server',
+                                                           thumbnail="not_possible")
+            await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none(), delete_after=self.server_message_remove_time)
+            await asyncio.sleep(self.server_message_remove_time)
+            await delete_message_if_text_channel(ctx)
+            return
         for server_item in self.servers:
             if server_item.name not in exclude:
                 try:
@@ -243,11 +257,13 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
                         # mod_list_command = self.bot.get_command('get_newest_mod_data')
                         async with self.log_watcher_cog.get_newest_mod_data_only_file(server_item.name) as html_file:
-                            await ctx.send(**embed_data, file=html_file, delete_after=300)
+                            await ctx.send(**embed_data, file=html_file, delete_after=self.server_message_remove_time)
                         # await ctx.invoke(mod_list_command, server_item.name)
                         await asyncio.sleep(0.5)
                 except asyncio.exceptions.TimeoutError:
                     server_item.is_online = False
+        await asyncio.sleep(self.server_message_remove_time)
+        await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command(enabled=get_command_enabled("current_players"))
     @allowed_channel_and_allowed_role_2()
@@ -290,7 +306,8 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         except asyncio.exceptions.TimeoutError:
             await ctx.send(f"The server, `{server}` is currently not online", delete_after=120)
             server_holder.is_online = False
-        await ctx.message.delete()
+        await asyncio.sleep(120)
+        await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command(enabled=get_command_enabled('exclude_from_server_status_notification'))
     @allowed_channel_and_allowed_role_2()

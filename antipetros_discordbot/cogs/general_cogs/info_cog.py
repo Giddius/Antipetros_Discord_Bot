@@ -201,7 +201,6 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
-
     @auto_meta_info_command(enabled=get_command_enabled('info_bot'))
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     async def info_bot(self, ctx: commands.Context):
@@ -331,7 +330,6 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @allowed_channel_and_allowed_role_2()
     async def info_command(self, ctx: commands.Context, command: CommandConverter, as_codeblock: str = None):
         name = command.name
-        ic(name)
         aliases = command.aliases
         command_help = command.help
         cog_file_name = os.path.basename(await antipetros_repo_rel_path(getsourcefile(command.cog.__class__)))
@@ -389,7 +387,6 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [HelperMethods]
 
-
     async def _get_command_gif(self, command_name):
         gif_name = f"{command_name}_command.gif"
         for file in os.scandir(APPDATA['gifs']):
@@ -401,7 +398,6 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     async def _make_other_source_code_images(self, scode: str):
 
         lexer = guess_lexer(scode)
-        ic(lexer.name)
 
         image = highlight(scode, lexer, ImageFormatter(style=self.code_style,
                                                        font_name='Fira Code',

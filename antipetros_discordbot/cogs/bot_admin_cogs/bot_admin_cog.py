@@ -87,7 +87,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 # region [Setup]
 
     async def on_ready_setup(self):
-        self.garbage_clean_loop.start()
+        # self.garbage_clean_loop.start()
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -99,6 +99,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
 
 # region [Loops]
+
 
     @tasks.loop(hours=1)
     async def garbage_clean_loop(self):
@@ -211,55 +212,6 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
     @auto_meta_info_command(enabled=True)
     @commands.is_owner()
-    async def self_announcement(self, ctx: commands.Context, channel: discord.TextChannel, test: bool = False):
-
-        if COGS_CONFIG.retrieve(self.config_name, 'self_announcement_made', typus=bool, direct_fallback=True) is True:
-            return
-
-        creator_mention = self.bot.creator.member_object.mention
-        seperator = '━' * 25
-        pre_embed = await self.bot.make_generic_embed(title='ANNOUNCEMENT\nfrom\n~~ the Party Leadership ~~\nthe Antistasi Leadership',
-                                                      description="\n***Please direct your eyes to the mandatory Telescreens and await the announcement***",
-                                                      image="https://raw.githubusercontent.com/official-antistasi-community/Antipetros_Discord_Bot/development/art/finished/images/bot_announcement.png",
-                                                      footer=None)
-
-        embed_data = await self.bot.make_generic_embed(title=f"LET THIS DATE LIVE IN INFAMY\n{ZERO_WIDTH}",
-                                                       description="**There is a new Bot in Town".center(75, '$').replace('$', f" {ZERO_WIDTH} ") +
-                                                       "\n" + "made from all the Petroses you ever killed".center(75, '$').replace('$', f" {ZERO_WIDTH} ") +
-                                                       "\n" + "accidentaly, on purpose or otherwise".center(75, '$').replace('$', f" {ZERO_WIDTH} ") + "\n\n" +
-                                                       "He and his Assistent Bertha are here to clean this place up**".center(75, '$').replace('$', f" {ZERO_WIDTH} "),
-                                                       image=self.bot.portrait_url,
-                                                       thumbnail=None,
-                                                       fields=[self.bot.field_item(name=ZERO_WIDTH, value=ZERO_WIDTH, inline=False),
-                                                               self.bot.field_item(name=f'**USER HAS JOINED YOUR CHANNEL**\n{ZERO_WIDTH}', value=f'Just call me {self.bot.user.mention}\n{ZERO_WIDTH}', inline=False),
-                                                               self.bot.field_item(
-                                                                   name=f'**NEW RULES**\n{ZERO_WIDTH}', value=f"**⍟** No more pro or contra Furry fighting, or Bertha puts on her BanBear Fursuite\n{seperator}\n**⍟** If you spam my commands you get Blacklisted!\n{seperator}\n**⍟** Try to break me, but if you succede, let {creator_mention} know\n{seperator}\n**⍟** Not everything in this announcement is serious, but you don't know what is and what is not\n{seperator}\n{ZERO_WIDTH}", inline=False),
-                                                               self.bot.field_item(name=f'**WHO CREATED THIS CRIME AGAINST HUMANITY?**\n{ZERO_WIDTH}',
-                                                                                   value=f"Direct the angry Mob to {creator_mention}" + f"\n{ZERO_WIDTH}", inline=False),
-                                                               self.bot.field_item(name=f"**YOU HAVE SOMETHING TO SAY ABOUT ME?**\n{ZERO_WIDTH}",
-                                                                                   value=f"Send {creator_mention} a DM or ping him\n*(he is completely ok with getting pinged)*\ndon't hesitate, you are helping!\n{ZERO_WIDTH}", inline=False),
-                                                               self.bot.field_item(name=f'**HOW CAN WE INTERACT WITH YOU?**\n{ZERO_WIDTH}',
-                                                                                   value=f'Just use\n\n```fix\n@{self.bot.display_name} [COMMAND]\n```\n\nand\n\n```fix\n@{self.bot.display_name} help\n```\nfor info.\n{ZERO_WIDTH}'),
-                                                               self.bot.field_item(name=f"**CAN I SEE THE CODE?**\n{ZERO_WIDTH}", value=f"{embed_hyperlink('Link to Github Repo',self.bot.github_url)}\n{ZERO_WIDTH}", inline=False),
-                                                               self.bot.field_item(name=f"**I WANT TO ALSO WORK ON THIS BOT**\n{ZERO_WIDTH}", value=f"Again, {creator_mention}\n{ZERO_WIDTH}", inline=False),
-                                                               self.bot.field_item(name=ZERO_WIDTH, value=ZERO_WIDTH, inline=False)],
-                                                       footer=None,
-                                                       timestamp=datetime.strptime("6666.06.06 06:06", "%Y.%m.%d %H:%M"))
-        file = discord.File(APPDATA['announcement.mp3'])
-        await channel.send(**pre_embed)
-        async with ctx.typing():
-            await asyncio.sleep(60)
-        await channel.send(file=file)
-        async with ctx.typing():
-            await asyncio.sleep(20)
-        await channel.send(**embed_data)
-        if not test:
-            COGS_CONFIG.set(self.config_name, 'self_announcement_made', 'yes')
-            COGS_CONFIG.save()
-        await ctx.message.delete()
-
-    @auto_meta_info_command(enabled=True)
-    @commands.is_owner()
     async def send_log_file(self, ctx: commands.Context, which_logs: str = 'newest'):
         """
         Gets the log files of the bot and post it as a file to discord.
@@ -343,7 +295,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         return self.qualified_name
 
     def cog_unload(self):
-        self.garbage_clean_loop.stop()
+        # self.garbage_clean_loop.stop()
         log.debug("Cog '%s' UNLOADED!", str(self))
 
 # region[Main_Exec]
