@@ -1,5 +1,7 @@
 Jinja2==2.11.2
+Markdown==3.3.4
 Pillow==8.1.2
+Pygments==2.8.1
 WeasyPrint==52.2
 aiohttp==3.7.3
 aiosqlite==0.16.1
@@ -20,6 +22,7 @@ gidlogger==0.1.9
 googletrans==4.0.0rc1
 humanize==3.2.0
 icecream==2.0.0
+imgkit==1.1.0
 marshmallow==3.10.0
 matplotlib==3.3.3
 psutil==5.8.0

@@ -14,9 +14,11 @@ from datetime import datetime
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands import Converter, CommandError
 from googletrans import LANGUAGES
+from discord.ext import commands, tasks, flags
+import discord
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+from antipetros_discordbot.utility.exceptions import ParameterError
 # endregion[Imports]
 
 # region [TODO]
@@ -104,6 +106,16 @@ class FlagArg(Converter):
                 raise CommandError
         else:
             raise CommandError
+
+
+class CommandConverter(Converter):
+
+    async def convert(self, ctx: commands.Context, argument):
+        bot = ctx.bot
+        command = await bot.command_by_name(argument)
+        if command is None:
+            raise ParameterError('command', argument)
+        return command
 
 
 # region[Main_Exec]

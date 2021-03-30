@@ -17,3 +17,7 @@ vendorize
 wikitextparser
 tabulate
 Flask-WTF
+Flask-Discord
+imgkit
+markdown
+pygments

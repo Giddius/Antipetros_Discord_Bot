@@ -20,7 +20,7 @@ from pprint import pprint, pformat
 from typing import Union, TYPE_CHECKING
 from datetime import tzinfo, datetime, timezone, timedelta
 from functools import wraps, lru_cache, singledispatch, total_ordering, partial, cached_property
-from contextlib import contextmanager
+from contextlib import contextmanager, asynccontextmanager
 from collections import Counter, ChainMap, deque, namedtuple, defaultdict
 from multiprocessing import Pool
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
@@ -30,8 +30,8 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import unicodedata
 from io import BytesIO
-from textwrap import dedent
-
+from textwrap import dedent, indent, TextWrapper
+import imgkit
 # * Third Party Imports -->
 from icecream import ic
 # import requests
@@ -42,21 +42,26 @@ from icecream import ic
 # from github import Github, GithubException
 # from jinja2 import BaseLoader, Environment
 # from natsort import natsorted
-# from fuzzywuzzy import fuzz, process
+from fuzzywuzzy import fuzz, process as fuzzprocess
 import aiohttp
 import discord
 from discord.ext import tasks, commands, flags
 from async_property import async_property
 from dateparser import parse as date_parse
-
+from inspect import getmembers, getdoc, getsource, getsourcefile, getsourcelines, getframeinfo, getfile
 # * Gid Imports -->
 import gidlogger as glog
-
+import markdown
+from pygments import highlight
+from pygments.lexers import PythonLexer, get_lexer_by_name, get_all_lexers, guess_lexer
+from pygments.formatters import HtmlFormatter, ImageFormatter
+from pygments.styles import get_style_by_name, get_all_styles
+from pygments.filters import get_all_filters
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, alt_seconds_to_pretty, delete_message_if_text_channel
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, alt_seconds_to_pretty, delete_message_if_text_channel, antipetros_repo_rel_path
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled, bytes2human
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled, bytes2human, readit, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
@@ -65,7 +70,9 @@ from antipetros_discordbot.utility.replacements.command_replacement import auto_
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
-
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock, html_codeblock
+from antipetros_discordbot.utility.converters import CommandConverter
+from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -124,6 +131,12 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     required_config_data = dedent("""
                                     """).strip('\n')
+    code_style_map = {'dracula': DraculaStyle,
+                      'tomorrow': TomorrowStyle,
+                      'tomorrownight': TomorrownightStyle,
+                      'tomorrownightbright': TomorrownightbrightStyle,
+                      'tomorrownightblue': TomorrownightblueStyle,
+                      'tomorrownighteighties': TomorrownighteightiesStyle} | {name.casefold(): get_style_by_name(name) for name in get_all_styles()}
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -152,6 +165,14 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         all_members_and_date = [(member, member.joined_at) for member in self.bot.antistasi_guild.members]
         all_members_sorted = sorted(all_members_and_date, key=lambda x: x[1])
         return {member_data[0]: join_index + 1 for join_index, member_data in enumerate(all_members_sorted)}
+
+    @property
+    def code_style(self):
+        style_name = COGS_CONFIG.retrieve(self.config_name, 'code_style', typus=str, direct_fallback='dracula')
+        style = self.code_style_map.get(style_name.casefold())
+        if style is None:
+            raise KeyError(f'no such style as {style_name}')
+        return style
 
 # endregion [Properties]
 
@@ -306,6 +327,59 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
             await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
+    @auto_meta_info_command()
+    @allowed_channel_and_allowed_role_2()
+    async def info_command(self, ctx: commands.Context, command: CommandConverter, as_codeblock: str = None):
+        name = command.name
+        ic(name)
+        aliases = command.aliases
+        command_help = command.help
+        cog_file_name = os.path.basename(await antipetros_repo_rel_path(getsourcefile(command.cog.__class__)))
+        github_link, start_line_number = await self._get_github_line_link(command)
+        if as_codeblock is not None and as_codeblock.casefold() == 'codeblock':
+            embed_data = embed_data = await self.bot.make_generic_embed(title=name, url=github_link, description=command_help,
+                                                                        fields=[self.bot.field_item(name="Aliases", value='\n'.join(aliases), inline=False),
+                                                                                self.bot.field_item(name="Link to Source", value=embed_hyperlink(f"{cog_file_name}", github_link), inline=False)],
+                                                                        thumbnail=None)
+            rel_path = await antipetros_repo_rel_path(getsourcefile(command.cog.__class__))
+            raw_source_code = f'\t# {rel_path}\n\n' + getsource(command.callback)
+            await self.bot.split_to_messages(ctx, raw_source_code, in_codeblock=True, syntax_highlighting='py')
+            await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        else:
+            async with self._make_source_code_image(command, start_line_number) as source_image_binary:
+                embed_data = await self.bot.make_generic_embed(title=name, url=github_link, description=command_help,
+                                                               fields=[self.bot.field_item(name="Aliases", value='\n'.join(aliases)if aliases != [] else 'None', inline=False),
+                                                                       self.bot.field_item(name="Link to Source", value=embed_hyperlink(f"{cog_file_name}", github_link), inline=False), ],
+                                                               thumbnail=None,
+                                                               image=discord.File(source_image_binary, filename=command.name + '.png'))
+
+                await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+                gif = await self._get_command_gif(command.name)
+                if gif is not None:
+                    gif_file = discord.File(gif)
+                    await ctx.send(file=gif_file)
+                await asyncio.sleep(2)
+
+    @auto_meta_info_command()
+    @has_attachments(1)
+    async def code_file_to_image(self, ctx: commands.Context, as_codeblock: str = None):
+        file = ctx.message.attachments[0]
+        file_name = file.filename
+
+        with TemporaryDirectory() as tempdir:
+            path = pathmaker(tempdir, file_name)
+            await file.save(path)
+            content = readit(path)
+        if as_codeblock is not None and as_codeblock.casefold() == 'codeblock':
+            await self.bot.split_to_messages(ctx, content, in_codeblock=True, syntax_highlighting=file_name.split('.')[-1])
+        else:
+            async with self._make_other_source_code_images(content) as source_image_binary:
+                embed_data = await self.bot.make_generic_embed(title=file_name.title(),
+                                                               thumbnail=None,
+                                                               image=discord.File(source_image_binary, filename=file_name.split(".")[0] + '.png'))
+                await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+
 # endregion [Commands]
 
 # region [DataStorage]
@@ -315,6 +389,60 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [HelperMethods]
 
+
+    async def _get_command_gif(self, command_name):
+        gif_name = f"{command_name}_command.gif"
+        for file in os.scandir(APPDATA['gifs']):
+            if file.is_file() and file.name.casefold() == gif_name.casefold():
+                return file.path
+        return None
+
+    @ asynccontextmanager
+    async def _make_other_source_code_images(self, scode: str):
+
+        lexer = guess_lexer(scode)
+        ic(lexer.name)
+
+        image = highlight(scode, lexer, ImageFormatter(style=self.code_style,
+                                                       font_name='Fira Code',
+                                                       line_number_bg="#2f3136",
+                                                       line_number_fg="#ffffff",
+                                                       line_number_chars=3,
+                                                       line_pad=5,
+                                                       font_size=20,
+                                                       line_number_bold=True))
+        with BytesIO() as image_binary:
+            image_binary.write(image)
+            image_binary.seek(0)
+            yield image_binary
+
+    @ asynccontextmanager
+    async def _make_source_code_image(self, command: commands.Command, start_line_number: int):
+        rel_path = await antipetros_repo_rel_path(getsourcefile(command.cog.__class__))
+        raw_source_code = f'\t# {rel_path}\n\n' + getsource(command.callback)
+
+        image = highlight(raw_source_code, PythonLexer(), ImageFormatter(style=self.code_style,
+                                                                         font_name='Fira Code',
+                                                                         line_number_start=start_line_number,
+                                                                         line_number_bg="#2f3136",
+                                                                         line_number_fg="#ffffff",
+                                                                         line_number_chars=3,
+                                                                         line_pad=5,
+                                                                         font_size=20,
+                                                                         line_number_bold=True))
+        with BytesIO() as image_binary:
+            image_binary.write(image)
+            image_binary.seek(0)
+            yield image_binary
+
+    async def _get_github_line_link(self, command: commands.Command):
+        base_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/"
+        rel_path = await antipetros_repo_rel_path(getsourcefile(command.cog.__class__))
+        source_lines = getsourcelines(command.callback)
+        start_line_number = source_lines[1]
+        code_length = len(source_lines[0])
+        full_path = base_url + rel_path + f'#L{start_line_number}-L{start_line_number+code_length-1}'
+        return full_path, start_line_number
 
     async def _get_allowed_channels(self):
         indicator_permissions = ['read_messages', 'send_messages', 'manage_messages', 'add_reactions']

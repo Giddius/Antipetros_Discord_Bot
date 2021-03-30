@@ -430,3 +430,11 @@ async def dict_from_attached_json(attachment: discord.Attachment):
     byte_data = await attachment.read()
     data = byte_data.decode('utf-8')
     return json.loads(data)
+
+
+async def antipetros_repo_rel_path(in_path: str):
+    in_path = pathmaker(in_path)
+    in_path_parts = in_path.split('/')
+    while in_path_parts[0] != 'antipetros_discordbot':
+        _ = in_path_parts.pop(0)
+    return pathmaker(*in_path_parts)

@@ -311,6 +311,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         self.reaction_instructions = None
         BaseReactionInstruction.bot = self.bot
+        self.instructions_loaded = False
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -333,7 +334,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     async def on_ready_setup(self):
         await self._load_reaction_instructions()
-
+        self.instructions_loaded = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -352,6 +353,8 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @commands.Cog.listener(name='on_message')
     async def add_reaction_to_message_sorter_listener(self, msg: discord.Message):
         await self.bot.wait_until_ready()
+        if self.instructions_loaded is False:
+            return
         try:
             if msg.author.bot is True:
                 return

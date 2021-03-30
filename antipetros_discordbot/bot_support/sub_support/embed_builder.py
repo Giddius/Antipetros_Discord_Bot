@@ -168,6 +168,9 @@ class EmbedBuilder(SubSupportBase):
                 file = File(fp=image_binary, filename=file_name)
                 image = f"attachment://{file_name}"
                 return image, file
+        elif isinstance(image, discord.file.File):
+            return f"attachment://{image.filename}", image
+
         elif image is None:
             return None, None
         else:

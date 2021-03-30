@@ -77,7 +77,6 @@ class AntiPetrosBot(commands.Bot):
 
 # endregion[ClassAttributes]
 
-
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
@@ -358,6 +357,14 @@ class AntiPetrosBot(commands.Bot):
 
     async def cog_by_name(self, query_cog_name: str):
         return {cog_name.casefold(): cog for cog_name, cog in self.cogs.items()}.get(query_cog_name.casefold())
+
+    async def command_by_name(self, query_command_name: str):
+        command_name_dict = {}
+        for command in self.commands:
+            command_name_dict[command.name.casefold()] = command
+            for alias in command.aliases:
+                command_name_dict[alias.casefold()] = command
+        return command_name_dict.get(query_command_name.casefold(), None)
 
     def all_cog_commands(self):
         for cog_name, cog_object in self.cogs.items():

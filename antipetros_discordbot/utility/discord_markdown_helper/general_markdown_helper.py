@@ -93,5 +93,15 @@ def make_message_list(in_list_data: list, list_marker: str = 'bullet', special_m
     return newlines.join(mod_list_data)
 
 
+def html_codeblock(code: str, language: str):
+    template = """
+<pre>
+  <code class="language-!$!">
+    $!$
+  </code>
+</pre>"""
+    return template.replace('$!$', code).replace('!$!', language.casefold())
+
+
 if __name__ == '__main__':
     pass

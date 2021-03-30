@@ -243,7 +243,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
                         # mod_list_command = self.bot.get_command('get_newest_mod_data')
                         async with self.log_watcher_cog.get_newest_mod_data_only_file(server_item.name) as html_file:
-                            await ctx.send(**embed_data, file=html_file)
+                            await ctx.send(**embed_data, file=html_file, delete_after=300)
                         # await ctx.invoke(mod_list_command, server_item.name)
                         await asyncio.sleep(0.5)
                 except asyncio.exceptions.TimeoutError:

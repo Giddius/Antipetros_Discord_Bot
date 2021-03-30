@@ -24,7 +24,7 @@ from icecream import ic
 import gidlogger as glog
 from dateparser import parse as date_parse
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data, dict_from_attached_json
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data, dict_from_attached_json, antipetros_repo_rel_path
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, only_giddi, has_attachments
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson, writeit
@@ -40,6 +40,8 @@ from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.exceptions import NotAllowedChannelError
 from pyyoutube import Api
 from inspect import getmembers, getsourcefile, getsource, getsourcelines, getfullargspec, getmodule, getcallargs, getabsfile, getmodulename, getdoc, getfile, cleandoc, classify_class_attrs
+
+from antipetros_discordbot.utility.sqldata_storager import AioMetaDataStorageSQLite
 # endregion [Imports]
 
 # region [Logging]
@@ -103,6 +105,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         self.antidevtros_member = None
         self.antipetros_member = None
         self.edit_embed_message = None
+        self.meta_db = AioMetaDataStorageSQLite()
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
@@ -705,21 +708,21 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         embed_data = await self.bot.make_generic_embed(title='This is a test', description=embed_hyperlink('test', message.jump_url))
         await ctx.send(**embed_data)
 
-    async def better_rel_path(self, in_path: str):
-        in_path = pathmaker(in_path)
-        in_path_parts = in_path.split('/')
-        while in_path_parts[0] != 'antipetros_discordbot':
-            _ = in_path_parts.pop(0)
-        return pathmaker(*in_path_parts)
-
     @auto_meta_info_command()
     async def get_cog_info(self, ctx: commands.Context, cog_name: str):
         cog = await self.bot.cog_by_name(cog_name)
         await ctx.send('\n'.join(command.name for command in cog.get_commands()))
 
-        await ctx.send(await self.better_rel_path(getsourcefile(cog.__class__)))
-
+        await ctx.send(await antipetros_repo_rel_path(getsourcefile(cog.__class__)))
+        command = [command for command in self.bot.commands if command.cog is cog][0]
+        await ctx.send(command.name)
+        await ctx.send("```py\n" + getsource(command.callback) + "\n```")
         await ctx.send(cleandoc(getdoc(cog)))
+
+    @auto_meta_info_command()
+    async def dump_to_meta_db(self, ctx: commands.Context):
+        await self.meta_db.insert_cogs(self.bot)
+        await ctx.send('done')
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))

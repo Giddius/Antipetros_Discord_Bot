@@ -4,17 +4,15 @@
 
 import os
 import shutil
-
-
-
+from inspect import getmembers, getfile, getsourcefile, getsource, getsourcelines, getdoc
 
 import gidlogger as glog
-
-
+from icecream import ic
+from textwrap import dedent
 from antipetros_discordbot.utility.gidsql.facade import AioGidSqliteDatabase
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, timenamemaker, limit_amount_files_absolute
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.misc import antipetros_repo_rel_path
 # endregion[Imports]
 
 # region [Constants]
@@ -29,6 +27,9 @@ SCRIPT_LOC_LINKS = APPDATA['save_link_sql']
 DB_LOC_SUGGESTIONS = pathmaker(APPDATA['database'], "save_suggestion.db")
 SCRIPT_LOC_SUGGESTIONS = APPDATA['save_suggestion_sql']
 
+DB_LOC_META_DATA = pathmaker(APPDATA['database'], "meta_data.db")
+SCRIPT_LOC_META_DATA = APPDATA['meta_data_sql']
+
 ARCHIVE_LOCATION = APPDATA['archive']
 LOG_EXECUTION = False
 
@@ -42,6 +43,26 @@ glog.import_notification(log, __name__)
 
 
 # endregion[Logging]
+
+
+class AioMetaDataStorageSQLite:
+    def __init__(self):
+        self.db = AioGidSqliteDatabase(db_location=DB_LOC_META_DATA, script_location=SCRIPT_LOC_META_DATA, log_execution=LOG_EXECUTION)
+        self.was_created = self.db.startup_db()
+        self.db.vacuum()
+        glog.class_init_notification(log, self)
+
+    async def insert_cogs(self, bot):
+        for cog_name, cog_object in bot.cogs.items():
+            abs_path = getsourcefile(cog_object.__class__)
+            ic(abs_path)
+            rel_path = await antipetros_repo_rel_path(abs_path)
+            ic(rel_path)
+            category = os.path.basename(os.path.dirname(rel_path))
+            ic(category)
+            description = dedent(str(getdoc(cog_object.__class__)))
+            await self.db.aio_write('insert_cog_category', (category,))
+            await self.db.aio_write('insert_cog', (cog_name, cog_object.config_name, description, category, rel_path, 1))
 
 
 class AioSuggestionDataStorageSQLite:
