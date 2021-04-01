@@ -494,6 +494,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             if item.message is not None:
                 await item.message.delete(reason="Error at topic creation")
             raise error
+
         await self._add_topic_data(item)
         self.topics.append(item)
         if ctx.channel.type is discord.ChannelType.text:
