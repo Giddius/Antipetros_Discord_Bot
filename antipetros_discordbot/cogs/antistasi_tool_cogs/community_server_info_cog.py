@@ -247,7 +247,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                                                                                self.bot.field_item(name="━━━━━━━━━━━━", value=ZERO_WIDTH, inline=False),
                                                                                self.bot.field_item(name="Game", value=game, inline=True),
                                                                                self.bot.field_item(name="Players", value=f"{player_count}/{max_players}", inline=True),
-                                                                               self.bot.field_item(name="Ping", value=str(ping), inline=True),
+                                                                               self.bot.field_item(name="Ping", value=str(ping) if str(ping) is not None else "NA", inline=True),
                                                                                self.bot.field_item(name="Map", value=map_name, inline=True),
                                                                                self.bot.field_item(name="Password", value=f"{password_needed}", inline=True),
                                                                                self.bot.field_item(name='Battlemetrics', value="🔗 " + embed_hyperlink('link to Battlemetrics', server_item.battlemetrics_url), inline=True)],

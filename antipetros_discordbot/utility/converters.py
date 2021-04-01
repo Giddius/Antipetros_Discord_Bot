@@ -16,6 +16,7 @@ from discord.ext.commands import Converter, CommandError
 from googletrans import LANGUAGES
 from discord.ext import commands, tasks, flags
 import discord
+from dateparser import parse as date_parse
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from antipetros_discordbot.utility.exceptions import ParameterError
@@ -116,6 +117,10 @@ class CommandConverter(Converter):
         if command is None:
             raise ParameterError('command', argument)
         return command
+
+
+def date_time_full_converter_flags(argument):
+    return date_parse(argument)
 
 
 # region[Main_Exec]

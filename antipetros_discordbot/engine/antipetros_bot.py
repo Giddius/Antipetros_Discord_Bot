@@ -157,7 +157,6 @@ class AntiPetrosBot(commands.Bot):
 
     async def on_ready(self):
         log.info('%s has connected to Discord!', self.user.name)
-        log.info('Bot is currently rate limited: %s', str(self.is_ws_ratelimited()))
         await self.antistasi_guild.chunk(cache=True)
         await self._get_bot_info()
         await self._start_sessions()
@@ -177,6 +176,7 @@ class AntiPetrosBot(commands.Bot):
         self._watch_for_alias_changes.start()
         log.info("Debug Session: %s", self.is_debug)
         log.info("Bot is ready")
+        log.info('Bot is currently rate limited: %s', str(self.is_ws_ratelimited()))
         log.info('%s End of Setup Procedures %s', '+-+' * 15, '+-+' * 15)
 
     async def handle_previous_shutdown_msg(self):
@@ -345,6 +345,7 @@ class AntiPetrosBot(commands.Bot):
 
     @ tasks.loop(minutes=5, reconnect=True)
     async def update_check_loop(self):
+        log.info('Bot is currently rate limited: %s', str(self.is_ws_ratelimited()))
         if self.current_day == datetime.utcnow().day:
             return
         self.current_day = datetime.utcnow().day

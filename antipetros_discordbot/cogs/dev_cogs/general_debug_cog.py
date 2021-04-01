@@ -16,7 +16,7 @@ from zipfile import ZipFile, ZIP_LZMA
 from tempfile import TemporaryDirectory
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
-from discord.ext import commands
+from discord.ext import commands, flags
 from emoji import demojize
 from webdav3.client import Client
 from icecream import ic
@@ -38,6 +38,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.exceptions import NotAllowedChannelError
+from antipetros_discordbot.utility.converters import DateTimeFullConverter, date_time_full_converter_flags
 from pyyoutube import Api
 from inspect import getmembers, getsourcefile, getsource, getsourcelines, getfullargspec, getmodule, getcallargs, getabsfile, getmodulename, getdoc, getfile, cleandoc, classify_class_attrs
 
@@ -289,17 +290,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await message.pin(reason=reason)
         await ctx.message.delete()
 
-    @auto_meta_info_command(enabled=True)
-    @has_attachments(1)
-    @log_invoker(log, 'info')
-    async def make_embed(self, ctx: commands.Context):
-        attachment = ctx.message.attachments[0]
-        embed_dict = await dict_from_attached_json(attachment)
-        print(embed_dict.get('embed'))
-        embed = discord.Embed.from_dict(embed_dict.get('embed'))
-        print(embed)
-        await ctx.send(embed=embed)
-
     @auto_meta_info_command(aliases=['unpin'])
     async def unpin_message(self, ctx: commands.Context, *, reason: str):
         if ctx.channel.name.casefold() not in ['bot-testing', 'bot-development']:
@@ -384,13 +374,6 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     #         cogs_config_file = discord.File(APPDATA['cogs_config.ini'])
     #         base_config_file = discord.File(APPDATA['base_config.ini'])
     #         await admin_lead_member.send('**From Giddi**:\nAttached are the bot configs, they are commented as best I can right now, but I am always available for questions. You can change them directly and send them back to me(giddi).\n\n*I use the bot to send this message to not have to write it 3 times*', files=[base_config_file, cogs_config_file])
-
-    @ commands.command(aliases=['clr-scrn'])
-    async def the_bots_new_clothes(self, ctx: commands.Context):
-        msg = ZERO_WIDTH * 20 + '\n'
-        await ctx.send('THE BOTS NEW CLOTHES' + (msg * 60))
-
-        await ctx.message.delete()
 
     async def get_save_path(self, save_folder, name, in_round=0):
         if in_round == 0:
@@ -723,6 +706,11 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     async def dump_to_meta_db(self, ctx: commands.Context):
         await self.meta_db.insert_cogs(self.bot)
         await ctx.send('done')
+
+    @auto_meta_info_command()
+    async def color_embed_check(self, ctx: commands.Context, hex_color: str):
+        embed_data = await self.bot.make_generic_embed(title="Color check", description="testing hex color conversion", color=hex_color)
+        await ctx.send(**embed_data)
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))

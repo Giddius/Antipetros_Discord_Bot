@@ -82,12 +82,13 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         self.latest_who_is_triggered_time = datetime.utcnow()
-
+        self.ready = False
         glog.class_init_notification(log, self)
 # region [Setup]
 
     async def on_ready_setup(self):
         # self.garbage_clean_loop.start()
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -127,7 +128,8 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
     @commands.Cog.listener(name='on_message')
     async def who_is_this_bot_listener(self, msg: discord.Message):
-        await self.bot.wait_until_ready()
+        if self.ready is False:
+            return
         command_name = "who_is_this_bot_listener"
         if get_command_enabled(command_name) is False:
             return

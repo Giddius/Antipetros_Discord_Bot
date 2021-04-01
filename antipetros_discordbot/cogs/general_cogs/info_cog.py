@@ -179,11 +179,9 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Setup]
 
     async def on_ready_setup(self):
-        log.info("%s 'on_ready_setup' cog_method was called %s", '-' * 20, '-' * 20)
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
-        log.info("%s 'update' cog_method was called with typus: '%s' %s", '-' * 20, typus, '-' * 20)
         return
         log.debug('cog "%s" was updated', str(self))
 
@@ -347,7 +345,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
             async with self._make_source_code_image(command, start_line_number) as source_image_binary:
                 embed_data = await self.bot.make_generic_embed(title=name, url=github_link, description=command_help,
                                                                fields=[self.bot.field_item(name="Aliases", value='\n'.join(aliases)if aliases != [] else 'None', inline=False),
-                                                                       self.bot.field_item(name="Link to Source", value=embed_hyperlink(f"{cog_file_name}", github_link), inline=False), ],
+                                                                       self.bot.field_item(name="Link to Source", value=embed_hyperlink(f"{cog_file_name}", github_link), inline=False)],
                                                                thumbnail=None,
                                                                image=discord.File(source_image_binary, filename=command.name + '.png'))
 

@@ -224,14 +224,14 @@ def allowed_requester(cog, data_type: str):
     return _allowed_data
 
 
-def owner_or_admin(allowe_in_dm: bool = False):
+def owner_or_admin(allowed_in_dm: bool = False):
     async def predicate(ctx: commands.Context):
         if await ctx.bot.is_owner(ctx.author):
             return True
         if ctx.channel.type is discord.ChannelType.text:
             if 'admin' in {role.name.casefold() for role in ctx.author.roles}:
                 return True
-        elif ctx.channel.type is discord.ChannelType.private and allowe_in_dm is True:
+        elif ctx.channel.type is discord.ChannelType.private and allowed_in_dm is True:
             member = ctx.bot.sync_member_by_id(ctx.author.id)
             if 'admin' in {role.name.casefold() for role in member.roles}:
                 return True

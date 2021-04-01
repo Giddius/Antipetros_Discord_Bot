@@ -172,6 +172,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         self.topics = []
+        self.ready = False
 
         glog.class_init_notification(log, self)
 
@@ -181,6 +182,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     async def on_ready_setup(self):
         await self._load_topic_items()
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -212,7 +214,8 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     @commands.Cog.listener(name='on_raw_reaction_add')
     async def subscription_reaction(self, payload):
-        await self.bot.wait_until_ready()
+        if self.ready is False:
+            return
         try:
             channel = self.bot.get_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
@@ -238,7 +241,8 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     @commands.Cog.listener(name='on_raw_reaction_remove')
     async def unsubscription_reaction(self, payload):
-        await self.bot.wait_until_ready()
+        if self.ready is False:
+            return
         try:
             channel = self.bot.get_channel(payload.channel_id)
 

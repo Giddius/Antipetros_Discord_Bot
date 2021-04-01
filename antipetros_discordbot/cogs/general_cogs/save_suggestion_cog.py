@@ -111,6 +111,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         self.command_emojis = None
         self.categories_emojis = None
         self.vote_emojis = None
+        self.ready = False
 
         glog.class_init_notification(log, self)
 
@@ -122,6 +123,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         self.command_emojis = await self.get_command_emojis()
         self.categories_emojis = await self.get_categories_emojis()
         self.vote_emojis = await self.get_upvote_downvote_emojis()
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -222,7 +224,8 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
     @ commands.Cog.listener(name="on_raw_reaction_add")
     async def suggestion_reaction_listener(self, payload):
-        await self.bot.wait_until_ready()
+        if self.ready is False:
+            return
         try:
             channel = self.bot.get_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)

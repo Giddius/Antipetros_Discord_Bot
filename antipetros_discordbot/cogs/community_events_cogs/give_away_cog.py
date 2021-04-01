@@ -91,6 +91,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         if os.path.isfile(self.give_away_data_file) is False:
             writejson([], self.give_away_data_file)
+        self.ready = False
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -113,6 +114,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
         await asyncio.sleep(5)
         self.check_give_away_ended_loop.start()
         self.clean_emojis_from_reaction.start()
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -149,7 +151,8 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        await self.bot.wait_until_ready()
+        if self.ready is False:
+            return
         try:
             channel = self.bot.get_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)

@@ -121,7 +121,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         self._get_stamps()
         log.debug('setup for cog "%s" finished', str(self))
@@ -178,6 +177,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 
 # endregion[Listener]
+
 
     def _get_stamps(self):
         self.stamps = {}
@@ -464,7 +464,18 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         bytes_out.seek(0)
         return base_image, bytes_out
 
-    @auto_meta_info_command(enabled=get_command_enabled('add_stamp'))
+    @auto_meta_info_command(enabled=get_command_enabled('get_stamp_image'), aliases=["get_image"])
+    @allowed_channel_and_allowed_role_2()
+    async def get_stamp_image(self, ctx: commands.Context, image_name: str):
+        image_name = image_name.split('.')[0].upper()
+        if image_name not in self.stamps:
+            await ctx.send(f"Don't have an image named `{image_name}` saved!", delete_after=120)
+            return
+        image = self.stamps.get(image_name)
+        embed_data = await self.bot.make_generic_embed(title=image_name, description="Your requested image", thumbnail=None, image=image)
+        await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+    @auto_meta_info_command(enabled=get_command_enabled('add_stamp'), aliases=["add_image"])
     @allowed_channel_and_allowed_role_2()
     @has_attachments(1)
     @log_invoker(log, "critical")

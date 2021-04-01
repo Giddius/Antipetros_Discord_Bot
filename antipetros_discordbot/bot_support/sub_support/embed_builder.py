@@ -117,6 +117,10 @@ class EmbedBuilder(SubSupportBase):
                 return self.bot.random_color.discord_color
             elif color == 'colorless':
                 return self.bot.fake_colorless
+            elif color.startswith('#'):
+                h = color.lstrip('#')
+                rgb = tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+                return discord.Color.from_rgb(*rgb)
             else:
                 try:
                     return self.bot.get_discord_color(color)

@@ -355,7 +355,6 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @commands.Cog.listener(name="on_member_update")
     async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):
-        await self.bot.wait_until_ready()
         if self.is_ready is False:
             return
         if before.roles != after.roles:
@@ -364,7 +363,6 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @commands.Cog.listener(name="on_guild_role_create")
     async def role_added_listener(self, role: discord.Role):
-        await self.bot.wait_until_ready()
         if self.is_ready is False:
             return
         log.debug("updating Team Roster because new role was created")
@@ -372,7 +370,6 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @commands.Cog.listener(name="on_guild_role_delete")
     async def role_removed_listener(self, role: discord.Role):
-        await self.bot.wait_until_ready()
         if self.is_ready is False:
             return
         log.debug("updating Team Roster because role was deleted")
@@ -380,7 +377,6 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @commands.Cog.listener(name="on_guild_role_update")
     async def role_updated_listener(self, before: discord.Role, after: discord.Role):
-        await self.bot.wait_until_ready()
         if self.is_ready is False:
             return
         log.debug("updating Team Roster because role was modifed")

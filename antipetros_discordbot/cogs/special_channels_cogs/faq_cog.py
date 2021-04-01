@@ -102,6 +102,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self.ready = False
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -126,6 +127,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
         FaqItem.answer_parse_emoji = self.a_emoji
         FaqItem.config_name = self.config_name
         await self.collect_raw_faq_data()
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -145,21 +147,24 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
     @commands.Cog.listener(name='on_message')
     async def faq_message_added_listener(self, message):
-        await self.bot.wait_until_ready()
+        if self.ready is False:
+            return
         channel = message.channel
         if channel is self.faq_channel:
             await self.collect_raw_faq_data()
 
     @commands.Cog.listener(name='on_raw_message_delete')
     async def faq_message_deleted_listener(self, payload):
-        await self.bot.wait_until_ready()
+        if self.ready is False:
+            return
         channel = channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
             await self.collect_raw_faq_data()
 
     @commands.Cog.listener(name='on_raw_message_edit')
     async def faq_message_edited_listener(self, payload):
-        await self.bot.wait_until_ready()
+        if self.ready is False:
+            return
         channel = channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
             await self.collect_raw_faq_data()
