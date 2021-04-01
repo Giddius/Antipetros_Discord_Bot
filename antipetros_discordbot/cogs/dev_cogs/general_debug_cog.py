@@ -8,6 +8,7 @@ import random
 from time import time
 from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
 import asyncio
+from pprint import pprint
 from textwrap import dedent
 from dotenv import load_dotenv
 from datetime import datetime
@@ -17,7 +18,8 @@ from tempfile import TemporaryDirectory
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands, flags
-from emoji import demojize
+from emoji import demojize, emojize, emoji_count
+from emoji.unicode_codes import EMOJI_UNICODE_ENGLISH
 from webdav3.client import Client
 from icecream import ic
 # * Gid Imports ----------------------------------------------------------------------------------------->
@@ -711,6 +713,25 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     async def color_embed_check(self, ctx: commands.Context, hex_color: str):
         embed_data = await self.bot.make_generic_embed(title="Color check", description="testing hex color conversion", color=hex_color)
         await ctx.send(**embed_data)
+
+    @auto_meta_info_command()
+    @has_attachments(1)
+    async def check_emoji_stuff(self, ctx: commands.Context):
+        file = ctx.message.attachments[0]
+        with TemporaryDirectory() as tempdir:
+            path = pathmaker(tempdir, file.filename)
+            await file.save(path)
+            with open(path, 'r') as f:
+                content = f.read().strip()
+        colon_start = content.startswith(':')
+        await ctx.send(f"emojis starts with `:` - {colon_start}")
+        await ctx.send(f"emoji emojized - {emojize(content)}")
+        emojized_start = emojize(content).startswith(':')
+        await ctx.send(f"emojized starts with `:` - {emojized_start}")
+        await ctx.send(f"raw emoji count - {emoji_count(content)}")
+        await ctx.send(f"emojized emoji count - {emoji_count(emojize(content))}")
+
+        pprint(EMOJI_UNICODE_ENGLISH)
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))

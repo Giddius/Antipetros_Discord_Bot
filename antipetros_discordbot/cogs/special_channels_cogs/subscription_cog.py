@@ -13,6 +13,7 @@ from copy import deepcopy
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands
 import discord
+from emoji import emoji_count
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -477,11 +478,22 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         if topic_creator is None:
             await ctx.send(f'Unable to find Creator with id `{topic_creator_id}`')
             return
+        if emoji_count(command_data.get('emoji')) == 0:
+            await ctx.send(f'Unusable emoji `{command_data.get("emoji")}`')
+            return
         item = TopicItem(command_data.get('name'), command_data.get('emoji'), topic_creator, self.subscription_channel, description=command_data.get("description", ""), color=command_data.get('color'), image=command_data.get('image'))
         if await self._confirm_topic_creation_deletion(ctx, item, 'creation') is False:
             return
-        await self._create_topic_role(item)
-        await self._post_new_topic(item)
+        try:
+            await self._create_topic_role(item)
+            await self._post_new_topic(item)
+
+        except Exception as error:
+            if item.role is not None:
+                await item.role.delete(reason="Error at topic creation")
+            if item.message is not None:
+                await item.message.delete(reason="Error at topic creation")
+            raise error
         await self._add_topic_data(item)
         self.topics.append(item)
         if ctx.channel.type is discord.ChannelType.text:
