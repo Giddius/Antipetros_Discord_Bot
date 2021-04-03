@@ -477,7 +477,7 @@ def optimize_art(c, quality=100):
 
 
 REQUIREMENT_EXTRAS = [('discord-flags', None)]
-REQUIREMENT_FIXED = ['uvloop==0.15.2; platform_system==Linux']
+REQUIREMENT_FIXED = []
 
 
 def _get_version_from_freeze(context, package_name, markers=None):  # markers is list of strings

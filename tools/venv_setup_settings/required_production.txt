@@ -38,4 +38,3 @@ validator_collection==1.5.0
 watchgod==0.6
 webdavclient3==3.14.5
 aiohttp==3.7.3
-uvloop==0.15.2; platform_system==Linux
