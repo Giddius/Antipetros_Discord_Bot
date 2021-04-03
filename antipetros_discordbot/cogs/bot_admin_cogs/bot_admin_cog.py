@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from textwrap import dedent
 import random
 import asyncio
+import re
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands, tasks
@@ -17,8 +18,8 @@ from icecream import ic
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name, seconds_to_pretty
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
+from antipetros_discordbot.utility.misc import make_config_name, seconds_to_pretty, delete_message_if_text_channel
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin, only_giddi
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
@@ -74,6 +75,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
                                   """)
     alive_phrases_file = pathmaker(APPDATA['fixed_data'], 'alive_phrases.json')
     who_is_trigger_phrases_file = pathmaker(APPDATA['fixed_data'], 'who_is_trigger_phrases.json')
+    loop_regex = re.compile(r"\<?(?P<name>[a-zA-Z\.\_]+)\srunning\=(?P<running>True|False)\sclosed\=(?P<closed>True|False)\sdebug\=(?P<debug>True|False)\>", re.IGNORECASE)
 
     def __init__(self, bot):
         self.bot = bot
@@ -277,6 +279,19 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
                 all_aliases.append(f"`{command.name}`\n```python\n" + '\n'.join(command.aliases) + "\n```")
 
         await self.bot.split_to_messages(ctx, '\n\n'.join(all_aliases), split_on='\n\n')
+
+    @auto_meta_info_command()
+    @only_giddi()
+    async def send_loop_info(self, ctx: commands.Context, loop_attr: str = None):
+        loop_attr = 'name' if loop_attr is None else loop_attr
+        if loop_attr.casefold() not in self.loop_regex.groupindex.keys():
+            await ctx.send(f"`{loop_attr}` is not a valid value for the parameter `loop_attr`.\nNeeds to be one of " + ', '.join(f"`{g_name}`" for g_name in self.loop_regex.groupindex.keys()), delete_after=120)
+            await delete_message_if_text_channel(ctx)
+            return
+        loop = asyncio.get_event_loop()
+        loop_string = str(loop)  # "<uvloop.Loop running=True closed=False debug=False>"
+        loop_match = self.loop_regex.match(loop_string)
+        await ctx.send(loop_match.group(loop_attr.casefold()))
 
     def cog_check(self, ctx):
         return True

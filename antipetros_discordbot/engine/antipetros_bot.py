@@ -65,8 +65,8 @@ class AntiPetrosBot(commands.Bot):
     # region [ClassAttributes]
 
     creator = CreatorMember('Giddi', 576522029470056450, None, None)
-    executor = ThreadPoolExecutor(6, thread_name_prefix='Bot_Thread')
-    process_executor = ProcessPoolExecutor(max_workers=3)
+    executor = ThreadPoolExecutor(os.cpu_count(), thread_name_prefix='Bot_Thread')
+
     discord_admin_cog_import_path = "antipetros_discordbot.cogs.discord_admin_cogs.discord_admin_cog"
     bot_feature_suggestion_folder = APPDATA["bot_feature_suggestion_data"]
     bot_feature_suggestion_json_file = APPDATA['bot_feature_suggestions.json']
@@ -157,6 +157,7 @@ class AntiPetrosBot(commands.Bot):
 
     async def on_ready(self):
         log.info('%s has connected to Discord!', self.user.name)
+        self.loop.set_default_executor(self.executor)
         await self.antistasi_guild.chunk(cache=True)
         await self._get_bot_info()
         await self._start_sessions()

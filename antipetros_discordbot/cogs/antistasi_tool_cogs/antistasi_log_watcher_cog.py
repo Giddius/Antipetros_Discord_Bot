@@ -33,7 +33,7 @@ from jinja2 import Environment, FileSystemLoader
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, split_camel_case_string
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, split_camel_case_string, async_dict_items_iterator, async_list_iterator, async_load_json, async_write_it
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -187,26 +187,24 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await self.check_oversized_logs()
 
     async def update_log_file_data(self):
-        for folder_name, folder_item in self.server.items():
+        async for folder_name, folder_item in async_dict_items_iterator(self.server):
             log.debug("updating log files for '%s'", folder_name)
             await folder_item.update()
             await folder_item.sort()
-            await asyncio.sleep(0)
 
     async def check_oversized_logs(self):
-        for folder_name, folder_item in self.server.items():
+        async for folder_name, folder_item in async_dict_items_iterator(self.server):
             log.debug("checking log files of '%s', for oversize", folder_name)
             oversize_items = await folder_item.get_oversized_items()
 
             oversize_items = [log_item for log_item in oversize_items if log_item.etag not in self.already_notified]
-            for item in oversize_items:
+            async for item in async_list_iterator(oversize_items):
                 if item.modified.replace(tzinfo=pytz.UTC) <= self.old_logfile_cutoff_date.replace(tzinfo=pytz.UTC):
                     await self.add_to_already_notified(item.etag)
                 else:
                     await self.notify_oversized_log(item)
                     await self.add_to_already_notified(item.etag)
 
-            await asyncio.sleep(0)
 
 # endregion [Loops]
 
@@ -230,13 +228,13 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
         log_item = log_item[0]
         mod_data = await log_item.mod_data
         templ_data = []
-        template = self.jinja_env.get_template('arma_required_mods.html.jinja')
-        for item in mod_data:
+        template = await self.bot.execute_in_thread(self.jinja_env.get_template, 'arma_required_mods.html.jinja')
+        async for item in async_list_iterator(mod_data):
             transformed_mod_name = self._transform_mod_name(item)
             templ_data.append(self.mod_lookup_data.get(transformed_mod_name))
         with TemporaryDirectory() as tempdir:
             html_path = pathmaker(tempdir, f"{mod_server}_mods.html")
-            writeit(html_path, template.render(req_mods=templ_data, server_name=server.replace('_', ' ')))
+            await async_write_it(html_path, template.render(req_mods=templ_data, server_name=server.replace('_', ' ')))
             html_file = discord.File(html_path)
             yield html_file
 
@@ -301,7 +299,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
         folder_item = self.server[server]
         sub_folder = sub_folder if sub_folder in folder_item.sub_folder else fuzzprocess.extractOne(sub_folder, list(folder_item.sub_folder))[0]
         try:
-            for log_item in await folder_item.get_newest_log_file(sub_folder, amount):
+            async for log_item in async_list_iterator(await folder_item.get_newest_log_file(sub_folder, amount)):
                 with TemporaryDirectory() as tempdir:
                     file_path = await log_item.download(tempdir)
                     if log_item.size >= self.bot.filesize_limit:
@@ -329,12 +327,12 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
     async def zip_log_file(self, file_path):
         zip_path = pathmaker(os.path.dirname(file_path), os.path.basename(file_path).split('.')[0] + '.zip')
         with ZipFile(zip_path, 'w', ZIP_LZMA) as zippy:
-            zippy.write(file_path, os.path.basename(file_path))
+            await self.bot.execute_in_thread(zippy.write, file_path, os.path.basename(file_path))
         return zip_path
 
     async def get_base_structure(self):
         nextcloud_client = Client(get_nextcloud_options())
-        for folder in await asyncio.to_thread(nextcloud_client.list, self.nextcloud_base_folder):
+        async for folder in async_list_iterator(await asyncio.to_thread(nextcloud_client.list, self.nextcloud_base_folder)):
             folder = folder.strip('/')
             if folder != self.nextcloud_base_folder and '.' not in folder:
                 folder_item = LogServer(self.nextcloud_base_folder, folder)
@@ -344,7 +342,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
         log.info(str(self) + ' collected server names: ' + ', '.join([key for key in self.server]))
 
     async def notify_oversized_log(self, log_item):
-        for member in await self.member_to_notify:
+        async for member in async_list_iterator(await self.member_to_notify):
             embed_data = await self.bot.make_generic_embed(title="Warning Oversized Log File",
                                                            description=f"Log file `{log_item.name}` from server `{log_item.server_name}` and subfolder `{log_item.sub_folder_name}`, is over the size limit of `{self.size_limit}`",
                                                            fields=[self.bot.field_item(name="__**Current Size**__", value=log_item.size_pretty),

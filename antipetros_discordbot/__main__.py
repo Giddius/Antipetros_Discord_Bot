@@ -18,6 +18,7 @@ from time import sleep
 from datetime import datetime
 import click
 from dotenv import load_dotenv
+import platform
 import gidlogger as glog
 from antipetros_discordbot.utility.misc import generate_base_cogs_config, generate_help_data
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -25,6 +26,7 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState
 from antipetros_discordbot.utility.data_gathering import save_cog_command_data
+
 
 # endregion[Imports]
 
@@ -292,6 +294,19 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
     """
     log = configure_logger()
     log.info(glog.NEWRUN())
+    operating_system_name = platform.system()
+    log.info("Operating System is '%s'", operating_system_name)
+
+    if operating_system_name == 'Linux':
+        log.info("Trying to use 'uvloop', because the operating system is 'Linux'")
+        import asyncio
+        try:
+            import uvloop
+            uvloop.install()
+        except Exception as error:
+            log.error(error)
+            log.warning("Unable to use 'uvloop', falling back to default asyncio loop!")
+
     if nextcloud_username is not None:
         os.environ['NEXTCLOUD_USERNAME'] = nextcloud_username
     if nextcloud_password is not None:

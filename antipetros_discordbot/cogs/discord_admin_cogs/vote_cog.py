@@ -27,7 +27,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from tempfile import TemporaryDirectory
 from urllib.parse import urlparse
 import asyncio
-
+import threading
 import unicodedata
 from io import BytesIO
 from textwrap import dedent
@@ -55,7 +55,7 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel, async_dict_items_iterator
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -105,7 +105,9 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion[Constants]
 
+
 # region [Helper]
+
 
 _from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 
@@ -148,9 +150,11 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         self.running_votes = []
         self.reaction_deques = {}
+
         glog.class_init_notification(log, self)
 
 # endregion [Init]
+
 
 # region [Properties]
 
@@ -159,9 +163,12 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
+
         self.check_vote_ended_loop.start()
         self.remove_reaction_from_deques.start()
+
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus):
@@ -174,20 +181,31 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     @tasks.loop(seconds=5)
     async def check_vote_ended_loop(self):
-        if self.running_votes == []:
-            return
         for vote_item in self.running_votes:
             vote_message, vote_end_datetime, vote_dict = vote_item
             if vote_end_datetime <= datetime.utcnow():
+                log.debug("end of vote found for %s", vote_end_datetime.isoformat(timespec="seconds"))
                 await self._end_vote(vote_message, vote_dict)
                 self.running_votes.remove(vote_item)
 
-    @tasks.loop(seconds=1)
+    @tasks.loop(seconds=0)
     async def remove_reaction_from_deques(self):
-        for user, reaction_deque in self.reaction_deques.items():
-            while len(reaction_deque) > 1:
-                reaction = reaction_deque.popleft()
-                await reaction.remove(user)
+        async for message, value in async_dict_items_iterator(self.reaction_deques):
+            async for user, reaction_deque in async_dict_items_iterator(value):
+                while len(reaction_deque) > 1:
+                    reaction = reaction_deque.popleft()
+                    await reaction.remove(user)
+
+    # async def remove_reaction_worker(self):
+    #     log.debug('starting "reaction_removal_loop"')
+    #     while True:
+    #         for message, value in self.reaction_deques.items():
+    #             for user, reaction_deque in value.items():
+    #                 while len(reaction_deque) > 1:
+    #                     log.debug("more than one item in deque")
+    #                     reaction = reaction_deque.popleft()
+    #                     await reaction.remove(user)
+
 
 # endregion [Loops]
 
@@ -209,9 +227,9 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
         if reaction.custom_emoji is True:
             return
 
-        if user not in self.reaction_deques:
-            self.reaction_deques[user] = deque()
-        self.reaction_deques[user].append(reaction)
+        if user not in self.reaction_deques[reaction.message]:
+            self.reaction_deques[reaction.message][user] = deque()
+        self.reaction_deques[reaction.message][user].append(reaction)
 
 # endregion [Listener]
 
@@ -242,6 +260,7 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
         vote_dict = {v_emoji: option for v_emoji, option in zip(vote_emojis, options)}
 
         self.running_votes.append((vote_message, end_datetime, vote_dict))
+        self.reaction_deques[vote_message] = {}
 
 # endregion [Commands]
 
@@ -251,7 +270,6 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
-
 
     async def remove_other_reactions(self, reaction: discord.Reaction, user: Union[discord.User, discord.Member]):
         msg = await reaction.message.channel.fetch_message(reaction.message.id)
@@ -263,17 +281,17 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
     async def _end_vote(self, vote_message: discord.Message, vote_dict: dict):
         votes = {option_name: [] for vote_emoji, option_name in vote_dict.items()}
         vote_counts = {option_name: 0 for vote_emoji, option_name in vote_dict.items()}
+        log.debug("fetching message")
         vote_message = await vote_message.channel.fetch_message(vote_message.id)
+        log.debug("message fetched")
 
-        for reaction in vote_message.reactions:
+        for user, reaction_deque in self.reaction_deques[vote_message].items():
+            reaction = reaction_deque.pop()
             if str(reaction) in vote_dict:
 
                 option_name = vote_dict.get(str(reaction))
-                vote_counts[option_name] = reaction.count - 1
-                async for reacted_user in reaction.users():
-
-                    if reacted_user.bot is False:
-                        votes[option_name].append(reacted_user.mention)
+                vote_counts[option_name] += 1
+                votes[option_name].append(user.mention)
         text = ""
         for option, user_mentions in votes.items():
             text += f"__**{option}**__\n"
@@ -284,6 +302,7 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await vote_message.channel.send(text, allowed_mentions=discord.AllowedMentions.none())
         if vote_message.channel.type is discord.ChannelType.text:
             await self._modify_vote_message_with_result(vote_message, votes, vote_counts)
+        del self.reaction_deques[vote_message]
 
     async def _modify_vote_message_with_result(self, vote_message: discord.Message, vote_users: dict, vote_counts: dict):
         embed = vote_message.embeds[0].copy()

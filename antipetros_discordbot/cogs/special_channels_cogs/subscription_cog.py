@@ -316,6 +316,11 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             topic_item = await TopicItem.from_data(self.bot, self.subscription_channel, **item)
             self.topics.append(topic_item)
 
+    async def convert_hex_color(self, color):
+        h = color.lstrip('#')
+        rgb = tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+        return discord.Color.from_rgb(*rgb)
+
     async def _create_topic_role(self, topic_item: TopicItem):
         """
         Creates the new subscriber role.
@@ -327,7 +332,8 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
         """
         log.debug(f"Trying to create role '{topic_item.name}_Subscriber'")
-        new_role = await self.bot.antistasi_guild.create_role(name=f"{topic_item.name}_Subscriber", permissions=discord.Permissions.none(), mentionable=True, color=self.bot.get_discord_color(topic_item.color), reason=f"Subscribe-able Topic creation, topic: '{topic_item.name}'")
+        color = self.bot.get_discord_color(topic_item.color) if not topic_item.color.startswith('#') else await self.convert_hex_color(topic_item.color)
+        new_role = await self.bot.antistasi_guild.create_role(name=f"{topic_item.name}_Subscriber", permissions=discord.Permissions.none(), mentionable=True, color=color, reason=f"Subscribe-able Topic creation, topic: '{topic_item.name}'")
         # await new_role.edit(position=0, reason=f"Subscribe-able Topic creation, topic: '{topic_item.name}'")
         topic_item.role = new_role
         log.debug(f"finished creating role '{topic_item.name}_Subscriber'")
@@ -356,14 +362,14 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         role = topic_item.role
         for member in role.members:
             embed_data = await self.bot.make_generic_embed(title=f"Topic {topic_item.name} was removed!",
-                                                           description=f"The Topic `{topic_item.name}` was removed as a topic, therefor the assigned role {topic_item.mention} has been removed from your account!")
+                                                           description=f"The Topic `{topic_item.name}` was removed as a topic, therefor the assigned role {topic_item.role.mention} has been removed from your account!")
             await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
             await asyncio.sleep(0.25)
 
     async def sucess_subscribed_embed(self, member: discord.Member, topic: TopicItem):
         embed_data = await self.bot.make_generic_embed(title="Successfully Subscribed", description=f"You are now subscribed to {topic.name} and will get pinged if they have an Announcement.",
                                                        thumbnail="subscribed",
-                                                       fields=[self.bot.field_item(name="Subscription Role", value=f"For this purpose you have been assigne the Role {topic.mention}", inline=False),
+                                                       fields=[self.bot.field_item(name="Subscription Role", value=f"For this purpose you have been assigne the Role `{topic.role.name}`", inline=False),
                                                                self.bot.field_item(name="Unsubscribe", value=f"To Unsubscribe just remove your emoji from the subscription post [link to post]({topic.message.jump_url})", inline=False),
                                                                self.bot.field_item(name="Unsubscribe Command", value=f"You can also use the command `@AntiPetros unsubscribe {topic.name}`", inline=False)])
         await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
@@ -371,7 +377,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     async def sucess_unsubscribed_embed(self, member: discord.Member, topic: TopicItem):
         embed_data = await self.bot.make_generic_embed(title="Successfully Unsubscribed", description=f"You are now no longer subscribed to {topic.name} and will NOT get pinged anymore if they have an Announcement.",
                                                        thumbnail="update",
-                                                       fields=[self.bot.field_item(name="Subscription Role", value=f"The Role {topic.mention} has been removed", inline=False)])
+                                                       fields=[self.bot.field_item(name="Subscription Role", value=f"The Role {topic.role.name} has been removed", inline=False)])
         await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     async def _confirm_topic_creation_deletion(self, ctx: commands.Context, topic_item: TopicItem, typus: str):

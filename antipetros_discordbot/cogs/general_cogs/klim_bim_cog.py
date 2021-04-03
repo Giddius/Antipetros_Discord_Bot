@@ -162,7 +162,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
     @ auto_meta_info_command(enabled=get_command_enabled('flip_coin'))
     @allowed_channel_and_allowed_role_2()
     @commands.cooldown(1, 15, commands.BucketType.channel)
-    async def flip_coin(self, ctx: commands.Context):
+    async def flip_coin(self, ctx: commands.Context, only_text: str = None):
         """
         Simulates a coin flip and posts the result as an image of a Petros Dollar.
 
@@ -174,7 +174,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
             result = (secrets.randbelow(2) + 1)
             coin = "heads" if is_even(result) is True else 'tails'
-
+            color = "green" if coin == "heads" else "red"
             await asyncio.sleep(random.random() * random.randint(1, 2))
 
             coin_image = COGS_CONFIG.retrieve(self.config_name, f"coin_image_{coin}", typus=str)
@@ -182,9 +182,14 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
             if nato_check_num <= 1:
                 coin = 'nato, you lose!'
                 coin_image = "https://i.postimg.cc/cdL5Z0BH/nato-coin.png"
-            embed = await self.bot.make_generic_embed(title=coin.title(), description=ZERO_WIDTH, image=coin_image, thumbnail='no_thumbnail')
+                color = "blue"
+            if only_text is not None and only_text.casefold() == "text":
+                embed = discord.Embed(description=f"{ctx.author.mention} flipped a Coin: **{coin.title()}**", color=self.bot.get_discord_color(color))
+                await ctx.reply(embed=embed, allowed_mentions=AllowedMentions.none())
+            else:
+                embed = await self.bot.make_generic_embed(title=coin.title(), description=ZERO_WIDTH, image=coin_image, thumbnail='no_thumbnail', color=color)
 
-            await ctx.reply(**embed, allowed_mentions=AllowedMentions.none())
+                await ctx.reply(**embed, allowed_mentions=AllowedMentions.none())
             return coin
 
     @ auto_meta_info_command(enabled=get_command_enabled('urban_dictionary'))
@@ -296,7 +301,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
     @auto_meta_info_command(enabled=get_command_enabled('roll_dice'))
     @allowed_channel_and_allowed_role_2(True)
     @commands.cooldown(1, 5, commands.BucketType.member)
-    async def roll_dice(self, ctx, *, dice_line: str):
+    async def roll_dice(self, ctx, *, dice_line: str):  # @AntiPetros roll_dice 14d4 14d6 14d8 14d10 14d12 14d20 14d100
         """
         Roll Dice and get the result also as Image.
 
@@ -338,10 +343,11 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         result_combined = await self.bot.execute_in_thread(self._sum_dice_results, results)
         fields = [self.bot.field_item(name="Sum", value='`' + str(result_combined) + '`', inline=False)]
 
-        embed_data = await self.bot.make_generic_embed(title='You rolled...',
+        embed_data = await self.bot.make_generic_embed(title=f'{ctx.author.display_name} rolled:',
                                                        fields=fields,
                                                        thumbnail='no_thumbnail',
-                                                       image=result_image)
+                                                       image=result_image,
+                                                       color='random')
         await ctx.send(**embed_data)
 
     @auto_meta_info_command(enabled=get_command_enabled('choose_random'))

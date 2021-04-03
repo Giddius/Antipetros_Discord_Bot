@@ -2,6 +2,7 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import sys
+import asyncio
 import inspect
 from asyncio import get_event_loop
 from datetime import datetime
@@ -10,7 +11,7 @@ from functools import wraps, partial
 from concurrent.futures import ThreadPoolExecutor
 from inspect import getclosurevars
 import json
-
+from typing import Iterable, Union, Set, List, Tuple, Dict, Callable, Mapping, Generator
 # * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
 from validator_collection import validators
@@ -34,7 +35,7 @@ glog.import_notification(log, __name__)
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
-
+_LOOP = None
 SGF = 1024  # SIZE_GENERAL_FACTOR
 SIZE_CONV = {'byte': {'factor': SGF**0, 'short_name': 'b'},
              'kilobyte': {'factor': SGF**1, 'short_name': 'kb'},
@@ -236,7 +237,10 @@ def generate_help_data(cog: commands.Cog, output_file=None):
 
 
 async def async_load_json(json_file):
-    return loadjson(json_file)
+    global _LOOP
+    if _LOOP is None:
+        _LOOP = asyncio.get_event_loop()
+    return await _LOOP.run_in_executor(None, loadjson, json_file)
 
 
 async def image_to_url(image_path):
@@ -438,3 +442,22 @@ async def antipetros_repo_rel_path(in_path: str):
     while in_path_parts[0] != 'antipetros_discordbot':
         _ = in_path_parts.pop(0)
     return pathmaker(*in_path_parts)
+
+
+async def async_dict_items_iterator(in_dict: Mapping):
+    for key, value in in_dict.items():
+        yield key, value
+        await asyncio.sleep(0)
+
+
+async def async_list_iterator(in_list: Iterable):
+    for item in in_list:
+        yield item
+        await asyncio.sleep(0)
+
+
+async def async_write_it(in_file, in_data, append=False, in_encoding='utf-8', in_errors=None):
+    global _LOOP
+    if _LOOP is None:
+        _LOOP = asyncio.get_event_loop()
+    await _LOOP.run_in_executor(None, writeit, in_file, in_data, append, in_encoding, in_errors)

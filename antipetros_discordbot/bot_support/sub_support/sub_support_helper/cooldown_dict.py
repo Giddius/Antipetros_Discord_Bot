@@ -30,10 +30,8 @@ class CoolDownDict(UserDict):
     async def add(self, ctx: commands.Context, error: commands.CommandOnCooldown):
 
         _id = self.data_lut.get(error.cooldown.type)(ctx)
-        command_name = ctx.command.name
-        time_remaining = error.retry_after
-        key = _id + self.string_to_int(command_name)
-        value = {'id': _id, 'context': ctx, 'error': error, 'time_remaining': time_remaining}
+        key = _id + self.string_to_int(ctx.command.name)
+        value = {'id': _id, 'context': ctx, 'error': error, 'time_remaining': error.retry_after}
         self.data[key] = value
         create_task(self._timed_removal(key, value))
 

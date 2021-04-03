@@ -476,16 +476,20 @@ def optimize_art(c, quality=100):
                 os.rename(file.path, file.path.replace('.jpg', '.png'))
 
 
-REQUIREMENT_EXTRAS = ['discord-flags']
+REQUIREMENT_EXTRAS = [('discord-flags', None)]
+REQUIREMENT_FIXED = ['uvloop==0.15.2; platform_system==Linux']
 
 
-def _get_version_from_freeze(context, package_name):
+def _get_version_from_freeze(context, package_name, markers=None):  # markers is list of strings
     result = activator_run(context, "pip freeze", echo=False, hide=True).stdout.strip()
     for req_line in result.splitlines():
         req_line = req_line.strip()
         req_name = req_line.split('==')[0]
         if req_name.casefold() == package_name.casefold():
-            return req_line
+            if markers is not None:
+                mod_req_line = req_line + '; ' + ', '.join(markers)
+                return mod_req_line
+        return req_line
 
 
 @task
@@ -520,7 +524,8 @@ def set_requirements(c):
             line = line.replace(' ', '')
             _requirements.append(line)
     for req in REQUIREMENT_EXTRAS:
-        _requirements.append(_get_version_from_freeze(c, req))
+        _requirements.append(_get_version_from_freeze(c, req[0], req[1]))
+    _requirements += REQUIREMENT_FIXED
     os.remove(pigar_req_file)
     os.chdir(os.getenv('WORKSPACEDIR'))
     with open('pyproject.toml', 'r') as f:
@@ -597,8 +602,14 @@ def get_dependencies():
     _out = {}
     raw_dependencies = flit_data('dependencies')
     for raw_dependency in raw_dependencies:
-        name, version = raw_dependency.split('==')
-        _out[name.strip()] = version.strip()
+        if "uvloop" not in raw_dependency:
+            try:
+                name, version = raw_dependency.split('==')
+                _out[name.strip()] = version.strip()
+            except ValueError as error:
+                print(raw_dependency)
+                raise error
+
     return dict(sorted(_out.items()))
 
 
