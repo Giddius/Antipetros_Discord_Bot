@@ -63,7 +63,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
     Collection of commands that help in translating text to different Languages.
     """
     # region [ClassAttributes]
-    cog_id = 685
+    cog_id = 819
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     language_dict = {value: key for key, value in LANGUAGES.items()}
     language_emoji_map = {'Germany': 'de',

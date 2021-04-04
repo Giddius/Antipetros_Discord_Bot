@@ -80,7 +80,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     """
     Collects Latency data and memory usage every 10min and posts every 24h a report of the last 24h as graphs.
     """
-    cog_id = 685
+    cog_id = 795
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     save_folder = APPDATA['performance_data']

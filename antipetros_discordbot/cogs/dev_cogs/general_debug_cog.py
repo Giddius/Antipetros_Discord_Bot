@@ -81,7 +81,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     """
     Cog for debug or test commands, should not be enabled fo normal Bot operations.
     """
-    cog_id = 685
+    cog_id = 131
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,

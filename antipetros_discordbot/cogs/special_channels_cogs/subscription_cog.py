@@ -152,7 +152,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     Organizes Topic so they can be subscribed and mentioned selectively.
     """
     # region [ClassAttributes]
-    cog_id = 685
+    cog_id = 476
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     topics_data_file = pathmaker(APPDATA['json_data'], 'subscription_topics_data.json')

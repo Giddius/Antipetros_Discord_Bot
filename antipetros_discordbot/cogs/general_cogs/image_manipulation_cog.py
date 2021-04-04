@@ -63,7 +63,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
     Commands that manipulate or generate images.
     """
     # region [ClassAttributes]
-    cog_id = 685
+    cog_id = 326
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     allowed_stamp_formats = set(loadjson(APPDATA["image_file_extensions.json"]))

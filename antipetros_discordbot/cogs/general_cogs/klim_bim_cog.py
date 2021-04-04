@@ -74,7 +74,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
     Collection of small commands that either don't fit anywhere else or are just for fun.
     """
     # region [ClassAttributes]
-    cog_id = 685
+    cog_id = 514
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
 

@@ -84,7 +84,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     commands are hidden from the help command.
     """
     # region [ClassAttributes]
-    cog_id = 685
+    cog_id = 469
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     config_dir = APPDATA['config']

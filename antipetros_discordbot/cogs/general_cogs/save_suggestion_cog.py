@@ -70,7 +70,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     """
 
     # region [ClassAttributes]
-    cog_id = 685
+    cog_id = 724
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
 

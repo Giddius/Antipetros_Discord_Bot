@@ -62,7 +62,7 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
     Soon
     """
     # region [ClassAttributes]
-    cog_id = 685
+    cog_id = 546
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
 

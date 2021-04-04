@@ -65,7 +65,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     Commands and methods that help in Administrate the Discord Server.
     """
     # region [ClassAttributes]
-    cog_id = 685
+    cog_id = 537
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     announcements_channel_id = 645930607683174401

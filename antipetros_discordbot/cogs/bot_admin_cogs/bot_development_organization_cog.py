@@ -82,7 +82,7 @@ class BotDevOrgCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
     """
     # region [ClassAttributes]
-    cog_id = 685
+    cog_id = 156
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     dev_org_folder = APPDATA['bot_development_organization']
