@@ -79,6 +79,7 @@ class AntiPetrosBot(commands.Bot):
 
 # endregion[ClassAttributes]
 
+
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
@@ -158,6 +159,15 @@ class AntiPetrosBot(commands.Bot):
         if os.path.isfile(pathmaker(APPDATA['debug'], 'general_debug')):
             bot_info = bot_info | loadjson(pathmaker(APPDATA['debug'], 'general_debug'))
 
+    async def cog_id_unique_check(self):
+        all_ids = []
+        for cog_name, cog_object in self.cogs.items():
+            cog_id = cog_object.full_cog_id
+            if cog_id not in all_ids:
+                all_ids.append(cog_id)
+            else:
+                await self.creator.member_object.send('Warning NON UNIQUE COG IDS\n\nCurrent Cog IDs:\n' + '\n'.join(f"NAME: {cog_name}, ID: {cog_o.full_cog_id}" for cog_name, cog_o in self.cogs.items()))
+
     async def on_ready(self):
         log.info('%s has connected to Discord!', self.user.name)
         self.loop.set_default_executor(self.executor)
@@ -181,6 +191,7 @@ class AntiPetrosBot(commands.Bot):
         log.info("Debug Session: %s", self.is_debug)
         log.info("Bot is ready")
         log.info('Bot is currently rate limited: %s', str(self.is_ws_ratelimited()))
+        await self.cog_id_unique_check()
         log.info('%s End of Setup Procedures %s', '+-+' * 15, '+-+' * 15)
 
     async def handle_previous_shutdown_msg(self):
@@ -308,27 +319,31 @@ class AntiPetrosBot(commands.Bot):
 
     async def close(self):
         try:
-            if self.used_startup_message is not None:
-                await self.used_startup_message.delete()
-        except discord.NotFound:
-            log.debug('startup message was already deleted')
-        log.info("shutting down bot loops")
-        self.update_check_loop.stop()
+            try:
+                if self.used_startup_message is not None:
+                    await self.used_startup_message.delete()
+            except discord.NotFound:
+                log.debug('startup message was already deleted')
+            log.info("shutting down bot loops")
+            self.update_check_loop.stop()
 
-        log.info("retiring troops")
-        self.support.retire_subsupport()
+            log.info("retiring troops")
+            self.support.retire_subsupport()
 
-        log.info("shutting down executor")
-        self.executor.shutdown()
-        for session in self.clients_to_close:
-            await session.close()
-            log.info("'%s' was shut down", str(session))
-        log.debug('aiosession closed: %s', str(self.aio_request_session.closed))
+            log.info("shutting down executor")
+            self.executor.shutdown()
+            for session in self.clients_to_close:
+                await session.close()
+                log.info("'%s' was shut down", str(session))
+            log.debug('aiosession closed: %s', str(self.aio_request_session.closed))
 
-        log.info("closing bot")
-        await self.wait_until_ready()
-        await super().close()
-        time.sleep(2)
+            log.info("closing bot")
+            await self.wait_until_ready()
+        except Exception as error:
+            log.error(error, exc_info=True)
+        finally:
+            await super().close()
+            time.sleep(2)
 
     def activity_from_config(self, option='standard_activity'):
         if self.is_debug is True:
@@ -361,6 +376,13 @@ class AntiPetrosBot(commands.Bot):
 
     async def cog_by_name(self, query_cog_name: str):
         return {cog_name.casefold(): cog for cog_name, cog in self.cogs.items()}.get(query_cog_name.casefold())
+
+    async def cog_by_id(self, cog_id: int):
+        return {cog.full_cog_id: cog for cog_name, cog in self.cogs.items()}.get(cog_id)
+
+    @property
+    def cog_name_id_map(self):
+        return {cog.full_cog_id: cog for cog_name, cog in self.cogs.items()} | {cog_name.casefold(): cog for cog_name, cog in self.cogs.items()}
 
     async def command_by_name(self, query_command_name: str):
         command_name_dict = {}

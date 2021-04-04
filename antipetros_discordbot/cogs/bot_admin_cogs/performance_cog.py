@@ -16,6 +16,7 @@ import discord
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from psutil import virtual_memory
+import psutil
 from discord.ext import tasks, commands
 from matplotlib.ticker import FormatStrFormatter
 
@@ -113,6 +114,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
+        _ = psutil.cpu_percent(interval=None)
         self.latency_measure_loop.start()
         self.memory_measure_loop.start()
         self.report_data_loop.start()
@@ -325,6 +327,30 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         """
         await ctx.invoke(self.bot.get_command('report_memory'))
         await ctx.invoke(self.bot.get_command('report_latency'))
+
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def cpu_info(self, ctx: commands.Context):
+        cpu_percent = psutil.cpu_percent(interval=None)
+        cpu_logical_count = psutil.cpu_count()
+        cpu_strict_count = psutil.cpu_count(logical=False)
+        cpu_load_avg = [x / psutil.cpu_count() * 100 for x in psutil.getloadavg()]
+        fields = [self.bot.field_item(name="CPU Percent", value=f"{cpu_percent} %"),
+                  self.bot.field_item(name="CPU count logical", value=cpu_logical_count),
+                  self.bot.field_item(name="CPU strict count", value=cpu_strict_count),
+                  self.bot.field_item(name="CPU load average", value=f"1 minute: {cpu_load_avg[0]}\n5 minutes: {cpu_load_avg[1]}\n15 minutes: {cpu_load_avg[2]}")]
+        embed_data = await self.bot.make_generic_embed(title="CPU Data", fields=fields)
+        await ctx.send(**embed_data)
+
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def socket_info(self, ctx: commands.Context):
+        out = []
+        net_connections = psutil.net_connections()
+        for item in net_connections:
+            out.append(str(item))
+        writejson(out, 'net_stuff.json')
+        await ctx.send('done')
 
     def __str__(self) -> str:
         return self.qualified_name

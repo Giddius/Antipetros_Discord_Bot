@@ -16,7 +16,7 @@ import gc
 from icecream import ic
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+from typing import TYPE_CHECKING, List, Dict, Optional, Tuple, Any, Union, Callable, Iterable, Set, Mapping
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name, seconds_to_pretty, delete_message_if_text_channel, make_full_cog_id
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin, only_giddi
@@ -29,6 +29,11 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import make_message_list
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.converters import CogConverter
+from antipetros_discordbot.cogs import category_ids
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+
+
 # endregion[Imports]
 
 # region [TODO]
@@ -80,7 +85,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
     who_is_trigger_phrases_file = pathmaker(APPDATA['fixed_data'], 'who_is_trigger_phrases.json')
     loop_regex = re.compile(r"\<?(?P<name>[a-zA-Z\.\_]+)\srunning\=(?P<running>True|False)\sclosed\=(?P<closed>True|False)\sdebug\=(?P<debug>True|False)\>", re.IGNORECASE)
 
-    def __init__(self, bot):
+    def __init__(self, bot: "AntiPetrosBot"):
         self.bot = bot
         self.support = self.bot.support
         self.allowed_channels = allowed_requester(self, 'channels')
@@ -105,6 +110,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
 
 # region [Loops]
+
 
     @tasks.loop(hours=1)
     async def garbage_clean_loop(self):
@@ -298,7 +304,23 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
     @auto_meta_info_command()
     @owner_or_admin()
     async def disable_cog(self, ctx: commands.Context, cog: CogConverter):
-        pass
+        name = cog.qualified_name
+        await ctx.send(f"Trying to remove Cog `{name}`")
+        self.bot.remove_cog(name)
+        import_path = cog.__module__.split('.', 2)[-1]
+        if import_path.split('.')[0] not in ['bot_admin_cogs', 'discord_admin_cogs', 'dev_cogs']:
+            BASE_CONFIG.set("extensions", import_path, "no")
+            BASE_CONFIG.save()
+            await ctx.send(f"Set BASE_CONFIG import setting for Cog `{name}` to `no`")
+        await ctx.send(f"removed Cog `{name}` from the the current bot process!")
+
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def current_cogs(self, ctx: commands.Context):
+        text = ""
+        for cog_name, cog_object in self.bot.cogs.items():
+            text += f"NAME: {cog_name}, ID: {cog_object.__module__}, CONFIG_NAME: {cog_object.config_name}\n{'-'*10}\n"
+        await self.bot.split_to_messages(ctx, text, in_codeblock=True, syntax_highlighting='fix')
 
     def cog_check(self, ctx):
         return True

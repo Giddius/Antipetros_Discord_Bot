@@ -139,7 +139,7 @@ class EssentialCommandsKeeper(SubSupportBase):
             pickleit({"message_id": last_shutdown_message.id, "channel_id": last_shutdown_message.channel.id}, self.shutdown_message_pickle_file)
 
         except Exception as error:
-            log.error(error, exc_info=False)
+            log.error(error, exc_info=True)
         finally:
             await self.bot.close()
 
