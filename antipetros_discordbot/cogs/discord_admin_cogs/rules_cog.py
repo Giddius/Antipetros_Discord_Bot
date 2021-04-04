@@ -54,13 +54,13 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel, make_full_cog_id
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, Seperators
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogState
+from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
@@ -116,7 +116,8 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
     WiP
     """
 # region [ClassAttributes]
-
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     rules_channel_id = 648725988813045765
     rules_message_regex = re.compile(r"^(?P<number>\d+(\.\d)?)[\)\.]\s?\-?(?P<text>.*)")
@@ -166,7 +167,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await self.get_rules_messages()
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 

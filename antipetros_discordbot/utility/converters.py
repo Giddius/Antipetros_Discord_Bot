@@ -10,7 +10,7 @@
 import os
 import re
 from datetime import datetime
-
+from typing import TYPE_CHECKING
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands import Converter, CommandError
 from googletrans import LANGUAGES
@@ -20,6 +20,9 @@ from dateparser import parse as date_parse
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from antipetros_discordbot.utility.exceptions import ParameterError
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
 
 # region [TODO]
@@ -121,6 +124,13 @@ class CommandConverter(Converter):
 
 def date_time_full_converter_flags(argument):
     return date_parse(argument)
+
+
+class CogConverter(Converter):
+
+    async def convert(self, ctx: commands.Context, argument):
+        bot = ctx.bot
+
 
 
 # region[Main_Exec]

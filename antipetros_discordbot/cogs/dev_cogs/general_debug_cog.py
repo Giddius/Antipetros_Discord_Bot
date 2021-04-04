@@ -26,13 +26,13 @@ from icecream import ic
 import gidlogger as glog
 from dateparser import parse as date_parse
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data, dict_from_attached_json, antipetros_repo_rel_path
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data, dict_from_attached_json, antipetros_repo_rel_path, make_full_cog_id
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, only_giddi, has_attachments
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name, normalize_emoji
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
@@ -81,6 +81,8 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     """
     Cog for debug or test commands, should not be enabled fo normal Bot operations.
     """
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
                 'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING | CogState.FOR_DEBUG,
@@ -127,7 +129,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await generate_bot_data(self.bot, self.antipetros_member)
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 

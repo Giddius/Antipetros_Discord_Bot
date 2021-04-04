@@ -29,7 +29,7 @@ from dateparser import parse as date_parse
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.enums import EmbedType
+from antipetros_discordbot.utility.enums import EmbedType, UpdateTypus
 from antipetros_discordbot.utility.exceptions import FuzzyMatchError
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
 from antipetros_discordbot.utility.gidtools_functions import (loadjson, pathmaker, writejson, create_file, create_folder)
@@ -164,6 +164,7 @@ class EmbedBuilder(SubSupportBase):
 
             return image, None
         elif isinstance(image, PIL.Image.Image):
+            log.debug('Image is a Pil image')
             with BytesIO() as image_binary:
                 image_format = 'PNG' if image.format is None else image.format
                 image.save(image_binary, image_format, optimize=True)
@@ -235,7 +236,7 @@ class EmbedBuilder(SubSupportBase):
                               description=str(kwargs.get('description', self.default_description)),
                               color=self._validate_color(kwargs.get('color', self.default_color)),
                               timestamp=self._validate_timestamp(kwargs.get('timestamp', self.default_timestamp)),
-                              url=kwargs.get('url'))
+                              url=kwargs.get('url', discord.Embed.Empty))
 
         image, image_file = self._validate_image(kwargs.get('image', None))
         files.append(image_file)
@@ -420,7 +421,7 @@ class EmbedBuilder(SubSupportBase):
         self.collect_embed_build_recipes()
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug("'%s' sub_support was UPDATED", str(self))
 

@@ -12,10 +12,10 @@ from discord.ext import commands, flags
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.misc import make_config_name, make_full_cog_id
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, in_allowed_channels
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 # endregion[Imports]
@@ -55,6 +55,8 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": COG_
     """
     Soon
     """
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
                 'is_ready': (CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
@@ -70,13 +72,12 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": COG_
 
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 
 
 # endregion [Setup]
-
 
     def __init__(self, bot):
         self.bot = bot

@@ -19,14 +19,14 @@ from discord.ext import commands, flags
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name, alt_seconds_to_pretty
+from antipetros_discordbot.utility.misc import make_config_name, alt_seconds_to_pretty, make_full_cog_id
 from antipetros_discordbot.utility.enums import WatermarkPosition
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, log_invoker, has_attachments, owner_or_admin
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.exceptions import ParameterError
 from antipetros_discordbot.utility.image_manipulation import make_perfect_fontsize, find_min_fontsize, get_text_dimensions
@@ -63,6 +63,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
     Commands that manipulate or generate images.
     """
     # region [ClassAttributes]
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     allowed_stamp_formats = set(loadjson(APPDATA["image_file_extensions.json"]))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
@@ -121,11 +123,12 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         self._get_stamps()
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         self._get_stamps()
         log.debug('cog "%s" was updated', str(self))
 
@@ -177,7 +180,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 
 # endregion[Listener]
-
 
     def _get_stamps(self):
         self.stamps = {}

@@ -18,12 +18,14 @@ import discord
 from discord.ext.commands import MinimalHelpCommand
 from watchgod import Change, awatch
 from discord.ext import tasks, commands
-
-
+from enum import Enum, Flag, auto, unique
+from functools import reduce, partial, wraps, lru_cache, total_ordering, cmp_to_key, singledispatch
+from operator import or_
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
+from antipetros_discordbot.utility.enums import UpdateTypus
 from antipetros_discordbot.utility.misc import save_bin_file
 from antipetros_discordbot.engine.global_checks import user_not_blacklisted
 from antipetros_discordbot.utility.named_tuples import CreatorMember
@@ -88,6 +90,7 @@ class AntiPetrosBot(commands.Bot):
                          intents=self.get_intents(),
                          fetch_offline_members=True,
                          help_command=MinimalHelpCommand(),
+                         strip_after_prefix=True,
                          ** kwargs)
         self.token = token
         self.help_invocation = help_invocation
@@ -202,14 +205,14 @@ class AntiPetrosBot(commands.Bot):
                 log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
             BASE_CONFIG.read()
             COGS_CONFIG.read()
-            await self.to_all_cogs('update', typus='data')
+            await self.to_all_cogs('update', typus=UpdateTypus.CONFIG)
 
     @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_alias_changes(self):
         async for changes in awatch(APPDATA['command_aliases.json'], loop=self.loop):
             for change_typus, change_path in changes:
                 log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
-            await self.to_all_cogs('update', typus='data')
+            await self.to_all_cogs('update', typus=UpdateTypus.ALIAS)
 
     @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_shutdown_trigger(self):
@@ -317,7 +320,6 @@ class AntiPetrosBot(commands.Bot):
 
         log.info("shutting down executor")
         self.executor.shutdown()
-        self.process_executor.shutdown()
         for session in self.clients_to_close:
             await session.close()
             log.info("'%s' was shut down", str(session))

@@ -1,7 +1,9 @@
 # region [Imports]
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
-from enum import Enum, Flag, auto
+from enum import Enum, Flag, auto, unique
+from functools import reduce, wraps, partial
+from operator import or_
 
 # endregion[Imports]
 
@@ -96,3 +98,18 @@ class CogState(Flag):
             if state is not cls.EMPTY and state in combined_cog_state:
                 _out.append(state)
         return _out
+
+
+@unique
+class UpdateTypus(Flag):
+    CONFIG = auto()
+    ALIAS = auto()
+    DATE = auto()
+    TIME = auto()
+    DATE_AND_TIME = DATE | TIME
+
+    @classmethod
+    @property
+    def ALL(cls):
+        all_flags = [member for member in cls.__members__.values()]
+        return reduce(or_, all_flags)

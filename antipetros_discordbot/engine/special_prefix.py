@@ -65,9 +65,7 @@ def when_mentioned_or_roles_or():
                 if role.name.casefold() not in {role_exception.casefold() for role_exception in role_exceptions}:  # and role.mentionable is True:
                     r.append(role.mention)
 
-        absolutely_all_prefixes = []
-        for prefix in list(set(r + extra)):
-            absolutely_all_prefixes += [f"{prefix}{' '*i}" for i in reversed(range(1, 26)) if i != 0]
+        absolutely_all_prefixes = r + extra
 
         return absolutely_all_prefixes
 

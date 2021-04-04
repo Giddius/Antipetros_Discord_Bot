@@ -3,6 +3,9 @@
 from antipetros_discordbot.utility.gidtools_functions import loadjson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 import os
+import importlib.util
+from importlib import import_module
+from functools import lru_cache
 
 APPDATA = ParaStorageKeeper.get_appdata()
 
@@ -64,6 +67,16 @@ def get_cog_paths_from_folder(folder_name: str, files_to_exclude: list = None):
             name = cog_file.name.split('.')[0]
             import_paths.append(f"{folder}.{name}")
     return import_paths
+
+
+@lru_cache()
+def category_ids():
+    _category_ids = {}
+    for folder in os.scandir(COGS_DIR):
+        if folder.is_dir() and folder.name.casefold() not in ['__init__.py', '__pycache__', '.git', '.venv', '.vscode']:
+            category_module = import_module(f'.{folder.name}', __name__)
+            _category_ids[category_module.__name__] = category_module.CATGORY_ID
+    return _category_ids
 
 
 BOT_ADMIN_COG_PATHS = get_cog_paths_from_folder(folder_name='bot_admin_cogs', files_to_exclude=['bot_development_organization_cog.py', 'bot_feedback_cog.py'])

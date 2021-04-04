@@ -20,7 +20,7 @@ from antipetros_discordbot.utility.misc import async_date_today
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.enums import UpdateTypus
 # endregion[Imports]
 
 # region [TODO]
@@ -92,11 +92,11 @@ class ChannelStatistician(SubSupportBase):
             if channel.name not in self.channel_usage_stats['overall']:
                 self.channel_usage_stats['overall'][channel.name] = 0
         writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        await self.update(typus='time')
+        await self.update(typus=UpdateTypus.DATE)
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self, typus):
-        if typus == 'time':
+    async def update(self, typus: UpdateTypus):
+        if UpdateTypus.DATE in typus:
             writejson(self.channel_usage_stats, self.channel_usage_stats_file)
             if await async_date_today() not in self.channel_usage_stats:
                 self.channel_usage_stats[await async_date_today()] = {}

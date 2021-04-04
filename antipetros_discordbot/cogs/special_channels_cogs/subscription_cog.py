@@ -18,10 +18,10 @@ from emoji import emoji_count
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel
+from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel, make_full_cog_id
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, log_invoker, has_attachments
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson, pathmaker, pickleit, get_pickled, writeit, readit
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
@@ -152,7 +152,8 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     Organizes Topic so they can be subscribed and mentioned selectively.
     """
     # region [ClassAttributes]
-
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     topics_data_file = pathmaker(APPDATA['json_data'], 'subscription_topics_data.json')
     docattrs = {'show_in_readme': False,
@@ -186,7 +187,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 
@@ -233,6 +234,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             if reaction_user.bot is True:
                 return
             if topic.role in reaction_user.roles:
+                await reaction_user.send(f"You already have the role `{topic.role.name}`.\nThis should not have been possible, please contact Giddi!")
                 return
             await self._give_topic_role(reaction_user, topic)
             await self.sucess_subscribed_embed(reaction_user, topic)
@@ -332,8 +334,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
         """
         log.debug(f"Trying to create role '{topic_item.name}_Subscriber'")
-        color = self.bot.get_discord_color(topic_item.color) if not topic_item.color.startswith('#') else await self.convert_hex_color(topic_item.color)
-        new_role = await self.bot.antistasi_guild.create_role(name=f"{topic_item.name}_Subscriber", permissions=discord.Permissions.none(), mentionable=True, color=color, reason=f"Subscribe-able Topic creation, topic: '{topic_item.name}'")
+        new_role = await self.bot.antistasi_guild.create_role(name=f"{topic_item.name}_Subscriber", permissions=discord.Permissions.none(), mentionable=False, color=discord.Color.lighter_gray(), reason=f"Subscribe-able Topic creation, topic: '{topic_item.name}'")
         # await new_role.edit(position=0, reason=f"Subscribe-able Topic creation, topic: '{topic_item.name}'")
         topic_item.role = new_role
         log.debug(f"finished creating role '{topic_item.name}_Subscriber'")

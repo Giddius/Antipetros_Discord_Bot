@@ -17,14 +17,14 @@ from PIL import Image, ImageDraw, ImageFont
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, minute_to_second
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, minute_to_second, make_full_cog_id
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, owner_or_admin
 
 from antipetros_discordbot.utility.gidtools_functions import appendwriteit, clearit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements import auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_faq_cog import FaqItem
 # endregion[Imports]
@@ -75,6 +75,8 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
     """
 # region [ClassAttributes]
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     q_emoji = "🇶"
     a_emoji = "🇦"
@@ -130,7 +132,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 

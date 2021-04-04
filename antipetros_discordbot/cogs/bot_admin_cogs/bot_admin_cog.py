@@ -18,16 +18,17 @@ from icecream import ic
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name, seconds_to_pretty, delete_message_if_text_channel
+from antipetros_discordbot.utility.misc import make_config_name, seconds_to_pretty, delete_message_if_text_channel, make_full_cog_id
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin, only_giddi
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import make_message_list
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+from antipetros_discordbot.utility.converters import CogConverter
 # endregion[Imports]
 
 # region [TODO]
@@ -65,6 +66,8 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
     """
     Commands and methods that are needed to Administrate the Bot itself.
     """
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
                 'is_ready': (CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
@@ -93,7 +96,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 
@@ -102,7 +105,6 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
 
 # region [Loops]
-
 
     @tasks.loop(hours=1)
     async def garbage_clean_loop(self):
@@ -292,6 +294,11 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         loop_string = str(loop)  # "<uvloop.Loop running=True closed=False debug=False>"
         loop_match = self.loop_regex.match(loop_string)
         await ctx.send(loop_match.group(loop_attr.casefold()))
+
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def disable_cog(self, ctx: commands.Context, cog: CogConverter):
+        pass
 
     def cog_check(self, ctx):
         return True

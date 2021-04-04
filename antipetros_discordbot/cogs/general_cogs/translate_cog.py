@@ -17,13 +17,13 @@ from emoji import emojize
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.misc import make_config_name, make_full_cog_id
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.converters import LanguageConverter
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import discord_key_value_text
@@ -63,7 +63,8 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
     Collection of commands that help in translating text to different Languages.
     """
     # region [ClassAttributes]
-
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     language_dict = {value: key for key, value in LANGUAGES.items()}
     language_emoji_map = {'Germany': 'de',
                           'Austria': 'de',
@@ -131,12 +132,11 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 
@@ -148,7 +148,6 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 # endregion [Loops]
 
 # region [Listener]
-
 
     async def _emoji_translate_checks(self, payload):
         command_name = "emoji_translate_listener"
@@ -277,7 +276,6 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

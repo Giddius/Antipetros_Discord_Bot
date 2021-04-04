@@ -9,16 +9,17 @@ import asyncio
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, flags, tasks
 import discord
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from dateparser import parse as date_parse
+from typing import Iterable, List, Dict, Optional, Tuple, Union, Callable, Mapping
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+from async_property import async_property
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel
+from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel, make_full_cog_id
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin, has_attachments
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
@@ -64,9 +65,11 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     Commands and methods that help in Administrate the Discord Server.
     """
     # region [ClassAttributes]
-
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
-
+    announcements_channel_id = 645930607683174401
+    community_subscriber_role_id = 827937724341944360
     docattrs = {'show_in_readme': False,
                 'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.DOCUMENTATION_MISSING,)}
     required_config_data = dedent("""
@@ -81,6 +84,9 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self.meeting_message_times = {self.send_first_meeting_message: datetime(year=2021, month=1, day=1, hour=17, minute=5, second=0, tzinfo=timezone.utc),
+                                      self.send_second_meeting_message: datetime(year=2021, month=1, day=1, hour=17, minute=10, second=0, tzinfo=timezone.utc),
+                                      self.send_third_meeting_message: datetime(year=2021, month=1, day=1, hour=17, minute=15, second=0, tzinfo=timezone.utc)}
         glog.class_init_notification(log, self)
 
 
@@ -88,21 +94,75 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
 # region [Properties]
 
+    @property
+    def announcements_channel(self):
+        return self.bot.sync_channel_from_id(self.announcements_channel_id)
+
+    @property
+    def community_subscriber_role(self):
+        return self.bot.sync_retrieve_antistasi_role(self.community_subscriber_role_id)
 
 # endregion[Properties]
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
-
+        self.community_meeting_messages.start()
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
+
+# region [Loops]
+
+    async def send_first_meeting_message(self):
+        start_time = datetime.now(tz=timezone.utc).replace(hour=19, minute=0, second=0)
+
+        embed_data = await self.bot.make_generic_embed(title="Community Meeting Reminder",
+                                                       description="Community Meeting in 30 minutes!",
+                                                       fields=[self.bot.field_item(name="Meeting time as your local time", value="⇩")],
+                                                       timestamp=start_time,
+                                                       color="green")
+        await self.announcements_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+    async def send_second_meeting_message(self):
+        start_time = datetime.now(tz=timezone.utc).replace(hour=19, minute=0, second=0)
+        embed_data = await self.bot.make_generic_embed(title="Community Meeting Reminder",
+                                                       description=f"`{self.community_subscriber_role.mention}` Community Meeting in 15 minutes!",
+                                                       fields=[self.bot.field_item(name="Meeting time as your local time", value="⇩")],
+                                                       timestamp=start_time,
+                                                       color="green")
+        await self.announcements_channel.send(**embed_data)
+
+    async def send_third_meeting_message(self):
+        start_time = datetime.now(tz=timezone.utc).replace(hour=19, minute=0, second=0)
+        embed_data = await self.bot.make_generic_embed(title="Community Meeting Starting",
+                                                       description="Community meeting starting now!",
+                                                       timestamp=start_time,
+                                                       color="green")
+        await self.announcements_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+    async def check_timespan(self, target_time: datetime, time_span_minutes: int = 1, on_days: Iterable = None):
+        on_days = {0, 1, 2, 3, 4, 5, 6} if on_days is None else set(on_days)
+        check_delta = timedelta(minutes=time_span_minutes)
+        lower_time = target_time - check_delta
+        upper_time = target_time + check_delta
+        now = datetime.now(tz=timezone.utc)
+        if now.weekday() in on_days:
+            return lower_time.time() < now.time() < upper_time.time()
+        return False
+
+    @tasks.loop(minutes=2)
+    async def community_meeting_messages(self):
+        for key, value in self.meeting_message_times.items():
+            if await self.check_timespan(value, time_span_minutes=1, on_days=[6]) is True:
+                await key()
+                break
+
+# endregion[Loops]
 
     @ auto_meta_info_command(enabled=True)
     @owner_or_admin()
@@ -139,7 +199,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
     @flags.add_flag("--title", '-t', type=str, default=ZERO_WIDTH)
     @flags.add_flag("--description", '-d', type=str, default=ZERO_WIDTH)
-    @flags.add_flag("--url", '-u', type=str)
+    @flags.add_flag("--url", '-u', type=str, default=discord.Embed.Empty)
     @flags.add_flag("--thumbnail", '-th', type=str)
     @flags.add_flag("--image", "-i", type=str)
     @flags.add_flag("--timestamp", "-ts", type=date_time_full_converter_flags, default=datetime.utcnow())
@@ -188,7 +248,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             flags["footer"] = {"text": flags.pop("footer_text", None), "icon_url": flags.pop("footer_icon", None)}
         else:
             flags["footer"] = None
-        embed_data = await self.bot.make_generic_embed(**flags)
+        embed_data = await self.bot.make_generic_embed(**flags, color='random')
 
         embed_message = await channel.send(**embed_data, allowed_mentions=allowed_mentions, delete_after=delete_after)
         await ctx.send(f"__**Created Embed in Channel**__: {channel.mention}\n**__Link__**: {embed_message.jump_url}", allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
@@ -214,6 +274,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         return self.__class__.__name__
 
     def cog_unload(self):
+        self.community_meeting_messages.stop()
         log.debug("Cog '%s' UNLOADED!", str(self))
 
 

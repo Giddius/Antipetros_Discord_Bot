@@ -29,7 +29,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_SECTION
 from antipetros_discordbot.utility.enums import CogState
-
+from antipetros_discordbot.cogs import category_ids
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
 APPDATA = ParaStorageKeeper.get_appdata()
@@ -461,3 +461,11 @@ async def async_write_it(in_file, in_data, append=False, in_encoding='utf-8', in
     if _LOOP is None:
         _LOOP = asyncio.get_event_loop()
     await _LOOP.run_in_executor(None, writeit, in_file, in_data, append, in_encoding, in_errors)
+
+
+def make_full_cog_id(in_dir_path, in_cog_id: int):
+    category_data = category_ids()
+    cog_folder = os.path.basename(in_dir_path)
+    cog_cat_id = {key.split('.')[-1].casefold(): value for key, value in category_data.items()}.get(cog_folder.casefold())
+    full_id_string = str(cog_cat_id) + str(in_cog_id)
+    return int(full_id_string)

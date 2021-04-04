@@ -54,13 +54,13 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel, check_if_url, url_is_alive
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel, check_if_url, url_is_alive, make_full_cog_id
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogState
+from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
@@ -113,6 +113,7 @@ _from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 
 
 class TeamItem:
+
     config_name = None
     bot = None
     description_thumbnail = "https://i3.lensdump.com/i/Im1Q53.png"
@@ -299,7 +300,8 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
     WiP
     """
 # region [ClassAttributes]
-
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     team_item_data_file = pathmaker(APPDATA['json_data'], "team_items.json")
     docattrs = {'show_in_readme': True,
@@ -333,14 +335,13 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         await self.bot.antistasi_guild.chunk(cache=True)
         await self._load_team_items()
         self.is_ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         await self.bot.antistasi_guild.chunk(cache=True)
         log.debug('cog "%s" was updated', str(self))
 
@@ -352,6 +353,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Loops]
 
 # region [Listener]
+
 
     @commands.Cog.listener(name="on_member_update")
     async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):
@@ -518,7 +520,6 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
-
 
     async def _update_team_roster(self):
         for team_item in self.team_items:

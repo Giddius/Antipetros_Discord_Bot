@@ -26,6 +26,7 @@ from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.checks import owner_or_admin, log_invoker
+from antipetros_discordbot.utility.enums import UpdateTypus
 # endregion[Imports]
 
 # region [TODO]
@@ -146,7 +147,7 @@ class EssentialCommandsKeeper(SubSupportBase):
 
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug("'%s' sub_support was UPDATED", str(self))
 

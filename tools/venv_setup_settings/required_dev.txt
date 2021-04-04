@@ -36,8 +36,8 @@ pyqt5-tools
 pyspellchecker
 python-magic
 rich
+rope
 stdlib-list
 tomlkit
 vulture
 win10toast
-rope

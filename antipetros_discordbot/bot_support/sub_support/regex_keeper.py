@@ -19,7 +19,7 @@ from antipetros_discordbot.utility.named_tuples import RegexItem
 from antipetros_discordbot.utility.gidtools_functions import readit
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.enums import UpdateTypus
 # endregion[Imports]
 
 # region [TODO]
@@ -88,7 +88,7 @@ class RegexKeeper(SubSupportBase):
         await self.bot.execute_in_thread(self._compile_all_regexes)
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug("'%s' sub_support was UPDATED", str(self))
 

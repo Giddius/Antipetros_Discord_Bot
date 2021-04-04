@@ -24,8 +24,8 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 
-from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, date_today, make_config_name
-from antipetros_discordbot.utility.enums import DataSize, CogState
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, date_today, make_config_name, make_full_cog_id
+from antipetros_discordbot.utility.enums import DataSize, CogState, UpdateTypus
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
 from antipetros_discordbot.utility.named_tuples import LatencyMeasurement, MemoryUsageMeasurement
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, make_basic_embed_inline
@@ -80,6 +80,8 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     """
     Collects Latency data and memory usage every 10min and posts every 24h a report of the last 24h as graphs.
     """
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     save_folder = APPDATA['performance_data']
     docattrs = {'show_in_readme': False,
@@ -115,7 +117,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.memory_measure_loop.start()
         self.report_data_loop.start()
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 

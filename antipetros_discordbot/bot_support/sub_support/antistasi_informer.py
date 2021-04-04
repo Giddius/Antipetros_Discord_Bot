@@ -16,7 +16,7 @@ import discord
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.enums import UpdateTypus
 # endregion[Imports]
 
 # region [TODO]
@@ -139,6 +139,9 @@ class AntistasiInformer(SubSupportBase):
     async def retrieve_antistasi_role(self, role_id: int):
         return {role.id: role for role in self.antistasi_guild.roles}.get(role_id)
 
+    def sync_retrieve_antistasi_role(self, role_id: int):
+        return {role.id: role for role in self.antistasi_guild.roles}.get(role_id)
+
     async def all_members_with_role(self, role: str):
         role = await self.role_from_string(role)
         _out = []
@@ -150,7 +153,7 @@ class AntistasiInformer(SubSupportBase):
     async def if_ready(self):
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug("'%s' sub_support was UPDATED", str(self))
 

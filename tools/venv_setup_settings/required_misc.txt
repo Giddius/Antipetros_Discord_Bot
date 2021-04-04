@@ -1,6 +1,4 @@
 --force-reinstall pillow
-Flask
-Flask-Discord
 Jinja2
 WeasyPrint
 aiohttp
@@ -33,10 +31,8 @@ python-Levenshtein
 python-a2s
 python-youtube
 python_dotenv
-python_magic_bin
 pytz
 tldextract
-twitchAPI
 validator-collection
 watchgod
 webdavclient3

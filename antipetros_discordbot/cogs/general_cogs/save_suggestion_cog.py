@@ -21,7 +21,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.misc import make_config_name, make_full_cog_id
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, allowed_requester
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
@@ -30,7 +30,7 @@ from antipetros_discordbot.utility.sqldata_storager import AioSuggestionDataStor
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 # endregion[Imports]
 
@@ -70,7 +70,8 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     """
 
     # region [ClassAttributes]
-
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
 
     config_name = CONFIG_NAME
@@ -126,7 +127,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 

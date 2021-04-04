@@ -32,9 +32,9 @@ from antipetros_discordbot.utility.named_tuples import ListenerContext
 
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.misc import make_config_name, make_full_cog_id
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -89,6 +89,8 @@ class SecurityCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
     """
 # region [ClassAttributes]
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': True,
                 'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING,
@@ -163,8 +165,8 @@ class SecurityCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
         await self._create_forbidden_link_list()
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
-        if typus == "time":
+    async def update(self, typus: UpdateTypus):
+        if UpdateTypus.TIME in typus:
             await self._create_forbidden_link_list()
         else:
             return

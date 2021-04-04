@@ -15,12 +15,12 @@ from bs4 import BeautifulSoup
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.misc import make_config_name, make_full_cog_id
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogState
+from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 # endregion[Imports]
 
@@ -62,6 +62,8 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
     Soon
     """
     # region [ClassAttributes]
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
@@ -126,7 +128,7 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
         self.check_for_updates.start()
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 

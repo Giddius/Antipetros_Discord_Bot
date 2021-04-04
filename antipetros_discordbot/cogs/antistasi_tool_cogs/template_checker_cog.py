@@ -32,12 +32,12 @@ from pytz import timezone
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, make_full_cog_id
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2, has_attachments
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
@@ -92,7 +92,8 @@ class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME}):
     soon
     """
 # region [ClassAttributes]
-
+    cog_id = 685
+    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     already_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
     docattrs = {'show_in_readme': True,
@@ -128,7 +129,7 @@ class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 

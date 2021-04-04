@@ -19,7 +19,7 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.bot_support.sub_support.sub_support_helper.command_stats_dict import CommandStatDict
-
+from antipetros_discordbot.utility.enums import UpdateTypus
 # endregion[Imports]
 
 # region [TODO]
@@ -104,8 +104,8 @@ class CommandStatistician(SubSupportBase):
 
         return overall_item, cogs_item, commands_item
 
-    async def update(self, typus):
-        if typus == 'time':
+    async def update(self, typus: UpdateTypus):
+        if UpdateTypus.DATE in typus:
             self.command_invoked_stats.save_data()
             self.command_invoked_stats.save_overall()
             self.command_invoked_stats.initialize_data()
