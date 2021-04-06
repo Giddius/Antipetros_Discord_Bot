@@ -83,7 +83,7 @@ class AntiPetrosBot(commands.Bot):
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
-        BaseCustomHelpCommand.bot = self
+
         super().__init__(owner_ids={self.creator.id, 122348088319803392, 346595708180103170, 262095121527472128},
                          case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'),
                          self_bot=False,
