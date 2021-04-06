@@ -101,15 +101,6 @@ class DuplicateNameError(AntiPetrosBaseError):
         super().__init__(self.msg)
 
 
-class CommandIdNotSetError(AntiPetrosBaseError):
-    def __init__(self, command):
-        self.command = command
-        self.cog = command.cog
-        self.cog_name = str(self.cog) if self.cog is not None else "No Cog"
-        self.msg = f"Command `{self.command.name}` in `{self.cog_name}` is missing its command_id in the decorator!"
-        super().__init__(self.msg)
-
-
 class BaseExtendedCommandError(CommandError):
     pass
 

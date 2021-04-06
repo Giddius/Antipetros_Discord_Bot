@@ -34,7 +34,7 @@ from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
 from antipetros_discordbot.utility.gidtools_functions import get_pickled, loadjson, pathmaker, readit, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.cogs import BOT_ADMIN_COG_PATHS, DISCORD_ADMIN_COG_PATHS, DEV_COG_PATHS
-from antipetros_discordbot.utility.replacements.help_replacement import BaseCustomHelpCommand
+from .replacements import BaseCustomHelpCommand
 # endregion[Imports]
 
 

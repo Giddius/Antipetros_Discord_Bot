@@ -25,7 +25,7 @@ from antipetros_discordbot.utility.converters import LanguageConverter
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
-from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
+from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import discord_key_value_text
 
 # endregion[Imports]

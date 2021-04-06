@@ -33,7 +33,7 @@ from antipetros_discordbot.utility.embed_helpers import make_basic_embed, make_b
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, bytes2human, create_folder
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
+from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 
 # endregion[Imports]
