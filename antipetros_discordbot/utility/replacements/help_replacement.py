@@ -16,3 +16,4 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 
 
 class BaseCustomHelpCommand(MinimalHelpCommand):
+    pass
