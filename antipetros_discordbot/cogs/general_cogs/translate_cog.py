@@ -27,7 +27,7 @@ from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import discord_key_value_text
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 # endregion[Imports]
 
 # region [TODO]
@@ -64,8 +64,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
     Collection of commands that help in translating text to different Languages.
     """
     # region [ClassAttributes]
-    cog_id = 15
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     language_dict = {value: key for key, value in LANGUAGES.items()}
     language_emoji_map = {'Germany': 'de',
                           'Austria': 'de',

@@ -18,7 +18,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 # endregion[Imports]
 
 # region [TODO]
@@ -56,8 +56,7 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": COG_
     """
     Soon
     """
-    cog_id = 11
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
                 'is_ready': (CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,

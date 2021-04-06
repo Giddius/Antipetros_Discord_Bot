@@ -27,7 +27,7 @@ from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements import auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_faq_cog import FaqItem
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 # endregion[Imports]
 
 # region [TODO]
@@ -76,8 +76,6 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
     """
 # region [ClassAttributes]
-    cog_id = 10
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     q_emoji = "🇶"
     a_emoji = "🇦"

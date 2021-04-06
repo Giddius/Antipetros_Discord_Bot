@@ -30,7 +30,7 @@ from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.exceptions import ParameterError
 from antipetros_discordbot.utility.image_manipulation import make_perfect_fontsize, find_min_fontsize, get_text_dimensions
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 # endregion[Imports]
 
 # region [TODO]
@@ -63,8 +63,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
     Commands that manipulate or generate images.
     """
     # region [ClassAttributes]
-    cog_id = 10
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     allowed_stamp_formats = set(loadjson(APPDATA["image_file_extensions.json"]))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}

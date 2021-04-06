@@ -69,17 +69,6 @@ def get_cog_paths_from_folder(folder_name: str, files_to_exclude: list = None):
     return import_paths
 
 
-@lru_cache()
-def category_ids():
-    _category_ids = {}
-    for folder in os.scandir(COGS_DIR):
-        if folder.is_dir() and folder.name.casefold() not in ['__init__.py', '__pycache__', '.git', '.venv', '.vscode']:
-            category_module = import_module(f'.{folder.name}', __name__)
-            _category_ids[category_module.__name__] = category_module.CATEGORY_ID
-
-    return _category_ids
-
-
 BOT_ADMIN_COG_PATHS = get_cog_paths_from_folder(folder_name='bot_admin_cogs', files_to_exclude=['bot_development_organization_cog.py', 'bot_feedback_cog.py'])
 DEV_COG_PATHS = get_cog_paths_from_folder(folder_name='dev_cogs', files_to_exclude=[])
 DISCORD_ADMIN_COG_PATHS = get_cog_paths_from_folder(folder_name='discord_admin_cogs', files_to_exclude=[])

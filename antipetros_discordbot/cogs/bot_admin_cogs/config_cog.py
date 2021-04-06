@@ -35,7 +35,7 @@ from antipetros_discordbot.utility.replacements.command_replacement import auto_
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_config_cog import AddedAliasChangeEvent
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 # endregion[Imports]
 
 # region [TODO]
@@ -85,8 +85,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     commands are hidden from the help command.
     """
     # region [ClassAttributes]
-    cog_id = 13
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     config_dir = APPDATA['config']
     alias_file = APPDATA['command_aliases.json']

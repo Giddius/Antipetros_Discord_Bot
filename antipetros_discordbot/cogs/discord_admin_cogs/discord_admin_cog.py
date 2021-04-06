@@ -24,7 +24,7 @@ from antipetros_discordbot.utility.replacements.command_replacement import auto_
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.converters import DateTimeFullConverter, date_time_full_converter_flags
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 # endregion[Imports]
 
 # region [TODO]
@@ -66,8 +66,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     Commands and methods that help in Administrate the Discord Server.
     """
     # region [ClassAttributes]
-    cog_id = 10
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     announcements_channel_id = 645930607683174401
     community_subscriber_role_id = 827937724341944360

@@ -76,7 +76,7 @@ from antipetros_discordbot.utility.pygment_styles import DraculaStyle, Tomorrown
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 # endregion[Imports]
 
 # region [TODO]
@@ -123,8 +123,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     WiP
     """
 # region [ClassAttributes]
-    cog_id = 11
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     antistasi_guild_id = 449481990513754112
     docattrs = {'show_in_readme': True,
@@ -200,6 +199,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
+
     @auto_meta_info_command(enabled=get_command_enabled('info_bot'))
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     async def info_bot(self, ctx: commands.Context):
@@ -235,6 +235,9 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @auto_meta_info_command(enabled=get_command_enabled('info_guild'))
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     async def info_guild(self, ctx: commands.Context):
+        """
+        Shows some attributes of the current Guild.
+        """
         as_guild = self.bot.antistasi_guild
         # await as_guild.chunk()
         thumbnail = None
@@ -385,6 +388,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
 
     async def _get_command_gif(self, command_name):
         gif_name = f"{command_name}_command.gif"

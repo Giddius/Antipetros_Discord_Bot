@@ -72,7 +72,7 @@ from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle
 from github import Github
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -123,8 +123,7 @@ class GithubCog(commands.Cog, command_attrs={'name': COG_NAME}):
     WiP
     """
 # region [ClassAttributes]
-    cog_id = 12
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     antistasi_repo_url = "https://github.com/official-antistasi-community/A3-Antistasi"
     antistasi_base_file_url = "https://github.com/official-antistasi-community/A3-Antistasi/blob/"

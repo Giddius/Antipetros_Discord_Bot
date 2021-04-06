@@ -22,6 +22,7 @@ from emoji import demojize, emojize, emoji_count
 from emoji.unicode_codes import EMOJI_UNICODE_ENGLISH
 from webdav3.client import Client
 from icecream import ic
+from typing import TYPE_CHECKING
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from dateparser import parse as date_parse
@@ -45,7 +46,9 @@ from pyyoutube import Api
 from inspect import getmembers, getsourcefile, getsource, getsourcelines, getfullargspec, getmodule, getcallargs, getabsfile, getmodulename, getdoc, getfile, cleandoc, classify_class_attrs
 
 from antipetros_discordbot.utility.sqldata_storager import AioMetaDataStorageSQLite
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion [Imports]
 
 # region [Logging]
@@ -82,8 +85,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     """
     Cog for debug or test commands, should not be enabled fo normal Bot operations.
     """
-    cog_id = 10
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
                 'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING | CogState.FOR_DEBUG,
@@ -92,7 +94,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     required_config_data = dedent("""
                                   """)
 
-    def __init__(self, bot):
+    def __init__(self, bot: "AntiPetrosBot"):
         self.bot = bot
         self.support = self.bot.support
 
@@ -737,15 +739,11 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         pprint(EMOJI_UNICODE_ENGLISH)
 
     @auto_meta_info_command()
-    async def check_cog_id(self, ctx: commands.context):
+    async def check_set_command_attr(self, ctx: commands.Context):
         text = ""
-        all_ids = []
-        for cog_name, cog_object in self.bot.cogs.items():
-            text += f"{cog_name}: cog_id = {cog_object.cog_id}, full_id = {cog_object.full_cog_id}\n\n"
-            all_ids.append(cog_object.full_cog_id)
+        for command in self.bot.commands:
+            text += f"{command.name}: {str(command.set_attribute)}\n\n"
         await self.bot.split_to_messages(ctx, text, in_codeblock=True)
-        await ctx.send(f"all full_ids  len {len(all_ids)} " + ', '.join(str(item) for item in all_ids))
-        await ctx.send(f"duplicates removed all full_ids len {len(set(all_ids))} " + ', '.join(str(item) for item in set(all_ids)))
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))

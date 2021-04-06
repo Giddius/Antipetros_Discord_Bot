@@ -64,7 +64,7 @@ from antipetros_discordbot.utility.replacements.command_replacement import auto_
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -115,8 +115,7 @@ class BotFeedbackCog(commands.Cog, command_attrs={'name': COG_NAME}):
     WiP
     """
 # region [ClassAttributes]
-    cog_id = 12
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     bot_suggestion_data_file = pathmaker(APPDATA['bot_feedback_data'], 'bot_suggestions.json')
     bot_feature_request_data_file = pathmaker(APPDATA['bot_feedback_data'], "bot_feature_requests.json")

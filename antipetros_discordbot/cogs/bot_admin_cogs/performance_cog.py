@@ -35,7 +35,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 # endregion[Imports]
 
 # region [TODO]
@@ -81,8 +81,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     """
     Collects Latency data and memory usage every 10min and posts every 24h a report of the last 24h as graphs.
     """
-    cog_id = 14
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     save_folder = APPDATA['performance_data']
     docattrs = {'show_in_readme': False,

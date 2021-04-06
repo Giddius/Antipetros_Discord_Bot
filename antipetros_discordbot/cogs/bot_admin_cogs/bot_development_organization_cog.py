@@ -33,7 +33,7 @@ from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_config_cog import AddedAliasChangeEvent
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
@@ -83,8 +83,7 @@ class BotDevOrgCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
 
     """
     # region [ClassAttributes]
-    cog_id = 11
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     dev_org_folder = APPDATA['bot_development_organization']
     dev_org_files_folder = APPDATA['bot_development_organization_files']

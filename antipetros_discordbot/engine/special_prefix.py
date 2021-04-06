@@ -63,7 +63,7 @@ def when_mentioned_or_roles_or():
             r.append(f"<@!{bot.user.id}>")
             for role in bot.all_bot_roles:
                 if role.name.casefold() not in {role_exception.casefold() for role_exception in role_exceptions}:  # and role.mentionable is True:
-                    r.append(role.mention)
+                    r.append(role.mention + ' ')
 
         absolutely_all_prefixes = r + extra
 

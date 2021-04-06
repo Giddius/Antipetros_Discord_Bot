@@ -42,7 +42,7 @@ from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -92,8 +92,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     """
 # region [ClassAttributes]
-    cog_id = 10
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     already_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
     docattrs = {'show_in_readme': True,

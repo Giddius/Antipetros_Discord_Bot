@@ -70,7 +70,7 @@ from antipetros_discordbot.utility.exceptions import CustomEmojiError, NameInUse
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 
 # endregion[Imports]
 
@@ -290,8 +290,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
     WiP
     """
 # region [ClassAttributes]
-    cog_id = 10
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     reaction_instructions_data_file = pathmaker(APPDATA['json_data'], "message_reaction_instructions_dat.json")
     custom_emoji_regex = re.compile(r"\<\:(?P<name>.*)\:(?P<id>\d+)\>")
@@ -367,7 +366,6 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command()
     @owner_or_admin(False)

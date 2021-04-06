@@ -69,7 +69,7 @@ from antipetros_discordbot.utility.parsing import parse_command_text_file
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 # endregion[Imports]
 
 # region [TODO]
@@ -116,8 +116,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
     WiP
     """
 # region [ClassAttributes]
-    cog_id = 12
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     rules_channel_id = 648725988813045765
     rules_message_regex = re.compile(r"^(?P<number>\d+(\.\d)?)[\)\.]\s?\-?(?P<text>.*)")
@@ -247,6 +246,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [HelperMethods]
 
+
     async def _make_rules_embed(self, rule_message: discord.Message):
         fields = await self.parse_rules(rule_message)
         fields.append(self.bot.field_item(name="Additional Rules Documents", value='\n'.join(await self.parse_links())))
@@ -302,7 +302,6 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

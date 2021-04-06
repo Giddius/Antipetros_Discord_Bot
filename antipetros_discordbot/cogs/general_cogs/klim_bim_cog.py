@@ -34,7 +34,7 @@ from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateT
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.gidtools_functions import bytes2human
 from antipetros_discordbot.utility.exceptions import ParseDiceLineError
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 # endregion[Imports]
 
 # region [TODO]
@@ -75,8 +75,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
     Collection of small commands that either don't fit anywhere else or are just for fun.
     """
     # region [ClassAttributes]
-    cog_id = 12
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
@@ -141,7 +140,6 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 # endregion [Listener]
 
 # region [Commands]
-
 
     @ auto_meta_info_command(enabled=get_command_enabled('the_dragon'))
     @ allowed_channel_and_allowed_role_2()

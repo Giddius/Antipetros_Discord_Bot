@@ -43,7 +43,7 @@ from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -93,8 +93,7 @@ class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME}):
     soon
     """
 # region [ClassAttributes]
-    cog_id = 13
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     already_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
     docattrs = {'show_in_readme': True,

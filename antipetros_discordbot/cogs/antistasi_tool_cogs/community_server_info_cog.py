@@ -51,7 +51,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_community_server_info_cog import CommunityServerInfo, ServerStatusChange
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 
 # endregion[Imports]
 
@@ -94,8 +94,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     soon
     """
 # region [ClassAttributes]
-    cog_id = 11
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     base_server_info_file = APPDATA['base_server_info.json']
     server_status_change_exclusions_file = pathmaker(APPDATA['json_data'], 'server_status_change_exclusions.json')

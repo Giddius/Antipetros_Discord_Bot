@@ -79,9 +79,11 @@ class AntiPetrosBot(commands.Bot):
 
 # endregion[ClassAttributes]
 
+
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
+        BaseCustomHelpCommand.bot = self
         super().__init__(owner_ids={self.creator.id, 122348088319803392, 346595708180103170, 262095121527472128},
                          case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'),
                          self_bot=False,
@@ -89,7 +91,7 @@ class AntiPetrosBot(commands.Bot):
                          activity=self.activity_from_config(),
                          intents=self.get_intents(),
                          fetch_offline_members=True,
-                         help_command=MinimalHelpCommand(),
+                         help_command=BaseCustomHelpCommand(),
                          strip_after_prefix=True,
                          ** kwargs)
         self.token = token
@@ -162,15 +164,6 @@ class AntiPetrosBot(commands.Bot):
         if os.path.isfile(pathmaker(APPDATA['debug'], 'general_debug')):
             bot_info = bot_info | loadjson(pathmaker(APPDATA['debug'], 'general_debug'))
 
-    async def cog_id_unique_check(self):
-        all_ids = []
-        for cog_name, cog_object in self.cogs.items():
-            cog_id = cog_object.full_cog_id
-            if cog_id not in all_ids:
-                all_ids.append(cog_id)
-            else:
-                await self.creator.member_object.send('Warning NON UNIQUE COG IDS\n\nCurrent Cog IDs:\n' + '\n'.join(f"NAME: {cog_name}, ID: {cog_o.full_cog_id}" for cog_name, cog_o in self.cogs.items()))
-
     async def on_ready(self):
         log.info('%s has connected to Discord!', self.user.name)
         self.loop.set_default_executor(self.executor)
@@ -194,7 +187,7 @@ class AntiPetrosBot(commands.Bot):
         log.info("Debug Session: %s", self.is_debug)
         log.info("Bot is ready")
         log.info('Bot is currently rate limited: %s', str(self.is_ws_ratelimited()))
-        await self.cog_id_unique_check()
+
         log.info('%s End of Setup Procedures %s', '+-+' * 15, '+-+' * 15)
 
     async def handle_previous_shutdown_msg(self):
@@ -385,7 +378,8 @@ class AntiPetrosBot(commands.Bot):
 
     @property
     def cog_name_id_map(self):
-        return {cog.full_cog_id: cog for cog_name, cog in self.cogs.items()} | {cog_name.casefold(): cog for cog_name, cog in self.cogs.items()}
+        # TODO: Redo when ID up again
+        return {cog_name.casefold(): cog for cog_name, cog in self.cogs.items()}
 
     async def command_by_name(self, query_command_name: str):
         command_name_dict = {}

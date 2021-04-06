@@ -28,7 +28,7 @@ from antipetros_discordbot.utility.replacements.command_replacement import auto_
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
 
 # endregion[Imports]
 
@@ -153,8 +153,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     Organizes Topic so they can be subscribed and mentioned selectively.
     """
     # region [ClassAttributes]
-    cog_id = 11
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
+
     config_name = CONFIG_NAME
     topics_data_file = pathmaker(APPDATA['json_data'], 'subscription_topics_data.json')
     docattrs = {'show_in_readme': False,
