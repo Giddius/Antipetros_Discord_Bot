@@ -663,11 +663,7 @@ def create_file(in_path, overwrite=False):
 
 def create_folder(in_path):
     if os.path.isdir(in_path) is False:
-        log.error(f"Folder '{in_path}' does **NOT** exist!")
         os.makedirs(in_path)
-        log.info("Created Folder '{in_path}'")
-    else:
-        log.info(f"Folder '{in_path}' does exist!")
 
 
 def bytes2human(n, annotate=False):

@@ -17,7 +17,7 @@ from PIL import Image, ImageDraw, ImageFont
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, minute_to_second, make_full_cog_id
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, minute_to_second
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, owner_or_admin
 
 from antipetros_discordbot.utility.gidtools_functions import appendwriteit, clearit, loadjson, pathmaker, writejson
@@ -27,6 +27,7 @@ from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.replacements import auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_faq_cog import FaqItem
+from antipetros_discordbot.utility.id_generation import make_full_cog_id
 # endregion[Imports]
 
 # region [TODO]
@@ -75,7 +76,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
     """
 # region [ClassAttributes]
-    cog_id = 131
+    cog_id = 10
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     q_emoji = "🇶"
@@ -95,6 +96,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # endregion [ClassAttributes]
 
 # region [Init]
+
 
     def __init__(self, bot):
 
@@ -121,7 +123,6 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         FaqItem.bot = self.bot
         FaqItem.faq_channel = self.faq_channel
@@ -145,7 +146,6 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # endregion [Loops]
 
 # region [Listener]
-
 
     @commands.Cog.listener(name='on_message')
     async def faq_message_added_listener(self, message):
@@ -175,7 +175,6 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command(enabled=get_command_enabled('post_faq_by_number'))
     @ allowed_channel_and_allowed_role_2(in_dm_allowed=False)
@@ -221,7 +220,6 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
 # region [HelperMethods]
 
-
     async def collect_raw_faq_data(self):
         channel = self.faq_channel
         self.faq_items = {}
@@ -234,13 +232,17 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
                 image = message.attachments[0]
             faq_item = FaqItem(content, created_at, jump_url, image)
             self.faq_items[faq_item.number] = faq_item
-            log.debug(f"collected faq item {faq_item.number}")
-        log.info('Updated all FAQ items')
+        max_faq_number = max(key for key in self.faq_items)
+        if all(_num in self.faq_items for _num in range(1, max_faq_number + 1)):
+            log.info('FAQ items collected: %s', max_faq_number)
+        else:
+            raise KeyError(f"Not all FAQ Items where collected, missing: {', '.join(_num for _num in range(1,max_faq_number+1) if _num not in self.faq_items)}")
 
 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

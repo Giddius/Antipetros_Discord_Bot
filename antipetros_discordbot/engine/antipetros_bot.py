@@ -17,7 +17,7 @@ import aiohttp
 import discord
 from discord.ext.commands import MinimalHelpCommand
 from watchgod import Change, awatch
-from discord.ext import tasks, commands
+from discord.ext import tasks, commands, ipc
 from enum import Enum, Flag, auto, unique
 from functools import reduce, partial, wraps, lru_cache, total_ordering, cmp_to_key, singledispatch
 from operator import or_
@@ -79,7 +79,6 @@ class AntiPetrosBot(commands.Bot):
 
 # endregion[ClassAttributes]
 
-
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
@@ -108,6 +107,7 @@ class AntiPetrosBot(commands.Bot):
         self.github_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot"
         self.wiki_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki"
         self.used_startup_message = None
+        self.ipc = ipc.Server(self, secret_key=os.getenv('IPC_SECRET_KEY'))
 
         user_not_blacklisted(self, log)
         if is_test is False:
@@ -116,6 +116,9 @@ class AntiPetrosBot(commands.Bot):
         glog.class_init_notification(log, self)
 
         # endregion[Init]
+    async def on_ipc_ready(self):
+        """Called upon the IPC Server being ready"""
+        log.info("Ipc is ready.")
 
     def get_intents(self):
 
@@ -497,9 +500,6 @@ class AntiPetrosBot(commands.Bot):
 
     async def execute_in_thread(self, func, *args, **kwargs):
         return await self.loop.run_in_executor(self.executor, func, *args, **kwargs)
-
-    async def execute_in_process(self, func, *args, **kwargs):
-        return await self.loop.run_in_executor(self.process_executor, func, *args, **kwargs)
 
     async def save_feature_suggestion_extra_data(self, data_name, data_content):
         path = pathmaker(self.bot_feature_suggestion_folder, data_name)

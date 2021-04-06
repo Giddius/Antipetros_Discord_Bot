@@ -24,7 +24,7 @@ import discord
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import is_even, make_config_name, make_full_cog_id
+from antipetros_discordbot.utility.misc import is_even, make_config_name
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
@@ -34,6 +34,7 @@ from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateT
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.gidtools_functions import bytes2human
 from antipetros_discordbot.utility.exceptions import ParseDiceLineError
+from antipetros_discordbot.utility.id_generation import make_full_cog_id
 # endregion[Imports]
 
 # region [TODO]
@@ -74,7 +75,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
     Collection of small commands that either don't fit anywhere else or are just for fun.
     """
     # region [ClassAttributes]
-    cog_id = 514
+    cog_id = 12
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
 

@@ -18,7 +18,7 @@ from emoji import emoji_count
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel, make_full_cog_id
+from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, log_invoker, has_attachments
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
@@ -28,6 +28,7 @@ from antipetros_discordbot.utility.replacements.command_replacement import auto_
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
+from antipetros_discordbot.utility.id_generation import make_full_cog_id
 
 # endregion[Imports]
 
@@ -152,7 +153,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     Organizes Topic so they can be subscribed and mentioned selectively.
     """
     # region [ClassAttributes]
-    cog_id = 476
+    cog_id = 11
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     topics_data_file = pathmaker(APPDATA['json_data'], 'subscription_topics_data.json')

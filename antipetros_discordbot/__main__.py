@@ -106,21 +106,26 @@ def configure_logger():
         log_stdout = 'both'
 
     _log = glog.main_logger(_log_file, log_level, other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata"], log_to=log_stdout, in_back_up=in_back_up)
+
     asyncio_logger = logging.getLogger('asyncio')
     asyncio_logger.addFilter(filter_asyncio_call)
     old_record_factory = logging.getLogRecordFactory()
 
     def asyncio_mod_message_factory(*args, **kwargs):
         record = old_record_factory(*args, **kwargs)
-        if record.name == 'asyncio' and record.msg.startswith('Executing'):
-            old_msg = record.msg
-            new_msg = '!' * 10 + " " + "Loop was blocked for " + old_msg.split(" took ")[-1] + ' ' + '!' * 10
-            record.msg = new_msg
-            record.args = record.args[-1]
-            record.for_asyncio_enabled = True
-        else:
-            record.for_asyncio_enabled = False
+
+        if record.name == 'asyncio':
+            if record.msg.startswith('Executing'):
+                old_msg = record.msg
+                new_msg = '!' * 10 + " " + "Loop was blocked for " + old_msg.split(" took ")[-1] + ' ' + '!' * 10
+                record.msg = new_msg
+                record.args = record.args[-1]
+                record.for_asyncio_enabled = True
+            else:
+                record.for_asyncio_enabled = False
+
         return record
+
     logging.setLogRecordFactory(asyncio_mod_message_factory)
     if use_logging is False:
         logging.disable(logging.CRITICAL)
@@ -314,6 +319,13 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
     os.environ['INFO_RUN'] = "0"
     anti_petros_bot = AntiPetrosBot(token=token)
 
+    # @anti_petros_bot.ipc.route()
+    # async def get_config_data(data):
+    #     my_config_parser_dict = {s: dict(BASE_CONFIG.items(s)) for s in BASE_CONFIG.sections()}
+    #     from pprint import pprint
+    #     return my_config_parser_dict
+
+    # anti_petros_bot.ipc.start()
     anti_petros_bot.run()
     log.info('~+~' * 20 + ' finished shutting down! ' + '~+~' * 20)
 

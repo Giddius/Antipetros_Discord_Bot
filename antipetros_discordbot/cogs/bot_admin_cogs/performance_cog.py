@@ -25,7 +25,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 
-from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, date_today, make_config_name, make_full_cog_id
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, date_today, make_config_name
 from antipetros_discordbot.utility.enums import DataSize, CogState, UpdateTypus
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
 from antipetros_discordbot.utility.named_tuples import LatencyMeasurement, MemoryUsageMeasurement
@@ -35,7 +35,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-
+from antipetros_discordbot.utility.id_generation import make_full_cog_id
 # endregion[Imports]
 
 # region [TODO]
@@ -81,7 +81,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     """
     Collects Latency data and memory usage every 10min and posts every 24h a report of the last 24h as graphs.
     """
-    cog_id = 795
+    cog_id = 14
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     save_folder = APPDATA['performance_data']
@@ -111,6 +111,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self.ready = False
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
@@ -118,6 +119,8 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.latency_measure_loop.start()
         self.memory_measure_loop.start()
         self.report_data_loop.start()
+        await asyncio.sleep(5)
+        self.ready = True
 
     async def update(self, typus: UpdateTypus):
         return
@@ -125,7 +128,8 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def latency_measure_loop(self):
-        await self.bot.wait_until_ready()
+        if self.ready is False:
+            return
         start_time = time.time()
         log.info("measuring latency")
         now = datetime.utcnow()
@@ -135,11 +139,11 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             await self.bot.message_creator(embed=await make_basic_embed(title='LATENCY WARNING!', text='Latency is very high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'latency': str(latency) + ' ms'}))
 
         self.latency_data.append(LatencyMeasurement(now, latency))
-        log.debug(f'collecting latency data took {await async_seconds_to_pretty_normal(int(round(time.time()-start_time)))}')
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def memory_measure_loop(self):
-        await self.bot.wait_until_ready()
+        if self.ready is False:
+            return
         start_time = time.time()
         log.info("measuring memory usage")
         now = datetime.utcnow()
@@ -156,13 +160,10 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             is_warning = True
             log.warning("Memory usage is high! Memory in use: %s", DataSize.GigaBytes.convert(memory_in_use, annotate=True))
         self.memory_data.append(MemoryUsageMeasurement(now, _mem_item.total, _mem_item.total - _mem_item.available, _mem_item.percent, is_warning, is_critical))
-        log.debug(f'collecting memory data took {await async_seconds_to_pretty_normal(int(round(time.time()-start_time)))}')
 
     @tasks.loop(**DATA_DUMP_INTERVALL, reconnect=True)
     async def report_data_loop(self):
-        await self.bot.wait_until_ready()
-        # TODO: limit amount of saved data, maybe archive it
-        if datetime.utcnow() <= self.start_time + timedelta(seconds=DATA_COLLECT_INTERVALL * 2):
+        if self.ready is False:
             return
         log.info("creating performance reports")
         collected_latency_data = list(self.latency_data.copy())

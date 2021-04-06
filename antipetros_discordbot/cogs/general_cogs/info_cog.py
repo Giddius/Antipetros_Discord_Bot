@@ -59,7 +59,7 @@ from pygments.styles import get_style_by_name, get_all_styles
 from pygments.filters import get_all_filters
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, alt_seconds_to_pretty, delete_message_if_text_channel, antipetros_repo_rel_path, make_full_cog_id
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, alt_seconds_to_pretty, delete_message_if_text_channel, antipetros_repo_rel_path
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled, bytes2human, readit, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -76,7 +76,7 @@ from antipetros_discordbot.utility.pygment_styles import DraculaStyle, Tomorrown
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
-
+from antipetros_discordbot.utility.id_generation import make_full_cog_id
 # endregion[Imports]
 
 # region [TODO]
@@ -123,7 +123,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     WiP
     """
 # region [ClassAttributes]
-    cog_id = 961
+    cog_id = 11
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     antistasi_guild_id = 449481990513754112
@@ -465,8 +465,9 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         return f'{oldest_member_and_date[0].mention} -> {oldest_member_and_date[0].name}, joined at {oldest_member_and_date[1].strftime("%H:%M:%S on %a the %Y.%b.%d")}'
 
     async def most_used_channel(self):
-        stats = self.bot.channel_usage_stats.get('overall')
-        channel, amount = sorted(list(stats.items()), key=lambda x: x[1], reverse=True)[0]
+        stats = await self.bot.get_usage_stats('overall')
+        channel_data = await self.bot.execute_in_thread(partial(sorted, key=lambda x: x[1], reverse=True), list(stats.items()))
+        channel, amount = channel_data[0]
         channel = await self.bot.channel_from_name(channel)
         return f"{channel.mention} recorded usages: {amount}"
 

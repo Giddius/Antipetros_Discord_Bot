@@ -38,6 +38,7 @@ def set_env():
     os.environ['LOG_FOLDER'] = MAIN_DIR
     os.chdir(old_cd)
     os.environ['DISABLE_IMPORT_LOGCALLS'] = "1"
+    os.environ['DISABLE_INITIATION_LOG_CALLS'] = "1"
 
 
 _mem_item = virtual_memory()

@@ -36,7 +36,7 @@ from pytz import timezone
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, seconds_to_pretty, alt_seconds_to_pretty, delete_message_if_text_channel, make_full_cog_id
+from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, seconds_to_pretty, alt_seconds_to_pretty, delete_message_if_text_channel
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -51,6 +51,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_community_server_info_cog import CommunityServerInfo, ServerStatusChange
+from antipetros_discordbot.utility.id_generation import make_full_cog_id
 
 # endregion[Imports]
 
@@ -93,7 +94,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     soon
     """
 # region [ClassAttributes]
-    cog_id = 112
+    cog_id = 11
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     base_server_info_file = APPDATA['base_server_info.json']

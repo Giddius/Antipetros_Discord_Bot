@@ -8,7 +8,7 @@ import random
 from time import time
 from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
 import asyncio
-from pprint import pprint
+from pprint import pprint, pformat
 from textwrap import dedent
 from dotenv import load_dotenv
 from datetime import datetime
@@ -26,7 +26,7 @@ from icecream import ic
 import gidlogger as glog
 from dateparser import parse as date_parse
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data, dict_from_attached_json, antipetros_repo_rel_path, make_full_cog_id
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data, dict_from_attached_json, antipetros_repo_rel_path
 from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, only_giddi, has_attachments
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson, writeit
@@ -45,6 +45,7 @@ from pyyoutube import Api
 from inspect import getmembers, getsourcefile, getsource, getsourcelines, getfullargspec, getmodule, getcallargs, getabsfile, getmodulename, getdoc, getfile, cleandoc, classify_class_attrs
 
 from antipetros_discordbot.utility.sqldata_storager import AioMetaDataStorageSQLite
+from antipetros_discordbot.utility.id_generation import make_full_cog_id
 # endregion [Imports]
 
 # region [Logging]
@@ -81,7 +82,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     """
     Cog for debug or test commands, should not be enabled fo normal Bot operations.
     """
-    cog_id = 131
+    cog_id = 10
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
@@ -734,6 +735,17 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await ctx.send(f"emojized emoji count - {emoji_count(emojize(content))}")
 
         pprint(EMOJI_UNICODE_ENGLISH)
+
+    @auto_meta_info_command()
+    async def check_cog_id(self, ctx: commands.context):
+        text = ""
+        all_ids = []
+        for cog_name, cog_object in self.bot.cogs.items():
+            text += f"{cog_name}: cog_id = {cog_object.cog_id}, full_id = {cog_object.full_cog_id}\n\n"
+            all_ids.append(cog_object.full_cog_id)
+        await self.bot.split_to_messages(ctx, text, in_codeblock=True)
+        await ctx.send(f"all full_ids  len {len(all_ids)} " + ', '.join(str(item) for item in all_ids))
+        await ctx.send(f"duplicates removed all full_ids len {len(set(all_ids))} " + ', '.join(str(item) for item in set(all_ids)))
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))

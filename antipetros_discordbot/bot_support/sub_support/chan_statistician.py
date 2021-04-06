@@ -81,6 +81,9 @@ class ChannelStatistician(SubSupportBase):
     async def make_heat_map(self):
         pass
 
+    async def get_usage_stats(self, key: str):
+        return await self.bot.execute_in_thread(self.channel_usage_stats.get, key)
+
     async def if_ready(self):
         if os.path.isfile(self.channel_usage_stats_file) is False:
             self.channel_usage_stats = {'overall': {}}

@@ -18,7 +18,7 @@ from icecream import ic
 import gidlogger as glog
 from typing import TYPE_CHECKING, List, Dict, Optional, Tuple, Any, Union, Callable, Iterable, Set, Mapping
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name, seconds_to_pretty, delete_message_if_text_channel, make_full_cog_id
+from antipetros_discordbot.utility.misc import make_config_name, seconds_to_pretty, delete_message_if_text_channel
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin, only_giddi
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
@@ -30,6 +30,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_help
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.converters import CogConverter
 from antipetros_discordbot.cogs import category_ids
+from antipetros_discordbot.utility.id_generation import make_full_cog_id
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -71,7 +72,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
     """
     Commands and methods that are needed to Administrate the Bot itself.
     """
-    cog_id = 477
+    cog_id = 10
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
@@ -319,7 +320,7 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
     async def current_cogs(self, ctx: commands.Context):
         text = ""
         for cog_name, cog_object in self.bot.cogs.items():
-            text += f"NAME: {cog_name}, ID: {cog_object.__module__}, CONFIG_NAME: {cog_object.config_name}\n{'-'*10}\n"
+            text += f"NAME: {cog_name}, ID: {cog_object.full_cog_id}, CONFIG_NAME: {cog_object.config_name}\n{'-'*10}\n"
         await self.bot.split_to_messages(ctx, text, in_codeblock=True, syntax_highlighting='fix')
 
     def cog_check(self, ctx):
