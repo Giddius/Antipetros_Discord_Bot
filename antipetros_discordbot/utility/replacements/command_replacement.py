@@ -49,7 +49,7 @@ class AliasProvider:
         return list(set(map(lambda x: x.casefold(), aliases)))
 
 
-class AntiPetrosCommand(commands.Command):
+class AntiPetrosBaseCommand(commands.Command):
     meta_data_file = pathmaker(APPDATA['documentation'], 'command_help_data.json')
     bot_mention_regex = re.compile(r"\@AntiPetros|\@AntiDEVtros", re.IGNORECASE)
     gif_folder = APPDATA['gifs']
@@ -150,7 +150,7 @@ class AntiPetrosCommand(commands.Command):
         writejson(data, self.meta_data_file)
 
 
-class AntiPetrosFlagCommand(flags.FlagCommand, AntiPetrosCommand):
+class AntiPetrosFlagCommand(flags.FlagCommand, AntiPetrosBaseCommand):
     pass
 
 
@@ -193,7 +193,7 @@ def auto_meta_info_command(name=None, cls=None, **attrs):
         If the function is not a coroutine or is already a command.
     """
     if cls is None:
-        cls = AntiPetrosCommand
+        cls = AntiPetrosBaseCommand
 
     def decorator(func):
         return cls(func, name=name, **attrs)
