@@ -53,7 +53,7 @@ from importlib.util import find_spec, module_from_spec, spec_from_file_location
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from importlib.machinery import SourceFileLoader
 import inspect
-
+import icecream as ic
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
 import discord
@@ -91,6 +91,8 @@ import gidlogger as glog
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from .helper.alias_provider import AliasProvider
+from .helper.source_code_provider import SourceCodeProvider
+from antipetros_discordbot.utility.misc import highlight_print
 # endregion[Imports]
 
 # region [TODO]
@@ -127,12 +129,21 @@ class AntiPetrosBaseCommand(commands.Command):
 
     def __init__(self, func, **kwargs):
         self.name = func.__name__ if kwargs.get("name") is None else kwargs.get("name")
-        self.alias_provider = AliasProvider(self.name, kwargs.get("aliases"))
+        self.alias_provider = AliasProvider(self.name, kwargs.pop("aliases", []))
+        self.source_code_provider = SourceCodeProvider(self)
         super().__init__(func, **kwargs)
+        self.module = sys.modules[func.__module__]
+
+    async def get_source_code_image(self):
+        return await self.source_code_provider.source_code_image()
 
     @property
-    def full_id(self):
-        return self._get_full_id()
+    def enabled(self):
+        return self.module.get_command_enabled(self.name)
+
+    @enabled.setter
+    def enabled(self, value):
+        pass
 
     @property
     def aliases(self):

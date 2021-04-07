@@ -84,6 +84,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         self.support = self.bot.support
         self.stamp_location = APPDATA['stamps']
         self.stamps = {}
+        self.nato_symbol_parts_location = APPDATA['nato_symbol_parts']
+        self.nato_symbol_parts_images = {}
         self.stamp_pos_functions = {WatermarkPosition.Right | WatermarkPosition.Bottom: self._to_bottom_right,
                                     WatermarkPosition.Right | WatermarkPosition.Top: self._to_top_right,
                                     WatermarkPosition.Right | WatermarkPosition.Center: self._to_center_right,
@@ -122,9 +124,9 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         self._get_stamps()
+        self._get_nato_symbol_parts()
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
@@ -179,6 +181,14 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 
 # endregion[Listener]
+
+
+    def _get_nato_symbol_parts(self):
+        self.nato_symbol_parts_images = {}
+        for file in os.scandir(self.nato_symbol_parts_location):
+            if os.path.isfile(file.path) is True:
+                name = file.name.split('.')[0].replace(' ', '_').strip().upper()
+                self.nato_symbol_parts_images[name] = file.path
 
     def _get_stamps(self):
         self.stamps = {}

@@ -79,7 +79,6 @@ class AntiPetrosBot(commands.Bot):
 
 # endregion[ClassAttributes]
 
-
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
@@ -109,7 +108,7 @@ class AntiPetrosBot(commands.Bot):
         self.github_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot"
         self.wiki_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki"
         self.used_startup_message = None
-        self.ipc = ipc.Server(self, secret_key=os.getenv('IPC_SECRET_KEY'))
+        self.ipc = ipc.Server(self, secret_key=os.getenv('IPC_SECRET_KEY'), host=BASE_CONFIG.retrieve('ipc', 'host', typus=str), port=BASE_CONFIG.retrieve('ipc', 'port', typus=int))
 
         user_not_blacklisted(self, log)
         if is_test is False:
@@ -120,7 +119,11 @@ class AntiPetrosBot(commands.Bot):
         # endregion[Init]
     async def on_ipc_ready(self):
         """Called upon the IPC Server being ready"""
-        log.info("Ipc is ready.")
+        log.info(f"{self.ipc.host} {self.ipc.port} is ready")
+
+    async def on_ipc_error(self, endpoint, error):
+        """Called upon an error being raised within an IPC route"""
+        log.critical(endpoint, "raised", error)
 
     def get_intents(self):
 

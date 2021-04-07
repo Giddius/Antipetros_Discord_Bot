@@ -41,7 +41,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.exceptions import NotAllowedChannelError
-from antipetros_discordbot.utility.converters import DateTimeFullConverter, date_time_full_converter_flags
+from antipetros_discordbot.utility.converters import DateTimeFullConverter, date_time_full_converter_flags, CommandConverter
 from pyyoutube import Api
 from inspect import getmembers, getsourcefile, getsource, getsourcelines, getfullargspec, getmodule, getcallargs, getabsfile, getmodulename, getdoc, getfile, cleandoc, classify_class_attrs
 
@@ -739,11 +739,9 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         pprint(EMOJI_UNICODE_ENGLISH)
 
     @auto_meta_info_command()
-    async def check_set_command_attr(self, ctx: commands.Context):
-        text = ""
-        for command in self.bot.commands:
-            text += f"{command.name}: {str(command.set_attribute)}\n\n"
-        await self.bot.split_to_messages(ctx, text, in_codeblock=True)
+    async def command_image(self, ctx: commands.Context, command: CommandConverter):
+        embed_data = await self.bot.make_generic_embed(title=command.name, description=command.short_doc, image=await command.get_source_code_image(), thumbnail="source_code")
+        await ctx.send(**embed_data)
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))

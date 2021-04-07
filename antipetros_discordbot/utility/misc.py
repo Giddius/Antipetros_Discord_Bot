@@ -461,3 +461,17 @@ async def async_write_it(in_file, in_data, append=False, in_encoding='utf-8', in
     if _LOOP is None:
         _LOOP = asyncio.get_event_loop()
     await _LOOP.run_in_executor(None, writeit, in_file, in_data, append, in_encoding, in_errors)
+
+
+def highlight_print(in_data, highlight_level: int = 1):
+    seperators = {0: "#" * 10,
+                  1: "*" * 10,
+                  2: "!" * 10,
+                  3: "+-" * 5}
+    print("")
+    for i in range(highlight_level):
+        print(seperators.get(i))
+    print(in_data)
+    for i in reversed(range(highlight_level)):
+        print(seperators.get(i))
+    print("")

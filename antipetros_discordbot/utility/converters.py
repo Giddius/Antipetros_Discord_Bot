@@ -10,7 +10,7 @@
 import os
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands import Converter, CommandError
 from googletrans import LANGUAGES
@@ -20,6 +20,7 @@ from dateparser import parse as date_parse
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from antipetros_discordbot.utility.exceptions import ParameterError
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosFlagCommand
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -114,7 +115,7 @@ class FlagArg(Converter):
 
 class CommandConverter(Converter):
 
-    async def convert(self, ctx: commands.Context, argument):
+    async def convert(self, ctx: commands.Context, argument) -> Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosFlagCommand]:
         bot = ctx.bot
         command = await bot.command_by_name(argument)
         if command is None:
