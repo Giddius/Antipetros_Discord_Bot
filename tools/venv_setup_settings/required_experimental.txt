@@ -25,5 +25,4 @@ tabulate
 twitchAPI
 vendorize
 wikitextparser
-discord-ext-ipc
 Quart

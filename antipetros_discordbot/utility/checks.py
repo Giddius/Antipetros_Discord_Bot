@@ -5,6 +5,7 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from typing import List, Set
+import sys
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands
@@ -60,16 +61,19 @@ def in_allowed_channels():
         if allowed_channel_names != ['all'] and channel.name.casefold() not in allowed_channel_names + ['bot-testing']:
             raise NotAllowedChannelError(ctx, allowed_channel_names)
         return True
+    predicate.check_name = sys._getframe().f_code.co_name
     return commands.check(predicate)
 
 
 def log_invoker(logger, level: str = 'info'):
+    # TODO: make as before invoke hook and not check!
     def predicate(ctx):
         channel_name = ctx.channel.name if ctx.channel.type is discord.ChannelType.text else 'DM'
         getattr(logger, level)("command '%s' as '%s' -- invoked by: name: '%s', id: %s -- in channel: '%s' -- raw invoking message: '%s'",
                                ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, channel_name, ctx.message.content)
 
         return True
+    predicate.check_name = sys._getframe().f_code.co_name
     return commands.check(predicate)
 
 
@@ -121,7 +125,7 @@ def has_attachments(min_amount_attachments: int = 1):
             return True
         else:
             raise MissingAttachmentError(ctx, min_amount_attachments)
-
+    predicate.check_name = sys._getframe().f_code.co_name
     return commands.check(predicate)
 
 
@@ -140,7 +144,7 @@ def only_dm_only_allowed_id(config_name: str, allowed_id_key: str = "allowed_in_
         if user_id not in set(map(int, COGS_CONFIG.getlist(config_name, allowed_id_key))):
             return False
         return True
-
+    predicate.check_name = sys._getframe().f_code.co_name
     return commands.check(predicate)
 
 
@@ -187,7 +191,7 @@ def allowed_channel_and_allowed_role_2(in_dm_allowed: bool = False):
                 raise NotNecessaryRole(ctx, allowed_role_names)
 
         return True
-
+    predicate.check_name = sys._getframe().f_code.co_name
     return commands.check(predicate)
 
 
@@ -237,6 +241,7 @@ def owner_or_admin(allowed_in_dm: bool = False):
                 return True
 
         return False
+    predicate.check_name = sys._getframe().f_code.co_name
     return commands.check(predicate)
 
 
@@ -245,6 +250,7 @@ def only_giddi():
         if ctx.author.id == ctx.bot.creator.id:
             return True
         return False
+    predicate.check_name = sys._getframe().f_code.co_name
     return commands.check(predicate)
 
 
@@ -253,6 +259,7 @@ def only_bob():
         if ctx.author.id == "346595708180103170":
             return True
         return False
+    predicate.check_name = sys._getframe().f_code.co_name
     return commands.check(predicate)
 
 

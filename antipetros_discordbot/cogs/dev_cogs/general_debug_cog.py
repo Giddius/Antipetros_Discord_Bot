@@ -15,6 +15,7 @@ from datetime import datetime
 import shutil
 from zipfile import ZipFile, ZIP_LZMA
 from tempfile import TemporaryDirectory
+
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands, flags
@@ -41,7 +42,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.exceptions import NotAllowedChannelError
-from antipetros_discordbot.utility.converters import DateTimeFullConverter, date_time_full_converter_flags, CommandConverter
+from antipetros_discordbot.utility.converters import DateTimeFullConverter, date_time_full_converter_flags, CommandConverter, CogConverter
 from pyyoutube import Api
 from inspect import getmembers, getsourcefile, getsource, getsourcelines, getfullargspec, getmodule, getcallargs, getabsfile, getmodulename, getdoc, getfile, cleandoc, classify_class_attrs
 
@@ -739,9 +740,23 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         pprint(EMOJI_UNICODE_ENGLISH)
 
     @auto_meta_info_command()
-    async def command_image(self, ctx: commands.Context, command: CommandConverter):
-        embed_data = await self.bot.make_generic_embed(title=command.name, description=command.short_doc, image=await command.get_source_code_image(), thumbnail="source_code")
+    async def new_command_info_check(self, ctx: commands.Context, command: CommandConverter):
+        fields = []
+        for att_name, att_object in getmembers(command):
+            if att_name.startswith('dynamic_'):
+                fields.append(self.bot.field_item(name=att_name.replace('dynamic_', ''), value=att_object))
+        fields.append(self.bot.field_item(name='checks', value='\n'.join(check.check_name for check in command.checks if hasattr(check, "check_name"))))
+        embed_data = await self.bot.make_generic_embed(title=command.name, description='\n'.join(command.aliases), image=await command.get_source_code_image(), thumbnail="source_code",
+                                                       fields=fields)
         await ctx.send(**embed_data)
+        if command.gif:
+            await ctx.send(file=discord.File(command.gif))
+        await ctx.send(str(command.parent))
+
+    @auto_meta_info_command()
+    async def check_cog_commands_dunder(self, ctx: commands.Context, cog: CogConverter):
+        content = [str(item) for item in cog.__cog_commands__]
+        await self.bot.split_to_messages(ctx, '\n'.join(content), in_codeblock=True)
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))

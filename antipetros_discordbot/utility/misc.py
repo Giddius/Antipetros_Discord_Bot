@@ -219,19 +219,19 @@ async def generate_bot_data(bot, production_bot):
 def generate_help_data(cog: commands.Cog, output_file=None):
     if CogState.FOR_DEBUG in CogState.split(cog.docattrs['is_ready'][0]):
         return
-    help_data_file = pathmaker(APPDATA['documentation'], 'command_help_data.json') if output_file is None else pathmaker(output_file)
+    help_data_file = pathmaker(APPDATA['documentation'], 'command_meta_data.json') if output_file is None else pathmaker(output_file)
     if os.path.isfile(help_data_file) is False:
         writejson({}, help_data_file)
     help_data = loadjson(help_data_file)
 
     for command in cog.get_commands():
-        help_data[command.name.strip()] = {'brief': command.brief,
-                                           'description': command.description,
-                                           'usage': command.usage,
-                                           'help': command.help,
-                                           'hide': command.hidden,
-                                           'brief': command.brief,
-                                           'short_doc': command.short_doc}
+        help_data[command.name.strip().casefold()] = {'brief': command.brief,
+                                                      'description': command.description,
+                                                      'usage': command.usage,
+                                                      'help': command.help,
+                                                      'hide': command.hidden,
+                                                      'brief': command.brief,
+                                                      'short_doc': command.short_doc}
 
     writejson(help_data, help_data_file)
 

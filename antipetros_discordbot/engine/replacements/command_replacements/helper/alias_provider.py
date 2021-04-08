@@ -70,7 +70,7 @@ from importlib.machinery import SourceFileLoader
 
 # from discord import Embed, File
 
-# from discord.ext import commands, tasks
+from discord.ext import commands, tasks
 
 # from github import Github, GithubException
 
@@ -118,16 +118,16 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class AliasProvider:
+class JsonAliasProvider:
     """
     Dynamically provides all aliases set for a command.
     """
     alias_data_file = pathmaker(APPDATA['documentation'], 'command_aliases.json')
     base_config = ParaStorageKeeper.get_config('base_config')
 
-    def __init__(self, command_name: str, extra_aliases: Union[List, Tuple] = None):
-        self.command_name = command_name
-        self.extra_aliases = [] if extra_aliases is None else extra_aliases
+    def __init__(self):
+        if os.path.isfile(self.alias_data_file) is False:
+            writejson({}, self.alias_data_file)
 
     @property
     def default_alias_chars(self) -> List[str]:
@@ -135,27 +135,67 @@ class AliasProvider:
 
     @property
     def custom_alias_data(self) -> dict:
-        if os.path.isfile(self.alias_data_file) is False:
-            return {}
         return loadjson(self.alias_data_file)
 
-    @property
-    def default_aliases(self) -> List[str]:
-        default_aliases = []
-        for char in self.default_alias_chars:
-            mod_name = self.command_name.replace('_', char)
-            if mod_name not in default_aliases and mod_name != self.command_name:
-                default_aliases.append(mod_name)
-        return default_aliases
+    def get_auto_provider(self, command: commands.Command) -> Callable:
+        return partial(self.get, command)
 
-    @property
-    def custom_aliases(self) -> List[str]:
-        return self.custom_alias_data.get(self.command_name, [])
+    def set_auto_provider(self, command: commands.Command) -> Callable:
+        return partial(self.set_alias, command)
 
-    @property
-    def aliases(self) -> List[str]:
-        aliases = self.default_aliases + self.custom_aliases + self.extra_aliases
-        return list(set(map(lambda x: x.casefold(), aliases)))
+    def remove_auto_provider(self, command: commands.Command) -> Callable:
+        return partial(self.remove, command)
+
+    def get(self, command: Union[str, commands.Command], extra_aliases: Union[List, Tuple] = None) -> list[str]:
+        if isinstance(command, commands.Command):
+            command = command.name
+        all_aliases = [] if extra_aliases is None else list(extra_aliases)
+        all_aliases = all_aliases + self._get_default_aliases(command) + self._get_custom_aliases(command)
+        return list(set(map(lambda x: x.casefold(), all_aliases)))
+
+    def _get_default_aliases(self, command: Union[str, commands.Command]) -> List[str]:
+        if isinstance(command, commands.Command):
+            command = command.name
+        return [command.replace('_', char) for char in self.default_alias_chars if command.replace('_', char) != command]
+
+    def _get_custom_aliases(self, command: Union[str, commands.Command]) -> List[str]:
+        if isinstance(command, commands.Command):
+            command = command.name
+        return self.custom_alias_data.get(command.casefold(), [])
+
+    def set_alias(self, command: commands.Command, new_alias: str):
+        new_alias = new_alias.casefold()
+
+        command_name = command.name.casefold()
+        data = loadjson(self.alias_data_file)
+        if command_name not in data:
+            data[command_name] = []
+        pre_size = len(data[command_name])
+        data[command_name].append(new_alias)
+        data[command_name] = list(set(map(lambda x: x.casefold(), data[command_name])))
+        post_size = len(data[command_name])
+        self.save(data)
+        command.cog.bot.refresh_command(command)
+        if post_size > pre_size:
+            return True
+        else:
+            return False
+
+    def remove(self, command: Union[str, commands.Command], alias: str):
+        alias = alias.casefold()
+        if isinstance(command, commands.Command):
+            command = command.name
+        command = command.casefold()
+        data = loadjson(self.alias_data_file)
+        if command not in data:
+            return False
+        if alias not in data[command]:
+            return False
+        data[command].remove(alias)
+        self.save(data)
+
+    def save(self, data: dict) -> None:
+        writejson(data, self.alias_data_file)
 
 
 # region[Main_Exec]

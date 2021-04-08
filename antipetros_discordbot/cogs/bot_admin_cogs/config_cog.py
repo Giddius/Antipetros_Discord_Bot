@@ -33,6 +33,7 @@ from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_config_cog import AddedAliasChangeEvent
+from antipetros_discordbot.utility.converters import CommandConverter
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -273,7 +274,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     @auto_meta_info_command(enabled=get_command_enabled("add_alias"))
     @owner_or_admin()
     @log_invoker(log, 'critical')
-    async def add_alias(self, ctx: commands.Context, command_name: str, alias: str):
+    async def add_alias(self, ctx: commands.Context, command: CommandConverter, new_alias: str):
         """
         Adds an alias for a command.
 
@@ -287,18 +288,16 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
             @AntiPetros add_alias flip_coin flip_it
         """
         await self.refresh_command_aliases()
-        if command_name not in self.aliases:
-            await ctx.send(f"I was not able to find the command with the name '{command_name}'")
+        new_alias = new_alias.casefold()
+        if new_alias in self.all_alias_names:
+            await ctx.send(f'Alias `{new_alias}` is already in use, either on this command or any other. Cannot be set as alias, aborting!')
             return
-        if alias in self.all_alias_names:
-            await ctx.send(f'Alias {alias} is already in use, either on this command or any other. Cannot be set as alias, aborting!')
-            return
-        self.aliases[command_name].append(alias)
-        await self.save_command_aliases()
-        await ctx.send(f"successfully added '{alias}' to the command aliases of '{command_name}'")
-        await self.bot.reload_cog_from_command_name(command_name)
-        await self.bot.creator.member_object.send(f"A new alias was set by `{ctx.author.name}`\n**Command:** {command_name}\n**New Alias:** {alias}")
-
+        add_success = command.set_alias(new_alias)
+        if add_success is True:
+            await ctx.send(f"successfully added `{new_alias}` to the command aliases of `{command.name}`")
+            await self.bot.creator.member_object.send(f"A new alias was set by `{ctx.author.name}`\n**Command:** `{command.name}`\n**New Alias:** `{new_alias}`")
+        else:
+            await ctx.send(f"error with adding alias `{new_alias}` to `{command.name}`, alias was **NOT** added!")
 # endregion [Commands]
 
 # region [Helper]

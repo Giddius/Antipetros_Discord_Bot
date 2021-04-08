@@ -37,7 +37,7 @@ from time import time, sleep
 from pprint import pprint, pformat
 from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
 from timeit import Timer
-from typing import Union, Callable, Iterable
+from typing import Union, Callable, Iterable, List, Dict, Optional, Tuple, Any, Callable, Mapping, TYPE_CHECKING
 from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
 from zipfile import ZipFile
 from datetime import tzinfo, datetime, timezone, timedelta
@@ -52,7 +52,7 @@ from urllib.parse import urlparse
 from importlib.util import find_spec, module_from_spec, spec_from_file_location
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from importlib.machinery import SourceFileLoader
-import inspect
+
 
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
@@ -70,7 +70,7 @@ import discord
 
 # from discord import Embed, File
 
-from discord.ext import commands, tasks, flags, ipc
+from discord.ext import commands, tasks, ipc, flags
 
 # from github import Github, GithubException
 
@@ -87,11 +87,9 @@ import gidlogger as glog
 
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
-from .base_command import AntiPetrosBaseCommand
+from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, readit, writeit, pathmaker
 # endregion[Imports]
 
 # region [TODO]
@@ -103,7 +101,6 @@ from .base_command import AntiPetrosBaseCommand
 
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
-
 
 # endregion [AppUserData]
 
@@ -121,11 +118,44 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class AntiPetrosFlagCommand(flags.FlagCommand, AntiPetrosBaseCommand):
-    pass
+class JsonMetaDataProvider:
+    data_file = pathmaker(APPDATA['documentation'], 'command_meta_data.json')
+
+    def __init__(self) -> None:
+        if os.path.isfile(self.data_file) is False:
+            writejson({}, self.data_file)
+
+    @property
+    def meta_data(self) -> dict:
+        return loadjson(self.data_file)
+
+    def get_auto_provider(self, command: commands.Command) -> Callable:
+        return partial(self.get, command)
+
+    def set_auto_provider(self, command: commands.Command) -> Callable:
+        return partial(self.set, command)
+
+    def get(self, command: Union[str, commands.Command], typus: str, fallback=None):
+        if isinstance(command, commands.Command):
+            command = command.name
+        typus = typus.casefold()
+        return self.meta_data.get(command.casefold(), {}).get(typus, fallback)
+
+    def set(self, command: Union[str, commands.Command], typus: str, value: Any):
+        if isinstance(command, commands.Command):
+            command = command.name
+        typus = typus.casefold()
+        data = self.meta_data
+        if command.casefold() not in data:
+            data[command.casefold()] = {}
+        data[command.casefold()][typus] = value
+        self.save(data)
+
+    def save(self, data: dict) -> None:
+        writejson(data, self.data_file)
 
 
-# region[Main_Exec]
+        # region[Main_Exec]
 if __name__ == '__main__':
     pass
 

@@ -90,8 +90,7 @@ import gidlogger as glog
 
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from .helper.alias_provider import AliasProvider
-from .helper.source_code_provider import SourceCodeProvider
+from .helper import JsonMetaDataProvider, JsonAliasProvider, SourceCodeProvider
 from antipetros_discordbot.utility.misc import highlight_print
 # endregion[Imports]
 
@@ -123,19 +122,27 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class AntiPetrosBaseCommand(commands.Command):
-    meta_data_file = pathmaker(APPDATA['documentation'], 'command_help_data.json')
+    meta_data_provider = JsonMetaDataProvider()
+    alias_data_provider = JsonAliasProvider()
+    source_code_data_provider = SourceCodeProvider()
     bot_mention_regex = re.compile(r"\@AntiPetros|\@AntiDEVtros", re.IGNORECASE)
+    bot_mention_placeholder = '@BOTMENTION'
     gif_folder = APPDATA['gifs']
 
     def __init__(self, func, **kwargs):
         self.name = func.__name__ if kwargs.get("name") is None else kwargs.get("name")
-        self.alias_provider = AliasProvider(self.name, kwargs.pop("aliases", []))
-        self.source_code_provider = SourceCodeProvider(self)
+        self.extra_aliases = kwargs.pop("aliases", None)
+        self.get_meta_data = self.meta_data_provider.get_auto_provider(self)
+        self.set_meta_data = self.meta_data_provider.set_auto_provider(self)
+        self.get_alias = self.alias_data_provider.get_auto_provider(self)
+        self.set_alias = self.alias_data_provider.set_auto_provider(self)
+        self.remove_alias = self.alias_data_provider.remove_auto_provider(self)
+        self.get_source_code = self.source_code_data_provider.get_auto_provider(self)
         super().__init__(func, **kwargs)
         self.module = sys.modules[func.__module__]
 
     async def get_source_code_image(self):
-        return await self.source_code_provider.source_code_image()
+        return await asyncio.to_thread(self.get_source_code, typus='image')
 
     @property
     def enabled(self):
@@ -147,74 +154,87 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def aliases(self):
-        return self.alias_provider.aliases
+        return self.get_alias(extra_aliases=self.extra_aliases)
 
     @aliases.setter
     def aliases(self, value):
         pass
 
     @property
-    def meta_data(self):
-        if os.path.isfile(self.meta_data_file) is False:
-            return {}
-        return loadjson(self.meta_data_file).get(self.name, {})
+    def dynamic_help(self):
+        _help = self.get_meta_data('help', None)
+        if _help in [None, ""]:
+            _help = self.help
+        if _help in [None, ""]:
+            _help = 'NA'
+        return inspect.cleandoc(_help)
+
+    @dynamic_help.setter
+    def dynamic_help(self, value):
+        self.set_meta_data('help', value)
 
     @property
-    def help(self):
-        return inspect.cleandoc(self.meta_data.get('help', inspect.getdoc(self.callback)))
+    def dynamic_brief(self):
+        brief = self.get_meta_data('brief', None)
+        if brief in [None, ""]:
+            brief = self.brief
+        if brief in [None, ""]:
+            brief = 'NA'
+        return brief
 
-    @help.setter
-    def help(self, value):
-        pass
-
-    @property
-    def brief(self):
-        return self.meta_data.get('brief', None)
-
-    @brief.setter
-    def brief(self, value):
-        pass
+    @dynamic_brief.setter
+    def dynamic_brief(self, value):
+        self.set_meta_data('brief', value)
 
     @property
-    def description(self):
-        return inspect.cleandoc(self.meta_data.get('description', ''))
+    def dynamic_description(self):
+        description = self.get_meta_data('description', None)
+        if description in [None, ""]:
+            description = self.description
+        if description in [None, ""]:
+            description = 'NA'
+        return inspect.cleandoc(description)
 
-    @description.setter
-    def description(self, value):
-        pass
-
-    @property
-    def short_doc(self):
-        short_doc = self.meta_data.get('short_doc', None)
-        if short_doc is not None:
-            return short_doc
-        if self.brief is not None:
-            return self.brief
-        if self.help is not None:
-            return self.help
-        return ''
-
-    @short_doc.setter
-    def short_doc(self, value):
-        pass
+    @dynamic_description.setter
+    def dynamic_description(self, value):
+        self.set_meta_data('description', value)
 
     @property
-    def usage(self):
-        return self.meta_data.get('usage', None)
+    def dynamic_short_doc(self):
+        short_doc = self.get_meta_data('short_doc', None)
+        if short_doc in [None, ""]:
+            short_doc = self.short_doc
+        if short_doc in [None, ""]:
+            short_doc = 'NA'
+        return short_doc
 
-    @usage.setter
-    def usage(self, value):
-        pass
+    @dynamic_short_doc.setter
+    def dynamic_short_doc(self, value):
+        self.set_meta_data('short_doc', value)
 
     @property
-    def example(self):
-        example = self.meta_data.get('example', None)
-        return example
+    def dynamic_usage(self):
+        usage = self.get_meta_data('usage', None)
+        if usage in [None, ""]:
+            usage = self.usage
+        if usage in [None, ""]:
+            usage = 'NA'
+        return usage
 
-    @example.setter
-    def example(self, value):
-        meta_data = self.get_full_metadata()
-        meta_data[self.name]['example'] = value
+    @dynamic_usage.setter
+    def dynamic_usage(self, value):
+        self.set_meta_data('usage', value)
+
+    @property
+    def dynamic_example(self):
+        example = self.get_meta_data('example', None)
+        if example in [None, ""]:
+            example = 'NA'
+        return example.replace(self.bot_mention_placeholder, self.cog.bot.bot_member.mention)
+
+    @dynamic_example.setter
+    def dynamic_example(self, value):
+        self.set_meta_data('example', value)
 
     @property
     def gif(self):
@@ -223,13 +243,9 @@ class AntiPetrosBaseCommand(commands.Command):
                 return pathmaker(gif_file.path)
         return None
 
-    def get_full_metadata(self):
-        if os.path.exists(self.meta_data_file) is False:
-            return {self.name: {}}
-        return loadjson(self.meta_data_file)
-
-    def save_full_metadata(self, data):
-        writejson(data, self.meta_data_file)
+    @property
+    def github_link(self):
+        return self.get_source_code('link')
 
 
 # region[Main_Exec]

@@ -131,10 +131,9 @@ class CogConverter(Converter):
 
     async def convert(self, ctx: commands.Context, argument):
         bot = ctx.bot
-        try:
-            mod_argument = argument.casfold()
-        except AttributeError:
-            mod_argument = int(argument)
+
+        mod_argument = argument.casefold()
+
         cog = bot.cog_name_id_map.get(mod_argument, None)
         if cog is None:
             raise ParameterError("cog", argument)

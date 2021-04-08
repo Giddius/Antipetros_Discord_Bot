@@ -127,24 +127,33 @@ class SourceCodeProvider:
     base_folder_name = 'antipetros_discordbot'
     code_highlighter_style = DraculaStyle
 
-    def __init__(self, command: commands.Command):
-        self.command = command
+    def get_auto_provider(self, command: commands.Command) -> Callable:
+        return partial(self.get, command)
 
-    @cached_property
-    def line_numbers(self) -> tuple:
-        source_lines = inspect.getsourcelines(self.command.callback)
+    def get(self, command: commands.Command, typus: str):
+        typus = typus.casefold()
+        if typus == "image":
+            return self.source_code_image(command)
+        if typus == "link":
+            return self.github_line_link(command)
+
+    @staticmethod
+    @lru_cache
+    def line_numbers(command: commands.Command) -> tuple:
+        source_lines = inspect.getsourcelines(command.callback)
         start_line_number = source_lines[1]
         code_length = len(source_lines[0])
         code_line_numbers = tuple(range(start_line_number, start_line_number + code_length))
         return code_line_numbers
 
-    @cached_property
-    def github_line_link(self) -> str:
-        rel_path = self.antipetros_repo_rel_path(inspect.getsourcefile(self.command.cog.__class__))
-        code_line_numbers = self.line_numbers
+    @lru_cache
+    def github_line_link(self, command: commands.Command) -> str:
+        rel_path = self.antipetros_repo_rel_path(inspect.getsourcefile(command.cog.__class__))
+        code_line_numbers = self.line_numbers(command)
         full_path = self.base_url + rel_path + f'#L{min(code_line_numbers)}-L{max(code_line_numbers)}'
         return full_path
 
+    @lru_cache
     def antipetros_repo_rel_path(self, in_path: str) -> str:
         in_path = pathmaker(in_path)
         in_path_parts = in_path.split('/')
@@ -152,13 +161,13 @@ class SourceCodeProvider:
             _ = in_path_parts.pop(0)
         return pathmaker(*in_path_parts)
 
-    async def source_code_image(self) -> bytes:
-        rel_path = self.antipetros_repo_rel_path(inspect.getsourcefile(self.command.cog.__class__))
-        raw_source_code = f'\t# {rel_path}\n\n' + inspect.getsource(self.command.callback)
+    def source_code_image(self, command: commands.Command) -> bytes:
+        rel_path = self.antipetros_repo_rel_path(inspect.getsourcefile(command.cog.__class__))
+        raw_source_code = f'\t# {rel_path}\n\n' + inspect.getsource(command.callback)
 
         image = highlight(raw_source_code, PythonLexer(), ImageFormatter(style=self.code_highlighter_style,
                                                                          font_name='Fira Code',
-                                                                         line_number_start=min(self.line_numbers),
+                                                                         line_number_start=min(self.line_numbers(command)),
                                                                          line_number_bg="#2f3136",
                                                                          line_number_fg="#ffffff",
                                                                          line_number_chars=3,
