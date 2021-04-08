@@ -334,6 +334,7 @@ class AntiPetrosBot(commands.Bot):
 
             log.info("shutting down executor")
             self.executor.shutdown()
+
             for session in self.clients_to_close:
                 await session.close()
                 log.info("'%s' was shut down", str(session))

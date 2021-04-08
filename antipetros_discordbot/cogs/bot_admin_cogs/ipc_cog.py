@@ -145,7 +145,6 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -168,6 +167,7 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
+
     @ipc.server.route()
     async def shut_down(self, data):
         member = await self.bot.retrieve_antistasi_member(data.member_id)
@@ -175,10 +175,13 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
         trial_admin_role = {role.name.casefold(): role for role in self.bot.antistasi_guild.roles}.get("trial admin")
         if await self.bot.is_owner(member) is True or admin_role in member.roles or trial_admin_role in member.roles:
             log.info(f'Shutdown was requested via IPC from {member.display_name}')
-            asyncio.create_task(self.bot.shutdown_mechanic())
+            asyncio.create_task(self.execute_shutdown())
+            return {"success": True}
+        return {"success": False}
 
     @ipc.server.route()
     async def say_hi(self, data):
+
         channel = await self.bot.channel_from_name('bot-testing')
         await channel.send(f"This was send via IPC and will enable me all the server shananigans.\nHi {data.name}")
 
@@ -192,10 +195,14 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [HelperMethods]
 
 
+    async def execute_shutdown(self):
+        await asyncio.sleep(5)
+        await self.bot.shutdown_mechanic()
+
+
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

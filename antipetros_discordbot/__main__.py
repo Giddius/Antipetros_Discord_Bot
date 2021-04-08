@@ -260,14 +260,21 @@ def stop(member_id):
     Writes a file to a specific folder that acts like a shutdown trigger (bot watches the folder)
     afterwards deletes the file. Used as redundant way to shut down if other methods fail, if this fails, the server has to be restarted.
     """
-
+    sleep(5)
     logging.shutdown()
+
     client = ipc.Client(secret_key=os.getenv('IPC_SECRET_KEY'), host=BASE_CONFIG.retrieve('ipc', 'host', typus=str), port=BASE_CONFIG.retrieve('ipc', 'port', typus=int))
 
-    client.loop.run_until_complete(client.request('shut_down', member_id=member_id))
-    client.loop.run_until_complete(client.session.close())
+    async def do_stop():
+        _out = await client.request('shut_down', member_id=member_id)
+        await asyncio.sleep(5)
+        await asyncio.wait_for(client.session.close(), timeout=None)
+        await asyncio.wait_for(client.websocket.close(), timeout=None)
+        if _out.get('success') is True:
+            print(f'AntiPetrosBot was shut down at {datetime.utcnow().strftime("%H:%M:%S on the %Y.%m.%d")}')
 
-    print(f'AntiPetrosBot was shut down at {datetime.utcnow().strftime("%H:%M:%S on the %Y.%m.%d")}')
+    asyncio.run(do_stop())
+    print('done')
 
 
 @ cli.command(name='run')
@@ -325,6 +332,7 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
 
     anti_petros_bot.ipc.start()
     anti_petros_bot.run()
+
     log.info('~+~' * 20 + ' finished shutting down! ' + '~+~' * 20)
 
 
