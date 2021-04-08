@@ -20,6 +20,8 @@ import click
 from dotenv import load_dotenv
 import platform
 import gidlogger as glog
+from discord.ext import ipc
+import asyncio
 from antipetros_discordbot.utility.misc import generate_base_cogs_config, generate_help_data
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit
@@ -37,7 +39,7 @@ from antipetros_discordbot.utility.data_gathering import save_cog_command_data
 
 
 # region [Constants]
-
+load_dotenv('ipc.env')
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
@@ -251,25 +253,27 @@ def clean_user_data():
 
 
 @cli.command(name='stop')
-def stop():
+@click.option('--member-id', '-id', type=int)
+def stop(member_id):
     """
     Cli way of autostoping the bot.
     Writes a file to a specific folder that acts like a shutdown trigger (bot watches the folder)
     afterwards deletes the file. Used as redundant way to shut down if other methods fail, if this fails, the server has to be restarted.
     """
+
     logging.shutdown()
-    shutdown_trigger_path = pathmaker(APPDATA['shutdown_trigger'], 'shutdown.trigger')
-    writeit(shutdown_trigger_path, 'shutdown')
-    sleep(10)
-    if os.path.isfile(shutdown_trigger_path) is True:
-        os.remove(shutdown_trigger_path)
+    client = ipc.Client(secret_key=os.getenv('IPC_SECRET_KEY'), host=BASE_CONFIG.retrieve('ipc', 'host', typus=str), port=BASE_CONFIG.retrieve('ipc', 'port', typus=int))
+
+    client.loop.run_until_complete(client.request('shut_down', member_id=member_id))
+    client.loop.run_until_complete(client.session.close())
+
     print(f'AntiPetrosBot was shut down at {datetime.utcnow().strftime("%H:%M:%S on the %Y.%m.%d")}')
 
 
-@cli.command(name='run')
-@click.option('--token', '-t')
-@click.option('--nextcloud-username', '-nu', default=None)
-@click.option('--nextcloud-password', '-np', default=None)
+@ cli.command(name='run')
+@ click.option('--token', '-t')
+@ click.option('--nextcloud-username', '-nu', default=None)
+@ click.option('--nextcloud-password', '-np', default=None)
 def run(token, nextcloud_username, nextcloud_password):
     """
     Standard way to start the bot and connect it to discord.
@@ -319,13 +323,7 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
     os.environ['INFO_RUN'] = "0"
     anti_petros_bot = AntiPetrosBot(token=token)
 
-    # @anti_petros_bot.ipc.route()
-    # async def get_config_data(data):
-    #     my_config_parser_dict = {s: dict(BASE_CONFIG.items(s)) for s in BASE_CONFIG.sections()}
-    #     from pprint import pprint
-    #     return my_config_parser_dict
-
-    # anti_petros_bot.ipc.start()
+    anti_petros_bot.ipc.start()
     anti_petros_bot.run()
     log.info('~+~' * 20 + ' finished shutting down! ' + '~+~' * 20)
 

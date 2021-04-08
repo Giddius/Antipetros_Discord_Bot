@@ -829,3 +829,27 @@ def new_cog(c, name, category="general"):
 def bot_restart(c):
     from dev_tools_and_scripts.scripts.launch_in_server import restart
     restart()
+
+
+@task
+def shutdown_bot(c):
+    from discord.ext import ipc
+    import asyncio
+    load_dotenv(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\token.env")
+    client = ipc.Client(secret_key=os.getenv('IPC_SECRET_KEY'))
+    request_thing = client.request("shut_down", member_id=576522029470056450)
+
+    print(client.loop.run_until_complete(request_thing))
+    client.loop.run_until_complete(client.session.close())
+
+
+@task
+def message_hi(c):
+    from discord.ext import ipc
+    import asyncio
+    load_dotenv(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\token.env")
+    client = ipc.Client(secret_key=os.getenv('IPC_SECRET_KEY'))
+    request_thing = client.request("say_hi", name="Giddi is the name")
+
+    print(client.loop.run_until_complete(request_thing))
+    client.loop.run_until_complete(client.session.close())
