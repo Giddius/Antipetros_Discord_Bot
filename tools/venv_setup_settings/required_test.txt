@@ -1,4 +1,3 @@
-dpytest
 pytest
 pytest-asyncio
 pytest-click

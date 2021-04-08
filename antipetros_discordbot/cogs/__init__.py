@@ -16,27 +16,27 @@ def get_aliases(command_name):
 
 
 def get_brief(command_name):
-    data = loadjson(APPDATA['command_help_data.json'])
+    data = loadjson(APPDATA['command_meta_data.json'])
     return data.get(command_name, {}).get('brief', None)
 
 
 def get_description(command_name):
-    data = loadjson(APPDATA['command_help_data.json'])
+    data = loadjson(APPDATA['command_meta_data.json'])
     return data.get(command_name, {}).get('description', "")
 
 
 def get_usage(command_name):
-    data = loadjson(APPDATA['command_help_data.json'])
+    data = loadjson(APPDATA['command_meta_data.json'])
     return data.get(command_name, {}).get('usage', None)
 
 
 def get_help(command_name):
-    data = loadjson(APPDATA['command_help_data.json'])
+    data = loadjson(APPDATA['command_meta_data.json'])
     return data.get(command_name, {}).get('help', None)
 
 
 def get_doc_data(command_name):
-    return loadjson(APPDATA['command_help_data.json']).get(command_name, {"brief": None, "description": "", "help": None, "usage": None})
+    return loadjson(APPDATA['command_meta_data.json']).get(command_name, {"brief": None, "description": "", "help": None, "usage": None})
 
 
 COGS_DIR = os.path.abspath(os.path.dirname(__file__))

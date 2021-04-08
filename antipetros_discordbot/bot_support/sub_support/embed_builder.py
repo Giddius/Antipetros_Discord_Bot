@@ -173,6 +173,15 @@ class EmbedBuilder(SubSupportBase):
                 file = File(fp=image_binary, filename=file_name)
                 image = f"attachment://{file_name}"
                 return image, file
+        elif isinstance(image, bytes):
+            with BytesIO() as image_binary:
+                image_binary.write(image)
+                image_binary.seek(0)
+                file_name = f"image{randint(*self.generic_image_name_range)}.png"
+                file = File(fp=image_binary, filename=file_name)
+                image = f"attachment://{file_name}"
+                return image, file
+
         elif isinstance(image, discord.file.File):
             return f"attachment://{image.filename}", image
 

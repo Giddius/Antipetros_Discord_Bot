@@ -24,7 +24,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
-from antipetros_discordbot.utility.replacements.command_replacement import auto_meta_info_command, AntiPetrosFlagCommand
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosFlagCommand
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_give_away_cog import GiveAwayEvent
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 
@@ -217,7 +217,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
     @flags.add_flag("--end-message", "-emsg", type=str, default="Give away has finished!")
     @flags.add_flag("--start-message", "-smsg", type=str)
     @flags.add_flag("--enter-emoji", '-em', type=str, default="🎁")
-    @auto_meta_info_command(cls=flags.FlagCommand, enabled=get_command_enabled("create_giveaway"))
+    @auto_meta_info_command(cls=AntiPetrosFlagCommand, enabled=get_command_enabled("create_giveaway"))
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @log_invoker(logger=log, level="info")
     async def create_giveaway(self, ctx, **flags):

@@ -36,3 +36,4 @@ tldextract
 validator-collection
 watchgod
 webdavclient3
+PyPDF2

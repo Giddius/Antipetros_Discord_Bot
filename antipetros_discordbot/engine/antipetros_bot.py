@@ -15,6 +15,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
+from typing import Union, Any, Callable, List, Dict, Set, Tuple
 from discord.ext.commands import MinimalHelpCommand
 from watchgod import Change, awatch
 from discord.ext import tasks, commands, ipc
@@ -34,7 +35,8 @@ from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
 from antipetros_discordbot.utility.gidtools_functions import get_pickled, loadjson, pathmaker, readit, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.cogs import BOT_ADMIN_COG_PATHS, DISCORD_ADMIN_COG_PATHS, DEV_COG_PATHS
-from antipetros_discordbot.utility.replacements.help_replacement import BaseCustomHelpCommand
+from antipetros_discordbot.utility.converters import CommandConverter
+from .replacements import BaseCustomHelpCommand
 # endregion[Imports]
 
 
@@ -109,7 +111,7 @@ class AntiPetrosBot(commands.Bot):
         self.github_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot"
         self.wiki_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki"
         self.used_startup_message = None
-        self.ipc = ipc.Server(self, secret_key=os.getenv('IPC_SECRET_KEY'))
+        self.ipc = ipc.Server(self, secret_key=os.getenv('IPC_SECRET_KEY'), host=BASE_CONFIG.retrieve('ipc', 'host', typus=str), port=BASE_CONFIG.retrieve('ipc', 'port', typus=int))
 
         user_not_blacklisted(self, log)
         if is_test is False:
@@ -120,7 +122,11 @@ class AntiPetrosBot(commands.Bot):
         # endregion[Init]
     async def on_ipc_ready(self):
         """Called upon the IPC Server being ready"""
-        log.info("Ipc is ready.")
+        log.info(f"{self.ipc.host} {self.ipc.port} is ready")
+
+    async def on_ipc_error(self, endpoint, error):
+        """Called upon an error being raised within an IPC route"""
+        log.critical(endpoint, "raised", error)
 
     def get_intents(self):
 
@@ -183,7 +189,7 @@ class AntiPetrosBot(commands.Bot):
         await self.handle_previous_shutdown_msg()
         self._watch_for_shutdown_trigger.start()
         self._watch_for_config_changes.start()
-        self._watch_for_alias_changes.start()
+        # self._watch_for_alias_changes.start()
         log.info("Debug Session: %s", self.is_debug)
         log.info("Bot is ready")
         log.info('Bot is currently rate limited: %s', str(self.is_ws_ratelimited()))
@@ -505,21 +511,27 @@ class AntiPetrosBot(commands.Bot):
         feat_suggest_json.append(item._asdict())
         writejson(feat_suggest_json, self.bot_feature_suggestion_json_file)
 
-    async def reload_cog_from_command_name(self, command_name: str):
-        _command = {command.name.casefold(): command for command in self.commands}.get(command_name.casefold())
-        cog_name = _command.cog_name
-        cog = _command.cog
-        file_name = f"{cog.config_name}_cog"
-        for option in BASE_CONFIG.options('extensions'):
-            if option.split('.')[-1].casefold() == file_name.casefold():
-                import_path = self.cog_import_base_path + '.' + option
-                self.unload_extension(import_path)
-                self.load_extension(import_path)
-                for _cog_name, cog_object in self.cogs.items():
-                    if _cog_name.casefold() == cog_name.casefold():
-                        await cog_object.on_ready_setup()
-                        break
-                break
+    async def reload_cog_from_command_name(self, command: Union[str, commands.Command]):
+        if isinstance(command, str):
+            converter = CommandConverter()
+            command = await converter.no_context_convert(self, command)
+
+        self.reload_extension(command.module.__name__)
+        # file_name = f"{cog.config_name}_cog"
+        # for option in BASE_CONFIG.options('extensions'):
+        #     if option.split('.')[-1].casefold() == file_name.casefold():
+        #         import_path = self.cog_import_base_path + '.' + option
+        #         self.unload_extension(import_path)
+        #         self.load_extension(import_path)
+        #         for _cog_name, cog_object in self.cogs.items():
+        #             if _cog_name.casefold() == cog_name.casefold():
+        #                 await cog_object.on_ready_setup()
+        #                 break
+        #         break
+
+    def refresh_command(self, command: commands.Command):
+        self.remove_command(command.name)
+        self.add_command(command)
 
     async def debug_function(self):
         log.debug("debug function triggered")
