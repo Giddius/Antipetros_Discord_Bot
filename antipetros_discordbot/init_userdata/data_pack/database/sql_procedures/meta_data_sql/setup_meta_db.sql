@@ -31,3 +31,21 @@ CREATE TABLE commands_tbl (
     CONSTRAINT cogs_tbl_name_unique UNIQUE (name),
     CONSTRAINT cog_FK FOREIGN KEY ("cog_id") REFERENCES cogs_tbl(id)
 );
+CREATE TABLE memory_performance_tbl (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "timestamp" DATETIME NOT NULL UNIQUE,
+    "memory_in_use" INTEGER NOT NULL
+);
+CREATE TABLE latency_performance_tbl (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "timestamp" DATETIME NOT NULL UNIQUE,
+    "latency" INTEGER NOT NULL
+);
+CREATE TABLE cpu_performance_tbl (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "timestamp" DATETIME NOT NULL UNIQUE,
+    "usage_percent" INTEGER NOT NULL,
+    "load_average_1" INTEGER NOT NULL,
+    "load_average_5" INTEGER NOT NULL,
+    "load_average_15" INTEGER NOT NULL
+)

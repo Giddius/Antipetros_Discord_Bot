@@ -16,7 +16,7 @@ from antipetros_discordbot.utility.misc import make_config_name
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, in_allowed_channels
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 
 # endregion[Imports]
@@ -79,6 +79,7 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": COG_
 
 # endregion [Setup]
 
+
     def __init__(self, bot):
         self.bot = bot
         self.support = self.bot.support
@@ -89,7 +90,7 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": COG_
 
     @flags.add_flag("--and-giddi", '-gid', type=bool, default=False)
     @flags.add_flag("--number-of-messages", '-n', type=int, default=99999999999)
-    @auto_meta_info_command(enabled=get_command_enabled("purge_antipetros"), cls=flags.FlagCommand)
+    @auto_meta_info_command(enabled=get_command_enabled("purge_antipetros"), cls=AntiPetrosFlagCommand)
     @commands.is_owner()
     @in_allowed_channels()
     async def purge_antipetros(self, ctx: commands.Context, **command_flags):

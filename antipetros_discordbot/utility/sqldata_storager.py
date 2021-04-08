@@ -5,7 +5,7 @@
 import os
 import shutil
 from inspect import getmembers, getfile, getsourcefile, getsource, getsourcelines, getdoc
-
+from datetime import datetime
 import gidlogger as glog
 from icecream import ic
 from textwrap import dedent
@@ -51,6 +51,15 @@ class AioMetaDataStorageSQLite:
         self.was_created = self.db.startup_db()
         self.db.vacuum()
         glog.class_init_notification(log, self)
+
+    async def insert_cpu_performance(self, timestamp: datetime, usage_percent: int, load_avg_1: int, load_avg_5: int, load_avg_15: int):
+        await self.db.aio_write("insert_cpu_performance.sql", (timestamp, usage_percent, load_avg_1, load_avg_5, load_avg_15))
+
+    async def insert_latency_perfomance(self, timestamp: datetime, latency: int):
+        await self.db.aio_write('insert_latency_performance', (timestamp, latency))
+
+    async def insert_memory_perfomance(self, timestamp: datetime, memory_in_use: int):
+        await self.db.aio_write('insert_memory_performance', (timestamp, memory_in_use))
 
     async def insert_cogs(self, bot):
         for cog_name, cog_object in bot.cogs.items():

@@ -33,6 +33,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_help
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.id_generation import make_full_cog_id
+from antipetros_discordbot.engine.replacements import auto_meta_info_command
 # endregion[Imports]
 
 # region [Logging]
@@ -265,7 +266,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
 # region [Commands]
 
-    @ commands.command(aliases=get_aliases("mark_discussed"), enabled=get_command_enabled("mark_discussed"))
+    @auto_meta_info_command()
     @ allowed_channel_and_allowed_role_2(in_dm_allowed=True)
     async def mark_discussed(self, ctx, *suggestion_ids: int):
         embed_dict = {}
@@ -274,8 +275,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             embed_dict['message_with_id_' + str(suggestion_id)] = 'was marked as discussed'
         await ctx.send(embed=await make_basic_embed(title='Marked Suggestions as discussed', text='The following items were marked as discussed: ', symbol='update', ** embed_dict))
 
-    @ commands.command(aliases=get_aliases("clear_all_suggestions"), enabled=get_command_enabled("clear_all_suggestions"))
-    @ owner_or_admin()
+    @ auto_meta_info_command()
     async def clear_all_suggestions(self, ctx, sure: bool = False):
         if sure is False:
             question_msg = await ctx.send("Do you really want to delete all saved suggestions?\n\nANSWER **YES** in the next __30 SECONDS__")
@@ -293,7 +293,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         else:
             await self._clear_suggestions(ctx, 'yes')
 
-    @ commands.command(aliases=get_aliases("auto_accept_suggestions"), **get_doc_data("auto_accept_suggestions"))
+    @ auto_meta_info_command()
     @ commands.dm_only()
     async def auto_accept_suggestions(self, ctx):
         if str(ctx.author.id) in self.auto_accept_user_dict:
@@ -306,7 +306,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         # Todo: make as embed
         await ctx.send("I added you to the auto accept suggestion list")
 
-    @ commands.command(aliases=get_aliases("unsave_suggestion"), **get_doc_data("unsave_suggestion"))
+    @ auto_meta_info_command()
     @ commands.dm_only()
     async def unsave_suggestion(self, ctx, suggestion_id: int):
         if suggestion_id not in await self.saved_messages():
@@ -347,7 +347,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             await ctx.send('No answer received, aborting request, you can always try again')
             return
 
-    @ commands.command(aliases=get_aliases("get_all_suggestions"), **get_doc_data("get_all_suggestions"))
+    @ auto_meta_info_command()
     @ allowed_channel_and_allowed_role_2(in_dm_allowed=True)
     async def get_all_suggestions(self, ctx, report_template: str = "basic_report.html.jinja"):
 
@@ -372,7 +372,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             log.debug('sending file')
             await ctx.send(file=file)
 
-    @ commands.command(aliases=get_aliases("remove_all_userdata"), **get_doc_data("remove_all_userdata"))
+    @ auto_meta_info_command()
     @ commands.dm_only()
     async def remove_all_userdata(self, ctx):
         user = ctx.author
@@ -409,7 +409,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             await ctx.send('No answer received, aborting request, you can always try again')
             return
 
-    @ commands.command(aliases=get_aliases("request_my_data"), **get_doc_data("request_my_data"))
+    @ auto_meta_info_command()
     @ commands.dm_only()
     async def request_my_data(self, ctx):
         user = ctx.author

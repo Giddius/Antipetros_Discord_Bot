@@ -27,7 +27,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosFlagCommand, AntiPetrosBaseCommand
 from antipetros_discordbot.utility.exceptions import ParameterError
 from antipetros_discordbot.utility.image_manipulation import make_perfect_fontsize, find_min_fontsize, get_text_dimensions
 
@@ -306,7 +306,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
     @flags.add_flag("--second-pos", '-sp', type=str, default="right")
     @flags.add_flag("--stamp-opacity", '-so', type=float, default=1.0)
     @flags.add_flag('--factor', '-f', type=float, default=None)
-    @auto_meta_info_command(enabled=get_command_enabled("stamp_image"), cls=flags.FlagCommand)
+    @auto_meta_info_command(enabled=get_command_enabled("stamp_image"), cls=AntiPetrosFlagCommand)
     @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def stamp_image(self, ctx, **flags):

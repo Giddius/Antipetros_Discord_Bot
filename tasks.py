@@ -244,6 +244,7 @@ def get_command_data(c, output_file=None, verbose=False):
     Runs without actually connecting to Discord.
 
     """
+    os.chdir(pathmaker(main_dir_from_git(), 'antipetros_discordbot'))
     output_file = pathmaker(output_file, rev=True) if output_file is not None else output_file
     command = f"{ANTIPETROS_CLI_COMMAND} {COLLECT_COMMAND} command"
     if output_file is not None:

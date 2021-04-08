@@ -36,6 +36,7 @@ from antipetros_discordbot.utility.gidtools_functions import get_pickled, loadjs
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.cogs import BOT_ADMIN_COG_PATHS, DISCORD_ADMIN_COG_PATHS, DEV_COG_PATHS
 from antipetros_discordbot.utility.converters import CommandConverter
+from antipetros_discordbot.utility.data_gathering import save_cog_command_data
 from .replacements import BaseCustomHelpCommand
 # endregion[Imports]
 
@@ -195,6 +196,13 @@ class AntiPetrosBot(commands.Bot):
         log.info('Bot is currently rate limited: %s', str(self.is_ws_ratelimited()))
 
         log.info('%s End of Setup Procedures %s', '+-+' * 15, '+-+' * 15)
+        if os.getenv('INFO_RUN') == "1":
+            await asyncio.sleep(5)
+            for cog_name, cog_object in self.cogs.items():
+                print(f"Collecting command-info for '{cog_name}'")
+
+                save_cog_command_data(cog_object, output_file=os.getenv('INFO_RUN_OUTPUT_FILE'))
+            await self.bot.close()
 
     async def handle_previous_shutdown_msg(self):
         if self.is_debug is False and os.path.isfile(self.shutdown_message_pickle_file):

@@ -153,6 +153,14 @@ class AntiPetrosBaseCommand(commands.Command):
         pass
 
     @property
+    def hidden(self):
+        return self.get_meta_data('hidden', False)
+
+    @hidden.setter
+    def hidden(self, value):
+        pass
+
+    @property
     def aliases(self):
         return self.get_alias(extra_aliases=self.extra_aliases)
 

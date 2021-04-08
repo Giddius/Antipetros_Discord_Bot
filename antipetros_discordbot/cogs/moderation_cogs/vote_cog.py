@@ -66,6 +66,7 @@ from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
+from antipetros_discordbot.engine.replacements import AntiPetrosFlagCommand, AntiPetrosBaseCommand, auto_meta_info_command
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -162,7 +163,6 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
 
         self.check_vote_ended_loop.start()
@@ -209,6 +209,7 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Loops]
 
 # region [Listener]
+
 
     @commands.Cog.listener(name='on_reaction_add')
     async def vote_reaction_listener(self, reaction: discord.Reaction, user: Union[discord.User, discord.Member]):
@@ -269,6 +270,7 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
 
     async def remove_other_reactions(self, reaction: discord.Reaction, user: Union[discord.User, discord.Member]):
         msg = await reaction.message.channel.fetch_message(reaction.message.id)

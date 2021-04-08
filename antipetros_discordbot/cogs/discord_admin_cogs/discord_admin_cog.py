@@ -20,10 +20,10 @@ from antipetros_discordbot.utility.misc import make_config_name, delete_message_
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin, has_attachments
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.converters import DateTimeFullConverter, date_time_full_converter_flags
+from antipetros_discordbot.engine.replacements import AntiPetrosFlagCommand, AntiPetrosBaseCommand, auto_meta_info_command
 
 # endregion[Imports]
 
@@ -210,7 +210,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     @flags.add_flag("--footer-icon", "-fi", type=str, default=discord.Embed.Empty)
     @flags.add_flag("--disable-mentions", "-dis", type=bool, default=True)
     @flags.add_flag("--delete-after", "-da", type=int, default=None)
-    @auto_meta_info_command(cls=flags.FlagCommand)
+    @auto_meta_info_command(cls=AntiPetrosFlagCommand)
     @owner_or_admin()
     @log_invoker(log, "info")
     async def make_embed(self, ctx: commands.Context, channel: discord.TextChannel, **flags):

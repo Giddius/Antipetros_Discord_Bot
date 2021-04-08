@@ -118,7 +118,6 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         """
         standard setup async method.
@@ -137,7 +136,6 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 # endregion [Setup]
 
 # region [Properties]
-
 
     @property
     def existing_configs(self):
@@ -202,7 +200,6 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 
 # region [Commands]
 
-
     @auto_meta_info_command(enabled=True)
     @commands.is_owner()
     @log_invoker(log, 'info')
@@ -242,42 +239,42 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
         else:
             await self.send_config_file(ctx, config_name)
 
-    @ commands.command(aliases=get_aliases("overwrite_config_from_file"))
-    @commands.is_owner()
-    @log_invoker(log, 'critical')
+    @auto_meta_info_command()
+    @ commands.is_owner()
+    @ log_invoker(log, 'critical')
     async def overwrite_config_from_file(self, ctx):
         """
         NOT IMPLEMENTED
         """
         await self.bot.not_implemented(ctx)
 
-    @commands.command(aliases=get_aliases("change_setting_to"))
-    @commands.is_owner()
+    @ commands.command(aliases=get_aliases("change_setting_to"))
+    @ commands.is_owner()
     async def change_setting_to(self, ctx, config, section, option, value):
         """
         NOT IMPLEMENTED
         """
         await self.bot.not_implemented(ctx)
 
-    @commands.command(aliases=get_aliases("show_config_content"))
-    @commands.is_owner()
+    @ commands.command(aliases=get_aliases("show_config_content"))
+    @ commands.is_owner()
     async def show_config_content(self, ctx: commands.Context, config_name: str = "all"):
         """
         NOT IMPLEMENTED
         """
         await self.bot.not_implemented(ctx)
 
-    @commands.command(aliases=get_aliases("show_config_content_raw"))
-    @commands.is_owner()
+    @ commands.command(aliases=get_aliases("show_config_content_raw"))
+    @ commands.is_owner()
     async def show_config_content_raw(self, ctx: commands.Context, config_name: str = "all"):
         """
         NOT IMPLEMENTED
         """
         await self.bot.not_implemented(ctx)
 
-    @auto_meta_info_command(enabled=get_command_enabled("add_alias"))
-    @owner_or_admin()
-    @log_invoker(log, 'critical')
+    @ auto_meta_info_command(enabled=get_command_enabled("add_alias"))
+    @ owner_or_admin()
+    @ log_invoker(log, 'critical')
     async def add_alias(self, ctx: commands.Context, command: CommandConverter, new_alias: str):
         """
         Adds an alias for a command.

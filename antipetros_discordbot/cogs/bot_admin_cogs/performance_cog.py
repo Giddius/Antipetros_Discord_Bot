@@ -35,7 +35,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-
+from antipetros_discordbot.utility.sqldata_storager import AioMetaDataStorageSQLite
 # endregion[Imports]
 
 # region [TODO]
@@ -111,13 +111,16 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         self.ready = False
+        self.meta_db = AioMetaDataStorageSQLite()
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
         _ = psutil.cpu_percent(interval=None)
         self.latency_measure_loop.start()
         self.memory_measure_loop.start()
+        self.cpu_measure_loop.start()
         self.report_data_loop.start()
+
         await asyncio.sleep(5)
         self.ready = True
 
@@ -126,24 +129,35 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         log.debug('cog "%s" was updated', str(self))
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
+    async def cpu_measure_loop(self):
+        if self.ready is False:
+            return
+        log.info("measuring cpu")
+        now = datetime.utcnow()
+        cpu_percent = psutil.cpu_percent(interval=None)
+        cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15 = [x / psutil.cpu_count() * 100 for x in psutil.getloadavg()]
+        await self.meta_db.insert_cpu_performance(now, cpu_percent, cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15)
+
+    @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def latency_measure_loop(self):
         if self.ready is False:
             return
-        start_time = time.time()
+
         log.info("measuring latency")
         now = datetime.utcnow()
-        latency = round(self.bot.latency * 1000)
+        raw_latency = self.bot.latency * 1000
+        latency = round(raw_latency)
         if latency > self.latency_thresholds.get('warning'):
             log.warning("high latency: %s ms", str(latency))
             await self.bot.message_creator(embed=await make_basic_embed(title='LATENCY WARNING!', text='Latency is very high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'latency': str(latency) + ' ms'}))
 
         self.latency_data.append(LatencyMeasurement(now, latency))
+        await self.meta_db.insert_latency_perfomance(now, raw_latency)
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def memory_measure_loop(self):
         if self.ready is False:
             return
-        start_time = time.time()
         log.info("measuring memory usage")
         now = datetime.utcnow()
         _mem_item = virtual_memory()
@@ -159,6 +173,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             is_warning = True
             log.warning("Memory usage is high! Memory in use: %s", DataSize.GigaBytes.convert(memory_in_use, annotate=True))
         self.memory_data.append(MemoryUsageMeasurement(now, _mem_item.total, _mem_item.total - _mem_item.available, _mem_item.percent, is_warning, is_critical))
+        await self.meta_db.insert_memory_perfomance(now, memory_in_use)
 
     @tasks.loop(**DATA_DUMP_INTERVALL, reconnect=True)
     async def report_data_loop(self):
@@ -356,6 +371,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         return self.qualified_name
 
     def cog_unload(self):
+        self.cpu_measure_loop.stop()
         self.latency_measure_loop.stop()
         self.memory_measure_loop.stop()
         self.report_data_loop.stop()

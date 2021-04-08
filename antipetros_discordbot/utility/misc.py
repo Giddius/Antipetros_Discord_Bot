@@ -22,7 +22,7 @@ from aiohttp.client_exceptions import ClientConnectionError
 # * Gid Imports ----------------------------------------------------------------------------------------->
 # * Gid Imports -->
 import gidlogger as glog
-from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle,GithubStyle
+from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle, GithubStyle
 from inspect import getmembers, getdoc, getsource, getsourcefile, getsourcelines, getframeinfo, getfile
 from pygments import highlight
 from pygments.lexers import PythonLexer, get_lexer_by_name, get_all_lexers, guess_lexer
@@ -218,6 +218,9 @@ async def generate_bot_data(bot, production_bot):
     bot_info['intents'] = dict(bot.intents)
     bot_info['avatar_url'] = str(production_bot.avatar_url)
     bot_info['invite_url'] = bot.antistasi_invite_url
+    bot_info['role_names'] = [role.name for role in production_bot.roles if 'everyone' not in role.name.casefold()]
+    bot_info['amount_cogs'] = len([cog for cog in bot.cogs if cog.casefold() != 'generaldebugcog'])
+    bot_info['amount_commands'] = len([command for command in bot.commands if str(command.cog).casefold() != 'generaldebugcog'])
 
     writejson(bot_info, bot_info_file)
 
@@ -235,7 +238,7 @@ def generate_help_data(cog: commands.Cog, output_file=None):
                                                       'description': command.description,
                                                       'usage': command.usage,
                                                       'help': command.help,
-                                                      'hide': command.hidden,
+                                                      'hidden': command.hidden,
                                                       'brief': command.brief,
                                                       'short_doc': command.short_doc}
 
@@ -483,13 +486,13 @@ def highlight_print(in_data, highlight_level: int = 1):
     print("")
 
 
-async def make_other_source_code_images(file_content: str, lexer: str = 'guess', style:str='dracula'):
+async def make_other_source_code_images(file_content: str, lexer: str = 'guess', style: str = 'dracula'):
 
     lexer_map = {'guess': guess_lexer(file_content),
                  'python': PythonLexer(),
                  'ini': get_lexer_by_name('INI')}
-    style_map = {'dracula':DraculaStyle,
-                 'github':GithubStyle}
+    style_map = {'dracula': DraculaStyle,
+                 'github': GithubStyle}
 
     lexer = lexer_map.get(lexer.casefold())
 

@@ -362,18 +362,18 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         embed_data = await self.bot.make_generic_embed(title=f'Permissions for **__{member.name}__** in **__{channel.name.upper()}__**', description=description, thumbnail=None, footer='not_set')
         await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none(), delete_after=300)
 
-    @ commands.command()
+    @auto_meta_info_command()
     async def check_embed_gif(self, ctx: commands.Context):
         embed_data = await self.bot.make_generic_embed(title="check embed gif", image=APPDATA['COMMAND_the_dragon.gif'])
         await ctx.send(**embed_data)
 
-    @ commands.command()
+    @auto_meta_info_command()
     async def get_prefixes(self, ctx: commands.Context):
         prefixes = await self.bot.get_prefix(ctx.message)
         prefixes = list(set([prefix.strip() for prefix in prefixes]))
         await ctx.send(str(prefixes))
 
-    # @ commands.command()
+    # @auto_meta_info_command()
     # @ commands.is_owner()
     # async def send_the_configs(self, ctx: commands.Context):
     #     data = loadjson(APPDATA['Admin Lead_members.json'])
