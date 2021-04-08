@@ -38,6 +38,8 @@ from antipetros_discordbot.utility.enums import UpdateTypus
 # TODO: rebuild whole error handling system
 # TODO: make it so that creating the embed also sends it, with more optional args
 
+# TODO: Handlers needed: discord.ext.commands.errors.DisabledCommand,
+
 # endregion [TODO]
 
 # region [AppUserData]

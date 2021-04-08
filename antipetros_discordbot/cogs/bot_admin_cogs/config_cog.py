@@ -24,7 +24,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.misc import make_config_name, make_other_source_code_images
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writejson, bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -118,6 +118,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         """
         standard setup async method.
@@ -136,6 +137,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 # endregion [Setup]
 
 # region [Properties]
+
 
     @property
     def existing_configs(self):
@@ -190,7 +192,8 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
                                                        footer={'text': "last modified:"},
                                                        timestamp=modified,
                                                        author='bot_author',
-                                                       thumbnail='config')
+                                                       thumbnail='config',
+                                                       image=await make_other_source_code_images(readit(config_path), 'ini', 'dracula'))
         await ctx.send(**embed_data)
         await ctx.send(file=discord.File(config_path))
 
@@ -198,6 +201,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 # endregion [HelperMethods]
 
 # region [Commands]
+
 
     @auto_meta_info_command(enabled=True)
     @commands.is_owner()
@@ -215,8 +219,8 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
                                                        thumbnail='config')
         await ctx.reply(**embed_data)
 
-    @ commands.command(aliases=get_aliases("config_request"))
-    @ commands.is_owner()
+    @ auto_meta_info_command()
+    @ owner_or_admin()
     async def config_request(self, ctx, config_name: str = 'all'):
         """
         Returns a Config file as and attachment, with additional info in an embed.
@@ -318,6 +322,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 # endregion[Helper]
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

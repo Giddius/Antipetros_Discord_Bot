@@ -22,7 +22,13 @@ from aiohttp.client_exceptions import ClientConnectionError
 # * Gid Imports ----------------------------------------------------------------------------------------->
 # * Gid Imports -->
 import gidlogger as glog
-
+from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle,GithubStyle
+from inspect import getmembers, getdoc, getsource, getsourcefile, getsourcelines, getframeinfo, getfile
+from pygments import highlight
+from pygments.lexers import PythonLexer, get_lexer_by_name, get_all_lexers, guess_lexer
+from pygments.formatters import HtmlFormatter, ImageFormatter
+from pygments.styles import get_style_by_name, get_all_styles
+from pygments.filters import get_all_filters
 # * Local Imports --------------------------------------------------------------------------------------->
 # * Local Imports -->
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writeit, writejson
@@ -475,3 +481,24 @@ def highlight_print(in_data, highlight_level: int = 1):
     for i in reversed(range(highlight_level)):
         print(seperators.get(i))
     print("")
+
+
+async def make_other_source_code_images(file_content: str, lexer: str = 'guess', style:str='dracula'):
+
+    lexer_map = {'guess': guess_lexer(file_content),
+                 'python': PythonLexer(),
+                 'ini': get_lexer_by_name('INI')}
+    style_map = {'dracula':DraculaStyle,
+                 'github':GithubStyle}
+
+    lexer = lexer_map.get(lexer.casefold())
+
+    image = await asyncio.to_thread(highlight, file_content, lexer, ImageFormatter(style=style_map.get(style.casefold()),
+                                                                                   font_name='Fira Code',
+                                                                                   line_number_bg="#2f3136",
+                                                                                   line_number_fg="#ffffff",
+                                                                                   line_number_chars=3,
+                                                                                   line_pad=5,
+                                                                                   font_size=20,
+                                                                                   line_number_bold=True))
+    return image
