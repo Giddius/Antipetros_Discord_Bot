@@ -248,7 +248,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
         """
         await self.bot.not_implemented(ctx)
 
-    @ commands.command(aliases=get_aliases("change_setting_to"))
+    @ auto_meta_info_command()
     @ commands.is_owner()
     async def change_setting_to(self, ctx, config, section, option, value):
         """
@@ -256,7 +256,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
         """
         await self.bot.not_implemented(ctx)
 
-    @ commands.command(aliases=get_aliases("show_config_content"))
+    @ auto_meta_info_command()
     @ commands.is_owner()
     async def show_config_content(self, ctx: commands.Context, config_name: str = "all"):
         """
@@ -264,7 +264,7 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
         """
         await self.bot.not_implemented(ctx)
 
-    @ commands.command(aliases=get_aliases("show_config_content_raw"))
+    @ auto_meta_info_command()
     @ commands.is_owner()
     async def show_config_content_raw(self, ctx: commands.Context, config_name: str = "all"):
         """

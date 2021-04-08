@@ -238,7 +238,10 @@ class AntiPetrosBaseCommand(commands.Command):
         example = self.get_meta_data('example', None)
         if example in [None, ""]:
             example = 'NA'
-        return example.replace(self.bot_mention_placeholder, self.cog.bot.bot_member.mention)
+        if self.cog.bot.bot_member is not None:
+            return example.replace(self.bot_mention_placeholder, self.cog.bot.bot_member.mention)
+        else:
+            return example
 
     @dynamic_example.setter
     def dynamic_example(self, value):

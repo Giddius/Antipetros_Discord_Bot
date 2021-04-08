@@ -83,19 +83,25 @@ def save_cog_command_data(cog, output_file=None):
                               'config_name': cog.config_name}
 
     for command in cog.get_commands():
-        command_json[str(cog)]["commands"][command.name.strip()] = {"signature": command.signature.replace('<ctx>', '').replace('  ', ' ').strip(),
-                                                                    "aliases": command.aliases,
-                                                                    "parameter": [param_string for param_string, _ in command.clean_params.items() if param_string != 'ctx'],
-                                                                    "checks": [str(check).split()[1].split('.')[0] for check in command.checks],
-                                                                    'short_doc': command.short_doc,
-                                                                    'usage': command.usage,
-                                                                    'description': command.description,
-                                                                    'is_hidden': command.hidden,
-                                                                    'is_enabled': command.enabled,
-                                                                    'qualified_name': command.qualified_name,
-                                                                    'help': command.help,
-                                                                    'brief': command.brief,
-                                                                    'gif': get_gif(command)}
+        try:
+            command_json[str(cog)]["commands"][command.name.strip()] = {"signature": command.signature.replace('<ctx>', '').replace('  ', ' ').strip(),
+                                                                        "aliases": command.aliases,
+                                                                        "parameter": [param_string for param_string, _ in command.clean_params.items() if param_string != 'ctx'],
+                                                                        "checks": [str(check).split()[1].split('.')[0] for check in command.checks],
+                                                                        'short_doc': command.short_doc,
+                                                                        'usage': command.usage,
+                                                                        'description': command.description,
+                                                                        'is_hidden': command.hidden,
+                                                                        'is_enabled': command.enabled,
+                                                                        'qualified_name': command.qualified_name,
+                                                                        'help': command.help,
+                                                                        'brief': command.brief,
+                                                                        'gif': get_gif(command),
+                                                                        'example': command.dynamic_example}
+        except AttributeError:
+            print('#' * 25)
+            print(command.name)
+            print('#' * 25)
 
     writejson(command_json, command_json_file, indent=4)
     log.debug("commands for %s saved to %s", cog, command_json_file)
