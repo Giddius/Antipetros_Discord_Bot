@@ -5,14 +5,18 @@
 import os
 import shutil
 from inspect import getmembers, getfile, getsourcefile, getsource, getsourcelines, getdoc
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import gidlogger as glog
 from icecream import ic
+import psutil
+import discord
 from textwrap import dedent
+from functools import cached_property
 from antipetros_discordbot.utility.gidsql.facade import AioGidSqliteDatabase
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, timenamemaker, limit_amount_files_absolute
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, timenamemaker, limit_amount_files_absolute, bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.misc import antipetros_repo_rel_path
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT
 # endregion[Imports]
 
 # region [Constants]
@@ -44,6 +48,65 @@ glog.import_notification(log, __name__)
 
 # endregion[Logging]
 
+class MemoryPerformanceItem:
+    total_memory = psutil.virtual_memory().total
+    initial_memory = int(os.getenv('INITIAL_MEMORY_USAGE'))
+
+    def __init__(self, timestamp, memory_in_use: int):
+        self.raw_timestamp = timestamp
+        self.date_time = datetime.fromisoformat(self.raw_timestamp)
+        self.memory_in_use = memory_in_use
+        self.as_percent = (self.memory_in_use / self.total_memory) * 100
+
+    @cached_property
+    def pretty_memory_in_use(self):
+        return bytes2human(self.memory_in_use, annotate=True)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(timestamp={self.raw_timestamp}, memory_in_use={self.memory_in_use})"
+
+    def __str__(self) -> str:
+        return f"{self.date_time.strftime(STANDARD_DATETIME_FORMAT)}: {self.pretty_memory_in_use}, {self.as_percent}%"
+
+
+class LatencyPerformanceItem:
+
+    def __init__(self, timestamp, latency: int):
+        self.raw_timestamp = timestamp
+        self.date_time = datetime.fromisoformat(self.raw_timestamp)
+        self.latency = latency
+
+    @cached_property
+    def pretty_latency(self):
+        return str(round(self.latency, ndigits=2)) + ' ms'
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(timestamp={self.raw_timestamp}, latency={self.latency})"
+
+    def __str__(self) -> str:
+        return f"{self.date_time.strftime(STANDARD_DATETIME_FORMAT)}: {self.pretty_latency}"
+
+
+class CpuPerformanceItem:
+
+    def __init__(self, timestamp, usage_percent: int, load_average_1: int, load_average_5: int, load_average_15: int):
+        self.raw_timestamp = timestamp
+        self.date_time = datetime.fromisoformat(self.raw_timestamp)
+        self.usage_percent = usage_percent
+        self.load_average_1 = load_average_1
+        self.load_average_5 = load_average_5
+        self.load_average_15 = load_average_15
+
+    @cached_property
+    def pretty_usage_percent(self):
+        return str(self.usage_percent) + '%'
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(timestamp={self.raw_timestamp}, usage_percent={self.usage_percent}, load_average_1={self.load_average_1}, load_average_5={self.load_average_5}, load_average_15={self.load_average_15})"
+
+    def __str__(self) -> str:
+        return f"{self.date_time.strftime(STANDARD_DATETIME_FORMAT)}: {self.pretty_usage_percent}"
+
 
 class AioMetaDataStorageSQLite:
     def __init__(self):
@@ -52,8 +115,57 @@ class AioMetaDataStorageSQLite:
         self.db.vacuum()
         glog.class_init_notification(log, self)
 
+    async def insert_text_channel(self, text_channel: discord.TextChannel):
+        _id = text_channel.id
+        name = text_channel.name
+        position = text_channel.position
+        created_at = text_channel.created_at
+        category_id = text_channel.category.id
+        topic = text_channel.topic
+        await self.db.aio_write("insert_text_channel", (_id, name, position, created_at, category_id, topic))
+
+    async def insert_category_channel(self, category_channel: discord.CategoryChannel):
+        _id = category_channel.id
+        name = category_channel.name
+        position = category_channel.position
+        created_at = category_channel.created_at
+        await self.db.aio_write("insert_category_channel", (_id, name, position, created_at))
+
+    async def get_cpu_data_last_24_hours(self):
+        now = datetime.now(tz=timezone.utc)
+        one_day_ago = now - timedelta(hours=24)
+
+        result = await self.db.aio_query('get_cpu_performance', (one_day_ago, now), row_factory=True)
+        all_items = []
+        for row in result:
+
+            all_items.append(CpuPerformanceItem(**row))
+        return all_items
+
+    async def get_latency_data_last_24_hours(self):
+        now = datetime.now(tz=timezone.utc)
+        one_day_ago = now - timedelta(hours=24)
+
+        result = await self.db.aio_query('get_latency_performance', (one_day_ago, now), row_factory=True)
+        all_items = []
+        for row in result:
+
+            all_items.append(LatencyPerformanceItem(**row))
+        return all_items
+
+    async def get_memory_data_last_24_hours(self):
+        now = datetime.now(tz=timezone.utc)
+        one_day_ago = now - timedelta(hours=24)
+
+        result = await self.db.aio_query('get_memory_performance', (one_day_ago, now), row_factory=True)
+        all_items = []
+        for row in result:
+
+            all_items.append(MemoryPerformanceItem(**row))
+        return all_items
+
     async def insert_cpu_performance(self, timestamp: datetime, usage_percent: int, load_avg_1: int, load_avg_5: int, load_avg_15: int):
-        await self.db.aio_write("insert_cpu_performance.sql", (timestamp, usage_percent, load_avg_1, load_avg_5, load_avg_15))
+        await self.db.aio_write("insert_cpu_performance", (timestamp, usage_percent, load_avg_1, load_avg_5, load_avg_15))
 
     async def insert_latency_perfomance(self, timestamp: datetime, latency: int):
         await self.db.aio_write('insert_latency_performance', (timestamp, latency))

@@ -67,7 +67,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.exceptions import CustomEmojiError, NameInUseError
-
+from antipetros_discordbot.abstracts import BaseReactionInstruction
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -111,29 +111,6 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 _from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 
 # endregion [Helper]
-
-
-class BaseReactionInstruction:
-    bot = None
-
-    def __init__(self, name: str, emojis: List):
-        self.name = name
-        self.emojis = emojis
-
-    async def __call__(self, msg: discord.Message):
-        if await self.check_trigger(msg) is True:
-            for emoji in self.emojis:
-                await msg.add_reaction(emoji)
-
-    @classmethod
-    async def from_dict(cls, **kwargs):
-        return cls(**kwargs)
-
-    def __str__(self) -> str:
-        return self.__class__.__name__
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.emojis})"
 
 
 class ChannelReactionInstruction(BaseReactionInstruction):
@@ -312,6 +289,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
         self.reaction_instructions = None
         BaseReactionInstruction.bot = self.bot
         self.ready = False
+
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -350,6 +328,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Listener]
 
+
     @commands.Cog.listener(name='on_message')
     async def add_reaction_to_message_sorter_listener(self, msg: discord.Message):
         if self.ready is False:
@@ -366,6 +345,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command()
     @owner_or_admin(False)

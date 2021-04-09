@@ -1,0 +1,7 @@
+{% macro html_image(img) -%}
+<img
+    src="{{ url_for('static', filename = img.path) }}"
+    alt="{{ img.alt_text }}"
+    title="{{ img.title_text }}"
+/>
+{%- endmacro %}

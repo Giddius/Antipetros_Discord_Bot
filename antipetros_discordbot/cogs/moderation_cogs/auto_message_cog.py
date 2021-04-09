@@ -1,5 +1,4 @@
-# jinja2: trim_blocks:True
-# jinja2: lstrip_blocks :True
+
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -45,7 +44,7 @@ from icecream import ic
 # from fuzzywuzzy import fuzz, process
 import aiohttp
 import discord
-from discord.ext import tasks, commands, flags, ipc
+from discord.ext import tasks, commands, flags
 from async_property import async_property
 from dateparser import parse as date_parse
 
@@ -61,7 +60,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
@@ -96,7 +95,7 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "IpcCog"
+COG_NAME = "AutoMessageCog"
 
 CONFIG_NAME = make_config_name(COG_NAME)
 
@@ -111,7 +110,7 @@ _from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 # endregion [Helper]
 
 
-class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
+class AutoMessageCog(commands.Cog, command_attrs={'name': COG_NAME}):
     """
     WiP
     """
@@ -168,22 +167,6 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Commands]
 
 
-    @ipc.server.route()
-    async def shut_down(self, data):
-        member = await self.bot.retrieve_antistasi_member(data.member_id)
-        admin_role = {role.name.casefold(): role for role in self.bot.antistasi_guild.roles}.get('admin')
-        trial_admin_role = {role.name.casefold(): role for role in self.bot.antistasi_guild.roles}.get("trial admin")
-        if await self.bot.is_owner(member) is True or admin_role in member.roles or trial_admin_role in member.roles:
-            log.info(f'Shutdown was requested via IPC from {member.display_name}')
-            asyncio.create_task(self.execute_shutdown())
-            return {"success": True}
-        return {"success": False}
-
-    @ipc.server.route()
-    async def get_base_bot_info(self, data):
-
-        return loadjson(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\resources\data\bot_info.json")
-
 # endregion [Commands]
 
 # region [DataStorage]
@@ -192,11 +175,6 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
-
-
-    async def execute_shutdown(self):
-        await asyncio.sleep(5)
-        await self.bot.shutdown_mechanic()
 
 
 # endregion [HelperMethods]
@@ -232,7 +210,7 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(IpcCog(bot)))
+    bot.add_cog(attribute_checker(AutoMessageCog(bot)))
 
 
 # region [Main_Exec]

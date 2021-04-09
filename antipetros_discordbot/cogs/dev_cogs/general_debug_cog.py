@@ -758,6 +758,17 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         content = [str(item) for item in cog.__cog_commands__]
         await self.bot.split_to_messages(ctx, '\n'.join(content), in_codeblock=True)
 
+    @auto_meta_info_command()
+    async def check_performance_data_db(self, ctx: commands.Context):
+        items = await self.meta_db.get_memory_data_last_24_hours()
+        await self.bot.split_to_messages(ctx, '\n'.join(str(item) for item in items), in_codeblock=True, syntax_highlighting='css')
+
+        items = await self.meta_db.get_latency_data_last_24_hours()
+        await self.bot.split_to_messages(ctx, '\n'.join(str(item) for item in items), in_codeblock=True, syntax_highlighting='css')
+
+        items = await self.meta_db.get_cpu_data_last_24_hours()
+        await self.bot.split_to_messages(ctx, '\n'.join(str(item) for item in items), in_codeblock=True, syntax_highlighting='css')
+
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))
 

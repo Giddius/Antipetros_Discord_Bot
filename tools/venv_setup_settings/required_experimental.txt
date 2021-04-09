@@ -26,3 +26,4 @@ twitchAPI
 vendorize
 wikitextparser
 Quart
+inflect

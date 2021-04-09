@@ -21,6 +21,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus
+from antipetros_discordbot.utility.sqldata_storager import AioMetaDataStorageSQLite
 # endregion[Imports]
 
 # region [TODO]
@@ -63,6 +64,7 @@ class ChannelStatistician(SubSupportBase):
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.channel_usage_stats = None
+        self.meta_db = AioMetaDataStorageSQLite()
 
         glog.class_init_notification(log, self)
 
@@ -84,7 +86,15 @@ class ChannelStatistician(SubSupportBase):
     async def get_usage_stats(self, key: str):
         return await self.bot.execute_in_thread(self.channel_usage_stats.get, key)
 
+    async def insert_channels_into_db(self):
+        for category_channel in self.bot.antistasi_guild.categories:
+            await self.meta_db.insert_category_channel(category_channel)
+        for text_channel in self.bot.antistasi_guild.text_channels:
+            if not text_channel.name.casefold().startswith('ticket-'):
+                await self.meta_db.insert_text_channel(text_channel)
+
     async def if_ready(self):
+        await self.insert_channels_into_db()
         if os.path.isfile(self.channel_usage_stats_file) is False:
             self.channel_usage_stats = {'overall': {}}
             writejson(self.channel_usage_stats, self.channel_usage_stats_file)

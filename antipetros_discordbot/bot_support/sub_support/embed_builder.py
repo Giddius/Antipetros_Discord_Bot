@@ -405,7 +405,7 @@ class EmbedBuilder(SubSupportBase):
         """
         "default_color": ""
         """
-        return loadjson(self.default_embed_data_file).get('default_color')
+        return discord.Color.dark_theme()
 
     @property
     def default_timestamp(self):

@@ -64,9 +64,7 @@ class GidSqliteDatabase:
         self.scripter = GidSqliteScriptProvider(self.script_location)
 
     def startup_db(self, overwrite=False):
-        if os.path.exists(self.path) is True and overwrite is False:
-            return False
-        if os.path.exists(self.path) is True:
+        if os.path.exists(self.path) is True and overwrite is True:
             os.remove(self.path)
         for script in self.scripter.setup_scripts:
             self.writer.write(script)
@@ -113,9 +111,7 @@ class AioGidSqliteDatabase(GidSqliteDatabase):
         self.aio_reader = AioGidSqliteReader(self.path, self.pragmas, log_execution=log_execution)
 
     async def aio_startup_db(self, overwrite=False):
-        if os.path.exists(self.path) is True and overwrite is False:
-            return False
-        if os.path.exists(self.path) is True:
+        if os.path.exists(self.path) is True and overwrite is True:
             os.remove(self.path)
         for script in self.scripter.setup_scripts:
             await self.aio_write(script)
