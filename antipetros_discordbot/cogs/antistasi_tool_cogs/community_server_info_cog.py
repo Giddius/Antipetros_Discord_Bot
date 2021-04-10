@@ -37,7 +37,7 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, seconds_to_pretty, alt_seconds_to_pretty, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
@@ -206,7 +206,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Commands]
 
     @auto_meta_info_command(enabled=get_command_enabled("current_online_server"), aliases=['server', 'servers'])
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 60, commands.BucketType.channel)
     async def current_online_server(self, ctx: commands.Context):
         """
@@ -267,7 +267,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command(enabled=get_command_enabled("current_players"))
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 120, commands.BucketType.member)
     async def current_players(self, ctx: commands.Context, *, server: str = "mainserver_1"):
         """
@@ -311,7 +311,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command(enabled=get_command_enabled('exclude_from_server_status_notification'))
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @log_invoker(log, 'critical')
     async def exclude_from_server_status_notification(self, ctx: commands.Context, server_name: str):
         if server_name.casefold() not in [server_holder.name.casefold() for server_holder in self.servers]:
@@ -324,7 +324,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await ctx.send(f'Excluded {server_name} from status change notifications')
 
     @auto_meta_info_command(enabled=get_command_enabled('undo_exclude_from_server_status_notification'))
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @log_invoker(log, 'critical')
     async def undo_exclude_from_server_status_notification(self, ctx: commands.Context, server_name: str):
         if server_name.casefold() not in [server_holder.name.casefold() for server_holder in self.servers]:

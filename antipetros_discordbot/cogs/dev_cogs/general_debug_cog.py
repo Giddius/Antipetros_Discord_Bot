@@ -29,7 +29,7 @@ import gidlogger as glog
 from dateparser import parse as date_parse
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, make_config_name, generate_bot_data, dict_from_attached_json, antipetros_repo_rel_path
-from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, only_giddi, has_attachments
+from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role, command_enabled_checker, allowed_requester, only_giddi, has_attachments
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -744,8 +744,14 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         fields = []
         for att_name, att_object in getmembers(command):
             if att_name.startswith('dynamic_'):
+                if isinstance(att_object, list):
+                    att_object = '\n'.join(att_object)
+                else:
+                    att_object = str(att_object)
+                if not att_object:
+                    att_object = 'NA'
                 fields.append(self.bot.field_item(name=att_name.replace('dynamic_', ''), value=att_object))
-        fields.append(self.bot.field_item(name='checks', value='\n'.join(check.check_name for check in command.checks if hasattr(check, "check_name"))))
+        fields.append(self.bot.field_item(name='checks', value='\n'.join(str(check) for check in command.checks)))
         embed_data = await self.bot.make_generic_embed(title=command.name, description='\n'.join(command.aliases), image=await command.get_source_code_image(), thumbnail="source_code",
                                                        fields=fields)
         await ctx.send(**embed_data)

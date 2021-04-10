@@ -56,7 +56,7 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel, async_dict_items_iterator
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
@@ -236,7 +236,7 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Commands]
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @log_invoker(log, 'info')
     async def create_vote(self, ctx: commands.Context, title: str, description: str, run_for: int, *options: str):
         if len(options) > 10:

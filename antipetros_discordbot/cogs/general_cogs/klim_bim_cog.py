@@ -25,7 +25,7 @@ import discord
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import is_even, make_config_name
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
@@ -142,7 +142,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 # region [Commands]
 
     @ auto_meta_info_command(enabled=get_command_enabled('the_dragon'))
-    @ allowed_channel_and_allowed_role_2()
+    @ allowed_channel_and_allowed_role()
     @commands.cooldown(1, 60, commands.BucketType.channel)
     async def the_dragon(self, ctx):
         """
@@ -161,7 +161,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
             await ctx.send(THE_DRAGON)
 
     @ auto_meta_info_command(enabled=get_command_enabled('flip_coin'))
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 15, commands.BucketType.channel)
     async def flip_coin(self, ctx: commands.Context, only_text: str = None):
         """
@@ -194,7 +194,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
             return coin
 
     @ auto_meta_info_command(enabled=get_command_enabled('urban_dictionary'))
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 30, commands.BucketType.user)
     async def urban_dictionary(self, ctx, term: str, entries: int = 1):
         """
@@ -231,7 +231,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
                         await asyncio.sleep(1)
 
     @ auto_meta_info_command(enabled=get_command_enabled('make_figlet'))
-    @ allowed_channel_and_allowed_role_2()
+    @ allowed_channel_and_allowed_role()
     @ commands.cooldown(1, 60, commands.BucketType.channel)
     async def make_figlet(self, ctx, *, text: str):
         """
@@ -300,7 +300,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         return result_combined
 
     @auto_meta_info_command(enabled=get_command_enabled('roll_dice'))
-    @allowed_channel_and_allowed_role_2(True)
+    @allowed_channel_and_allowed_role(True)
     @commands.cooldown(1, 5, commands.BucketType.member)
     async def roll_dice(self, ctx, *, dice_line: str):  # @AntiPetros roll_dice 14d4 14d6 14d8 14d10 14d12 14d20 14d100
         """
@@ -352,7 +352,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         await ctx.send(**embed_data)
 
     @auto_meta_info_command(enabled=get_command_enabled('choose_random'))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=True)
+    @allowed_channel_and_allowed_role(in_dm_allowed=True)
     @commands.cooldown(1, 5, commands.BucketType.member)
     async def choose_random(self, ctx: commands.Context, select_amount: Optional[int] = 1, *, choices: str):
         """

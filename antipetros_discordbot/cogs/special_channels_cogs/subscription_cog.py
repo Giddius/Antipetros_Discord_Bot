@@ -19,7 +19,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, log_invoker, has_attachments
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role, owner_or_admin, log_invoker, has_attachments
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker

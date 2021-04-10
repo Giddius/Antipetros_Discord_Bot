@@ -60,7 +60,7 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
@@ -222,7 +222,7 @@ class GithubCog(commands.Cog, command_attrs={'name': COG_NAME}):
                 await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def github_referals(self, ctx: commands.Context):
         fields = []
         for referal in self.antistasi_repo.get_top_referrers():
@@ -231,7 +231,7 @@ class GithubCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await ctx.send(**embed_data)
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def github_traffic(self, ctx: commands.Context):
         fields = []
         traffic_data = self.antistasi_repo.get_views_traffic()

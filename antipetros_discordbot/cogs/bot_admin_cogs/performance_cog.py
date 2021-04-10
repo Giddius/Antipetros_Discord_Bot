@@ -199,7 +199,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         _file = None
         if len(report_data) < 11:
             embed_data = embed_data | {item.date_time.strftime(self.bot.std_date_time_format): '\n\n'.join([f'in use absolute: \n{item.pretty_memory_in_use}',
-                                                                                                            f'percentage used: \n{item.as_percent}%']) for item in report_data}
+                                                                                                            f'percentage used: \n{round(item.as_percent, 1)}%']) for item in report_data}
 
         embed = await make_basic_embed_inline(title='Memory Data',
                                               text=f"Data of the last {str(since_last_hours)} hours",

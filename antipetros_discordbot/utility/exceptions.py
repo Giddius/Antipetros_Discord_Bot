@@ -165,6 +165,13 @@ class NotNecessaryDmId(BaseExtendedCommandError):
         super().__init__(self.msg)
 
 
+class NotAllowedMember(BaseExtendedCommandError):
+    def __init__(self, allowed_member_ids: list):
+        self.allowed_member_ids = allowed_member_ids
+        self.msg = "You are not in the list of members that are allowed to use this command"
+        super().__init__(self.msg)
+
+
 class ParameterError(BaseExtendedCommandError):
     def __init__(self, parameter_name: str, parameter_value) -> None:
         self.name = parameter_name

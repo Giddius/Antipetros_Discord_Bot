@@ -19,7 +19,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker, log_invoker
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, allowed_requester, command_enabled_checker, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
@@ -218,7 +218,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
     @flags.add_flag("--start-message", "-smsg", type=str)
     @flags.add_flag("--enter-emoji", '-em', type=str, default="🎁")
     @auto_meta_info_command(cls=AntiPetrosFlagCommand, enabled=get_command_enabled("create_giveaway"))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     @log_invoker(logger=log, level="info")
     async def create_giveaway(self, ctx, **flags):
         give_away_title = flags.get('title')
@@ -286,7 +286,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
                                                          message=give_away_message))
 
     @ auto_meta_info_command(enabled=get_command_enabled("abort_give_away"))
-    @ allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @ allowed_channel_and_allowed_role(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def abort_give_away(self, ctx):
         """
@@ -296,7 +296,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
         return
 
     @ auto_meta_info_command(enabled=get_command_enabled("finish_give_away"))
-    @ allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @ allowed_channel_and_allowed_role(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def finish_give_away(self, ctx):
         """

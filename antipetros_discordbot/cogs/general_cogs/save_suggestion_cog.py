@@ -22,7 +22,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import make_config_name
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, allowed_requester
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_channel_and_allowed_role, owner_or_admin, allowed_requester
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
 from antipetros_discordbot.utility.embed_helpers import EMBED_SYMBOLS, DEFAULT_FOOTER, make_basic_embed
@@ -267,7 +267,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 # region [Commands]
 
     @auto_meta_info_command()
-    @ allowed_channel_and_allowed_role_2(in_dm_allowed=True)
+    @ allowed_channel_and_allowed_role(in_dm_allowed=True)
     async def mark_discussed(self, ctx, *suggestion_ids: int):
         embed_dict = {}
         for suggestion_id in suggestion_ids:
@@ -348,7 +348,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             return
 
     @ auto_meta_info_command()
-    @ allowed_channel_and_allowed_role_2(in_dm_allowed=True)
+    @ allowed_channel_and_allowed_role(in_dm_allowed=True)
     async def get_all_suggestions(self, ctx, report_template: str = "basic_report.html.jinja"):
 
         query = await self.data_storage_handler.get_all_suggestion_not_discussed()

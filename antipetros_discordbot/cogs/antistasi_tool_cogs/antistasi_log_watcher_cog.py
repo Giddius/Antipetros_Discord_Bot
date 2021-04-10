@@ -34,7 +34,7 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, split_camel_case_string, async_dict_items_iterator, async_list_iterator, async_load_json, async_write_it
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
@@ -240,7 +240,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
             yield html_file
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 120, commands.BucketType.member)
     async def get_newest_mod_data(self, ctx: commands.Context, server: str = 'mainserver_1'):
         """
@@ -274,7 +274,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
             await ctx.send(file=html_file)
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def get_newest_logs(self, ctx, server: str = 'mainserver_1', sub_folder: str = 'server', amount: int = 1):
         """
         Gets the newest log files from the Dev Drive.

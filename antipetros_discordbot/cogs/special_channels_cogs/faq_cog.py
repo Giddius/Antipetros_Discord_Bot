@@ -18,7 +18,7 @@ from PIL import Image, ImageDraw, ImageFont
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, minute_to_second
-from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, owner_or_admin
+from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role, command_enabled_checker, allowed_requester, owner_or_admin
 
 from antipetros_discordbot.utility.gidtools_functions import appendwriteit, clearit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -175,7 +175,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # region [Commands]
 
     @auto_meta_info_command(enabled=get_command_enabled('post_faq_by_number'))
-    @ allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @ allowed_channel_and_allowed_role(in_dm_allowed=False)
     @commands.cooldown(1, 10, commands.BucketType.channel)
     async def post_faq_by_number(self, ctx, faq_numbers: commands.Greedy[int]):
         """

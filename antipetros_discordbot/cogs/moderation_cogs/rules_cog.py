@@ -55,7 +55,7 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, Seperators
@@ -186,7 +186,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 
     @auto_meta_info_command(enabled=get_command_enabled('exploits_rules'))
-    @allowed_channel_and_allowed_role_2(False)
+    @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def exploits_rules(self, ctx: commands.Context):
         embed_data = await self._make_rules_embed(self.rules_messages.get('exploits'))
@@ -195,7 +195,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
             await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command(enabled=get_command_enabled('community_rules'))
-    @allowed_channel_and_allowed_role_2(False)
+    @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def community_rules(self, ctx: commands.Context):
         embed_data = await self._make_rules_embed(self.rules_messages.get('community'))
@@ -204,7 +204,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
             await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command(enabled=get_command_enabled('server_rules'))
-    @allowed_channel_and_allowed_role_2(False)
+    @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def server_rules(self, ctx: commands.Context):
         embed_data = await self._make_rules_embed(self.rules_messages.get('server'))
@@ -213,7 +213,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
             await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command(enabled=get_command_enabled('all_rules'))
-    @allowed_channel_and_allowed_role_2(False)
+    @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 90, commands.BucketType.channel)
     async def all_rules(self, ctx: commands.Context):
         await self.exploits_rules(ctx)
@@ -221,7 +221,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await self.server_rules(ctx)
 
     @auto_meta_info_command(enabled=get_command_enabled('better_rules'))
-    @allowed_channel_and_allowed_role_2(False)
+    @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def better_rules(self, ctx: commands.Context):
         fields = []

@@ -60,7 +60,7 @@ from pygments.filters import get_all_filters
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, alt_seconds_to_pretty, delete_message_if_text_channel, antipetros_repo_rel_path
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled, bytes2human, readit, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
@@ -209,7 +209,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Commands]
 
     @auto_meta_info_command(enabled=get_command_enabled('info_bot'))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def info_bot(self, ctx: commands.Context):
         name = self.bot.display_name
         cleaned_prefixes = await self._clean_bot_prefixes(ctx)
@@ -241,7 +241,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command(enabled=get_command_enabled('info_guild'))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def info_guild(self, ctx: commands.Context):
         """
         Shows some attributes of the current Guild.
@@ -281,7 +281,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         info_msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command(enabled=get_command_enabled('info_me'))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def info_me(self, ctx: commands.Context):
         async with ctx.typing():
             member = ctx.author
@@ -337,7 +337,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
             await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def info_command(self, ctx: commands.Context, command: CommandConverter, as_codeblock: str = None):
         name = command.name
         aliases = command.aliases

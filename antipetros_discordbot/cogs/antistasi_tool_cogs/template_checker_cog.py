@@ -33,7 +33,7 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2, has_attachments
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role, has_attachments
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
@@ -156,7 +156,7 @@ class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME}):
         return new_content
 
     @auto_meta_info_command(enabled=get_command_enabled("check_template"))
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @has_attachments(1)
     async def check_template(self, ctx, all_items_file=True, case_insensitive: bool = False):
         """

@@ -14,7 +14,7 @@ from discord.ext import commands
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.exceptions import NotNecessaryRole, IsNotTextChannelError, MissingAttachmentError, NotAllowedChannelError, IsNotDMChannelError, NotNecessaryDmId
+from antipetros_discordbot.utility.exceptions import NotNecessaryRole, IsNotTextChannelError, MissingAttachmentError, NotAllowedChannelError, IsNotDMChannelError, NotNecessaryDmId, NotAllowedMember
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_OPTION_NAMES, COG_CHECKER_ATTRIBUTE_NAMES
 
@@ -44,6 +44,79 @@ log = glog.aux_logger(__name__)
 
 
 # endregion[Constants]
+
+class BaseAntiPetrosCheck:
+
+    def __init__(self, checked_types: List = None):
+        self.name = self.__class__.__name__
+        self.checked_types = checked_types
+
+    async def __call__(self, ctx: commands.Context):
+        bot = ctx.bot
+        cog = ctx.cog
+        command = ctx.command
+        author = ctx.author
+        member = await bot.retrieve_antistasi_member(author.id)
+        channel = ctx.channel
+
+        if channel.type is discord.ChannelType.private and self.allowed_in_dm(command) is False:
+            raise IsNotTextChannelError(ctx, channel.type)
+
+        if channel.type is discord.ChannelType.text:
+            allowed_channels = self.allowed_channels(command)
+            if allowed_channels != {'all'} and channel.name.casefold() not in allowed_channels:
+                raise NotAllowedChannelError(ctx, allowed_channels)
+        if member.id == bot.creator.id:
+            log.debug("skipping permission checks as user is creator: %s", ctx.bot.creator.name)
+            return True
+        allowed_roles = self.allowed_roles(command)
+        if allowed_roles != {'all'} and all(role.name.casefold() not in allowed_roles for role in member.roles):
+            raise NotNecessaryRole(ctx, allowed_roles)
+
+        allowed_members = self.allowed_members(command)
+        if allowed_members != {'all'} and member.id not in allowed_members:
+            raise NotAllowedMember(allowed_members)
+        return True
+
+    def allowed_channels(self, command: commands.Command):
+        return {"all"}
+
+    def allowed_roles(self, command: commands.Command):
+        return {'all'}
+
+    def allowed_members(self, command: commands.Command):
+        return {'all'}
+
+    def allowed_in_dm(self, command: commands.Command):
+        return False
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__
+
+    def __str__(self) -> str:
+        return self.__class__.__name__
+
+
+class AllowedChannelAndAllowedRoleCheck(BaseAntiPetrosCheck):
+    def __init__(self, in_dm_allowed: bool = False):
+        self.in_dm_allowed = in_dm_allowed
+        super().__init__(checked_types=["channels", "roles"])
+
+    def allowed_channels(self, command: commands.Command):
+        allowed_channel_names = getattr(command.cog, COG_CHECKER_ATTRIBUTE_NAMES.get('channels'))
+        if callable(allowed_channel_names):
+            allowed_channel_names = allowed_channel_names(command)
+        allowed_channel_names.append('bot-testing')
+        return set(map(lambda x: x.casefold(), allowed_channel_names))
+
+    def allowed_roles(self, command: commands.Command):
+        allowed_role_names = getattr(command.cog, COG_CHECKER_ATTRIBUTE_NAMES.get('roles'))
+        if callable(allowed_role_names):
+            allowed_role_names = allowed_role_names(command)
+        return set(map(lambda x: x.casefold(), allowed_role_names))
+
+    def allowed_in_dm(self, command: commands.Command):
+        return self.in_dm_allowed
 
 
 def in_allowed_channels():
@@ -148,51 +221,9 @@ def only_dm_only_allowed_id(config_name: str, allowed_id_key: str = "allowed_in_
     return commands.check(predicate)
 
 
-def allowed_channel_and_allowed_role_2(in_dm_allowed: bool = False):
-    async def predicate(ctx: commands.Context):
-        cog = ctx.cog
-        command = ctx.command
-        author = ctx.author
-        channel = ctx.channel
-        bot = ctx.bot
-        log.debug("in_dm_allowed for '%s': %s", command.name, str(in_dm_allowed))
-        if channel.type is discord.ChannelType.private:
-            if in_dm_allowed is False:
-                raise IsNotTextChannelError(ctx, channel.type)
+def allowed_channel_and_allowed_role(in_dm_allowed: bool = False):
 
-            if await bot.is_owner(author):
-                log.debug("skipping permission check as user is creator/owner: %s", ctx.author.name)
-                return True
-
-            allowed_dm_ids = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('dm_ids'))
-            if callable(allowed_dm_ids):
-                allowed_dm_ids = allowed_dm_ids(command)
-            log.debug("allowed_dm_ids for '%s': %s", command.name, str(allowed_dm_ids))
-            if allowed_dm_ids != ["all"] and author.id not in allowed_dm_ids:
-                raise NotNecessaryDmId(ctx)
-        else:
-            allowed_channel_names = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('channels'))
-            if callable(allowed_channel_names):
-                allowed_channel_names = allowed_channel_names(command)
-            allowed_channel_names = allowed_channel_names + ['bot-testing']
-            log.debug("allowed_channel_names for '%s': %s", command.name, str(allowed_channel_names))
-            if 'all' not in allowed_channel_names and channel.name.casefold() not in allowed_channel_names:
-                raise NotAllowedChannelError(ctx, allowed_channel_names)
-
-            if await bot.is_owner(author):
-                log.debug("skipping permission check as user is creator/owner: %s", ctx.bot.creator.name)
-                return True
-
-            allowed_role_names = getattr(cog, COG_CHECKER_ATTRIBUTE_NAMES.get('roles'))
-            if callable(allowed_role_names):
-                allowed_role_names = allowed_role_names(command)
-            log.debug("allowed_role_names for '%s': %s", command.name, str(allowed_role_names))
-            if allowed_role_names != ['all'] and all(role.name.casefold() not in allowed_role_names for role in author.roles):
-                raise NotNecessaryRole(ctx, allowed_role_names)
-
-        return True
-    predicate.check_name = sys._getframe().f_code.co_name
-    return commands.check(predicate)
+    return commands.check(AllowedChannelAndAllowedRoleCheck(in_dm_allowed=in_dm_allowed))
 
 
 def mod_func_all_in_int(x):

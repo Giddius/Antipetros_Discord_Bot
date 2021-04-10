@@ -21,7 +21,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name, alt_seconds_to_pretty
 from antipetros_discordbot.utility.enums import WatermarkPosition
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, log_invoker, has_attachments, owner_or_admin
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, command_enabled_checker, allowed_requester, log_invoker, has_attachments, owner_or_admin
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -307,7 +307,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
     @flags.add_flag("--stamp-opacity", '-so', type=float, default=1.0)
     @flags.add_flag('--factor', '-f', type=float, default=None)
     @auto_meta_info_command(enabled=get_command_enabled("stamp_image"), cls=AntiPetrosFlagCommand)
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def stamp_image(self, ctx, **flags):
         """
@@ -361,7 +361,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
                     await self._send_image(ctx, in_image, name, f"__**{name}**__")
 
     @auto_meta_info_command(enabled=get_command_enabled("available_stamps"))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_stamps(self, ctx):
         """
@@ -406,7 +406,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         """
 
     @member_avatar.command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def for_discord(self, ctx):
         modified_avatar = await self._member_avatar_helper(ctx.author, self._to_center_center, 0.66)
         name = f"{ctx.author.name}_Member_avatar"
@@ -476,7 +476,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         return base_image, bytes_out
 
     @auto_meta_info_command(enabled=get_command_enabled('get_stamp_image'), aliases=["get_image"])
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def get_stamp_image(self, ctx: commands.Context, image_name: str):
         image_name = image_name.split('.')[0].upper()
         if image_name not in self.stamps:
@@ -487,7 +487,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command(enabled=get_command_enabled('add_stamp'), aliases=["add_image"])
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @has_attachments(1)
     @log_invoker(log, "critical")
     async def add_stamp(self, ctx: commands.Context):
@@ -530,7 +530,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         return image
 
     @auto_meta_info_command(enabled=get_command_enabled('text_to_image'))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     @has_attachments(1)
     async def text_to_image(self, ctx: commands.Context, font: str, *, text: str):
         mod_font_name = font.split('.')[0].casefold()
@@ -585,7 +585,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         return preview_image
 
     @auto_meta_info_command(enabled=get_command_enabled('add_font'))
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def list_fonts(self, ctx: commands.Context):
         embed = discord.Embed(title="Available Fonts")
         await ctx.send(embed=embed, delete_after=60)

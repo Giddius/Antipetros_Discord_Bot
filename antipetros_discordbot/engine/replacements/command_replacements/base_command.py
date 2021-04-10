@@ -92,6 +92,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from .helper import JsonMetaDataProvider, JsonAliasProvider, SourceCodeProvider
 from antipetros_discordbot.utility.misc import highlight_print
+from antipetros_discordbot.utility.data import COG_CHECKER_ATTRIBUTE_NAMES
 # endregion[Imports]
 
 # region [TODO]
@@ -257,6 +258,36 @@ class AntiPetrosBaseCommand(commands.Command):
     @property
     def github_link(self):
         return self.get_source_code('link')
+
+    @property
+    def dynamic_allowed_channels(self):
+        allowed_channels = []
+        for check in self.checks:
+            if hasattr(check, "allowed_channels"):
+                allowed_channels += check.allowed_channels(self)
+        if allowed_channels == []:
+            return ['NA']
+        return allowed_channels
+
+    @property
+    def dynamic_allowed_roles(self):
+        allowed_roles = []
+        for check in self.checks:
+            if hasattr(check, "allowed_roles"):
+                allowed_roles += check.allowed_roles(self)
+        if allowed_roles == []:
+            return ['NA']
+        return allowed_roles
+
+    @property
+    def dynamic_allowed_in_dms(self):
+        values = []
+        for check in self.checks:
+            if hasattr(check, "allowed_in_dm"):
+                values.append(check.allowed_in_dm(self))
+        if values == []:
+            return True
+        return all(values)
 
 
 # region[Main_Exec]

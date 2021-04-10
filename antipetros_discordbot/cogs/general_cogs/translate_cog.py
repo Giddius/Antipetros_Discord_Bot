@@ -18,7 +18,7 @@ from emoji import emojize
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
 from antipetros_discordbot.utility.misc import make_config_name
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, allowed_requester, command_enabled_checker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.converters import LanguageConverter
@@ -228,7 +228,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 # region [Commands]
 
     @auto_meta_info_command(enabled=get_command_enabled("translate"))
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 60, commands.BucketType.channel)
     async def translate(self, ctx, to_language_id: Optional[LanguageConverter] = "english", *, text_to_translate: str):
         """
@@ -251,7 +251,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
         await ctx.message.delete()
 
     @auto_meta_info_command(enabled=get_command_enabled('available_languages'))
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_languages(self, ctx: commands.Context):
         await self.bot.not_implemented(ctx)

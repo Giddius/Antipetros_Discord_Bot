@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
@@ -155,7 +155,7 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 # region [Commands]
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def register_workshop_item(self, ctx, item_ids: commands.Greedy[int]):
         for item_id in item_ids:
             item = await self._get_fresh_item_data(item_id)
@@ -174,7 +174,7 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
             await ctx.send(**embed_data)
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def get_workshop_item_data(self, ctx, item_id: int):
         item = await self._get_fresh_item_data(item_id)
         req_value = '\n'.join([f"**{req_name}**\n{req_link}" for req_name, req_link in item.requirements]) if len(item.requirements) > 0 else 'No Requirements'
