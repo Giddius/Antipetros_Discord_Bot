@@ -4,9 +4,11 @@
 import os
 import logging
 from enum import Enum, auto
-from typing import Union
+from typing import Union, List, Set, Dict, Optional, Tuple, Callable, Iterable
+import sqlite3 as sqlite
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
+import aiosqlite
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidsql.phrasers import GidSqliteInserter
@@ -58,7 +60,8 @@ class GidSqliteDatabase:
         self.config = config
         self.pragmas = None
         if self.config is not None:
-            self.pragmas = self.config.getlist('general_settings', 'pragmas')
+            self.pragmas = self.config.retrieve('general_settings', 'pragmas', typus=List[str], default_fallback=[])
+
         self.writer = GidSQLiteWriter(self.path, self.pragmas, log_execution=log_execution)
         self.reader = GidSqliteReader(self.path, self.pragmas, log_execution=log_execution)
         self.scripter = GidSqliteScriptProvider(self.script_location)
@@ -68,7 +71,6 @@ class GidSqliteDatabase:
             os.remove(self.path)
         for script in self.scripter.setup_scripts:
             self.writer.write(script)
-
         return True
 
     def new_phrase(self, typus: PhraseType):
@@ -113,6 +115,7 @@ class AioGidSqliteDatabase(GidSqliteDatabase):
     async def aio_startup_db(self, overwrite=False):
         if os.path.exists(self.path) is True and overwrite is True:
             os.remove(self.path)
+
         for script in self.scripter.setup_scripts:
             await self.aio_write(script)
 
@@ -127,7 +130,6 @@ class AioGidSqliteDatabase(GidSqliteDatabase):
             await self.aio_writer.write(sql_phrase, variables)
 
     async def aio_query(self, phrase, variables=None, fetch: Fetch = Fetch.All, row_factory: Union[bool, any] = False):
-
         if row_factory:
             _factory = None if isinstance(row_factory, bool) is True else row_factory
             await self.aio_reader.enable_row_factory(in_factory=_factory)

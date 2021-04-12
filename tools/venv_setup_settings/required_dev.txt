@@ -12,7 +12,6 @@ icecream
 invoke
 ipython
 isort
-jupyter
 language_tool_python
 markdown2
 matplotlib
@@ -34,7 +33,6 @@ pydoc-markdown
 pypandoc
 pyqt5-tools
 pyspellchecker
-python-magic
 rich
 rope
 stdlib-list

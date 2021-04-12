@@ -119,6 +119,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class JsonMetaDataProvider:
+
     data_file = pathmaker(APPDATA['documentation'], 'command_meta_data.json')
 
     def __init__(self) -> None:

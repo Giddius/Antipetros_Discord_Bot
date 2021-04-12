@@ -180,10 +180,15 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Listener]
 
 
+    @commands.Cog.listener(name="on_raw_message_edit")
+    async def update_rules(self, payload: discord.RawMessageUpdateEvent):
+        if payload.channel_id != self.rules_channel_id:
+            return
+        await self.get_rules_messages()
+
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command(enabled=get_command_enabled('exploits_rules'))
     @allowed_channel_and_allowed_role(False)
@@ -246,7 +251,6 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [HelperMethods]
 
-
     async def _make_rules_embed(self, rule_message: discord.Message):
         fields = await self.parse_rules(rule_message)
         fields.append(self.bot.field_item(name="Additional Rules Documents", value='\n'.join(await self.parse_links())))
@@ -302,6 +306,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

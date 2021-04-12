@@ -3,13 +3,16 @@
 
 
 import os
+from typing import List, Union, Callable, Set, Dict, Mapping, Tuple, Optional, Iterable, TYPE_CHECKING
 import shutil
 from inspect import getmembers, getfile, getsourcefile, getsource, getsourcelines, getdoc
 from datetime import datetime, timezone, timedelta
 import gidlogger as glog
+from collections import Counter
 from icecream import ic
 import psutil
 import discord
+from discord.ext import commands, flags, tasks, ipc
 from textwrap import dedent
 from functools import cached_property
 from antipetros_discordbot.utility.gidsql.facade import AioGidSqliteDatabase
@@ -17,6 +20,7 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker, timename
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.misc import antipetros_repo_rel_path
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, auto_meta_info_group, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup
 # endregion[Imports]
 
 # region [Constants]
@@ -31,8 +35,8 @@ SCRIPT_LOC_LINKS = APPDATA['save_link_sql']
 DB_LOC_SUGGESTIONS = pathmaker(APPDATA['database'], "save_suggestion.db")
 SCRIPT_LOC_SUGGESTIONS = APPDATA['save_suggestion_sql']
 
-DB_LOC_META_DATA = pathmaker(APPDATA['database'], "meta_data.db")
-SCRIPT_LOC_META_DATA = APPDATA['meta_data_sql']
+DB_LOC_GENERAL = pathmaker(APPDATA['database'], "general_antipetros.db")
+SCRIPT_LOC_GENERAL = APPDATA['general_db_sql']
 
 ARCHIVE_LOCATION = APPDATA['archive']
 LOG_EXECUTION = False
@@ -47,6 +51,23 @@ glog.import_notification(log, __name__)
 
 
 # endregion[Logging]
+
+class ChannelUsageResult:
+    def __init__(self):
+        self.result_data = []
+
+    async def add_data(self, data):
+        self.result_data.append(data)
+
+    async def convert_data_to_channels(self, bot):
+        new_data = []
+        for data in self.result_data:
+            new_data.append(await bot.channel_from_id(data))
+        self.result_data = new_data
+
+    async def get_as_counter(self) -> Counter:
+        return Counter(self.result_data)
+
 
 class MemoryPerformanceItem:
     total_memory = psutil.virtual_memory().total
@@ -108,12 +129,57 @@ class CpuPerformanceItem:
         return f"{self.date_time.strftime(STANDARD_DATETIME_FORMAT)}: {self.pretty_usage_percent}"
 
 
-class AioMetaDataStorageSQLite:
+class AioGeneralStorageSQLite:
+    command_attr_names = ["help",
+                          "brief",
+                          "short_doc",
+                          "usage",
+                          "signature",
+                          "example",
+                          "gif",
+                          "github_link",
+                          "enabled",
+                          "hidden"]
+
     def __init__(self):
-        self.db = AioGidSqliteDatabase(db_location=DB_LOC_META_DATA, script_location=SCRIPT_LOC_META_DATA, log_execution=LOG_EXECUTION)
+        self.db = AioGidSqliteDatabase(db_location=DB_LOC_GENERAL, script_location=SCRIPT_LOC_GENERAL, log_execution=LOG_EXECUTION)
         self.was_created = self.db.startup_db()
         self.db.vacuum()
         glog.class_init_notification(log, self)
+
+    async def insert_command_usage(self, command: Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
+        timestamp = datetime.now(tz=timezone.utc)
+        command_name = command.name
+        await self.db.aio_write('insert_command_usage', (timestamp, command_name))
+
+    async def insert_cog(self, cog: commands.Cog):
+        abs_path = getsourcefile(cog.__class__)
+        rel_path = await antipetros_repo_rel_path(abs_path)
+        category = os.path.basename(os.path.dirname(rel_path))
+        if category not in ['dev_cogs']:
+            description = dedent(str(getdoc(cog.__class__)))
+            await self.db.aio_write('insert_cog_category', (category, category))
+            await self.db.aio_write('insert_cog', (str(cog), str(cog), cog.config_name, description, category, rel_path))
+
+    async def insert_command(self, command: Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
+        name = command.name
+        cog_name = str(command.cog)
+        is_group = 1 if isinstance(command, AntiPetrosBaseGroup) else 0
+        params = [name, name, cog_name, is_group]
+        for attr_name in self.command_attr_names:
+            attr_value = None
+            if hasattr(command, attr_name) and getattr(command, attr_name) != 'NA':
+                attr_value = getattr(command, attr_name)
+                if attr_name == 'gif' and attr_value is not None:
+                    attr_value = await antipetros_repo_rel_path(attr_value)
+            params.append(attr_value)
+        params = tuple(params)
+        await self.db.aio_write('insert_command', params)
+
+    async def insert_channel_use(self, text_channel: discord.TextChannel):
+        channel_id = text_channel.id
+        timestamp = datetime.now(tz=timezone.utc)
+        await self.db.aio_write('insert_channel_use', (timestamp, channel_id))
 
     async def insert_text_channel(self, text_channel: discord.TextChannel):
         _id = text_channel.id
@@ -164,6 +230,22 @@ class AioMetaDataStorageSQLite:
             all_items.append(MemoryPerformanceItem(**row))
         return all_items
 
+    async def get_channel_usage(self, from_datetime: datetime = None, to_datetime: datetime = None) -> ChannelUsageResult:
+        script_name = "get_channel_usage"
+        if from_datetime is None and to_datetime is None:
+            script_name = "get_channel_usage_all"
+        elif from_datetime is None:
+            script_name = "get_channel_usage_only_from"
+        elif to_datetime is None:
+            script_name = "get_channel_usage_only_to"
+
+        arguments = tuple(arg for arg in [from_datetime, to_datetime] if arg is not None)
+        result = await self.db.aio_query(script_name, arguments, row_factory=True)
+        result_item = ChannelUsageResult()
+        for row in result:
+            await result_item.add_data(row['channel_id'])
+        return result_item
+
     async def insert_cpu_performance(self, timestamp: datetime, usage_percent: int, load_avg_1: int, load_avg_5: int, load_avg_15: int):
         await self.db.aio_write("insert_cpu_performance", (timestamp, usage_percent, load_avg_1, load_avg_5, load_avg_15))
 
@@ -172,18 +254,6 @@ class AioMetaDataStorageSQLite:
 
     async def insert_memory_perfomance(self, timestamp: datetime, memory_in_use: int):
         await self.db.aio_write('insert_memory_performance', (timestamp, memory_in_use))
-
-    async def insert_cogs(self, bot):
-        for cog_name, cog_object in bot.cogs.items():
-            abs_path = getsourcefile(cog_object.__class__)
-            ic(abs_path)
-            rel_path = await antipetros_repo_rel_path(abs_path)
-            ic(rel_path)
-            category = os.path.basename(os.path.dirname(rel_path))
-            ic(category)
-            description = dedent(str(getdoc(cog_object.__class__)))
-            await self.db.aio_write('insert_cog_category', (category,))
-            await self.db.aio_write('insert_cog', (cog_name, cog_object.config_name, description, category, rel_path, 1))
 
 
 class AioSuggestionDataStorageSQLite:
@@ -330,3 +400,6 @@ class AioSuggestionDataStorageSQLite:
             await self.db.startup_db()
         except Exception as error:
             self.db.startup_db()
+
+
+general_db = AioGeneralStorageSQLite()

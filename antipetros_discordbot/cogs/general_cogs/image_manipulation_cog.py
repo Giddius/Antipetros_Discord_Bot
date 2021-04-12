@@ -27,7 +27,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosFlagCommand, AntiPetrosBaseCommand
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, auto_meta_info_group
 from antipetros_discordbot.utility.exceptions import ParameterError
 from antipetros_discordbot.utility.image_manipulation import make_perfect_fontsize, find_min_fontsize, get_text_dimensions
 
@@ -124,6 +124,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         self._get_stamps()
         self._get_nato_symbol_parts()
@@ -181,7 +182,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 
 # endregion[Listener]
-
 
     def _get_nato_symbol_parts(self):
         self.nato_symbol_parts_images = {}
@@ -394,7 +394,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         modified_avatar = await self.bot.execute_in_thread(placement, avatar_image, stamp, self.avatar_stamp_fraction)
         return modified_avatar
 
-    @commands.group(case_insensitive=True)
+    @auto_meta_info_group(case_insensitive=True, cls=AntiPetrosBaseGroup)
     async def member_avatar(self, ctx):
         """
         Stamps the avatar of a Member with the Antistasi Crest.

@@ -35,7 +35,7 @@ from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathma
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup
 from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name, normalize_emoji
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
@@ -46,7 +46,7 @@ from antipetros_discordbot.utility.converters import DateTimeFullConverter, date
 from pyyoutube import Api
 from inspect import getmembers, getsourcefile, getsource, getsourcelines, getfullargspec, getmodule, getcallargs, getabsfile, getmodulename, getdoc, getfile, cleandoc, classify_class_attrs
 
-from antipetros_discordbot.utility.sqldata_storager import AioMetaDataStorageSQLite
+from antipetros_discordbot.utility.sqldata_storager import general_db
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -114,7 +114,8 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         self.antidevtros_member = None
         self.antipetros_member = None
         self.edit_embed_message = None
-        self.meta_db = AioMetaDataStorageSQLite()
+        self.general_db = general_db
+        self.command_pop_list = []
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
@@ -711,8 +712,8 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await ctx.send(cleandoc(getdoc(cog)))
 
     @auto_meta_info_command()
-    async def dump_to_meta_db(self, ctx: commands.Context):
-        await self.meta_db.insert_cogs(self.bot)
+    async def dump_to_general_db(self, ctx: commands.Context):
+        await self.general_db.insert_cogs(self.bot)
         await ctx.send('done')
 
     @auto_meta_info_command()
@@ -740,24 +741,39 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         pprint(EMOJI_UNICODE_ENGLISH)
 
     @auto_meta_info_command()
-    async def new_command_info_check(self, ctx: commands.Context, command: CommandConverter):
+    async def new_command_info_check(self, ctx: commands.Context, command: CommandConverter, subcommand: str = None):
+        # if self.command_pop_list == []:
+        #     self.command_pop_list = [_command for _command in self.bot.commands if str(_command.cog).casefold() != "generaldebugcog"]
+        #     random.shuffle(self.command_pop_list)
+
+        # command = self.command_pop_list.pop(random.randint(0, len(self.command_pop_list) - 1))
+        # ic(len(self.command_pop_list))
+        if isinstance(command, AntiPetrosBaseGroup) and subcommand is not None:
+            command = command.all_commands.get(subcommand)
+
         fields = []
         for att_name, att_object in getmembers(command):
-            if att_name.startswith('dynamic_'):
+            if att_name in ['brief', 'description', 'example', 'help', 'short_doc', 'signature', 'usage']:
                 if isinstance(att_object, list):
                     att_object = '\n'.join(att_object)
+                elif isinstance(att_object, str):
+                    att_object = att_object
                 else:
                     att_object = str(att_object)
                 if not att_object:
                     att_object = 'NA'
                 fields.append(self.bot.field_item(name=att_name.replace('dynamic_', ''), value=att_object))
-        fields.append(self.bot.field_item(name='checks', value='\n'.join(str(check) for check in command.checks)))
+        if command.checks != []:
+            value = '\n'.join(str(check) for check in command.checks)
+        else:
+            value = 'None'
+        fields.append(self.bot.field_item(name='checks', value=value))
         embed_data = await self.bot.make_generic_embed(title=command.name, description='\n'.join(command.aliases), image=await command.get_source_code_image(), thumbnail="source_code",
                                                        fields=fields)
+        await ctx.send(f"__**Cog:**__ `{command.cog}`")
         await ctx.send(**embed_data)
         if command.gif:
             await ctx.send(file=discord.File(command.gif))
-        await ctx.send(str(command.parent))
 
     @auto_meta_info_command()
     async def check_cog_commands_dunder(self, ctx: commands.Context, cog: CogConverter):
@@ -766,13 +782,13 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     @auto_meta_info_command()
     async def check_performance_data_db(self, ctx: commands.Context):
-        items = await self.meta_db.get_memory_data_last_24_hours()
+        items = await self.general_db.get_memory_data_last_24_hours()
         await self.bot.split_to_messages(ctx, '\n'.join(str(item) for item in items), in_codeblock=True, syntax_highlighting='css')
 
-        items = await self.meta_db.get_latency_data_last_24_hours()
+        items = await self.general_db.get_latency_data_last_24_hours()
         await self.bot.split_to_messages(ctx, '\n'.join(str(item) for item in items), in_codeblock=True, syntax_highlighting='css')
 
-        items = await self.meta_db.get_cpu_data_last_24_hours()
+        items = await self.general_db.get_cpu_data_last_24_hours()
         await self.bot.split_to_messages(ctx, '\n'.join(str(item) for item in items), in_codeblock=True, syntax_highlighting='css')
 
     def cog_unload(self):

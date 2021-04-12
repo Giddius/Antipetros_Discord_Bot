@@ -476,10 +476,8 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         return f'{oldest_member_and_date[0].mention} -> {oldest_member_and_date[0].name}, joined at {oldest_member_and_date[1].strftime("%H:%M:%S on %a the %Y.%b.%d")}'
 
     async def most_used_channel(self):
-        stats = await self.bot.get_usage_stats('overall')
-        channel_data = await self.bot.execute_in_thread(partial(sorted, key=lambda x: x[1], reverse=True), list(stats.items()))
-        channel, amount = channel_data[0]
-        channel = await self.bot.channel_from_name(channel)
+        stats = await self.bot.get_usage_stats('all')
+        channel, amount = stats[0]
         return f"{channel.mention} recorded usages: {amount}"
 
     async def amount_commands(self, with_hidden: bool = False):

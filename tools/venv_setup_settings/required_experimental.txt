@@ -2,12 +2,14 @@ Flask
 Flask-Discord
 Flask-SQLAlchemy
 Flask-WTF
+Quart
 asyncinit
 dirtools
 discord-pretty-help
 disputils
 imgkit
 imperfect
+inflect
 log_calls
 markdown
 marshmallow
@@ -25,5 +27,3 @@ tabulate
 twitchAPI
 vendorize
 wikitextparser
-Quart
-inflect

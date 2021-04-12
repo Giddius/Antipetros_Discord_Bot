@@ -161,7 +161,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
             await ctx.send(THE_DRAGON)
 
     @ auto_meta_info_command(enabled=get_command_enabled('flip_coin'))
-    @allowed_channel_and_allowed_role()
+    @allowed_channel_and_allowed_role(in_dm_allowed=True)
     @commands.cooldown(1, 15, commands.BucketType.channel)
     async def flip_coin(self, ctx: commands.Context, only_text: str = None):
         """

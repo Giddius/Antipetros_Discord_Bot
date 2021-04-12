@@ -35,7 +35,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.sqldata_storager import AioMetaDataStorageSQLite
+from antipetros_discordbot.utility.sqldata_storager import general_db
 # endregion[Imports]
 
 # region [TODO]
@@ -110,7 +110,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         self.ready = False
-        self.meta_db = AioMetaDataStorageSQLite()
+        self.general_db = general_db
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
@@ -134,7 +134,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
         cpu_percent = psutil.cpu_percent(interval=None)
         cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15 = [x / psutil.cpu_count() * 100 for x in psutil.getloadavg()]
-        await self.meta_db.insert_cpu_performance(now, cpu_percent, cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15)
+        await self.general_db.insert_cpu_performance(now, cpu_percent, cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15)
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def latency_measure_loop(self):
@@ -148,7 +148,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         if latency > self.latency_thresholds.get('warning'):
             log.warning("high latency: %s ms", str(latency))
             await self.bot.message_creator(embed=await make_basic_embed(title='LATENCY WARNING!', text='Latency is very high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'latency': str(latency) + ' ms'}))
-        await self.meta_db.insert_latency_perfomance(now, raw_latency)
+        await self.general_db.insert_latency_perfomance(now, raw_latency)
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def memory_measure_loop(self):
@@ -163,7 +163,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             await self.bot.message_creator(embed=await make_basic_embed(title='MEMORY CRITICAL!', text='Memory consumption is dangerously high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'Memory usage absolute': await self.convert_memory_size(memory_in_use, DataSize.GigaBytes, True, 3), 'as percent': str(_mem_item.percent) + '%'}))
         elif memory_in_use > self.memory_thresholds.get("warning"):
             log.warning("Memory usage is high! Memory in use: %s", DataSize.GigaBytes.convert(memory_in_use, annotate=True))
-        await self.meta_db.insert_memory_perfomance(now, memory_in_use)
+        await self.general_db.insert_memory_perfomance(now, memory_in_use)
 
     @auto_meta_info_command(enabled=True)
     @owner_or_admin()
@@ -174,7 +174,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     @auto_meta_info_command(enabled=True)
     @owner_or_admin()
     async def report_latency(self, ctx, with_graph: bool = True):
-        report_data = await self.meta_db.get_latency_data_last_24_hours()
+        report_data = await self.general_db.get_latency_data_last_24_hours()
 
         stat_data = [item.latency for item in report_data]
         embed_data = {'Mean': round(mean(stat_data), 2), 'Median': round(median(stat_data), 2), "Std-dev": round(stdev(stat_data))}
@@ -191,7 +191,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     @auto_meta_info_command(enabled=True)
     @owner_or_admin()
     async def report_memory(self, ctx, with_graph: bool = True, since_last_hours: int = 24):
-        report_data = await self.meta_db.get_memory_data_last_24_hours()
+        report_data = await self.general_db.get_memory_data_last_24_hours()
 
         stat_data = [item.memory_in_use for item in report_data]
         embed_data = {'Mean': bytes2human(round(mean(stat_data), 2), True), 'Median': bytes2human(round(median(stat_data), 2), True), "Std-dev": bytes2human(round(stdev(stat_data)), True)}
@@ -214,7 +214,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     @auto_meta_info_command(enabled=True)
     @owner_or_admin()
     async def report_cpu(self, ctx, with_graph: bool = True):
-        report_data = await self.meta_db.get_cpu_data_last_24_hours()
+        report_data = await self.general_db.get_cpu_data_last_24_hours()
 
         stat_data = [item.usage_percent for item in report_data]
         embed_data = {'Mean': round(mean(stat_data), 2), 'Median': round(median(stat_data), 2), "Std-dev": round(stdev(stat_data))}

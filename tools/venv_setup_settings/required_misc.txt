@@ -1,5 +1,6 @@
 --force-reinstall pillow
 Jinja2
+PyPDF2
 WeasyPrint
 aiohttp
 aiosqlite
@@ -12,6 +13,7 @@ beautifulsoup4
 click
 cryptography
 dateparser
+discord-ext-ipc
 discord-flags
 dpytest
 emoji
@@ -36,4 +38,3 @@ tldextract
 validator-collection
 watchgod
 webdavclient3
-PyPDF2

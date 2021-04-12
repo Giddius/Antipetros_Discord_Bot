@@ -126,117 +126,137 @@ class AntiPetrosBaseCommand(commands.Command):
     meta_data_provider = JsonMetaDataProvider()
     alias_data_provider = JsonAliasProvider()
     source_code_data_provider = SourceCodeProvider()
-    bot_mention_regex = re.compile(r"\@AntiPetros|\@AntiDEVtros", re.IGNORECASE)
     bot_mention_placeholder = '@BOTMENTION'
     gif_folder = APPDATA['gifs']
 
     def __init__(self, func, **kwargs):
         self.name = func.__name__ if kwargs.get("name") is None else kwargs.get("name")
         self.extra_aliases = kwargs.pop("aliases", None)
-        self.get_meta_data = self.meta_data_provider.get_auto_provider(self)
-        self.set_meta_data = self.meta_data_provider.set_auto_provider(self)
-        self.get_alias = self.alias_data_provider.get_auto_provider(self)
-        self.set_alias = self.alias_data_provider.set_auto_provider(self)
-        self.remove_alias = self.alias_data_provider.remove_auto_provider(self)
-        self.get_source_code = self.source_code_data_provider.get_auto_provider(self)
+        self.data_getters = {'meta_data': self.meta_data_provider.get_auto_provider(self),
+                             'alias': self.alias_data_provider.get_auto_provider(self),
+                             'source_code': self.source_code_data_provider.get_auto_provider(self)}
+
+        self.data_setters = {'meta_data': self.meta_data_provider.set_auto_provider(self),
+                             'alias': self.alias_data_provider.set_auto_provider(self)}
+
+        self.data_removers = {'alias': self.alias_data_provider.remove_auto_provider(self)}
+        self._old_data = {'help': None,
+                          'brief': None,
+                          'description': None,
+                          'short_doc': None,
+                          'usage': None,
+                          'signature': None}
+
         super().__init__(func, **kwargs)
-        self.module = sys.modules[func.__module__]
+        self.module_object = sys.modules[func.__module__]
 
     async def get_source_code_image(self):
-        return await asyncio.to_thread(self.get_source_code, typus='image')
+        return await asyncio.to_thread(self.data_getters['source_code'], typus='image')
 
     @property
     def enabled(self):
-        return self.module.get_command_enabled(self.name)
+        return self.module_object.get_command_enabled(self.name)
 
     @enabled.setter
     def enabled(self, value):
         pass
 
-    @property
-    def hidden(self):
-        return self.get_meta_data('hidden', False)
+    # @property
+    # def hidden(self):
+    #     return self.get_meta_data('hidden', False)
 
-    @hidden.setter
-    def hidden(self, value):
-        pass
+    # @hidden.setter
+    # def hidden(self, value):
+    #     pass
 
     @property
     def aliases(self):
-        return self.get_alias(extra_aliases=self.extra_aliases)
+        return self.data_getters['alias'](extra_aliases=self.extra_aliases)
 
     @aliases.setter
     def aliases(self, value):
-        pass
+        if isinstance(value, list):
+            for alias in value:
+                self.data_setters['alias'](alias)
+        elif isinstance(value, str):
+            self.data_setters['alias'](value)
 
     @property
-    def dynamic_help(self):
-        _help = self.get_meta_data('help', None)
+    def help(self):
+        _help = self.data_getters['meta_data']('help', None)
         if _help in [None, ""]:
-            _help = self.help
+            _help = self._old_data.get('help')
         if _help in [None, ""]:
             _help = 'NA'
         return inspect.cleandoc(_help)
 
-    @dynamic_help.setter
-    def dynamic_help(self, value):
-        self.set_meta_data('help', value)
+    @help.setter
+    def help(self, value):
+        self._old_data['help'] = value
 
     @property
-    def dynamic_brief(self):
-        brief = self.get_meta_data('brief', None)
+    def brief(self):
+        brief = self.data_getters['meta_data']('brief', None)
         if brief in [None, ""]:
-            brief = self.brief
+            brief = self._old_data.get('brief')
         if brief in [None, ""]:
             brief = 'NA'
         return brief
 
-    @dynamic_brief.setter
-    def dynamic_brief(self, value):
-        self.set_meta_data('brief', value)
+    @brief.setter
+    def brief(self, value):
+        self._old_data['brief'] = value
 
     @property
-    def dynamic_description(self):
-        description = self.get_meta_data('description', None)
+    def description(self):
+        description = self.data_getters['meta_data']('description', None)
         if description in [None, ""]:
-            description = self.description
+            description = self._old_data.get('description')
         if description in [None, ""]:
             description = 'NA'
         return inspect.cleandoc(description)
 
-    @dynamic_description.setter
-    def dynamic_description(self, value):
-        self.set_meta_data('description', value)
+    @description.setter
+    def description(self, value):
+        self._old_data['description'] = value
 
     @property
-    def dynamic_short_doc(self):
-        short_doc = self.get_meta_data('short_doc', None)
+    def short_doc(self):
+        short_doc = self.data_getters['meta_data']('short_doc', None)
         if short_doc in [None, ""]:
-            short_doc = self.short_doc
+            short_doc = self._old_data.get('short_doc')
         if short_doc in [None, ""]:
             short_doc = 'NA'
         return short_doc
 
-    @dynamic_short_doc.setter
-    def dynamic_short_doc(self, value):
-        self.set_meta_data('short_doc', value)
+    @short_doc.setter
+    def short_doc(self, value):
+        self._old_data['short_doc'] = value
 
     @property
-    def dynamic_usage(self):
-        usage = self.get_meta_data('usage', None)
+    def usage(self):
+        usage = self.data_getters['meta_data']('usage', None)
         if usage in [None, ""]:
-            usage = self.usage
+            usage = self._old_data.get('usage')
         if usage in [None, ""]:
             usage = 'NA'
         return usage
 
-    @dynamic_usage.setter
-    def dynamic_usage(self, value):
-        self.set_meta_data('usage', value)
+    @usage.setter
+    def usage(self, value):
+        self._old_data['usage'] = value
 
     @property
-    def dynamic_example(self):
-        example = self.get_meta_data('example', None)
+    def signature(self):
+        return self._old_data.get("signature")
+
+    @signature.setter
+    def signature(self, value):
+        self._old_data["signature"] = value
+
+    @property
+    def example(self):
+        example = self.data_getters['meta_data']('example', None)
         if example in [None, ""]:
             example = 'NA'
         if self.cog.bot.bot_member is not None:
@@ -244,9 +264,9 @@ class AntiPetrosBaseCommand(commands.Command):
         else:
             return example
 
-    @dynamic_example.setter
-    def dynamic_example(self, value):
-        self.set_meta_data('example', value)
+    @example.setter
+    def example(self, value):
+        self.data_setters['meta_data']('example', value)
 
     @property
     def gif(self):
@@ -257,30 +277,34 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def github_link(self):
-        return self.get_source_code('link')
+        return self.data_getters['source_code']('link')
 
     @property
-    def dynamic_allowed_channels(self):
+    def allowed_channels(self):
         allowed_channels = []
         for check in self.checks:
             if hasattr(check, "allowed_channels"):
                 allowed_channels += check.allowed_channels(self)
         if allowed_channels == []:
             return ['NA']
+        if len(allowed_channels) > 1 and 'all' in allowed_channels:
+            allowed_channels.remove('all')
         return allowed_channels
 
     @property
-    def dynamic_allowed_roles(self):
+    def allowed_roles(self):
         allowed_roles = []
         for check in self.checks:
             if hasattr(check, "allowed_roles"):
                 allowed_roles += check.allowed_roles(self)
         if allowed_roles == []:
             return ['NA']
+        if len(allowed_roles) > 1 and 'all' in allowed_roles:
+            allowed_roles.remove('all')
         return allowed_roles
 
     @property
-    def dynamic_allowed_in_dms(self):
+    def allowed_in_dms(self):
         values = []
         for check in self.checks:
             if hasattr(check, "allowed_in_dm"):
@@ -288,6 +312,20 @@ class AntiPetrosBaseCommand(commands.Command):
         if values == []:
             return True
         return all(values)
+
+    @property
+    def allowed_members(self):
+        allowed_members = []
+        for check in self.checks:
+            if hasattr(check, "allowed_members"):
+                allowed_members += check.allowed_members(self)
+        if allowed_members == []:
+            return 'NA'
+        if len(allowed_members) > 1 and 'all' in allowed_members:
+            allowed_members.remove('all')
+        if allowed_members == ['all']:
+            return allowed_members
+        return list(map(lambda x: x.name, allowed_members))
 
 
 # region[Main_Exec]

@@ -7,6 +7,7 @@ import inspect
 from textwrap import dedent
 import subprocess
 import shutil
+import re
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from discord.ext import commands, tasks
@@ -14,6 +15,7 @@ import discord
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseGroup
 
 # endregion[Imports]
 
@@ -84,10 +86,11 @@ def save_cog_command_data(cog, output_file=None):
 
     for command in cog.get_commands():
         try:
-            command_json[str(cog)]["commands"][command.name.strip()] = {"signature": command.signature.replace('<ctx>', '').replace('  ', ' ').strip(),
+
+            command_json[str(cog)]["commands"][command.name.strip()] = {"signature": None if command.signature is None else command.signature.replace('<ctx>', '').replace('  ', ' ').strip(),
                                                                         "aliases": command.aliases,
                                                                         "parameter": [param_string for param_string, _ in command.clean_params.items() if param_string != 'ctx'],
-                                                                        "checks": [str(check).split()[1].split('.')[0] for check in command.checks],
+                                                                        "checks": [str(check) for check in command.checks],
                                                                         'short_doc': command.short_doc,
                                                                         'usage': command.usage,
                                                                         'description': command.description,
@@ -97,11 +100,33 @@ def save_cog_command_data(cog, output_file=None):
                                                                         'help': command.help,
                                                                         'brief': command.brief,
                                                                         'gif': get_gif(command),
-                                                                        'example': command.dynamic_example}
-        except AttributeError:
-            print('#' * 25)
+                                                                        'example': command.example if hasattr(command, 'example') else None,
+                                                                        'is_group': False}
+            if isinstance(command, AntiPetrosBaseGroup):
+                command_json[str(cog)]["commands"][command.name.strip()]['is_group'] = True
+                command_json[str(cog)]["commands"][command.name.strip()]['subcommands'] = {}
+                for subcommand_name, subcommand in command.all_commands.items():
+                    subcommand_name = subcommand.qualified_name.split(' ')[-1]
+                    if subcommand_name not in command_json[str(cog)]["commands"][command.name.strip()]['subcommands']:
+                        command_json[str(cog)]["commands"][command.name.strip()]['subcommands'][subcommand_name.strip()] = {"signature": None if subcommand.signature is None else subcommand.signature.replace('<ctx>', '').replace('  ', ' ').strip(),
+                                                                                                                            "aliases": subcommand.aliases,
+                                                                                                                            "parameter": [param_string for param_string, _ in subcommand.clean_params.items() if param_string != 'ctx'],
+                                                                                                                            "checks": [str(check) for check in subcommand.checks],
+                                                                                                                            'short_doc': subcommand.short_doc,
+                                                                                                                            'usage': subcommand.usage,
+                                                                                                                            'description': subcommand.description,
+                                                                                                                            'is_hidden': subcommand.hidden,
+                                                                                                                            'is_enabled': subcommand.enabled,
+                                                                                                                            'qualified_name': subcommand.qualified_name,
+                                                                                                                            'help': subcommand.help,
+                                                                                                                            'brief': subcommand.brief,
+                                                                                                                            'gif': get_gif(command),
+                                                                                                                            'example': subcommand.example if hasattr(command, 'example') else None}
+        except AttributeError as error:
+            print('!' * 25)
             print(command.name)
-            print('#' * 25)
+            print(error)
+            print('!' * 25)
 
     writejson(command_json, command_json_file, indent=4)
     log.debug("commands for %s saved to %s", cog, command_json_file)

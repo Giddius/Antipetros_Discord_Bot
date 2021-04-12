@@ -74,7 +74,7 @@ class BaseAntiPetrosCheck:
             raise NotNecessaryRole(ctx, allowed_roles)
 
         allowed_members = self.allowed_members(command)
-        if allowed_members != {'all'} and member.id not in allowed_members:
+        if allowed_members != {'all'} and member not in allowed_members:
             raise NotAllowedMember(allowed_members)
         return True
 
@@ -88,7 +88,7 @@ class BaseAntiPetrosCheck:
         return {'all'}
 
     def allowed_in_dm(self, command: commands.Command):
-        return False
+        return True
 
     def __repr__(self) -> str:
         return self.__class__.__name__
@@ -117,6 +117,38 @@ class AllowedChannelAndAllowedRoleCheck(BaseAntiPetrosCheck):
 
     def allowed_in_dm(self, command: commands.Command):
         return self.in_dm_allowed
+
+
+class AdminOrAdminLeadCheck(BaseAntiPetrosCheck):
+    def __init__(self, in_dm_allowed: bool = False):
+        self.in_dm_allowed = in_dm_allowed
+        super().__init__(checked_types="roles")
+
+    def allowed_roles(self, command: commands.Command):
+        return {'admin', 'admin lead'}
+
+    def allowed_in_dm(self, command: commands.Command):
+        return self.in_dm_allowed
+
+
+class OnlyBobMurphyCheck(BaseAntiPetrosCheck):
+    def __init__(self):
+        super().__init__(checked_types=['members'])
+
+    def allowed_members(self, command: commands.Command):
+        bot = command.cog.bot
+        bob_murphy_member = bot.sync_member_by_id(346595708180103170)
+        return {bob_murphy_member}
+
+
+class OnlyGiddiCheck(BaseAntiPetrosCheck):
+    def __init__(self):
+        super().__init__(checked_types=['members'])
+
+    def allowed_members(self, command: commands.Command):
+        bot = command.cog.bot
+        giddi_member = bot.sync_member_by_id(576522029470056450)
+        return {giddi_member}
 
 
 def in_allowed_channels():
@@ -260,38 +292,18 @@ def allowed_requester(cog, data_type: str):
 
 
 def owner_or_admin(allowed_in_dm: bool = False):
-    async def predicate(ctx: commands.Context):
-        if await ctx.bot.is_owner(ctx.author):
-            return True
-        if ctx.channel.type is discord.ChannelType.text:
-            if 'admin' in {role.name.casefold() for role in ctx.author.roles}:
-                return True
-        elif ctx.channel.type is discord.ChannelType.private and allowed_in_dm is True:
-            member = ctx.bot.sync_member_by_id(ctx.author.id)
-            if 'admin' in {role.name.casefold() for role in member.roles}:
-                return True
 
-        return False
-    predicate.check_name = sys._getframe().f_code.co_name
-    return commands.check(predicate)
+    return commands.check(AdminOrAdminLeadCheck(in_dm_allowed=allowed_in_dm))
 
 
 def only_giddi():
-    async def predicate(ctx: commands.Context):
-        if ctx.author.id == ctx.bot.creator.id:
-            return True
-        return False
-    predicate.check_name = sys._getframe().f_code.co_name
-    return commands.check(predicate)
+
+    return commands.check(OnlyGiddiCheck())
 
 
 def only_bob():
-    async def predicate(ctx: commands.Context):
-        if ctx.author.id == "346595708180103170":
-            return True
-        return False
-    predicate.check_name = sys._getframe().f_code.co_name
-    return commands.check(predicate)
+
+    return commands.check(OnlyBobMurphyCheck())
 
 
 # region[Main_Exec]
