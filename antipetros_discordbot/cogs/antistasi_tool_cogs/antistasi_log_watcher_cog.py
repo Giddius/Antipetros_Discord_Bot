@@ -230,7 +230,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
         mod_data = await log_item.mod_data
         templ_data = []
         template = await self.bot.execute_in_thread(self.jinja_env.get_template, 'arma_required_mods.html.jinja')
-        async for item in async_list_iterator(mod_data):
+        for item in mod_data:
             transformed_mod_name = self._transform_mod_name(item)
             templ_data.append(self.mod_lookup_data.get(transformed_mod_name))
         with TemporaryDirectory() as tempdir:

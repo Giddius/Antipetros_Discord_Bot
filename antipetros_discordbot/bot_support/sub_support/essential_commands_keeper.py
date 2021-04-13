@@ -112,7 +112,7 @@ class EssentialCommandsKeeper(SubSupportBase):
                         log.error(error)
             # await self.bot.to_all_cogs('on_ready_setup')
             _delete_time = 15 if self.is_debug is True else 60
-            _embed_data = await self.support.make_generic_embed(title="**successfully reloaded the following extensions**", author='bot_author', thumbnail="update", fields=reloaded_extensions)
+            _embed_data = await self.bot.make_generic_embed(title="**successfully reloaded the following extensions**", author='bot_author', thumbnail="update", fields=reloaded_extensions)
             await ctx.send(**_embed_data, delete_after=_delete_time)
             await ctx.message.delete(delay=float(_delete_time))
 
@@ -129,11 +129,12 @@ class EssentialCommandsKeeper(SubSupportBase):
             started_at_string = arrow.get(started_at).format('YYYY-MM-DD HH:mm:ss')
             online_duration = naturaltime(datetime.utcnow() - started_at).replace(' ago', '')
 
-            embed = await self.support.make_generic_embed(title=random.choice(loadjson(self.goodbye_quotes_file)),
-                                                          description=f'{self.bot.display_name} is shutting down.',
-                                                          image=BASE_CONFIG.retrieve('shutdown_message', 'image', typus=str, direct_fallback="https://i.ytimg.com/vi/YATREe6dths/maxresdefault.jpg"),
-                                                          type=self.support.embed_types_enum.Image,
-                                                          fields=[self.support.field_item(name='Online since', value=str(started_at_string), inline=False), self.support.field_item(name='Online for', value=str(online_duration), inline=False)])
+            embed = await self.bot.make_generic_embed(title=random.choice(loadjson(self.goodbye_quotes_file)),
+                                                      description=f'{self.bot.display_name} is shutting down.',
+                                                      image=BASE_CONFIG.retrieve('shutdown_message', 'image', typus=str, direct_fallback="https://i.ytimg.com/vi/YATREe6dths/maxresdefault.jpg"),
+                                                      type=self.support.embed_types_enum.Image,
+                                                      thumbnail="red_chain",
+                                                      fields=[self.support.field_item(name='Online since', value=str(started_at_string), inline=False), self.support.field_item(name='Online for', value=str(online_duration), inline=False)])
             channel = self.shutdown_message_channel
             last_shutdown_message = await channel.send(**embed)
             pickleit({"message_id": last_shutdown_message.id, "channel_id": last_shutdown_message.channel.id}, self.shutdown_message_pickle_file)

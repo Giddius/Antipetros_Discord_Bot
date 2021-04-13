@@ -147,6 +147,9 @@ class AioGeneralStorageSQLite:
         self.db.vacuum()
         glog.class_init_notification(log, self)
 
+    async def aio_vacuum(self):
+        await self.db.aio_vacuum()
+
     async def insert_command_usage(self, command: Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
         timestamp = datetime.now(tz=timezone.utc)
         command_name = command.name
@@ -188,14 +191,28 @@ class AioGeneralStorageSQLite:
         created_at = text_channel.created_at
         category_id = text_channel.category.id
         topic = text_channel.topic
-        await self.db.aio_write("insert_text_channel", (_id, name, position, created_at, category_id, topic))
+        await self.db.aio_write("insert_text_channel", (_id, name, position, created_at, category_id, topic, False))
 
     async def insert_category_channel(self, category_channel: discord.CategoryChannel):
         _id = category_channel.id
         name = category_channel.name
         position = category_channel.position
         created_at = category_channel.created_at
-        await self.db.aio_write("insert_category_channel", (_id, name, position, created_at))
+        await self.db.aio_write("insert_category_channel", (_id, name, position, created_at, False))
+
+    async def update_text_channel_deleted(self, text_channel_id: int):
+        await self.db.aio_write("update_text_channel_deleted", (text_channel_id, True))
+
+    async def update_category_channel_deleted(self, category_channel_id: int):
+        await self.db.aio_write("updated_category_channels_deleted", (category_channel_id, True))
+
+    async def get_category_channel_ids(self):
+        result = await self.db.aio_query("get_all_category_channel_ids", row_factory=True)
+        return [row['id'] for row in result]
+
+    async def get_text_channel_ids(self):
+        result = await self.db.aio_query("get_all_text_channel_ids", row_factory=True)
+        return [row['id'] for row in result]
 
     async def get_cpu_data_last_24_hours(self):
         now = datetime.now(tz=timezone.utc)
@@ -254,6 +271,9 @@ class AioGeneralStorageSQLite:
 
     async def insert_memory_perfomance(self, timestamp: datetime, memory_in_use: int):
         await self.db.aio_write('insert_memory_performance', (timestamp, memory_in_use))
+
+    def __str__(self):
+        return self.__class__.__name__
 
 
 class AioSuggestionDataStorageSQLite:

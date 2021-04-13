@@ -64,6 +64,10 @@ class AntistasiInformer(SubSupportBase):
         return False
 
     @property
+    def bertha_emoji(self):
+        return discord.utils.get(self.antistasi_guild.emojis, id=829666475035197470)
+
+    @property
     def antistasi_invite_url(self):
         return BASE_CONFIG.retrieve('antistasi_info', 'invite_url', typus=str, direct_fallback='')
 

@@ -195,7 +195,10 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def exploits_rules(self, ctx: commands.Context):
         embed_data = await self._make_rules_embed(self.rules_messages.get('exploits'))
-        await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
+        msg = await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
+        bertha_emoji = self.bot.bertha_emoji
+        if bertha_emoji is not None:
+            await msg.add_reaction(bertha_emoji)
         if ctx.message.reference is not None:
             await delete_message_if_text_channel(ctx)
 
@@ -204,7 +207,10 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def community_rules(self, ctx: commands.Context):
         embed_data = await self._make_rules_embed(self.rules_messages.get('community'))
-        await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
+        msg = await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
+        bertha_emoji = self.bot.bertha_emoji
+        if bertha_emoji is not None:
+            await msg.add_reaction(bertha_emoji)
         if ctx.message.reference is not None:
             await delete_message_if_text_channel(ctx)
 
@@ -213,7 +219,10 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def server_rules(self, ctx: commands.Context):
         embed_data = await self._make_rules_embed(self.rules_messages.get('server'))
-        await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
+        msg = await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
+        bertha_emoji = self.bot.bertha_emoji
+        if bertha_emoji is not None:
+            await msg.add_reaction(bertha_emoji)
         if ctx.message.reference is not None:
             await delete_message_if_text_channel(ctx)
 
@@ -261,14 +270,15 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
                                                        timestamp=timestamp,
                                                        footer={'text': "Last updated:"},
                                                        fields=fields,
-                                                       thumbnail='bertha')
+                                                       thumbnail='bertha_emoji_version',
+                                                       color='red')
         return embed_data
 
     async def get_rules_messages(self):
         self.rules_messages = {}
         async for message in self.rules_channel.history(limit=None):
-            content = message.content.strip().strip('-').strip()
-            first_line = content.splitlines()[0].strip('*').strip('_').casefold()
+            content = message.content.strip().strip('-*').strip()
+            first_line = content.splitlines()[0].strip('*_').casefold()
             if first_line == 'community rules':
                 self.rules_messages['community'] = message
             elif first_line == 'server rules':

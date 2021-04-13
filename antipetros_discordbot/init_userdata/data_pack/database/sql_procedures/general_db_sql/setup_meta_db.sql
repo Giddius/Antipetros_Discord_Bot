@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS category_channels_tbl (
     "name" TEXT NOT NULL UNIQUE,
     "position" INTEGER NOT NULL UNIQUE,
     "created_at" DATETIME NOT NULL,
-    "deleted" INTEGER DEFAULT 0
+    "deleted" BOOL
 );
 CREATE TABLE IF NOT EXISTS text_channels_tbl (
     "id" INTEGER NOT NULL PRIMARY KEY,
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS text_channels_tbl (
     "created_at" DATETIME NOT NULL,
     "category_id" INTEGER REFERENCES "category_channels_tbl" ("id"),
     "topic" TEXT,
-    "deleted" INTEGER DEFAULT 0
+    "deleted" BOOL
 );
 CREATE TABLE IF NOT EXISTS channel_usage_tbl (
     "timestamp" DATETIME NOT NULL,

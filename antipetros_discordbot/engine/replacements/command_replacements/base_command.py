@@ -186,6 +186,10 @@ class AntiPetrosBaseCommand(commands.Command):
         _help = self.data_getters['meta_data']('help', None)
         if _help in [None, ""]:
             _help = self._old_data.get('help')
+            if _help is not None and 'Example:' in _help and self.example == 'NA':
+                _help, example = _help.split('Example:')
+                self.data_setters['meta_data']('help', _help.strip())
+                self.example = example.strip()
         if _help in [None, ""]:
             _help = 'NA'
         return inspect.cleandoc(_help)

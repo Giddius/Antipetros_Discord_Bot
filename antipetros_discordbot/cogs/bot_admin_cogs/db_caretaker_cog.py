@@ -1,5 +1,5 @@
-#jinja2: trim_blocks:True
-#jinja2: lstrip_blocks :True
+# jinja2: trim_blocks:True
+# jinja2: lstrip_blocks :True
 # region [Imports]
 
 # * Standard Library Imports -->
@@ -65,7 +65,7 @@ from antipetros_discordbot.engine.replacements import auto_meta_info_command, An
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
-
+from antipetros_discordbot.utility.sqldata_storager import general_db
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -96,7 +96,7 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "{{ cog_name }}"
+COG_NAME = "DbCaretakerCog"
 
 CONFIG_NAME = make_config_name(COG_NAME)
 
@@ -110,7 +110,8 @@ _from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 
 # endregion [Helper]
 
-class {{ cog_name }}(commands.Cog, command_attrs={{ "{" }}'name': COG_NAME {{ "}" }}):
+
+class DbCaretakerCog(commands.Cog, command_attrs={'name': COG_NAME}):
     """
     WiP
     """
@@ -119,20 +120,22 @@ class {{ cog_name }}(commands.Cog, command_attrs={{ "{" }}'name': COG_NAME {{ "}
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
-            'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
+                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
 
     required_config_data = dedent("""
                                     """).strip('\n')
+
 # endregion [ClassAttributes]
 
 # region [Init]
 
-    def __init__(self, bot:"AntiPetrosBot"):
+    def __init__(self, bot: "AntiPetrosBot"):
         self.bot = bot
         self.support = self.bot.support
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self.db = general_db
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -140,30 +143,51 @@ class {{ cog_name }}(commands.Cog, command_attrs={{ "{" }}'name': COG_NAME {{ "}
 # region [Properties]
 
 
-
 # endregion [Properties]
 
 # region [Setup]
 
     async def on_ready_setup(self):
-
+        self.scheduled_vacuum.start()
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus:UpdateTypus):
-        return
+    async def update(self, typus: UpdateTypus):
+        if typus in [UpdateTypus.ALIAS, UpdateTypus.CONFIG]:
+            await self.bot.insert_command_data()
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
 
 # region [Loops]
 
-
+    @tasks.loop(hours=12)
+    async def scheduled_vacuum(self):
+        await self.db.aio_vacuum()
+        log.info("%s was scheduled vacuumed", str(self.db))
 
 # endregion [Loops]
 
 # region [Listener]
 
+    @commands.Cog.listener(name="on_guild_channel_delete")
+    async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):
+        await self.bot.insert_channels_into_db()
+        log.info('updated channels in %s, because Guild channel "%s" was removed', self.db, channel.name)
 
+    @commands.Cog.listener(name="on_guild_channel_create")
+    async def guild_structure_changes_listener_create(self, channel: discord.abc.GuildChannel):
+        await self.bot.insert_channels_into_db()
+        log.info('updated channels in %s, because Guild channel "%s" was created', self.db, channel.name)
+
+    @commands.Cog.listener(name="on_guild_channel_update")
+    async def guild_structure_changes_listener_update(self, before_channel: discord.abc.GuildChannel, after_channel: discord.abc.GuildChannel):
+        await self.bot.insert_channels_into_db()
+        log.info('updated channels in %s, because Guild channel "%s"/"%s" was updated', self.db, before_channel.name, after_channel.name)
+
+    @commands.Cog.listener(name="on_guild_update")
+    async def guild_update_listener(self, before_guild: discord.Guild, after_guild: discord.Guild):
+        await self.bot.insert_channels_into_db()
+        log.info('updated channels in %s, because Guild was updated', self.db)
 
 
 # endregion [Listener]
@@ -171,11 +195,9 @@ class {{ cog_name }}(commands.Cog, command_attrs={{ "{" }}'name': COG_NAME {{ "}
 # region [Commands]
 
 
-
 # endregion [Commands]
 
 # region [DataStorage]
-
 
 
 # endregion [DataStorage]
@@ -183,13 +205,11 @@ class {{ cog_name }}(commands.Cog, command_attrs={{ "{" }}'name': COG_NAME {{ "}
 # region [HelperMethods]
 
 
-
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
 
-
-    def cog_check(self,ctx):
+    def cog_check(self, ctx):
         return True
 
     async def cog_command_error(self, ctx, error):
@@ -201,10 +221,9 @@ class {{ cog_name }}(commands.Cog, command_attrs={{ "{" }}'name': COG_NAME {{ "}
     async def cog_after_invoke(self, ctx):
         pass
 
-
     def cog_unload(self):
+        self.scheduled_vacuum.stop()
         log.debug("Cog '%s' UNLOADED!", str(self))
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
@@ -220,7 +239,7 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker({{ cog_name }}(bot)))
+    bot.add_cog(attribute_checker(DbCaretakerCog(bot)))
 
 
 # region [Main_Exec]

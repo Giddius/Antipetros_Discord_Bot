@@ -107,12 +107,25 @@ class ChannelStatistician(SubSupportBase):
         return counter.most_common()
 
     async def insert_channels_into_db(self):
-        for category_channel in self.bot.antistasi_guild.categories:
+        all_channels = await self.bot.antistasi_guild.fetch_channels()
+        all_channels_map = {channel.type: [] for channel in all_channels}
+        for channel_type in all_channels_map:
+            all_channels_map[channel_type] += [channel for channel in all_channels if channel.type is channel_type]
+
+        for category_channel in all_channels_map.get(discord.ChannelType.category):
             if category_channel.name.casefold() not in self.exclude_categories:
                 await self.general_db.insert_category_channel(category_channel)
-        for text_channel in self.bot.antistasi_guild.text_channels:
+        for text_channel in all_channels_map.get(discord.ChannelType.text):
             if not text_channel.name.casefold().startswith('ticket-') and text_channel.name.casefold() not in self.exclude_channels:
                 await self.general_db.insert_text_channel(text_channel)
+        existing_category_ids = {category.id for category in all_channels_map.get(discord.ChannelType.category)}
+        for category_id in await self.general_db.get_category_channel_ids():
+            if category_id not in existing_category_ids:
+                await self.general_db.update_category_channel_deleted(category_id)
+        existing_text_channel_ids = {channel.id for channel in all_channels_map.get(discord.ChannelType.text)}
+        for text_channel_id in await self.general_db.get_text_channel_ids():
+            if text_channel_id not in existing_text_channel_ids:
+                await self.general_db.update_text_channel_deleted(text_channel_id)
 
     async def if_ready(self):
         await self.insert_channels_into_db()

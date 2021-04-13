@@ -62,13 +62,16 @@ class CommandStatistician(SubSupportBase):
         self.after_action()
 
     async def if_ready(self):
+        await self.insert_command_data()
+
+        log.debug("'%s' command staff soldier was READY", str(self))
+
+    async def insert_command_data(self):
         for cog_name, cog_object in self.bot.cogs.items():
             await self.general_db.insert_cog(cog_object)
         for command in self.bot.commands:
             if str(command.cog) not in ['GeneralDebugCog']:
                 await self.general_db.insert_command(command)
-
-        log.debug("'%s' command staff soldier was READY", str(self))
 
     async def get_amount_invoked_overall(self):
         pass
