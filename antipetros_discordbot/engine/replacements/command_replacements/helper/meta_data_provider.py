@@ -119,12 +119,20 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class JsonMetaDataProvider:
-
+    gif_folder = APPDATA['gifs']
     data_file = pathmaker(APPDATA['documentation'], 'command_meta_data.json')
 
     def __init__(self) -> None:
         if os.path.isfile(self.data_file) is False:
             writejson({}, self.data_file)
+
+    @property
+    def all_gifs(self):
+        _out = {}
+        for file in os.scandir(self.gif_folder):
+            if file.is_file() and file.name.casefold().endswith('_command.gif'):
+                _out[file.name.casefold().removesuffix('_command.gif')] = pathmaker(file.path)
+        return _out
 
     @property
     def meta_data(self) -> dict:
@@ -140,6 +148,8 @@ class JsonMetaDataProvider:
         if isinstance(command, commands.Command):
             command = command.name
         typus = typus.casefold()
+        if typus == 'gif':
+            return self.all_gifs.get(command.casefold())
         return self.meta_data.get(command.casefold(), {}).get(typus, fallback)
 
     def set(self, command: Union[str, commands.Command], typus: str, value: Any):
@@ -154,7 +164,6 @@ class JsonMetaDataProvider:
 
     def save(self, data: dict) -> None:
         writejson(data, self.data_file)
-
 
         # region[Main_Exec]
 if __name__ == '__main__':

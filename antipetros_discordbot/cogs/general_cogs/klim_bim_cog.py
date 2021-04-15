@@ -31,7 +31,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, auto_meta_info_group, AntiPetrosBaseGroup, AntiPetrosBaseCommand, AntiPetrosFlagCommand
 from antipetros_discordbot.utility.gidtools_functions import bytes2human
 from antipetros_discordbot.utility.exceptions import ParseDiceLineError
 
@@ -117,7 +117,6 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -141,6 +140,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
 # region [Commands]
 
+
     @ auto_meta_info_command(enabled=get_command_enabled('the_dragon'))
     @ allowed_channel_and_allowed_role()
     @commands.cooldown(1, 60, commands.BucketType.channel)
@@ -160,10 +160,10 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         else:
             await ctx.send(THE_DRAGON)
 
-    @ auto_meta_info_command(enabled=get_command_enabled('flip_coin'))
+    @ auto_meta_info_group(case_insensitive=True, cls=AntiPetrosBaseGroup, invoke_without_command=True, enabled=get_command_enabled('flip_coin'))
     @allowed_channel_and_allowed_role(in_dm_allowed=True)
     @commands.cooldown(1, 15, commands.BucketType.channel)
-    async def flip_coin(self, ctx: commands.Context, only_text: str = None):
+    async def flip_coin(self, ctx: commands.Context):
         """
         Simulates a coin flip and posts the result as an image of a Petros Dollar.
 
@@ -171,7 +171,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
             @AntiPetros flip_coin
 
         """
-        with ctx.typing():
+        async with ctx.typing():
 
             result = (secrets.randbelow(2) + 1)
             coin = "heads" if is_even(result) is True else 'tails'
@@ -184,14 +184,28 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
                 coin = 'nato, you lose!'
                 coin_image = "https://i.postimg.cc/cdL5Z0BH/nato-coin.png"
                 color = "blue"
-            if only_text is not None and only_text.casefold() == "text":
-                embed = discord.Embed(description=f"{ctx.author.mention} flipped a Coin: **{coin.title()}**", color=self.bot.get_discord_color(color))
-                await ctx.reply(embed=embed, allowed_mentions=AllowedMentions.none())
-            else:
-                embed = await self.bot.make_generic_embed(title=coin.title(), description=ZERO_WIDTH, image=coin_image, thumbnail='no_thumbnail', color=color)
 
-                await ctx.reply(**embed, allowed_mentions=AllowedMentions.none())
+            embed = await self.bot.make_generic_embed(title=coin.title(), description=ZERO_WIDTH, image=coin_image, thumbnail='no_thumbnail', color=color)
+
+            await ctx.reply(**embed, allowed_mentions=AllowedMentions.none())
             return coin
+
+    @flip_coin.command(name='text')
+    async def flip_coin_text(self, ctx: commands.Context):
+        async with ctx.typing():
+
+            result = (secrets.randbelow(2) + 1)
+            coin = "heads" if is_even(result) is True else 'tails'
+            color = "green" if coin == "heads" else "red"
+            await asyncio.sleep(random.random() * random.randint(1, 2))
+
+            nato_check_num = secrets.randbelow(100) + 1
+            if nato_check_num <= 1:
+                coin = 'nato, you lose!'
+                color = "blue"
+
+        embed = discord.Embed(description=f"{ctx.author.mention} flipped a Coin: **{coin.title()}**", color=self.bot.get_discord_color(color))
+        await ctx.reply(embed=embed, allowed_mentions=AllowedMentions.none())
 
     @ auto_meta_info_command(enabled=get_command_enabled('urban_dictionary'))
     @allowed_channel_and_allowed_role()
@@ -299,7 +313,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
         return result_combined
 
-    @auto_meta_info_command(enabled=get_command_enabled('roll_dice'))
+    @ auto_meta_info_group(case_insensitive=True, cls=AntiPetrosBaseGroup, invoke_without_command=True, enabled=get_command_enabled('roll_dice'))
     @allowed_channel_and_allowed_role(True)
     @commands.cooldown(1, 5, commands.BucketType.member)
     async def roll_dice(self, ctx, *, dice_line: str):  # @AntiPetros roll_dice 14d4 14d6 14d8 14d10 14d12 14d20 14d100
@@ -318,10 +332,10 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         parsed_dice_line = await self.parse_dice_line(dice_line)
 
         if sum(item[0] for item in parsed_dice_line) > dice_limit:
-            await ctx.send(f"Amount of overall dice `{sum(item[1] for item in await self.parse_dice_line(dice_line))}` is over the limit of `{dice_limit}`, aborting!", delete_after=120)
+            await ctx.send(f"Amount of overall dice `{sum(item[1] for item in parsed_dice_line)}` is over the limit of `{dice_limit}`, aborting!", delete_after=120)
             return
 
-        for amount, type_of_dice in await self.parse_dice_line(dice_line):
+        for amount, type_of_dice in parsed_dice_line:
             mod_type_of_dice = type_of_dice.casefold()
 
             if mod_type_of_dice not in self.dice_mapping:
@@ -338,7 +352,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
                 result_image_files.append(APPDATA[f"{mod_type_of_dice}_{roll_result}.png"])
                 await asyncio.sleep(0)
 
-        await self.bot.execute_in_thread(random.shuffle, result_image_files)
+        # await self.bot.execute_in_thread(random.shuffle, result_image_files)
         result_images = await self.bot.execute_in_thread(self._get_dice_images, result_image_files)
         result_image = await self.bot.execute_in_thread(self.paste_together, *result_images)
         result_combined = await self.bot.execute_in_thread(self._sum_dice_results, results)
@@ -350,6 +364,51 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
                                                        image=result_image,
                                                        color='random')
         await ctx.send(**embed_data)
+
+    @roll_dice.command(name='text')
+    async def roll_dice_text(self, ctx, *, dice_line: str):
+        dice_limit = 100
+        results = {}
+        parsed_dice_line = await self.parse_dice_line(dice_line)
+
+        if sum(item[0] for item in parsed_dice_line) > dice_limit:
+            await ctx.send(f"Amount of overall dice `{sum(item[1] for item in parsed_dice_line)}` is over the limit of `{dice_limit}`, aborting!", delete_after=120)
+            return
+
+        for amount, type_of_dice in parsed_dice_line:
+            mod_type_of_dice = type_of_dice.casefold()
+
+            if mod_type_of_dice not in self.dice_mapping:
+                await ctx.reply(f"I dont know dice of the type `{type_of_dice}`!", delete_after=120)
+                return
+
+            sides_of_die = self.dice_mapping[mod_type_of_dice].get('sides')
+            if mod_type_of_dice not in results:
+                results[mod_type_of_dice] = []
+
+            for i in range(amount):
+                roll_result = await self._roll_the_dice(sides_of_die)
+                results[mod_type_of_dice].append(roll_result)
+                await asyncio.sleep(0)
+        result_combined = await self.bot.execute_in_thread(self._sum_dice_results, results)
+        fields = [self.bot.field_item(name="Sum", value='`' + str(result_combined) + '`', inline=False)]
+        for key, value in results.items():
+            if len(value) > 1:
+                fields.append(self.bot.field_item(name=key.title(), value='```fixx\n' + ', '.join(f"{item}" for item in value) + '\n```' + f" = **{sum(value)}**"))
+            else:
+                fields.append(self.bot.field_item(name=key.title(), value='```fixx\n' + ', '.join(f"{item}" for item in value) + '\n```'))
+        description = f'{ctx.author.mention} rolled...'
+        if sum(item[0] for item in parsed_dice_line) == 1:
+            fields = []
+            for key, value in results.items():
+                description += f"`{value[0]}` on a **{key}**"
+
+        embed_data = await self.bot.make_generic_embed(description=description,
+                                                       title="",
+                                                       fields=fields,
+                                                       thumbnail='no_thumbnail',
+                                                       image=None, timestamp=None)
+        await ctx.reply(**embed_data, allowed_mentions=AllowedMentions.none())
 
     @auto_meta_info_command(enabled=get_command_enabled('choose_random'))
     @allowed_channel_and_allowed_role(in_dm_allowed=True)
@@ -418,7 +477,6 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

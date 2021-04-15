@@ -7,6 +7,7 @@ import os
 import time
 import asyncio
 from io import BytesIO
+from typing import Optional
 from datetime import datetime, timedelta, timezone
 from statistics import mean, stdev, median
 from collections import deque
@@ -361,6 +362,26 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             out.append(str(item))
         writejson(out, 'net_stuff.json')
         await ctx.send('done')
+
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def speed_test(self, ctx: commands.Context, amount_msgs: Optional[int] = 10, delete_msgs: Optional[bool] = False):
+        delete_after = None if delete_msgs is False else 30
+        start_time = time.monotonic()
+        times = []
+        for i in range(amount_msgs):
+            sub_time_start = time.monotonic()
+            await ctx.send(f"This is message {i+1} of the speed test!", delete_after=delete_after)
+            times.append(time.monotonic() - sub_time_start)
+        time_taken = time.monotonic() - start_time
+        time_taken = round(time_taken, ndigits=3)
+        mean_per_message = mean(times)
+        mean_per_message = round(mean_per_message, 3)
+        await ctx.send(f"__**result:**__ {time_taken} seconds for {amount_msgs} messages. average per message = {mean_per_message} seconds")
+        specific_results = ''
+        for index, the_time in enumerate(times):
+            specific_results += f"__Message {index+1}:__ `{round(the_time, 3)}` seconds\n"
+        await ctx.send(specific_results)
 
     def __str__(self) -> str:
         return self.qualified_name

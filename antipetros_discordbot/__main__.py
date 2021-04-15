@@ -100,7 +100,10 @@ def configure_logger():
     _log_file = glog.timestamp_log_folderer(os.getenv('APP_NAME'), APPDATA)
     for file in os.scandir(os.path.dirname(_log_file)):
         if file.is_file() and file.name.endswith('.log'):
-            shutil.move(file.path, pathmaker(os.path.dirname(file.path), 'old_logs'))
+            try:
+                shutil.move(file.path, pathmaker(os.path.dirname(file.path), 'old_logs'))
+            except shutil.Error:
+                shutil.move(file.path, pathmaker(os.path.dirname(file.path), 'old_logs', file.name.split('.')[0] + '_1.log'))
     limit_log_backups(pathmaker(os.path.dirname(_log_file), 'old_logs'))
     in_back_up = from_config('amount_keep_old_logs', 'getint')
     use_logging = from_config('use_logging', 'getboolean')

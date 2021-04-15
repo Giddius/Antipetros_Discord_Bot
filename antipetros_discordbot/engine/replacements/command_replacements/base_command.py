@@ -128,6 +128,7 @@ class AntiPetrosBaseCommand(commands.Command):
     source_code_data_provider = SourceCodeProvider()
     bot_mention_placeholder = '@BOTMENTION'
     gif_folder = APPDATA['gifs']
+    example_split_regex = re.compile(r"example\:\n", re.IGNORECASE)
 
     def __init__(self, func, **kwargs):
         self.name = func.__name__ if kwargs.get("name") is None else kwargs.get("name")
@@ -171,7 +172,9 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def aliases(self):
-        return self.data_getters['alias'](extra_aliases=self.extra_aliases)
+        aliases = self.data_getters['alias'](extra_aliases=self.extra_aliases)
+        self.alias = aliases
+        return aliases
 
     @aliases.setter
     def aliases(self, value):
@@ -186,8 +189,8 @@ class AntiPetrosBaseCommand(commands.Command):
         _help = self.data_getters['meta_data']('help', None)
         if _help in [None, ""]:
             _help = self._old_data.get('help')
-            if _help is not None and 'Example:' in _help and self.example == 'NA':
-                _help, example = _help.split('Example:')
+            if _help is not None and 'example:' in _help.casefold() and self.example == 'NA':
+                _help, example = self.example_split_regex.split(_help, maxsplit=1)
                 self.data_setters['meta_data']('help', _help.strip())
                 self.example = example.strip()
         if _help in [None, ""]:
@@ -210,6 +213,8 @@ class AntiPetrosBaseCommand(commands.Command):
     @brief.setter
     def brief(self, value):
         self._old_data['brief'] = value
+        if self.brief == 'NA' and value not in [None, '']:
+            self.data_setters['meta_data']('brief', value)
 
     @property
     def description(self):
@@ -223,6 +228,8 @@ class AntiPetrosBaseCommand(commands.Command):
     @description.setter
     def description(self, value):
         self._old_data['description'] = value
+        if self.description == 'NA' and value not in [None, '']:
+            self.data_setters['meta_data']('description', value)
 
     @property
     def short_doc(self):
@@ -236,6 +243,8 @@ class AntiPetrosBaseCommand(commands.Command):
     @short_doc.setter
     def short_doc(self, value):
         self._old_data['short_doc'] = value
+        if self.short_doc == 'NA' and value not in [None, '']:
+            self.data_setters['meta_data']('short_doc', value)
 
     @property
     def usage(self):
@@ -249,6 +258,8 @@ class AntiPetrosBaseCommand(commands.Command):
     @usage.setter
     def usage(self, value):
         self._old_data['usage'] = value
+        if self.usage == 'NA' and value not in [None, '']:
+            self.data_setters['meta_data']('usage', value)
 
     @property
     def signature(self):
@@ -257,6 +268,8 @@ class AntiPetrosBaseCommand(commands.Command):
     @signature.setter
     def signature(self, value):
         self._old_data["signature"] = value
+        if self.signature == 'NA' and value not in [None, '']:
+            self.data_setters['meta_data']('signature', value)
 
     @property
     def example(self):
@@ -274,10 +287,8 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def gif(self):
-        for gif_file in os.scandir(self.gif_folder):
-            if gif_file.is_file() and gif_file.name.casefold() == f"{self.name}_command.gif".casefold():
-                return pathmaker(gif_file.path)
-        return None
+        gif_path = self.data_getters['meta_data']('gif', None)
+        return gif_path
 
     @property
     def github_link(self):
@@ -285,7 +296,7 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def allowed_channels(self):
-        allowed_channels = []
+        allowed_channels = ['all']
         for check in self.checks:
             if hasattr(check, "allowed_channels"):
                 allowed_channels += check.allowed_channels(self)

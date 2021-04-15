@@ -54,7 +54,7 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel, async_write_json
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -65,7 +65,7 @@ from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
-
+from antipetros_discordbot.schemas.command_schema import CommandSchema
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -145,6 +145,7 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -167,7 +168,6 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
-
     @ipc.server.route()
     async def shut_down(self, data):
         member = await self.bot.retrieve_antistasi_member(data.member_id)
@@ -180,9 +180,33 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
         return {"success": False}
 
     @ipc.server.route()
-    async def get_base_bot_info(self, data):
+    async def get_appdata_accessor_kwargs(self, data):
+        return APPDATA.accessor_necessary_kwargs
 
-        return loadjson(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\docs\resources\data\bot_info.json")
+    @ipc.server.route()
+    async def get_command_list(self, data):
+        _out = {}
+        for command in self.bot.commands:
+            cog_name = str(command.cog)
+            if cog_name not in ['general_debug_cog.py', 'None'] and command.enabled is True and command.hidden is False:
+                if cog_name not in _out:
+                    _out[cog_name] = []
+                if hasattr(command, 'allowed_channels'):
+                    _out[cog_name].append({'name': command.name, 'help': command.help, 'hidden': command.hidden, 'enabled': command.enabled, 'aliases': ', '.join(command.aliases), "allowed_channels": '\n'.join(command.allowed_channels)})
+                else:
+                    print(command)
+        return _out
+
+    @auto_meta_info_command()
+    async def serialize_commands(self, ctx: commands.Context):
+        all_commands = []
+        schema = CommandSchema()
+        for command in self.bot.commands:
+            if hasattr(command, 'example') and command.example not in ['NA', None, '']:
+                print(command.example)
+            all_commands.append(schema.dump(command))
+        await async_write_json(all_commands, 'command_dump_check.json')
+        await ctx.send(f"Dumped {len(all_commands)} Commands to `command_dump_check.json`")
 
 # endregion [Commands]
 
@@ -193,7 +217,6 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [HelperMethods]
 
-
     async def execute_shutdown(self):
         await asyncio.sleep(5)
         await self.bot.shutdown_mechanic()
@@ -202,6 +225,7 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

@@ -9,8 +9,7 @@ h1 {text-align:center; }
 {% endblock %}
 {% block body %}
 <h1>AntiPetros Discord Bot</h1>
-{{ html_image(image) }}
+{{ html_image(antipetros_image) }}
 
-
-{{ table }}
+<a href="{{ url_for('command_list') }}"><button>Home</button></a>
 {% endblock %}

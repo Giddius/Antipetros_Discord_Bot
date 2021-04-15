@@ -252,6 +252,13 @@ async def async_load_json(json_file):
     return await _LOOP.run_in_executor(None, loadjson, json_file)
 
 
+async def async_write_json(data, json_file):
+    global _LOOP
+    if _LOOP is None:
+        _LOOP = asyncio.get_event_loop()
+    return await _LOOP.run_in_executor(None, writejson, data, json_file)
+
+
 async def image_to_url(image_path):
     _name = os.path.basename(image_path).replace('_', '').replace(' ', '')
     _file = discord.File(image_path, _name)

@@ -113,6 +113,10 @@ class AntistasiInformer(SubSupportBase):
     def antistasi_guild(self):
         return self.bot.get_guild(self.general_data.get('antistasi_guild_id'))
 
+    async def get_message_directly(self, channel_id: int, message_id: int) -> discord.Message:
+        channel = await self.channel_from_id(channel_id)
+        return await channel.fetch_message(message_id)
+
     async def retrieve_antistasi_member(self, user_id):
         return await self.antistasi_guild.fetch_member(user_id)
 
@@ -125,7 +129,7 @@ class AntistasiInformer(SubSupportBase):
     def sync_channel_from_id(self, channel_id: int):
         return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)
 
-    async def channel_from_id(self, channel_id: int):
+    async def channel_from_id(self, channel_id: int) -> discord.abc.GuildChannel:
         return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)
 
     def sync_member_by_id(self, member_id: int) -> discord.Member:

@@ -74,10 +74,10 @@ if %ERRORLEVEL% == 1 (
 )
 
 
-rem ECHO.
-rem ECHO -------------------------------------------- Clearing Pip Cache --------------------------------------------
-rem RD /S /Q %LocalAppData%\pip\Cache
-rem ECHO.
+ECHO.
+ECHO -------------------------------------------- Clearing Pip Cache --------------------------------------------
+RD /S /Q %LocalAppData%\pip\Cache
+ECHO.
 
 
 
@@ -149,8 +149,6 @@ ECHO.
 ECHO ################# Installing flit
 CALL pip install --no-cache-dir --upgrade flit
 ECHO.
-
-ECHO.
 ECHO.
 
 ECHO +++++++++++++++++++++++++++++ Gid Packages +++++++++++++++++++++++++++++
@@ -170,7 +168,7 @@ ECHO.
 ECHO.
 ECHO.
 
-Echo +++++++++++++++++++++++++++++ misc Packages +++++++++++++++++++++++++++++
+Echo +++++++++++++++++++++++++++++ Misc Packages +++++++++++++++++++++++++++++
 ECHO.
 FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_misc.txt) do (
 ECHO.
@@ -198,6 +196,7 @@ ECHO.
 
 Echo +++++++++++++++++++++++++++++ Qt Packages +++++++++++++++++++++++++++++
 ECHO.
+rem CALL pip install --upgrade --no-cache-dir PyQt5>=5.15.3
 FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_Qt.txt) do (
 ECHO.
 ECHO -------------------------- Installing %%A --------------^>
