@@ -103,8 +103,11 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     announcements_channel_id = 449553298366791690
     server_symbol = "https://i.postimg.cc/dJgyvGH7/server-symbol.png"
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-18 11:00:11")}
+                'is_ready': CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None
+                }
 
     required_config_data = dedent("""
                                     """).strip('\n')
@@ -204,6 +207,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command(enabled=get_command_enabled("current_online_server"), aliases=['server', 'servers'])
     @allowed_channel_and_allowed_role()

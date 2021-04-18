@@ -1,7 +1,7 @@
 # region [Imports]
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
-from enum import Enum, Flag, auto, unique
+from enum import Enum, Flag, auto, unique, EnumMeta
 from functools import reduce, wraps, partial
 from operator import or_
 
@@ -88,6 +88,7 @@ class CogState(Flag):
     DOCUMENTATION_MISSING = auto()
     FOR_DEBUG = auto()
     EMPTY = auto()
+    WIP = auto()
 
     @classmethod
     def split(cls, combined_cog_state):
@@ -98,6 +99,17 @@ class CogState(Flag):
             if state is not cls.EMPTY and state in combined_cog_state:
                 _out.append(state)
         return _out
+
+    @property
+    def _flags(self):
+        _out = []
+        for member in self.__class__.__members__.values():
+            if member in self:
+                _out.append(member)
+        return _out
+
+    def serialize(self):
+        return [flag.name for flag in self._flags]
 
 
 @unique
@@ -113,3 +125,53 @@ class UpdateTypus(Flag):
     def ALL(cls):
         all_flags = [member for member in cls.__members__.values()]
         return reduce(or_, all_flags)
+
+
+@unique
+class CommandCategory(Flag):
+    GENERAL = auto()
+    ADMINTOOLS = auto()
+    DEVTOOLS = auto()
+    TEAMTOOLS = auto()
+    META = auto()
+
+    @classmethod
+    def _by_name(cls, in_value: str):
+        for name, value in cls.__members__.items():
+            if name.casefold() == in_value.casefold():
+                return cls(value)
+        raise ValueError(f"'{in_value}' is not a permitted value for '{cls.__name__}'")
+
+    @classmethod
+    def deserialize(cls, value):
+        _out = None
+        if isinstance(value, list):
+            for subvalue in value:
+                if _out is None:
+                    _out = cls._by_name(subvalue)
+                else:
+                    _out |= cls._by_name(subvalue)
+        elif isinstance(value, str):
+            if '|' in value:
+                return cls.deserialize(value.split('|'))
+            _out = cls._by_name(value)
+        return _out
+
+    @property
+    def _flags(self):
+        _out = []
+        for member in self.__class__.__members__.values():
+            if member in self:
+                _out.append(member)
+        return _out
+
+    def serialize(self):
+        return [flag.name for flag in self._flags]
+
+    def visibility_check(self, in_roles):
+        visibility_map = {CommandCategory.GENERAL: ['all'],
+                          CommandCategory.ADMINTOOLS: ['admin', 'admin lead'],
+                          CommandCategory.DEVTOOLS: ['admin', 'admin lead', 'dev helper', 'template helper', 'dev team', 'dev team lead'],
+                          CommandCategory.TEAMTOOLS: ['admin', 'admin lead'],
+                          CommandCategory.META: ['admin', 'admin lead']}
+        return any(role in visibility_map.get(self) for role in in_roles)

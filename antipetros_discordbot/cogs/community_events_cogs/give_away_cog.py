@@ -73,10 +73,13 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
     config_name = CONFIG_NAME
     give_away_data_file = pathmaker(APPDATA['json_data'], 'give_aways.json')
     give_away_item = GiveAwayEvent
-    docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-06 05:22:34",
-                             "8afa88580ca36d0f7f103683f1fe29c200a2981113b8bb4b8ef9d52a4129de62545f1db6fd27be8c26e2fb52408b9f0f62e07faa4e23adf8e8c5d8864da389b1")}
+
+    docattrs = {'show_in_readme': False,
+                'is_ready': CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
+
     required_config_data = dedent("""
                                   embed_thumbnail = https://upload.wikimedia.org/wikipedia/commons/6/62/Gift_box_icon.png
                                   """)

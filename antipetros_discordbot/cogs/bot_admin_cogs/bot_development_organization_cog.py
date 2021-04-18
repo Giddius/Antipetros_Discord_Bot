@@ -91,8 +91,13 @@ class BotDevOrgCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
     discussion_file = pathmaker(dev_org_folder, 'bot_discussion.json')
     proposals_file = pathmaker(dev_org_folder, 'proposals.json')
     bot_development_channel_id = 704838990011826197
+
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,)}
+                'is_ready': CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
+
     required_config_data = dedent("""
 
                                 """)

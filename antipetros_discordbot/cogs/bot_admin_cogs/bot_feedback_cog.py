@@ -121,8 +121,11 @@ class BotFeedbackCog(commands.Cog, command_attrs={'name': COG_NAME}):
     bot_feature_request_data_file = pathmaker(APPDATA['bot_feedback_data'], "bot_feature_requests.json")
     bot_bug_data_file = pathmaker(APPDATA["bot_feedback_data"], "bot_bugs.json")
 
-    docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
+    docattrs = {'show_in_readme': False,
+                'is_ready': CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                     """).strip('\n')

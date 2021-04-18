@@ -88,16 +88,21 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
     """
-    soon
-
+    Different interactions with saved Antistasi Community Server Logs. Works by connecting to and interacting with the Online Storage where the logs are saved.
     """
 # region [ClassAttributes]
 
     config_name = CONFIG_NAME
     already_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-18 11:00:11")}
+                'is_ready': CogState.WORKING | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
+
+                'extra_description': dedent("""
+                                            Is not real time, in regards to getting new log files, it can have a delay of up to 10 min.
+                                            **Currently the framework to interact with the Online Storage is not as stable as it needs be, so there could be intermitten errors with the commands of this cog.
+                                            If they persist, please contact <@576522029470056450>**
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                   log_file_warning_size_threshold = 200mb,
@@ -215,7 +220,6 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Listener]
 
 # region [Commands]
-
 
     def _transform_mod_name(self, mod_name: str):
         mod_name = mod_name.removeprefix('@')

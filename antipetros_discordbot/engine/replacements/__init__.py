@@ -1,2 +1,3 @@
 from .command_replacements import AntiPetrosBaseCommand, AntiPetrosFlagCommand, auto_meta_info_command, AntiPetrosBaseGroup, auto_meta_info_group
-from .help_replacement import BaseCustomHelpCommand
+from .help_replacement import AntiPetrosBaseHelp
+from .context_replacement import AntiPetrosBaseContext

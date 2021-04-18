@@ -113,6 +113,14 @@ class AntistasiInformer(SubSupportBase):
     def antistasi_guild(self):
         return self.bot.get_guild(self.general_data.get('antistasi_guild_id'))
 
+    @ property
+    def blacklisted_users(self):
+        return loadjson(APPDATA['blacklist.json'])
+
+    def blacklisted_user_ids(self):
+        for user_item in self.blacklisted_users:
+            yield user_item.get('id')
+
     async def get_message_directly(self, channel_id: int, message_id: int) -> discord.Message:
         channel = await self.channel_from_id(channel_id)
         return await channel.fetch_message(message_id)

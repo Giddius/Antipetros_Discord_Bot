@@ -46,7 +46,7 @@ MovieQuoteItem = namedtuple('MovieQuoteItem', ["quote", "movie", "type", "year"]
 RegexItem = namedtuple('RegexItem', ['name', 'raw', 'compiled'], defaults=(None,))
 
 
-ColorItem = namedtuple('ColorItem', ['name', 'hex', 'hex_alt', 'hsv', 'hsv_norm', 'int', 'rgb', 'rgb_norm', 'discord_color'])
+ColorItem = namedtuple('ColorItem', ['name', 'hex', 'hex_alt', 'hsv', 'hsv_norm', 'int', 'rgb', 'rgb_norm', 'discord_color'], defaults=(None, None, None, None, None, None, None, None, None))
 
 
 FlagItem = namedtuple('FlagItem', ['name', 'value'])

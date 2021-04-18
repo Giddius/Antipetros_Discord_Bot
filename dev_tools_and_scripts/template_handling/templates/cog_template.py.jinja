@@ -17,7 +17,7 @@ import subprocess
 from enum import Enum, Flag, auto, unique
 from time import sleep
 from pprint import pprint, pformat
-from typing import Union, TYPE_CHECKING
+from typing import Optional,Union,Any,TYPE_CHECKING,Callable,Iterable,List,Dict,Set,Tuple,Mapping
 from datetime import tzinfo, datetime, timezone, timedelta
 from functools import wraps, lru_cache, singledispatch, total_ordering, partial
 from contextlib import contextmanager
@@ -54,7 +54,7 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel,async_write_json, async_load_json
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper

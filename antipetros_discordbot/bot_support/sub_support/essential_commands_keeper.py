@@ -71,6 +71,18 @@ class EssentialCommandsKeeper(SubSupportBase):
 
         glog.class_init_notification(log, self)
 
+    def refresh_command(self, command: commands.Command):
+        self.bot.remove_command(command.name)
+        self.bot.add_command(command)
+
+    async def not_implemented(self, ctx: commands.Context):
+        embed_data = await self.bot.make_generic_embed(title='NOT IMPLEMENTED',
+                                                       description='Sorry but the command is a Placeholder and is not yet implemented',
+                                                       author='bot_author',
+                                                       footer='feature_request_footer',
+                                                       thumbnail="under_construction")
+        await ctx.send(**embed_data)
+
     @property
     def shutdown_message_channel(self):
         channel_name = BASE_CONFIG.retrieve("shutdown_message", "channel_name", typus=str, direct_fallback='bot-commands')

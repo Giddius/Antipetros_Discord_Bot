@@ -82,8 +82,8 @@ from discord.ext import commands, tasks
 
 
 import gidlogger as glog
-from marshmallow import Schema, fields
-
+from marshmallow import Schema, fields, pre_load
+from antipetros_discordbot.utility.enums import CommandCategory
 # endregion[Imports]
 
 # region [TODO]
@@ -128,9 +128,14 @@ class CommandSchema(Schema):
     allowed_roles = fields.List(fields.Str())
     allowed_in_dms = fields.Bool()
     allowed_members = fields.List(fields.Str())
+    parent = fields.Nested(lambda: CommandSchema(), default=None)
+    categories = fields.Method('cast_category')
 
+    def cast_category(self, obj):
+        return obj.categories.serialize()
 
 # region[Main_Exec]
+
 
 if __name__ == '__main__':
     pass

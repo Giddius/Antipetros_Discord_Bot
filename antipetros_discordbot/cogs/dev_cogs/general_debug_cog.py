@@ -89,9 +89,10 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING | CogState.FOR_DEBUG,
-                             "2021-02-06 05:26:32",
-                             "a296317ad6ce67b66c11e18769b28ef24060e5dac5a0b61a9b00653ffbbd9f4e521b2481189f075d029a4e9745892052413d2364e0666a97d9ffc7561a022b07")}
+                'is_ready': CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING | CogState.FOR_DEBUG,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
     required_config_data = dedent("""
                                   """)
 

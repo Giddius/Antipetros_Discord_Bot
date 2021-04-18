@@ -304,8 +304,11 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
     full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
     config_name = CONFIG_NAME
     team_item_data_file = pathmaker(APPDATA['json_data'], "team_items.json")
-    docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
+    docattrs = {'show_in_readme': False,
+                'is_ready': CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                     """).strip('\n')

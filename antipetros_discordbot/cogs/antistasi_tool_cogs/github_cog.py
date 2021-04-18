@@ -129,7 +129,10 @@ class GithubCog(commands.Cog, command_attrs={'name': COG_NAME}):
     antistasi_base_file_url = "https://github.com/official-antistasi-community/A3-Antistasi/blob/"
     antistasi_repo_identifier = "official-antistasi-community/A3-Antistasi"
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
+                'is_ready': CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                     """).strip('\n')

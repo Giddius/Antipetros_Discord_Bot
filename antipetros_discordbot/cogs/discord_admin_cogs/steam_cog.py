@@ -66,7 +66,10 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.CRASHING | CogState.DOCUMENTATION_MISSING,)}
+                'is_ready': CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.CRASHING | CogState.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                   """)

@@ -67,10 +67,13 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
     config_name = CONFIG_NAME
     allowed_stamp_formats = set(loadjson(APPDATA["image_file_extensions.json"]))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
+
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
-                             "2021-02-06 05:09:20",
-                             "f166431cb83ae36c91d70d7d09020e274a7ebea84d5a0c724819a3ecd2230b9eca0b3e14c2d473563d005671b7a2bf9d87f5449544eb9b57bcab615035b0f83d")}
+                'is_ready': CogState.WORKING | CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
+
     required_config_data = dedent("""  avatar_stamp = ASLOGO1
                                 avatar_stamp_fraction = 0.2
                                 stamps_margin = 5

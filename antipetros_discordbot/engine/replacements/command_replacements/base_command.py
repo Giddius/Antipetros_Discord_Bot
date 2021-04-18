@@ -87,10 +87,10 @@ import gidlogger as glog
 
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
+from antipetros_discordbot.utility.enums import CommandCategory
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from .helper import JsonMetaDataProvider, JsonAliasProvider, SourceCodeProvider
+from .helper import JsonMetaDataProvider, JsonAliasProvider, SourceCodeProvider, JsonCategoryProvider
 from antipetros_discordbot.utility.misc import highlight_print
 from antipetros_discordbot.utility.data import COG_CHECKER_ATTRIBUTE_NAMES
 # endregion[Imports]
@@ -126,6 +126,7 @@ class AntiPetrosBaseCommand(commands.Command):
     meta_data_provider = JsonMetaDataProvider()
     alias_data_provider = JsonAliasProvider()
     source_code_data_provider = SourceCodeProvider()
+    category_provider = JsonCategoryProvider()
     bot_mention_placeholder = '@BOTMENTION'
     gif_folder = APPDATA['gifs']
     example_split_regex = re.compile(r"example\:\n", re.IGNORECASE)
@@ -135,10 +136,12 @@ class AntiPetrosBaseCommand(commands.Command):
         self.extra_aliases = kwargs.pop("aliases", None)
         self.data_getters = {'meta_data': self.meta_data_provider.get_auto_provider(self),
                              'alias': self.alias_data_provider.get_auto_provider(self),
-                             'source_code': self.source_code_data_provider.get_auto_provider(self)}
+                             'source_code': self.source_code_data_provider.get_auto_provider(self),
+                             'category': self.category_provider.get_auto_provider(self)}
 
         self.data_setters = {'meta_data': self.meta_data_provider.set_auto_provider(self),
-                             'alias': self.alias_data_provider.set_auto_provider(self)}
+                             'alias': self.alias_data_provider.set_auto_provider(self),
+                             'category': self.category_provider.set_auto_provider(self)}
 
         self.data_removers = {'alias': self.alias_data_provider.remove_auto_provider(self)}
         self._old_data = {'help': None,
@@ -150,9 +153,19 @@ class AntiPetrosBaseCommand(commands.Command):
 
         super().__init__(func, **kwargs)
         self.module_object = sys.modules[func.__module__]
+        self.categories = kwargs.get('categories')
 
     async def get_source_code_image(self):
         return await asyncio.to_thread(self.data_getters['source_code'], typus='image')
+
+    @property
+    def categories(self):
+        return self.data_getters['category']()
+
+    @categories.setter
+    def categories(self, value):
+        if value is not None:
+            self.data_setters['category'](value)
 
     @property
     def enabled(self):

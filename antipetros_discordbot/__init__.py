@@ -43,6 +43,8 @@ def set_env():
     _mem_item = virtual_memory()
     memory_in_use = _mem_item.total - _mem_item.available
     os.environ['INITIAL_MEMORY_USAGE'] = str(memory_in_use)
+    os.environ['BOT_CREATOR_NAME'] = "Giddi"
+    os.environ['BOT_CREATOR_ID'] = "576522029470056450"
 
 
 set_env()

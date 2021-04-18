@@ -21,8 +21,10 @@ from rich import print as rprint, inspect as rinspect, progress_bar
 from rich.progress import track
 from timeit import Timer, timeit
 from zipfile import ZipFile, ZIP_LZMA
-
-
+from importlib import import_module
+from inspect import getmembers, ismodule
+import isort
+from pyclbr import readmodule, readmodule_ex
 GIT_EXE = shutil.which('git.exe')
 
 
@@ -143,7 +145,8 @@ FOLDER = {'docs': pathmaker(THIS_FILE_DIR, 'docs'),
           'docs_raw_text': pathmaker(THIS_FILE_DIR, 'docs', 'resources', 'raw_text'),
           'scratches': pathmaker(THIS_FILE_DIR, 'tools', 'scratches'),
           'archived_scratches': pathmaker(THIS_FILE_DIR, 'misc', 'archive', 'archived_scratches'),
-          'cogs': pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'cogs')}
+          'cogs': pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'cogs'),
+          'venv_setup_settings': pathmaker(THIS_FILE_DIR, 'tools', 'venv_setup_settings')}
 
 FILES = {'bot_info.json': pathmaker(FOLDER.get('docs_data'), 'bot_info.json'),
          'command_data.json': pathmaker(FOLDER.get('docs_data'), 'command_data.json'),
@@ -854,3 +857,74 @@ def message_hi(c):
 
     print(client.loop.run_until_complete(request_thing))
     client.loop.run_until_complete(client.session.close())
+
+
+def get_all_members(in_object):
+
+    o_name = in_object.__name__
+    _out = {o_name: []}
+
+    for name, subobject in getmembers(in_object):
+        if not name.startswith('_') and not name.endswith('_'):
+            try:
+                if in_object.__name__ in subobject.__module__:
+                    _out[o_name].append(name)
+            except AttributeError:
+                if ismodule(subobject):
+                    print(f" {subobject.__name__} ".center(50, 'm'))
+                elif isinstance(subobject, (str, int, float, tuple, set, list, dict)):
+                    print(f" {name} ".center(50, 'c'))
+
+    return _out
+
+
+def isort_config():
+    pyproject = toml.load(pathmaker(THIS_FILE_DIR, 'pyproject.toml'))
+    return pyproject.get('tool', {}).get('isort', {})
+
+
+@task
+def module_members(c, module_name):
+    output_folder = pathmaker(FOLDER.get('scratches'), "module_import_data")
+    if os.path.isdir(output_folder) is False:
+        os.makedirs(output_folder)
+    module = import_module(module_name)
+    all_members = get_all_members(module)
+
+    text = []
+    for key, member_list in all_members.items():
+        text.append(f"from {key} import {', '.join(member_list)}")
+    code_string = isort.code('\n'.join(text), **isort_config())
+    with open(pathmaker(output_folder, f"{module_name.replace('.','_')}_members.py"), 'w') as f:
+        f.write(code_string)
+
+
+def process_pip_freeze_data(in_data: str):
+    _out = {}
+    for line in in_data.splitlines():
+        if line != '' and not "@ git" in line and not "@ file" in line:
+            name, version = line.split('==')
+            _out[name.strip().casefold()] = line.strip()
+    return _out
+
+
+@task
+def pin_reqs(c):
+    req_line_regex = re.compile(r"\=\=|\>\=|\<\=|\~\=|\!\=", re.IGNORECASE)
+    req_files = []
+    for file in os.scandir(FOLDER.get('venv_setup_settings')):
+        if file.is_file() and file.name.startswith('required_') and 'personal_packages' not in file.name.casefold() and not 'from_github' in file.name.casefold():
+            req_files.append(pathmaker(file.path))
+    pip_freeze_data = process_pip_freeze_data(activator_run(c, 'pip freeze').stdout)
+    for req_file in req_files:
+        new_req_file_content = []
+        for line in readit(req_file).splitlines():
+            line = line.casefold()
+            if line != '' and not line.startswith('https:'):
+                name = req_line_regex.split(line)[0]
+                for pinned_req_name, pinned_req_line in pip_freeze_data.items():
+                    if name.casefold() == pinned_req_name:
+                        line = pinned_req_line
+            new_req_file_content.append(line)
+        with open(req_file, 'w') as f:
+            f.write('\n'.join(new_req_file_content))

@@ -271,8 +271,11 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
     config_name = CONFIG_NAME
     reaction_instructions_data_file = pathmaker(APPDATA['json_data'], "message_reaction_instructions_dat.json")
     custom_emoji_regex = re.compile(r"\<\:(?P<name>.*)\:(?P<id>\d+)\>")
-    docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
+    docattrs = {'show_in_readme': False,
+                'is_ready': CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                     """).strip('\n')

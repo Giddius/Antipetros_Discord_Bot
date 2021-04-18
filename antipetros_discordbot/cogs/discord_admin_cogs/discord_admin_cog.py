@@ -73,8 +73,13 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     config_name = CONFIG_NAME
     announcements_channel_id = 645930607683174401
     community_subscriber_role_id = 827937724341944360
+
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.DOCUMENTATION_MISSING,)}
+                'is_ready': CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
+
     required_config_data = dedent("""
                                   """)
     # endregion[ClassAttributes]

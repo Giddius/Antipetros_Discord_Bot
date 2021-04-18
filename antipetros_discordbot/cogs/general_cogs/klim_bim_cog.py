@@ -28,11 +28,12 @@ from antipetros_discordbot.utility.misc import is_even, make_config_name
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker, Seperators
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import make_box
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command, auto_meta_info_group, AntiPetrosBaseGroup, AntiPetrosBaseCommand, AntiPetrosFlagCommand
-from antipetros_discordbot.utility.gidtools_functions import bytes2human
+from antipetros_discordbot.utility.gidtools_functions import bytes2human, loadjson, writejson
 from antipetros_discordbot.utility.exceptions import ParseDiceLineError
 
 # endregion[Imports]
@@ -79,14 +80,16 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING,
-                             "2021-02-06 03:32:39",
-                             "05703df4faf098a7f3f5cea49c51374b3225162318b081075eb0745cc36ddea6ff11d2f4afae1ac706191e8db881e005104ddabe5ba80687ac239ede160c3178")}
+                'is_ready': CogState.WORKING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                         coin_image_heads = https://i.postimg.cc/XY4fhCf5/antipetros-coin-head.png,
                                         coin_image_tails = https://i.postimg.cc/HsQ0B2yH/antipetros-coin-tails.png""")
     dice_statement_regex = re.compile(r"(?P<amount>\d+)(?P<dice_type>d\d+)", re.IGNORECASE)
+    music_data_file = APPDATA['youtube_music_links.json']
     # endregion [ClassAttributes]
 
     # region [Init]
@@ -112,6 +115,9 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
 # region [Properties]
 
+    @property
+    def youtube_links(self):
+        return loadjson(self.music_data_file)
 
 # endregion [Properties]
 
@@ -139,7 +145,6 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 # endregion [Listener]
 
 # region [Commands]
-
 
     @ auto_meta_info_command(enabled=get_command_enabled('the_dragon'))
     @ allowed_channel_and_allowed_role()
@@ -461,6 +466,15 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
                                                            thumbnail="random")
             await ctx.reply(**embed_data)
 
+    @auto_meta_info_command(enabled=get_command_enabled('random_music'), aliases=['music', 'good_music'])
+    @allowed_channel_and_allowed_role(False)
+    async def random_music(self, ctx: commands.Context):
+        data = self.youtube_links
+        selection = random.choice(list(data.keys()))
+        band, song_title = selection.split('-')
+        link = data.get(selection)
+        await ctx.send(make_box(f"**Band:** {band.strip()}\n**Title:** {song_title.strip()}") + f"\n\n{link}", allowed_mentions=AllowedMentions.none())
+
 # endregion [Commands]
 
 # region [DataStorage]
@@ -477,6 +491,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

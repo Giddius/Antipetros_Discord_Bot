@@ -19,6 +19,8 @@ import validator_collection
 import discord
 from discord.ext import commands
 from aiohttp.client_exceptions import ClientConnectionError
+from colormap.colors import HEX, Color, Colormap, hex2dec, hex2rgb, hex2web, hls2rgb, hsv2rgb, rgb2hex, rgb2hls, rgb2hsv, rgb2yuv, web2hex, yuv2rgb, rgb2yuv_int, yuv2rgb_int, to_intensity
+
 # * Gid Imports ----------------------------------------------------------------------------------------->
 # * Gid Imports -->
 import gidlogger as glog
@@ -512,3 +514,19 @@ async def make_other_source_code_images(file_content: str, lexer: str = 'guess',
                                                                                    font_size=20,
                                                                                    line_number_bold=True))
     return image
+
+
+def hex_to_rgb(color: str, normalized: bool = False):
+    return hex2rgb(color, normalise=normalized)
+
+
+def hex_to_int(color: str):
+    return int(color.removeprefix('#'), 16)
+
+
+def rgb_to_hsv(color: Tuple[int], normalized: bool = False):
+    return rgb2hsv(*color, normalised=normalized)
+
+
+def hex_to_hex_alt(color: str):
+    return color.replace('#', '0x')

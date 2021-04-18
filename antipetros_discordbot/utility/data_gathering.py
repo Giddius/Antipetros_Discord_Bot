@@ -81,7 +81,7 @@ def save_cog_command_data(cog, output_file=None):
     command_json[str(cog)] = {'file_path': pathmaker(inspect.getfile(cog.__class__)).split('site-packages')[-1].strip('/'),
                               'description': dedent(str(inspect.getdoc(cog.__class__))),
                               "commands": {},
-                              "state": str(cog.docattrs.get('is_ready')[0]).replace('CogState.', '').split('|'),
+                              "state": cog.docattrs.get('is_ready').serialize(),
                               'config_name': cog.config_name}
 
     for command in cog.get_commands():
@@ -101,7 +101,8 @@ def save_cog_command_data(cog, output_file=None):
                                                                         'brief': command.brief,
                                                                         'gif': get_gif(command),
                                                                         'example': command.example if hasattr(command, 'example') else None,
-                                                                        'is_group': False}
+                                                                        'is_group': False,
+                                                                        'categories': command.categories}
             if isinstance(command, AntiPetrosBaseGroup):
                 command_json[str(cog)]["commands"][command.name.strip()]['is_group'] = True
                 command_json[str(cog)]["commands"][command.name.strip()]['subcommands'] = {}
@@ -121,7 +122,8 @@ def save_cog_command_data(cog, output_file=None):
                                                                                                                             'help': subcommand.help,
                                                                                                                             'brief': subcommand.brief,
                                                                                                                             'gif': get_gif(command),
-                                                                                                                            'example': subcommand.example if hasattr(command, 'example') else None}
+                                                                                                                            'example': subcommand.example if hasattr(command, 'example') else None,
+                                                                                                                            'categories': command.categories}
         except AttributeError as error:
             print('!' * 25)
             print(command.name)

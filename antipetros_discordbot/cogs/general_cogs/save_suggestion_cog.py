@@ -88,9 +88,10 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     auto_accept_user_file = pathmaker(APPDATA["json_data"], "auto_accept_suggestion_users.json")
 
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-06 03:41:58",
-                             "82a2afc155a40808a8e2dcf7385bb5db0769ff2bf8e08f1829b97bfc58551531ebc0deeb178e850b3fb89cbe55522812226865fac0b389a082992130de175fcb")}
+                'is_ready': CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                         suggestion_reaction_listener_enabled = yes

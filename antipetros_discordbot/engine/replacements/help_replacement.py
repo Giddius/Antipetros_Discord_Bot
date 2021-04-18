@@ -15,5 +15,5 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 
 
-class BaseCustomHelpCommand(MinimalHelpCommand):
+class AntiPetrosBaseHelp(MinimalHelpCommand):
     pass

@@ -98,7 +98,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class SendMessageAwareContext(commands.Context):
+class AntiPetrosBaseContext(commands.Context):
     pass
 
 

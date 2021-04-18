@@ -1,4 +1,5 @@
 ZERO_WIDTH = '\u200b'
+SPECIAL_SPACE = '\u00A0'
 
 
 class ListMarker:
@@ -20,6 +21,10 @@ class ListMarker:
     arrow_two = '⇉'
     arrow_three = '⇶'
     bullet = '•'
+    vertical_bar = '▏'
+    vertical_bar_long = '│'
+    vertical_bar_thick = '┃'
+    connector_round = '╰'
 
 
 class Seperators:
@@ -29,6 +34,6 @@ class Seperators:
     line = '─'
 
     @classmethod
-    def make_line(cls, character_name: str, amount: int = 15):
+    def make_line(cls, character_name: str = 'line', amount: int = 15):
         character = getattr(cls, character_name)
         return character * amount

@@ -90,10 +90,12 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     config_name = CONFIG_NAME
     config_dir = APPDATA['config']
     alias_file = APPDATA['command_aliases.json']
+
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
-                             "2021-02-06 05:24:31",
-                             "87f320af11ad9e4bd1743d9809c3af554bedab8efe405cd81309088960efddba539c3a892101943902733d783835373760c8aabbcc2409db9403366373891baf")}
+                'is_ready': CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
     required_config_data = dedent("""
                                   notify_when_changed = yes
                                   notify_via = bot-testing

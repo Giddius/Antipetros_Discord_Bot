@@ -157,8 +157,10 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     config_name = CONFIG_NAME
     topics_data_file = pathmaker(APPDATA['json_data'], 'subscription_topics_data.json')
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-06 05:19:50")}
+                'is_ready': CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                   """)

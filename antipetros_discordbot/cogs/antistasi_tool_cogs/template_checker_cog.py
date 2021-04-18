@@ -97,8 +97,10 @@ class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME}):
     config_name = CONFIG_NAME
     already_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-18 11:00:11")}
+                'is_ready': CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
 

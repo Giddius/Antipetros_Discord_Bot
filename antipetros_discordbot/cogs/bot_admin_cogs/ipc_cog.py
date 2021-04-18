@@ -61,11 +61,11 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, auto_meta_info_command, AntiPetrosBaseGroup, AntiPetrosFlagCommand
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
-from antipetros_discordbot.schemas.command_schema import CommandSchema
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -119,8 +119,11 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     config_name = CONFIG_NAME
 
-    docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
+    docattrs = {'show_in_readme': False,
+                'is_ready': CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                     """).strip('\n')
@@ -198,16 +201,14 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
         return _out
 
     @auto_meta_info_command()
-    async def serialize_commands(self, ctx: commands.Context):
-        all_commands = []
-        schema = CommandSchema()
-        for command in self.bot.commands:
-            if hasattr(command, 'example') and command.example not in ['NA', None, '']:
-                print(command.example)
-            all_commands.append(schema.dump(command))
-        await async_write_json(all_commands, 'command_dump_check.json')
-        await ctx.send(f"Dumped {len(all_commands)} Commands to `command_dump_check.json`")
+    async def serialize_config(self, ctx: commands.Context):
+        base_config_dict = await BASE_CONFIG.async_to_dict()
+        await async_write_json(base_config_dict, 'base_config_check.json')
+        await ctx.send("Dumped `BASE_CONFIG` to `base_config_check.json`")
 
+        cogs_config_dict = await COGS_CONFIG.async_to_dict()
+        await async_write_json(cogs_config_dict, 'cogs_config_check.json')
+        await ctx.send("Dumped `COGS_CONFIG` to `cogs_config_check.json`")
 # endregion [Commands]
 
 # region [DataStorage]

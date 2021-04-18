@@ -135,8 +135,12 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     config_name = CONFIG_NAME
     antistasi_guild_id = 449481990513754112
+
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
+                'is_ready': CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                     """).strip('\n')
@@ -207,6 +211,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command(enabled=get_command_enabled('info_bot'))
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
@@ -312,7 +317,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
             embed_data = await self.bot.make_generic_embed(title=member.name, description=f"The one and only {member.mention}", thumbnail=str(member.avatar_url), fields=fields, color=member.color)
             await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
-    @auto_meta_info_command(enabled=get_command_enabled('info_me'))
+    @auto_meta_info_command(enabled=get_command_enabled('info_me'), hidden=True)
     @owner_or_admin(False)
     async def info_other(self, ctx: commands.Context, member_id: int):
         async with ctx.typing():
@@ -368,7 +373,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                     await ctx.send(file=gif_file)
                 await asyncio.sleep(2)
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(hidden=True)
     @has_attachments(1)
     async def code_file_to_image(self, ctx: commands.Context, as_codeblock: str = None):
         file = ctx.message.attachments[0]
@@ -396,6 +401,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
 
     async def _get_command_gif(self, command_name):
         gif_name = f"{command_name}_command.gif"
