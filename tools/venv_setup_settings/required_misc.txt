@@ -11,10 +11,14 @@ asyncstdlib
 autopep8
 beautifulsoup4
 click
+colormap
 cryptography
 dateparser
+discord-ext-ipc
 discord-flags
+discord.py
 dpytest
+easydev
 emoji
 fuzzywuzzy
 gidappdata

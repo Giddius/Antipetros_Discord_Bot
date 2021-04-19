@@ -1,6 +1,8 @@
-pytest-asyncio==0.14.0
-pytest-click==1.0.2
-pytest-cov==2.11.1
-pytest-qt==3.3.0
-pytest-venv==0.2.1
-pytest==6.2.3
+pytest
+pytest-asyncio
+pytest-click
+pytest-cov
+pytest-flask
+pytest-mock
+pytest-qt
+pytest-venv
