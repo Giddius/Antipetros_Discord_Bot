@@ -34,11 +34,11 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, split_camel_case_string, async_dict_items_iterator, async_list_iterator, async_load_json, async_write_it
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
@@ -88,16 +88,21 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
     """
-    soon
-
+    Different interactions with saved Antistasi Community Server Logs. Works by connecting to and interacting with the Online Storage where the logs are saved.
     """
 # region [ClassAttributes]
 
     config_name = CONFIG_NAME
     already_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-18 11:00:11")}
+                'is_ready': CogMetaStatus.WORKING | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
+
+                'extra_description': dedent("""
+                                            Is not real time, in regards to getting new log files, it can have a delay of up to 10 min.
+                                            **Currently the framework to interact with the Online Storage is not as stable as it needs be, so there could be intermitten errors with the commands of this cog.
+                                            If they persist, please contact <@576522029470056450>**
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                   log_file_warning_size_threshold = 200mb,
@@ -216,7 +221,6 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
-
     def _transform_mod_name(self, mod_name: str):
         mod_name = mod_name.removeprefix('@')
         return mod_name
@@ -230,7 +234,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
         mod_data = await log_item.mod_data
         templ_data = []
         template = await self.bot.execute_in_thread(self.jinja_env.get_template, 'arma_required_mods.html.jinja')
-        async for item in async_list_iterator(mod_data):
+        for item in mod_data:
             transformed_mod_name = self._transform_mod_name(item)
             templ_data.append(self.mod_lookup_data.get(transformed_mod_name))
         with TemporaryDirectory() as tempdir:
@@ -240,7 +244,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
             yield html_file
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 120, commands.BucketType.member)
     async def get_newest_mod_data(self, ctx: commands.Context, server: str = 'mainserver_1'):
         """
@@ -274,7 +278,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
             await ctx.send(file=html_file)
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def get_newest_logs(self, ctx, server: str = 'mainserver_1', sub_folder: str = 'server', amount: int = 1):
         """
         Gets the newest log files from the Dev Drive.

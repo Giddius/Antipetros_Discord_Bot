@@ -1,7 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <title>{{ doc_title }}</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+            {% block style %}
+            {% endblock style %}
+        </style>
     </head>
     <body>
         {% block body %} {% endblock %}

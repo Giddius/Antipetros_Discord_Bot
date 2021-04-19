@@ -56,18 +56,18 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, async_split_camel_case_string, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.exceptions import CustomEmojiError, NameInUseError
-
+from antipetros_discordbot.abstracts import BaseReactionInstruction
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -111,29 +111,6 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 _from_cog_config = CogConfigReadOnly(CONFIG_NAME)
 
 # endregion [Helper]
-
-
-class BaseReactionInstruction:
-    bot = None
-
-    def __init__(self, name: str, emojis: List):
-        self.name = name
-        self.emojis = emojis
-
-    async def __call__(self, msg: discord.Message):
-        if await self.check_trigger(msg) is True:
-            for emoji in self.emojis:
-                await msg.add_reaction(emoji)
-
-    @classmethod
-    async def from_dict(cls, **kwargs):
-        return cls(**kwargs)
-
-    def __str__(self) -> str:
-        return self.__class__.__name__
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.emojis})"
 
 
 class ChannelReactionInstruction(BaseReactionInstruction):
@@ -294,8 +271,11 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
     config_name = CONFIG_NAME
     reaction_instructions_data_file = pathmaker(APPDATA['json_data'], "message_reaction_instructions_dat.json")
     custom_emoji_regex = re.compile(r"\<\:(?P<name>.*)\:(?P<id>\d+)\>")
-    docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
+    docattrs = {'show_in_readme': False,
+                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                     """).strip('\n')
@@ -312,6 +292,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
         self.reaction_instructions = None
         BaseReactionInstruction.bot = self.bot
         self.ready = False
+
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -350,6 +331,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Listener]
 
+
     @commands.Cog.listener(name='on_message')
     async def add_reaction_to_message_sorter_listener(self, msg: discord.Message):
         if self.ready is False:
@@ -366,6 +348,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command()
     @owner_or_admin(False)

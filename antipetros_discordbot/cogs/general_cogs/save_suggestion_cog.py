@@ -22,7 +22,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import make_config_name
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, allowed_requester
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_channel_and_allowed_role, owner_or_admin, allowed_requester
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.named_tuples import SUGGESTION_DATA_ITEM
 from antipetros_discordbot.utility.embed_helpers import EMBED_SYMBOLS, DEFAULT_FOOTER, make_basic_embed
@@ -30,9 +30,10 @@ from antipetros_discordbot.utility.sqldata_storager import AioSuggestionDataStor
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.id_generation import make_full_cog_id
+from antipetros_discordbot.engine.replacements import auto_meta_info_command
 # endregion[Imports]
 
 # region [Logging]
@@ -87,9 +88,10 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     auto_accept_user_file = pathmaker(APPDATA["json_data"], "auto_accept_suggestion_users.json")
 
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-06 03:41:58",
-                             "82a2afc155a40808a8e2dcf7385bb5db0769ff2bf8e08f1829b97bfc58551531ebc0deeb178e850b3fb89cbe55522812226865fac0b389a082992130de175fcb")}
+                'is_ready': CogMetaStatus.WORKING | CogMetaStatus.OPEN_TODOS | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                         suggestion_reaction_listener_enabled = yes
@@ -265,8 +267,8 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
 # region [Commands]
 
-    @ commands.command(aliases=get_aliases("mark_discussed"), enabled=get_command_enabled("mark_discussed"))
-    @ allowed_channel_and_allowed_role_2(in_dm_allowed=True)
+    @auto_meta_info_command()
+    @ allowed_channel_and_allowed_role(in_dm_allowed=True)
     async def mark_discussed(self, ctx, *suggestion_ids: int):
         embed_dict = {}
         for suggestion_id in suggestion_ids:
@@ -274,8 +276,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             embed_dict['message_with_id_' + str(suggestion_id)] = 'was marked as discussed'
         await ctx.send(embed=await make_basic_embed(title='Marked Suggestions as discussed', text='The following items were marked as discussed: ', symbol='update', ** embed_dict))
 
-    @ commands.command(aliases=get_aliases("clear_all_suggestions"), enabled=get_command_enabled("clear_all_suggestions"))
-    @ owner_or_admin()
+    @ auto_meta_info_command()
     async def clear_all_suggestions(self, ctx, sure: bool = False):
         if sure is False:
             question_msg = await ctx.send("Do you really want to delete all saved suggestions?\n\nANSWER **YES** in the next __30 SECONDS__")
@@ -293,7 +294,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         else:
             await self._clear_suggestions(ctx, 'yes')
 
-    @ commands.command(aliases=get_aliases("auto_accept_suggestions"), **get_doc_data("auto_accept_suggestions"))
+    @ auto_meta_info_command()
     @ commands.dm_only()
     async def auto_accept_suggestions(self, ctx):
         if str(ctx.author.id) in self.auto_accept_user_dict:
@@ -306,7 +307,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         # Todo: make as embed
         await ctx.send("I added you to the auto accept suggestion list")
 
-    @ commands.command(aliases=get_aliases("unsave_suggestion"), **get_doc_data("unsave_suggestion"))
+    @ auto_meta_info_command()
     @ commands.dm_only()
     async def unsave_suggestion(self, ctx, suggestion_id: int):
         if suggestion_id not in await self.saved_messages():
@@ -347,8 +348,8 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             await ctx.send('No answer received, aborting request, you can always try again')
             return
 
-    @ commands.command(aliases=get_aliases("get_all_suggestions"), **get_doc_data("get_all_suggestions"))
-    @ allowed_channel_and_allowed_role_2(in_dm_allowed=True)
+    @ auto_meta_info_command()
+    @ allowed_channel_and_allowed_role(in_dm_allowed=True)
     async def get_all_suggestions(self, ctx, report_template: str = "basic_report.html.jinja"):
 
         query = await self.data_storage_handler.get_all_suggestion_not_discussed()
@@ -372,7 +373,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             log.debug('sending file')
             await ctx.send(file=file)
 
-    @ commands.command(aliases=get_aliases("remove_all_userdata"), **get_doc_data("remove_all_userdata"))
+    @ auto_meta_info_command()
     @ commands.dm_only()
     async def remove_all_userdata(self, ctx):
         user = ctx.author
@@ -409,7 +410,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             await ctx.send('No answer received, aborting request, you can always try again')
             return
 
-    @ commands.command(aliases=get_aliases("request_my_data"), **get_doc_data("request_my_data"))
+    @ auto_meta_info_command()
     @ commands.dm_only()
     async def request_my_data(self, ctx):
         user = ctx.author

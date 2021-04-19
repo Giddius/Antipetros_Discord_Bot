@@ -29,7 +29,7 @@ from antipetros_discordbot.utility.checks import allowed_requester, command_enab
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writejson, bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_config_cog import AddedAliasChangeEvent
@@ -90,10 +90,12 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
     config_name = CONFIG_NAME
     config_dir = APPDATA['config']
     alias_file = APPDATA['command_aliases.json']
+
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
-                             "2021-02-06 05:24:31",
-                             "87f320af11ad9e4bd1743d9809c3af554bedab8efe405cd81309088960efddba539c3a892101943902733d783835373760c8aabbcc2409db9403366373891baf")}
+                'is_ready': CogMetaStatus.OPEN_TODOS | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
     required_config_data = dedent("""
                                   notify_when_changed = yes
                                   notify_via = bot-testing
@@ -118,7 +120,6 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         """
         standard setup async method.
@@ -137,7 +138,6 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 # endregion [Setup]
 
 # region [Properties]
-
 
     @property
     def existing_configs(self):
@@ -202,7 +202,6 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
 
 # region [Commands]
 
-
     @auto_meta_info_command(enabled=True)
     @commands.is_owner()
     @log_invoker(log, 'info')
@@ -242,42 +241,42 @@ class ConfigCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
         else:
             await self.send_config_file(ctx, config_name)
 
-    @ commands.command(aliases=get_aliases("overwrite_config_from_file"))
-    @commands.is_owner()
-    @log_invoker(log, 'critical')
+    @auto_meta_info_command()
+    @ commands.is_owner()
+    @ log_invoker(log, 'critical')
     async def overwrite_config_from_file(self, ctx):
         """
         NOT IMPLEMENTED
         """
         await self.bot.not_implemented(ctx)
 
-    @commands.command(aliases=get_aliases("change_setting_to"))
-    @commands.is_owner()
+    @ auto_meta_info_command()
+    @ commands.is_owner()
     async def change_setting_to(self, ctx, config, section, option, value):
         """
         NOT IMPLEMENTED
         """
         await self.bot.not_implemented(ctx)
 
-    @commands.command(aliases=get_aliases("show_config_content"))
-    @commands.is_owner()
+    @ auto_meta_info_command()
+    @ commands.is_owner()
     async def show_config_content(self, ctx: commands.Context, config_name: str = "all"):
         """
         NOT IMPLEMENTED
         """
         await self.bot.not_implemented(ctx)
 
-    @commands.command(aliases=get_aliases("show_config_content_raw"))
-    @commands.is_owner()
+    @ auto_meta_info_command()
+    @ commands.is_owner()
     async def show_config_content_raw(self, ctx: commands.Context, config_name: str = "all"):
         """
         NOT IMPLEMENTED
         """
         await self.bot.not_implemented(ctx)
 
-    @auto_meta_info_command(enabled=get_command_enabled("add_alias"))
-    @owner_or_admin()
-    @log_invoker(log, 'critical')
+    @ auto_meta_info_command(enabled=get_command_enabled("add_alias"))
+    @ owner_or_admin()
+    @ log_invoker(log, 'critical')
     async def add_alias(self, ctx: commands.Context, command: CommandConverter, new_alias: str):
         """
         Adds an alias for a command.

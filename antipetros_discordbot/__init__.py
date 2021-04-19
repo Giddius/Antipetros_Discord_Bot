@@ -40,8 +40,11 @@ def set_env():
     os.environ['DISABLE_IMPORT_LOGCALLS'] = "1"
     os.environ['DISABLE_INITIATION_LOG_CALLS'] = "1"
 
+    _mem_item = virtual_memory()
+    memory_in_use = _mem_item.total - _mem_item.available
+    os.environ['INITIAL_MEMORY_USAGE'] = str(memory_in_use)
+    os.environ['BOT_CREATOR_NAME'] = "Giddi"
+    os.environ['BOT_CREATOR_ID'] = "576522029470056450"
 
-_mem_item = virtual_memory()
-memory_in_use = _mem_item.total - _mem_item.available
-os.environ['INITIAL_MEMORY_USAGE'] = str(memory_in_use)
+
 set_env()

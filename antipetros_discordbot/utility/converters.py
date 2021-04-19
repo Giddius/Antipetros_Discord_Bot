@@ -10,7 +10,7 @@
 import os
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, Callable
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands import Converter, CommandError
 from googletrans import LANGUAGES
@@ -20,7 +20,11 @@ from dateparser import parse as date_parse
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from antipetros_discordbot.utility.exceptions import ParameterError
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosFlagCommand
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.enums import CommandCategory
+from antipetros_discordbot.utility.checks import (OnlyGiddiCheck, OnlyBobMurphyCheck, BaseAntiPetrosCheck, AdminOrAdminLeadCheck, AllowedChannelAndAllowedRoleCheck,
+                                                  only_bob, only_giddi, log_invoker, is_not_giddi, owner_or_admin, has_attachments,
+                                                  in_allowed_channels, only_dm_only_allowed_id, allowed_channel_and_allowed_role, HasAttachmentCheck, OnlyGiddiCheck, OnlyBobMurphyCheck)
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -115,7 +119,7 @@ class FlagArg(Converter):
 
 class CommandConverter(Converter):
 
-    async def convert(self, ctx: commands.Context, argument) -> Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosFlagCommand]:
+    async def convert(self, ctx: commands.Context, argument) -> Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup]:
         bot = ctx.bot
         command = await bot.command_by_name(argument)
         if command is None:
@@ -131,16 +135,46 @@ class CogConverter(Converter):
 
     async def convert(self, ctx: commands.Context, argument):
         bot = ctx.bot
-
         mod_argument = argument.casefold()
+        if not mod_argument.endswith('cog'):
+            mod_argument += 'cog'
 
-        cog = bot.cog_name_id_map.get(mod_argument, None)
+        cog = await bot.cog_by_name(mod_argument)
         if cog is None:
             raise ParameterError("cog", argument)
         return cog
 
 
-# region[Main_Exec]
+class CategoryConverter(Converter):
+
+    async def convert(self, ctx: commands.Context, argument):
+        try:
+            return CommandCategory.deserialize(argument)
+        except (TypeError, ValueError) as e:
+            raise ParameterError("category", argument) from e
+
+
+class CheckConverter(Converter):
+    check_map = {'adminoradminleadcheck': AdminOrAdminLeadCheck,
+                 'allowed_channel_and_allowed_role': AllowedChannelAndAllowedRoleCheck,
+                 'allowedchannelandallowedrolecheck': AllowedChannelAndAllowedRoleCheck,
+                 'baseantipetroscheck': BaseAntiPetrosCheck,
+                 'has_attachments': HasAttachmentCheck,
+                 'hasattachmentcheck': HasAttachmentCheck,
+                 'only_bob': OnlyBobMurphyCheck,
+                 'onlybobmurphycheck': OnlyBobMurphyCheck,
+                 'only_giddi': OnlyGiddiCheck,
+                 'onlygiddicheck': OnlyGiddiCheck,
+                 'owner_or_admin': AdminOrAdminLeadCheck}
+
+    async def convert(self, ctx: commands.Context, argument) -> Callable:
+        _out = self.check_map.get(argument.casefold(), None)
+        if _out is None:
+            raise ParameterError("check", argument)
+        return _out
+
+
+        # region[Main_Exec]
 if __name__ == '__main__':
     pass
 

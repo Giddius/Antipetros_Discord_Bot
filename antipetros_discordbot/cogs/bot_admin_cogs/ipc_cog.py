@@ -54,14 +54,14 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel, async_write_json
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, auto_meta_info_command, AntiPetrosBaseGroup, AntiPetrosFlagCommand
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
@@ -119,8 +119,11 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     config_name = CONFIG_NAME
 
-    docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
+    docattrs = {'show_in_readme': False,
+                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                     """).strip('\n')
@@ -175,13 +178,37 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
         trial_admin_role = {role.name.casefold(): role for role in self.bot.antistasi_guild.roles}.get("trial admin")
         if await self.bot.is_owner(member) is True or admin_role in member.roles or trial_admin_role in member.roles:
             log.info(f'Shutdown was requested via IPC from {member.display_name}')
-            asyncio.create_task(self.bot.shutdown_mechanic())
+            asyncio.create_task(self.execute_shutdown())
+            return {"success": True}
+        return {"success": False}
 
     @ipc.server.route()
-    async def say_hi(self, data):
-        channel = await self.bot.channel_from_name('bot-testing')
-        await channel.send(f"This was send via IPC and will enable me all the server shananigans.\nHi {data.name}")
+    async def get_appdata_accessor_kwargs(self, data):
+        return APPDATA.accessor_necessary_kwargs
 
+    @ipc.server.route()
+    async def get_command_list(self, data):
+        _out = {}
+        for command in self.bot.commands:
+            cog_name = str(command.cog)
+            if cog_name not in ['general_debug_cog.py', 'None'] and command.enabled is True and command.hidden is False:
+                if cog_name not in _out:
+                    _out[cog_name] = []
+                if hasattr(command, 'allowed_channels'):
+                    _out[cog_name].append({'name': command.name, 'help': command.help, 'hidden': command.hidden, 'enabled': command.enabled, 'aliases': ', '.join(command.aliases), "allowed_channels": '\n'.join(command.allowed_channels)})
+                else:
+                    print(command)
+        return _out
+
+    @auto_meta_info_command()
+    async def serialize_config(self, ctx: commands.Context):
+        base_config_dict = await BASE_CONFIG.async_to_dict()
+        await async_write_json(base_config_dict, 'base_config_check.json')
+        await ctx.send("Dumped `BASE_CONFIG` to `base_config_check.json`")
+
+        cogs_config_dict = await COGS_CONFIG.async_to_dict()
+        await async_write_json(cogs_config_dict, 'cogs_config_check.json')
+        await ctx.send("Dumped `COGS_CONFIG` to `cogs_config_check.json`")
 # endregion [Commands]
 
 # region [DataStorage]
@@ -190,6 +217,10 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
+    async def execute_shutdown(self):
+        await asyncio.sleep(5)
+        await self.bot.shutdown_mechanic()
 
 
 # endregion [HelperMethods]

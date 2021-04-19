@@ -36,7 +36,8 @@ from antipetros_discordbot.utility.gidtools_functions import get_pickled, loadjs
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.cogs import BOT_ADMIN_COG_PATHS, DISCORD_ADMIN_COG_PATHS, DEV_COG_PATHS
 from antipetros_discordbot.utility.converters import CommandConverter
-from .replacements import BaseCustomHelpCommand
+from antipetros_discordbot.utility.data_gathering import save_cog_command_data
+from .replacements import AntiPetrosBaseHelp
 # endregion[Imports]
 
 
@@ -81,7 +82,6 @@ class AntiPetrosBot(commands.Bot):
 
 # endregion[ClassAttributes]
 
-
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
@@ -93,7 +93,7 @@ class AntiPetrosBot(commands.Bot):
                          activity=self.activity_from_config(),
                          intents=self.get_intents(),
                          fetch_offline_members=True,
-                         help_command=BaseCustomHelpCommand(),
+                         help_command=None,
                          strip_after_prefix=True,
                          ** kwargs)
         self.token = token
@@ -128,7 +128,8 @@ class AntiPetrosBot(commands.Bot):
         """Called upon an error being raised within an IPC route"""
         log.critical(endpoint, "raised", error)
 
-    def get_intents(self):
+    @staticmethod
+    def get_intents():
 
         if BASE_CONFIG.get('intents', 'convenience_setting') == 'all':
             intents = discord.Intents.all()
@@ -148,31 +149,30 @@ class AntiPetrosBot(commands.Bot):
 
     def _setup(self):
         self._get_initial_cogs()
-        self.update_check_loop.start()
 
-    async def create_doc_json(self):
-        prefixes_list = []
-        prefixes = BASE_CONFIG.getlist('prefix', 'command_prefix')
-        role_exceptions = BASE_CONFIG.getlist('prefix', 'invoke_by_role_exceptions')
-        extra = prefixes
-        for role in self.all_bot_roles:
-            if role.name not in role_exceptions and role.name.casefold() not in role_exceptions:  # and role.mentionable is True:
-                prefixes_list += [role.name]
-        prefixes_list += extra
-        prefixes_list += [self.display_name]
-        bot_info = {'display_name': self.display_name,
-                    'description': self.description,
-                    'guilds': [guild.name for guild in self.guilds],
-                    'prefixes': prefixes_list,
-                    'invite': 'https://discord.gg/m7e792Kg',
-                    'help_command': self.help_invocation,
-                    'owner': {key: value for key, value in self.creator._asdict().items() if key not in ['member_object', 'user_object']}}
-        if os.path.isfile(pathmaker(APPDATA['debug'], 'general_debug')):
-            bot_info = bot_info | loadjson(pathmaker(APPDATA['debug'], 'general_debug'))
+    # async def create_doc_json(self):
+    #     prefixes_list = []
+    #     prefixes = BASE_CONFIG.getlist('prefix', 'command_prefix')
+    #     role_exceptions = BASE_CONFIG.getlist('prefix', 'invoke_by_role_exceptions')
+    #     extra = prefixes
+    #     for role in self.all_bot_roles:
+    #         if role.name not in role_exceptions and role.name.casefold() not in role_exceptions:  # and role.mentionable is True:
+    #             prefixes_list += [role.name]
+    #     prefixes_list += extra
+    #     prefixes_list += [self.display_name]
+    #     bot_info = {'display_name': self.display_name,
+    #                 'description': self.description,
+    #                 'guilds': [guild.name for guild in self.guilds],
+    #                 'prefixes': prefixes_list,
+    #                 'invite': 'https://discord.gg/m7e792Kg',
+    #                 'help_command': self.help_invocation,
+    #                 'owner': {key: value for key, value in self.creator._asdict().items() if key not in ['member_object', 'user_object']}}
+    #     if os.path.isfile(pathmaker(APPDATA['debug'], 'general_debug')):
+    #         bot_info = bot_info | loadjson(pathmaker(APPDATA['debug'], 'general_debug'))
 
     async def on_ready(self):
         log.info('%s has connected to Discord!', self.user.name)
-        self.loop.set_default_executor(self.executor)
+
         await self.antistasi_guild.chunk(cache=True)
         await self._get_bot_info()
         await self._start_sessions()
@@ -181,7 +181,6 @@ class AntiPetrosBot(commands.Bot):
         await asyncio.sleep(2)
         await self.support.to_all_subsupports(attribute_name='if_ready')
         await self.to_all_cogs('on_ready_setup')
-        await self.create_doc_json()
         if self.is_debug is True:
             await self.debug_function()
         if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
@@ -189,26 +188,33 @@ class AntiPetrosBot(commands.Bot):
         await self.handle_previous_shutdown_msg()
         self._watch_for_shutdown_trigger.start()
         self._watch_for_config_changes.start()
-        # self._watch_for_alias_changes.start()
+        self._watch_for_alias_changes.start()
         log.info("Debug Session: %s", self.is_debug)
         log.info("Bot is ready")
         log.info('Bot is currently rate limited: %s', str(self.is_ws_ratelimited()))
 
         log.info('%s End of Setup Procedures %s', '+-+' * 15, '+-+' * 15)
+        if os.getenv('INFO_RUN') == "1":
+            await asyncio.sleep(5)
+            for cog_name, cog_object in self.cogs.items():
+                print(f"Collecting command-info for '{cog_name}'")
+
+                save_cog_command_data(cog_object, output_file=os.getenv('INFO_RUN_OUTPUT_FILE'))
+            await self.bot.close()
 
     async def handle_previous_shutdown_msg(self):
         if self.is_debug is False and os.path.isfile(self.shutdown_message_pickle_file):
-            last_shutdown_message = get_pickled(self.shutdown_message_pickle_file)
-            channel_id = last_shutdown_message.get('channel_id')
-            message_id = last_shutdown_message.get('message_id')
-            channel = await self.fetch_channel(channel_id)
-            message = await channel.fetch_message(message_id)
-            await message.delete()
-            os.remove(self.shutdown_message_pickle_file)
+            try:
+                last_shutdown_message = get_pickled(self.shutdown_message_pickle_file)
+                message = await self.get_message_directly(last_shutdown_message.get('channel_id'), last_shutdown_message.get('message_id'))
+                await message.delete()
+            except Exception as error:
+                log.debug(error)
+            finally:
+                os.remove(self.shutdown_message_pickle_file)
 
     async def set_delayed_bot_attributes(self):
         self.on_command_error = self.support.handle_errors
-        # self.on_error = self.support.handle_base_errors
 
     @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_config_changes(self):
@@ -281,8 +287,6 @@ class AntiPetrosBot(commands.Bot):
         self.command_prefix = when_mentioned_or_roles_or()
 
         AntiPetrosBot.creator = self.creator._replace(**{'member_object': await self.retrieve_antistasi_member(self.creator.id), 'user_object': await self.fetch_user(self.creator.id)})
-        os.environ['BOT_CREATOR_NAME'] = self.creator.name
-        os.environ['BOT_CREATOR_ID'] = str(self.creator.id)
 
     async def _start_sessions(self):
         if self.aio_request_session is None:
@@ -334,6 +338,7 @@ class AntiPetrosBot(commands.Bot):
 
             log.info("shutting down executor")
             self.executor.shutdown()
+
             for session in self.clients_to_close:
                 await session.close()
                 log.info("'%s' was shut down", str(session))
@@ -363,19 +368,6 @@ class AntiPetrosBot(commands.Bot):
 
         return discord.Activity(name=text, type=activity_type)
 
-    @ tasks.loop(minutes=5, reconnect=True)
-    async def update_check_loop(self):
-        log.info('Bot is currently rate limited: %s', str(self.is_ws_ratelimited()))
-        if self.current_day == datetime.utcnow().day:
-            return
-        self.current_day = datetime.utcnow().day
-        await self.to_all_subsupports('update', typus='time')
-        await self.to_all_cogs('updated', typus='time')
-
-    @ update_check_loop.before_loop
-    async def before_update_check_loop(self):
-        await self.wait_until_ready()
-
     async def cog_by_name(self, query_cog_name: str):
         return {cog_name.casefold(): cog for cog_name, cog in self.cogs.items()}.get(query_cog_name.casefold())
 
@@ -404,14 +396,6 @@ class AntiPetrosBot(commands.Bot):
         for _emoji in self.antistasi_guild.emojis:
             if _emoji.name.casefold() == name.casefold():
                 return _emoji
-
-    async def not_implemented(self, ctx: commands.Context):
-        embed_data = await self.make_generic_embed(title='NOT IMPLEMENTED',
-                                                   description='Sorry but the command is a Placeholder and is not yet implemented',
-                                                   author='bot_author',
-                                                   footer='feature_request_footer',
-                                                   thumbnail="under_construction")
-        await ctx.send(**embed_data)
 
     @property
     def all_command_names(self):
@@ -449,10 +433,6 @@ class AntiPetrosBot(commands.Bot):
             raise RuntimeError('is_debug')
 
     @ property
-    def blacklisted_users(self):
-        return loadjson(APPDATA['blacklist.json'])
-
-    @ property
     def notify_contact_member(self):
         return BASE_CONFIG.get('blacklist', 'notify_contact_member')
 
@@ -469,10 +449,6 @@ class AntiPetrosBot(commands.Bot):
         if self.display_name.casefold() == 'antidevtros':
             return "https://i3.lensdump.com/i/IJmEgD.png"
         return "https://i1.lensdump.com/i/IJmgGr.png"
-
-    def blacklisted_user_ids(self):
-        for user_item in self.blacklisted_users:
-            yield user_item.get('id')
 
     async def message_creator(self, message=None, embed=None, file=None):
         if message is None and embed is None:
@@ -494,9 +470,6 @@ class AntiPetrosBot(commands.Bot):
         if in_codeblock is True:
             _out = f"```{syntax_highlighting}\n{_out}\n```"
         await ctx.send(_out)
-
-    def sync_channel_from_name(self, channel_name):
-        return {channel.name.casefold(): channel for channel in self.antistasi_guild.channels}.get(channel_name.casefold())
 
     async def execute_in_thread(self, func, *args, **kwargs):
         return await self.loop.run_in_executor(self.executor, func, *args, **kwargs)
@@ -528,10 +501,6 @@ class AntiPetrosBot(commands.Bot):
         #                 await cog_object.on_ready_setup()
         #                 break
         #         break
-
-    def refresh_command(self, command: commands.Command):
-        self.remove_command(command.name)
-        self.add_command(command)
 
     async def debug_function(self):
         log.debug("debug function triggered")

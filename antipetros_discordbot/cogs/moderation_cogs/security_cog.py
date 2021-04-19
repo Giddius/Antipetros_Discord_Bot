@@ -34,7 +34,7 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejso
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.misc import make_config_name
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -91,10 +91,13 @@ class SecurityCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 # region [ClassAttributes]
 
     config_name = CONFIG_NAME
+
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING,
-                             "2021-02-06 05:18:25",
-                             "917274ca9966d8de3909eb5ac74869405c35f062db243440215e4f956b8e6beddd9cc812fe7e2f1b64fc93cf4b690f060c2b1da0e2f3aab6b39afe2f727013e1")}
+                'is_ready': CogMetaStatus.OPEN_TODOS | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
+
     required_config_data = dedent("""
                                         blocklist_hostfile_urls = https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts, https://raw.githubusercontent.com/Ultimate-Hosts-Blacklist/Ultimate.Hosts.Blacklist/master/hosts/hosts0
 

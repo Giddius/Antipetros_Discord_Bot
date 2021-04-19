@@ -3,16 +3,24 @@
 
 
 import os
+from typing import List, Union, Callable, Set, Dict, Mapping, Tuple, Optional, Iterable, TYPE_CHECKING
 import shutil
 from inspect import getmembers, getfile, getsourcefile, getsource, getsourcelines, getdoc
-
+from datetime import datetime, timezone, timedelta
 import gidlogger as glog
+from collections import Counter
 from icecream import ic
+import psutil
+import discord
+from discord.ext import commands, flags, tasks, ipc
 from textwrap import dedent
+from functools import cached_property
 from antipetros_discordbot.utility.gidsql.facade import AioGidSqliteDatabase
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, timenamemaker, limit_amount_files_absolute
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, timenamemaker, limit_amount_files_absolute, bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.misc import antipetros_repo_rel_path
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, auto_meta_info_group, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup
 # endregion[Imports]
 
 # region [Constants]
@@ -27,8 +35,8 @@ SCRIPT_LOC_LINKS = APPDATA['save_link_sql']
 DB_LOC_SUGGESTIONS = pathmaker(APPDATA['database'], "save_suggestion.db")
 SCRIPT_LOC_SUGGESTIONS = APPDATA['save_suggestion_sql']
 
-DB_LOC_META_DATA = pathmaker(APPDATA['database'], "meta_data.db")
-SCRIPT_LOC_META_DATA = APPDATA['meta_data_sql']
+DB_LOC_GENERAL = pathmaker(APPDATA['database'], "general_antipetros.db")
+SCRIPT_LOC_GENERAL = APPDATA['general_db_sql']
 
 ARCHIVE_LOCATION = APPDATA['archive']
 LOG_EXECUTION = False
@@ -44,25 +52,228 @@ glog.import_notification(log, __name__)
 
 # endregion[Logging]
 
-
-class AioMetaDataStorageSQLite:
+class ChannelUsageResult:
     def __init__(self):
-        self.db = AioGidSqliteDatabase(db_location=DB_LOC_META_DATA, script_location=SCRIPT_LOC_META_DATA, log_execution=LOG_EXECUTION)
+        self.result_data = []
+
+    async def add_data(self, data):
+        self.result_data.append(data)
+
+    async def convert_data_to_channels(self, bot):
+        new_data = []
+        for data in self.result_data:
+            new_data.append(await bot.channel_from_id(data))
+        self.result_data = new_data
+
+    async def get_as_counter(self) -> Counter:
+        return Counter(self.result_data)
+
+
+class MemoryPerformanceItem:
+    total_memory = psutil.virtual_memory().total
+    initial_memory = int(os.getenv('INITIAL_MEMORY_USAGE'))
+
+    def __init__(self, timestamp, memory_in_use: int):
+        self.raw_timestamp = timestamp
+        self.date_time = datetime.fromisoformat(self.raw_timestamp)
+        self.memory_in_use = memory_in_use
+        self.as_percent = (self.memory_in_use / self.total_memory) * 100
+
+    @cached_property
+    def pretty_memory_in_use(self):
+        return bytes2human(self.memory_in_use, annotate=True)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(timestamp={self.raw_timestamp}, memory_in_use={self.memory_in_use})"
+
+    def __str__(self) -> str:
+        return f"{self.date_time.strftime(STANDARD_DATETIME_FORMAT)}: {self.pretty_memory_in_use}, {self.as_percent}%"
+
+
+class LatencyPerformanceItem:
+
+    def __init__(self, timestamp, latency: int):
+        self.raw_timestamp = timestamp
+        self.date_time = datetime.fromisoformat(self.raw_timestamp)
+        self.latency = latency
+
+    @cached_property
+    def pretty_latency(self):
+        return str(round(self.latency, ndigits=2)) + ' ms'
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(timestamp={self.raw_timestamp}, latency={self.latency})"
+
+    def __str__(self) -> str:
+        return f"{self.date_time.strftime(STANDARD_DATETIME_FORMAT)}: {self.pretty_latency}"
+
+
+class CpuPerformanceItem:
+
+    def __init__(self, timestamp, usage_percent: int, load_average_1: int, load_average_5: int, load_average_15: int):
+        self.raw_timestamp = timestamp
+        self.date_time = datetime.fromisoformat(self.raw_timestamp)
+        self.usage_percent = usage_percent
+        self.load_average_1 = load_average_1
+        self.load_average_5 = load_average_5
+        self.load_average_15 = load_average_15
+
+    @cached_property
+    def pretty_usage_percent(self):
+        return str(self.usage_percent) + '%'
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(timestamp={self.raw_timestamp}, usage_percent={self.usage_percent}, load_average_1={self.load_average_1}, load_average_5={self.load_average_5}, load_average_15={self.load_average_15})"
+
+    def __str__(self) -> str:
+        return f"{self.date_time.strftime(STANDARD_DATETIME_FORMAT)}: {self.pretty_usage_percent}"
+
+
+class AioGeneralStorageSQLite:
+    command_attr_names = ["help",
+                          "brief",
+                          "short_doc",
+                          "usage",
+                          "signature",
+                          "example",
+                          "gif",
+                          "github_link",
+                          "enabled",
+                          "hidden"]
+
+    def __init__(self):
+        self.db = AioGidSqliteDatabase(db_location=DB_LOC_GENERAL, script_location=SCRIPT_LOC_GENERAL, log_execution=LOG_EXECUTION)
         self.was_created = self.db.startup_db()
         self.db.vacuum()
         glog.class_init_notification(log, self)
 
-    async def insert_cogs(self, bot):
-        for cog_name, cog_object in bot.cogs.items():
-            abs_path = getsourcefile(cog_object.__class__)
-            ic(abs_path)
-            rel_path = await antipetros_repo_rel_path(abs_path)
-            ic(rel_path)
-            category = os.path.basename(os.path.dirname(rel_path))
-            ic(category)
-            description = dedent(str(getdoc(cog_object.__class__)))
-            await self.db.aio_write('insert_cog_category', (category,))
-            await self.db.aio_write('insert_cog', (cog_name, cog_object.config_name, description, category, rel_path, 1))
+    async def aio_vacuum(self):
+        await self.db.aio_vacuum()
+
+    async def insert_command_usage(self, command: Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
+        timestamp = datetime.now(tz=timezone.utc)
+        command_name = command.name
+        await self.db.aio_write('insert_command_usage', (timestamp, command_name))
+
+    async def insert_cog(self, cog: commands.Cog):
+        abs_path = getsourcefile(cog.__class__)
+        rel_path = await antipetros_repo_rel_path(abs_path)
+        category = os.path.basename(os.path.dirname(rel_path))
+        if category not in ['dev_cogs']:
+            description = dedent(str(getdoc(cog.__class__)))
+            await self.db.aio_write('insert_cog_category', (category, category))
+            await self.db.aio_write('insert_cog', (str(cog), str(cog), cog.config_name, description, category, rel_path))
+
+    async def insert_command(self, command: Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
+        name = command.name
+        cog_name = str(command.cog)
+        is_group = 1 if isinstance(command, AntiPetrosBaseGroup) else 0
+        params = [name, name, cog_name, is_group]
+        for attr_name in self.command_attr_names:
+            attr_value = None
+            if hasattr(command, attr_name) and getattr(command, attr_name) != 'NA':
+                attr_value = getattr(command, attr_name)
+                if attr_name == 'gif' and attr_value is not None:
+                    attr_value = await antipetros_repo_rel_path(attr_value)
+            params.append(attr_value)
+        params = tuple(params)
+        await self.db.aio_write('insert_command', params)
+
+    async def insert_channel_use(self, text_channel: discord.TextChannel):
+        channel_id = text_channel.id
+        timestamp = datetime.now(tz=timezone.utc)
+        await self.db.aio_write('insert_channel_use', (timestamp, channel_id))
+
+    async def insert_text_channel(self, text_channel: discord.TextChannel):
+        _id = text_channel.id
+        name = text_channel.name
+        position = text_channel.position
+        created_at = text_channel.created_at
+        category_id = text_channel.category.id
+        topic = text_channel.topic
+        await self.db.aio_write("insert_text_channel", (_id, name, position, created_at, category_id, topic, False))
+
+    async def insert_category_channel(self, category_channel: discord.CategoryChannel):
+        _id = category_channel.id
+        name = category_channel.name
+        position = category_channel.position
+        created_at = category_channel.created_at
+        await self.db.aio_write("insert_category_channel", (_id, name, position, created_at, False))
+
+    async def update_text_channel_deleted(self, text_channel_id: int):
+        await self.db.aio_write("update_text_channel_deleted", (text_channel_id, True))
+
+    async def update_category_channel_deleted(self, category_channel_id: int):
+        await self.db.aio_write("updated_category_channels_deleted", (category_channel_id, True))
+
+    async def get_category_channel_ids(self):
+        result = await self.db.aio_query("get_all_category_channel_ids", row_factory=True)
+        return [row['id'] for row in result]
+
+    async def get_text_channel_ids(self):
+        result = await self.db.aio_query("get_all_text_channel_ids", row_factory=True)
+        return [row['id'] for row in result]
+
+    async def get_cpu_data_last_24_hours(self):
+        now = datetime.now(tz=timezone.utc)
+        one_day_ago = now - timedelta(hours=24)
+
+        result = await self.db.aio_query('get_cpu_performance', (one_day_ago, now), row_factory=True)
+        all_items = []
+        for row in result:
+
+            all_items.append(CpuPerformanceItem(**row))
+        return all_items
+
+    async def get_latency_data_last_24_hours(self):
+        now = datetime.now(tz=timezone.utc)
+        one_day_ago = now - timedelta(hours=24)
+
+        result = await self.db.aio_query('get_latency_performance', (one_day_ago, now), row_factory=True)
+        all_items = []
+        for row in result:
+
+            all_items.append(LatencyPerformanceItem(**row))
+        return all_items
+
+    async def get_memory_data_last_24_hours(self):
+        now = datetime.now(tz=timezone.utc)
+        one_day_ago = now - timedelta(hours=24)
+
+        result = await self.db.aio_query('get_memory_performance', (one_day_ago, now), row_factory=True)
+        all_items = []
+        for row in result:
+
+            all_items.append(MemoryPerformanceItem(**row))
+        return all_items
+
+    async def get_channel_usage(self, from_datetime: datetime = None, to_datetime: datetime = None) -> ChannelUsageResult:
+        script_name = "get_channel_usage"
+        if from_datetime is None and to_datetime is None:
+            script_name = "get_channel_usage_all"
+        elif from_datetime is None:
+            script_name = "get_channel_usage_only_from"
+        elif to_datetime is None:
+            script_name = "get_channel_usage_only_to"
+
+        arguments = tuple(arg for arg in [from_datetime, to_datetime] if arg is not None)
+        result = await self.db.aio_query(script_name, arguments, row_factory=True)
+        result_item = ChannelUsageResult()
+        for row in result:
+            await result_item.add_data(row['channel_id'])
+        return result_item
+
+    async def insert_cpu_performance(self, timestamp: datetime, usage_percent: int, load_avg_1: int, load_avg_5: int, load_avg_15: int):
+        await self.db.aio_write("insert_cpu_performance", (timestamp, usage_percent, load_avg_1, load_avg_5, load_avg_15))
+
+    async def insert_latency_perfomance(self, timestamp: datetime, latency: int):
+        await self.db.aio_write('insert_latency_performance', (timestamp, latency))
+
+    async def insert_memory_perfomance(self, timestamp: datetime, memory_in_use: int):
+        await self.db.aio_write('insert_memory_performance', (timestamp, memory_in_use))
+
+    def __str__(self):
+        return self.__class__.__name__
 
 
 class AioSuggestionDataStorageSQLite:
@@ -209,3 +420,6 @@ class AioSuggestionDataStorageSQLite:
             await self.db.startup_db()
         except Exception as error:
             self.db.startup_db()
+
+
+general_db = AioGeneralStorageSQLite()

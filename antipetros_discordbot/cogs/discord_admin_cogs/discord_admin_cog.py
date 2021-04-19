@@ -6,6 +6,9 @@
 import os
 from textwrap import dedent
 import asyncio
+from tempfile import TemporaryDirectory
+import lzma
+from zipfile import ZipFile, ZIP_LZMA
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, flags, tasks
 import discord
@@ -19,12 +22,12 @@ from async_property import async_property
 from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin, has_attachments
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.converters import DateTimeFullConverter, date_time_full_converter_flags
-
+from antipetros_discordbot.engine.replacements import AntiPetrosFlagCommand, AntiPetrosBaseCommand, auto_meta_info_command
+from antipetros_discordbot.utility.gidtools_functions import pathmaker
 # endregion[Imports]
 
 # region [TODO]
@@ -70,8 +73,13 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     config_name = CONFIG_NAME
     announcements_channel_id = 645930607683174401
     community_subscriber_role_id = 827937724341944360
+
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.DOCUMENTATION_MISSING,)}
+                'is_ready': CogMetaStatus.OPEN_TODOS | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.OUTDATED | CogMetaStatus.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
+
     required_config_data = dedent("""
                                   """)
     # endregion[ClassAttributes]
@@ -210,7 +218,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     @flags.add_flag("--footer-icon", "-fi", type=str, default=discord.Embed.Empty)
     @flags.add_flag("--disable-mentions", "-dis", type=bool, default=True)
     @flags.add_flag("--delete-after", "-da", type=int, default=None)
-    @auto_meta_info_command(cls=flags.FlagCommand)
+    @auto_meta_info_command(cls=AntiPetrosFlagCommand)
     @owner_or_admin()
     @log_invoker(log, "info")
     async def make_embed(self, ctx: commands.Context, channel: discord.TextChannel, **flags):
@@ -254,6 +262,23 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         await ctx.send(f"__**Created Embed in Channel**__: {channel.mention}\n**__Link__**: {embed_message.jump_url}", allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
         await asyncio.sleep(60)
         await delete_message_if_text_channel(ctx)
+
+    @auto_meta_info_command(enabled=get_command_enabled('all_guild_emojis'))
+    async def all_guild_emojis(self, ctx: commands.Context):
+        async with ctx.typing():
+            start_message = await ctx.send('Please wait this could take a minute or more!')
+            with TemporaryDirectory() as tempdir:
+                zip_path = pathmaker(tempdir, 'all_guild_emojis.zip')
+                with ZipFile(zip_path, 'w', ZIP_LZMA) as zippy:
+                    for emoji in self.bot.antistasi_guild.emojis:
+                        emoji_asset = emoji.url_as()
+                        save_path = pathmaker(tempdir, emoji.name + '_' + str(sum(int(num) for num in str(emoji.id))) + '.' + str(emoji_asset).split('.')[-1])
+                        await emoji_asset.save(save_path)
+                        zippy.write(save_path, os.path.basename(save_path))
+                file = discord.File(zip_path)
+                await ctx.send(file=file)
+                if ctx.channel.type is not discord.ChannelType.private:
+                    await start_message.delete()
 
     def cog_check(self, ctx):
         return True

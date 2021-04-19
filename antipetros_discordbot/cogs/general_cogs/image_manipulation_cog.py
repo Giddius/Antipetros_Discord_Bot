@@ -21,13 +21,13 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name, alt_seconds_to_pretty
 from antipetros_discordbot.utility.enums import WatermarkPosition
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, log_invoker, has_attachments, owner_or_admin
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, command_enabled_checker, allowed_requester, log_invoker, has_attachments, owner_or_admin
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, auto_meta_info_group
 from antipetros_discordbot.utility.exceptions import ParameterError
 from antipetros_discordbot.utility.image_manipulation import make_perfect_fontsize, find_min_fontsize, get_text_dimensions
 
@@ -67,10 +67,13 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
     config_name = CONFIG_NAME
     allowed_stamp_formats = set(loadjson(APPDATA["image_file_extensions.json"]))
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
+
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING | CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
-                             "2021-02-06 05:09:20",
-                             "f166431cb83ae36c91d70d7d09020e274a7ebea84d5a0c724819a3ecd2230b9eca0b3e14c2d473563d005671b7a2bf9d87f5449544eb9b57bcab615035b0f83d")}
+                'is_ready': CogMetaStatus.WORKING | CogMetaStatus.OPEN_TODOS | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
+
     required_config_data = dedent("""  avatar_stamp = ASLOGO1
                                 avatar_stamp_fraction = 0.2
                                 stamps_margin = 5
@@ -123,6 +126,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 # endregion[Init]
 
 # region [Setup]
+
 
     async def on_ready_setup(self):
         self._get_stamps()
@@ -181,7 +185,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 
 # endregion[Listener]
-
 
     def _get_nato_symbol_parts(self):
         self.nato_symbol_parts_images = {}
@@ -306,8 +309,8 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
     @flags.add_flag("--second-pos", '-sp', type=str, default="right")
     @flags.add_flag("--stamp-opacity", '-so', type=float, default=1.0)
     @flags.add_flag('--factor', '-f', type=float, default=None)
-    @auto_meta_info_command(enabled=get_command_enabled("stamp_image"), cls=flags.FlagCommand)
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @auto_meta_info_command(enabled=get_command_enabled("stamp_image"), cls=AntiPetrosFlagCommand)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def stamp_image(self, ctx, **flags):
         """
@@ -361,7 +364,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
                     await self._send_image(ctx, in_image, name, f"__**{name}**__")
 
     @auto_meta_info_command(enabled=get_command_enabled("available_stamps"))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_stamps(self, ctx):
         """
@@ -394,7 +397,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         modified_avatar = await self.bot.execute_in_thread(placement, avatar_image, stamp, self.avatar_stamp_fraction)
         return modified_avatar
 
-    @commands.group(case_insensitive=True)
+    @auto_meta_info_group(case_insensitive=True, cls=AntiPetrosBaseGroup)
     async def member_avatar(self, ctx):
         """
         Stamps the avatar of a Member with the Antistasi Crest.
@@ -406,7 +409,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         """
 
     @member_avatar.command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def for_discord(self, ctx):
         modified_avatar = await self._member_avatar_helper(ctx.author, self._to_center_center, 0.66)
         name = f"{ctx.author.name}_Member_avatar"
@@ -476,7 +479,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         return base_image, bytes_out
 
     @auto_meta_info_command(enabled=get_command_enabled('get_stamp_image'), aliases=["get_image"])
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def get_stamp_image(self, ctx: commands.Context, image_name: str):
         image_name = image_name.split('.')[0].upper()
         if image_name not in self.stamps:
@@ -487,7 +490,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command(enabled=get_command_enabled('add_stamp'), aliases=["add_image"])
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @has_attachments(1)
     @log_invoker(log, "critical")
     async def add_stamp(self, ctx: commands.Context):
@@ -530,7 +533,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         return image
 
     @auto_meta_info_command(enabled=get_command_enabled('text_to_image'))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     @has_attachments(1)
     async def text_to_image(self, ctx: commands.Context, font: str, *, text: str):
         mod_font_name = font.split('.')[0].casefold()
@@ -585,7 +588,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         return preview_image
 
     @auto_meta_info_command(enabled=get_command_enabled('add_font'))
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def list_fonts(self, ctx: commands.Context):
         embed = discord.Embed(title="Available Fonts")
         await ctx.send(embed=embed, delete_after=60)

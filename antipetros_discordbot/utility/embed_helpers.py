@@ -57,7 +57,7 @@ async def make_basic_embed(title, text=None, footer=None, symbol=None, **kwargs)
     embed_title = str(title)
     embed_text = '' if text is None else str(text)
 
-    basic_embed = discord.Embed(title=embed_title, description=embed_text, color=standard_embed_color())
+    basic_embed = discord.Embed(title=embed_title, description=embed_text, color=discord.Color.dark_theme())
     if symbol is not None:
         basic_embed.set_thumbnail(url=EMBED_SYMBOLS.get(symbol.casefold(), symbol))
     for key, value in kwargs.items():
@@ -85,7 +85,7 @@ async def make_basic_embed_inline(title, text=None, footer=None, symbol=None, **
     embed_title = str(title)
     embed_text = '' if text is None else str(text)
 
-    basic_embed = discord.Embed(title=embed_title, description=embed_text, color=standard_embed_color())
+    basic_embed = discord.Embed(title=embed_title, description=embed_text, color=discord.Color.dark_theme())
     if symbol is not None:
         basic_embed.set_thumbnail(url=EMBED_SYMBOLS.get(symbol.casefold(), symbol))
     for key, value in kwargs.items():

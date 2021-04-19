@@ -11,7 +11,7 @@ from functools import wraps, partial
 from concurrent.futures import ThreadPoolExecutor
 from inspect import getclosurevars
 import json
-from typing import Iterable, Union, Set, List, Tuple, Dict, Callable, Mapping, Generator
+from typing import Iterable, Union, Set, List, Tuple, Dict, Callable, Mapping, Generator, Awaitable, TypeVar
 # * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
 from validator_collection import validators
@@ -19,10 +19,12 @@ import validator_collection
 import discord
 from discord.ext import commands
 from aiohttp.client_exceptions import ClientConnectionError
+from colormap.colors import HEX, Color, Colormap, hex2dec, hex2rgb, hex2web, hls2rgb, hsv2rgb, rgb2hex, rgb2hls, rgb2hsv, rgb2yuv, web2hex, yuv2rgb, rgb2yuv_int, yuv2rgb_int, to_intensity
+
 # * Gid Imports ----------------------------------------------------------------------------------------->
 # * Gid Imports -->
 import gidlogger as glog
-from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle,GithubStyle
+from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle, GithubStyle
 from inspect import getmembers, getdoc, getsource, getsourcefile, getsourcelines, getframeinfo, getfile
 from pygments import highlight
 from pygments.lexers import PythonLexer, get_lexer_by_name, get_all_lexers, guess_lexer
@@ -34,7 +36,7 @@ from pygments.filters import get_all_filters
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writeit, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_SECTION
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogMetaStatus
 
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
@@ -174,6 +176,20 @@ def sync_to_async(_func):
     return wrapped
 
 
+R = TypeVar("R")
+
+
+def async_to_sync(func: Awaitable[R]) -> R:
+    '''Wraps `asyncio.run` on an async function making it sync callable.'''
+    if not asyncio.iscoroutinefunction(func):
+        raise TypeError(f"{func} is not a coroutine function")
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return asyncio.run(func(*args, **kwargs))
+    return wrapper
+
+
 def make_command_subsection_seperator(command_name):
     command_name = f"{command_name} COMMAND"
     return f'# {command_name.upper().center(75, "-")}'
@@ -218,12 +234,15 @@ async def generate_bot_data(bot, production_bot):
     bot_info['intents'] = dict(bot.intents)
     bot_info['avatar_url'] = str(production_bot.avatar_url)
     bot_info['invite_url'] = bot.antistasi_invite_url
+    bot_info['role_names'] = [role.name for role in production_bot.roles if 'everyone' not in role.name.casefold()]
+    bot_info['amount_cogs'] = len([cog for cog in bot.cogs if cog.casefold() != 'generaldebugcog'])
+    bot_info['amount_commands'] = len([command for command in bot.commands if str(command.cog).casefold() != 'generaldebugcog'])
 
     writejson(bot_info, bot_info_file)
 
 
 def generate_help_data(cog: commands.Cog, output_file=None):
-    if CogState.FOR_DEBUG in CogState.split(cog.docattrs['is_ready'][0]):
+    if CogMetaStatus.FOR_DEBUG in CogMetaStatus.split(cog.docattrs['is_ready'][0]):
         return
     help_data_file = pathmaker(APPDATA['documentation'], 'command_meta_data.json') if output_file is None else pathmaker(output_file)
     if os.path.isfile(help_data_file) is False:
@@ -235,7 +254,7 @@ def generate_help_data(cog: commands.Cog, output_file=None):
                                                       'description': command.description,
                                                       'usage': command.usage,
                                                       'help': command.help,
-                                                      'hide': command.hidden,
+                                                      'hidden': command.hidden,
                                                       'brief': command.brief,
                                                       'short_doc': command.short_doc}
 
@@ -247,6 +266,13 @@ async def async_load_json(json_file):
     if _LOOP is None:
         _LOOP = asyncio.get_event_loop()
     return await _LOOP.run_in_executor(None, loadjson, json_file)
+
+
+async def async_write_json(data, json_file):
+    global _LOOP
+    if _LOOP is None:
+        _LOOP = asyncio.get_event_loop()
+    return await _LOOP.run_in_executor(None, writejson, data, json_file)
 
 
 async def image_to_url(image_path):
@@ -483,13 +509,13 @@ def highlight_print(in_data, highlight_level: int = 1):
     print("")
 
 
-async def make_other_source_code_images(file_content: str, lexer: str = 'guess', style:str='dracula'):
+async def make_other_source_code_images(file_content: str, lexer: str = 'guess', style: str = 'dracula'):
 
     lexer_map = {'guess': guess_lexer(file_content),
                  'python': PythonLexer(),
                  'ini': get_lexer_by_name('INI')}
-    style_map = {'dracula':DraculaStyle,
-                 'github':GithubStyle}
+    style_map = {'dracula': DraculaStyle,
+                 'github': GithubStyle}
 
     lexer = lexer_map.get(lexer.casefold())
 
@@ -502,3 +528,19 @@ async def make_other_source_code_images(file_content: str, lexer: str = 'guess',
                                                                                    font_size=20,
                                                                                    line_number_bold=True))
     return image
+
+
+def hex_to_rgb(color: str, normalized: bool = False):
+    return hex2rgb(color, normalise=normalized)
+
+
+def hex_to_int(color: str):
+    return int(color.removeprefix('#'), 16)
+
+
+def rgb_to_hsv(color: Tuple[int], normalized: bool = False):
+    return rgb2hsv(*color, normalised=normalized)
+
+
+def hex_to_hex_alt(color: str):
+    return color.replace('#', '0x')

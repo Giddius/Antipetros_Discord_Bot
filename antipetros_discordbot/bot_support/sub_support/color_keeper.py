@@ -9,12 +9,12 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import random
-
+from typing import TYPE_CHECKING, Union, Optional, Any, Callable, Iterable, List, Tuple, Dict, Mapping, Set, Generator
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord import Color
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process as fuzzprocess
-
+from colormap.colors import hex2rgb, rgb2hex, rgb2hls, rgb2hsv, hsv2rgb
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -25,10 +25,12 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus
+from antipetros_discordbot.utility.misc import async_write_json, async_load_json, hex_to_hex_alt, hex_to_int, hex_to_rgb, rgb_to_hsv
 # endregion[Imports]
 
 # region [TODO]
 
+# TODO: redo this so it wont need all those values per color and maybe save it in the general db
 
 # endregion [TODO]
 
@@ -59,6 +61,10 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 class ColorKeeper(SubSupportBase):
     all_colors_json_file = APPDATA['all_color_list.json']
     base_colors_json_file = APPDATA['basic_color_list.json']
+    special_colors_json_file = APPDATA['special_colors.json']
+    category_map = {"all_colors": all_colors_json_file,
+                    "base_colors": base_colors_json_file,
+                    "special_colors": special_colors_json_file}
 
     def __init__(self, bot, support):
         self.bot = bot
@@ -82,7 +88,11 @@ class ColorKeeper(SubSupportBase):
             setattr(self, color_name.casefold(), self.dict_to_color_item(color_name, color_data))
 
     async def _make_color_items(self):
-        for name, values in loadjson(self.all_colors_json_file).items():
+        self.colors = {}
+        raw_color_dict = {}
+        for json_file in [self.all_colors_json_file, self.special_colors_json_file]:
+            raw_color_dict |= await async_load_json(json_file)
+        for name, values in raw_color_dict.items():
             discord_color = Color.from_rgb(*values.get('rgb'))
             new_values = {}
             for key, data in values.items():
@@ -118,6 +128,18 @@ class ColorKeeper(SubSupportBase):
     @property
     def random_color(self):
         return random.choice(self.color_item_list)
+
+    async def add_color(self, value: Union[Tuple[int], str], name: str, category: str = 'special_colors'):
+        _out_rgb = None
+        if isinstance(value, str):
+            _out_rgb = hex_to_rgb(_out_rgb)
+        else:
+            _out_rgb = tuple(value)
+        file = self.category_map.get(category.casefold())
+        data = await async_load_json(file)
+        data[name.upper()] = _out_rgb
+        await async_write_json(data, file)
+        await self._make_color_items()
 
     async def if_ready(self):
         await self._make_color_items()

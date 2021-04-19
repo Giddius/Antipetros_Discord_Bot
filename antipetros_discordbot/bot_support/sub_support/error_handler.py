@@ -31,6 +31,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.bot_support.sub_support.sub_support_helper.cooldown_dict import CoolDownDict
 from antipetros_discordbot.utility.enums import UpdateTypus
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 # endregion[Imports]
 
 # region [TODO]
@@ -38,7 +39,7 @@ from antipetros_discordbot.utility.enums import UpdateTypus
 # TODO: rebuild whole error handling system
 # TODO: make it so that creating the embed also sends it, with more optional args
 
-# TODO: Handlers needed: discord.ext.commands.errors.DisabledCommand,
+# TODO: Handlers needed: discord.ext.commands.errors.DisabledCommand,ParameterError
 
 # endregion [TODO]
 
@@ -225,14 +226,23 @@ class ErrorHandler(SubSupportBase):
     async def error_reply_embed(self, ctx, error, title, msg, error_traceback=None):
         embed = Embed(title=title, description=f"{ZERO_WIDTH}\n{msg}\n{ZERO_WIDTH}", color=self.support.color('red').int, timestamp=datetime.utcnow())
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('warning'))
+        embed.add_field(name="🔗", value=embed_hyperlink("invoking message jump url", ctx.message.jump_url), inline=False)
+        embed.add_field(name="prefix used", value=f"`{type(ctx.prefix)}`", inline=False)
+        embed.add_field(name='invoking message', value=f"```css\n{ctx.message.content}\n```", inline=False)
+        embed.add_field(name="args", value=ctx.args, inline=False)
+        embed.add_field(name="kwargs", value=ctx.kwargs, inline=False)
+
         # embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
         if error_traceback is not None:
             embed.add_field(name='Traceback', value=str(error_traceback)[0:500])
         if ctx.command is not None:
             embed.set_footer(text=f"Command: `{ctx.command.name}`\n{ZERO_WIDTH}\n By User: `{ctx.author.name}`\n{ZERO_WIDTH}\n Error: `{await async_split_camel_case_string(error.__class__.__name__)}`\n{ZERO_WIDTH}\n{ZERO_WIDTH}")
+            embed.add_field(name='command used', value=ctx.command.name, inline=False)
+
         else:
             embed.set_footer(text=f"text: {ctx.message.content}\n{ZERO_WIDTH}\n By User: `{ctx.author.name}`\n{ZERO_WIDTH}\n Error: `{await async_split_camel_case_string(error.__class__.__name__)}`\n{ZERO_WIDTH}\n{ZERO_WIDTH}")
-
+        embed.add_field(name='invoking user', value=ctx.author.name, inline=False)
+        embed.add_field(name='error type', value=await async_split_camel_case_string(error.__class__.__name__), inline=False)
         return embed
 
     async def error_message_embed(self, ctx, error, msg=ZERO_WIDTH):

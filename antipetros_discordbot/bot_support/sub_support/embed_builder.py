@@ -24,7 +24,7 @@ from discord import Color as DiscordColor
 from discord import Embed
 from discord.ext import commands, tasks
 from dateparser import parse as date_parse
-
+from icecream import ic
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -92,7 +92,7 @@ class EmbedBuilder(SubSupportBase):
     generic_image_name_range = (1, 9999)
     field_item = EmbedFieldItem
     max_embed_size = 6000
-    max_embed_fields = 25
+    max_embed_fields = 20
 
     def __init__(self, bot, support):
         self.bot = bot
@@ -204,17 +204,19 @@ class EmbedBuilder(SubSupportBase):
     def _size_of_field(field):
         return len(field.name) + len(field.value)
 
-    def _paginatedfields_generic_embed_helper(self, fields, embed):
-        amount_fields = len(fields)
-        applied_fields = 0
+    def handle_paginated_field(self, embed, field_item, applied_fields):
+        field = self._fix_field_item(field_item)
+        embed.add_field(name=field.name, value=field.value, inline=field.inline)
+        return embed, applied_fields + 1
 
-        for _ in range(amount_fields):
-            if (len(embed) + self._size_of_field(fields[0])) < self.max_embed_size and applied_fields < self.max_embed_fields:
-                field = self._fix_field_item(fields.pop(0))
-                embed.add_field(name=field.name, value=field.value, inline=field.inline)
-                applied_fields += 1
-            else:
-                return embed, fields
+    async def _paginatedfields_generic_embed_helper(self, fields, embed):
+
+        applied_fields = 0
+        embed, applied_fields = self.handle_paginated_field(embed, fields.pop(0), applied_fields)
+
+        while len(fields) > 0 and (len(embed) + self._size_of_field(fields[0])) < self.max_embed_size and applied_fields < self.max_embed_fields:
+            embed, applied_fields = self.handle_paginated_field(embed, fields.pop(0), applied_fields)
+
         return embed, fields
 
     async def make_paginatedfields_generic_embed(self, fields: List[EmbedFieldItem], **kwargs):
@@ -222,12 +224,13 @@ class EmbedBuilder(SubSupportBase):
         while len(fields) > 0:
             if is_first is False:
                 kwargs['title'] = 'CONTINUED'
+                kwargs['description'] = discord.Embed.Empty
             _embed_data = await self.make_generic_embed(**kwargs)
             _actual_embed = _embed_data.get('embed')
             if len(_actual_embed) > self.max_embed_size:
                 # TODO: make custom error
                 raise RuntimeError('Base embed without fields is already larger than max size')
-            embed, fields = self._paginatedfields_generic_embed_helper(fields, _actual_embed)
+            embed, fields = await self._paginatedfields_generic_embed_helper(fields, _actual_embed)
             _embed_data['embed'] = embed
             yield _embed_data
             is_first = False
@@ -241,11 +244,15 @@ class EmbedBuilder(SubSupportBase):
             footer = self.special_footers.get(footer, self.default_footer) if footer != 'not_set' else None
 
         files = []
-        generic_embed = Embed(title=str(kwargs.get("title", self.default_title)),
+        title = kwargs.get('title', self.default_title)
+        url = kwargs.get('url', discord.Embed.Empty)
+        if url is not discord.Embed.Empty:
+            title += ' 🔗'
+        generic_embed = Embed(title=title,
                               description=str(kwargs.get('description', self.default_description)),
                               color=self._validate_color(kwargs.get('color', self.default_color)),
                               timestamp=self._validate_timestamp(kwargs.get('timestamp', self.default_timestamp)),
-                              url=kwargs.get('url', discord.Embed.Empty))
+                              url=url)
 
         image, image_file = self._validate_image(kwargs.get('image', None))
         files.append(image_file)
@@ -270,7 +277,8 @@ class EmbedBuilder(SubSupportBase):
         self.default_field_name_num = 1
         # if self.bot.is_debug:
         #     await self.save_embed_as_json(embed=generic_embed, save_name=kwargs.get('save_name', None))
-
+        if self.is_debug is True:
+            log.debug(ic.format(len(generic_embed)))
         _out = {"embed": generic_embed}
         files = [file_item for file_item in files if file_item is not None]
         if len(files) == 1:
@@ -324,18 +332,18 @@ class EmbedBuilder(SubSupportBase):
             if method_name.startswith('_embed_recipe_'):
                 self.embed_build_recipes[method_name.replace("_embed_recipe_", "")] = getattr(self, method_name)
 
-    @property
+    @ property
     def error_embed_base_data(self):
         if os.path.isfile(self.error_embed_base_data_file) is False:
             writejson({}, self.error_embed_base_data_file)
         return loadjson(self.error_embed_base_data_file)
 
-    @property
+    @ property
     def standard_embed_symbols(self):
         create_file(self.standard_embed_symbols_file)
         return loadjson(self.standard_embed_symbols_file)
 
-    @property
+    @ property
     def folder_exists(self):
         return os.path.isdir(self.embed_data_folder)
 
@@ -344,14 +352,14 @@ class EmbedBuilder(SubSupportBase):
         if os.path.isfile(self.image_thumbnail_data_file) is False:
             writejson([], self.image_thumbnail_data_file)
 
-    @property
+    @ property
     def default_inline_value(self):
         """
         "default_inline_value": [true or false]
         """
         return loadjson(self.default_embed_data_file).get('default_inline_value')
 
-    @property
+    @ property
     def default_title(self):
         """
         "default_title": ""
@@ -364,7 +372,7 @@ class EmbedBuilder(SubSupportBase):
             _out = _out.replace(replace_marker, replace_value)
         return _out
 
-    @property
+    @ property
     def default_description(self):
         """
         "default_description": ""
@@ -375,14 +383,14 @@ class EmbedBuilder(SubSupportBase):
             _out = _out.replace(replace_marker, replace_value)
         return _out
 
-    @property
+    @ property
     def default_author(self):
         """
         "default_author": {"name": "", "url": "", "icon_url": ""}
         """
         return loadjson(self.default_embed_data_file).get('default_author')
 
-    @property
+    @ property
     def default_footer(self):
         """
 
@@ -391,7 +399,7 @@ class EmbedBuilder(SubSupportBase):
         """
         return loadjson(self.default_embed_data_file).get('default_footer')
 
-    @property
+    @ property
     def default_thumbnail(self):
         """
 
@@ -400,14 +408,14 @@ class EmbedBuilder(SubSupportBase):
         """
         return loadjson(self.default_embed_data_file).get('default_thumbnail')
 
-    @property
+    @ property
     def default_color(self):
         """
         "default_color": ""
         """
-        return loadjson(self.default_embed_data_file).get('default_color')
+        return discord.Color.dark_theme()
 
-    @property
+    @ property
     def default_timestamp(self):
         """
         optional!
@@ -415,7 +423,7 @@ class EmbedBuilder(SubSupportBase):
         """
         return loadjson(self.default_embed_data_file).get('default_timestamp', datetime.now(tz=timezone("Europe/Berlin")))
 
-    @property
+    @ property
     def default_type(self):
         return 'rich'
 

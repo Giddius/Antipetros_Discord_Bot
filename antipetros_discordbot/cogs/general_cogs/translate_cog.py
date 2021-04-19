@@ -17,13 +17,13 @@ from emoji import emojize
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import make_config_name
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker
+from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, allowed_requester, command_enabled_checker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.converters import LanguageConverter
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import discord_key_value_text
@@ -97,12 +97,13 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
                           'China': 'zh-tw',
                           'South_Korea': 'ko',
                           'Hungary': 'hu',
-                          'Netherlands': 'nl'
-                          }
+                          'Netherlands': 'nl'}
+
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.WORKING,
-                             "2021-02-06 03:40:46",
-                             "29d140f50313ab11e4ec463a204b56dbcba90f86502c5f4a027f4d1ab7f25525dcf97a5619fd1b88709b95e6facb81a7620b39551c98914dcb6f6fbf3038f542")}
+                'is_ready': CogMetaStatus.WORKING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                         emoji_translate_listener_enabled = yes
@@ -228,7 +229,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 # region [Commands]
 
     @auto_meta_info_command(enabled=get_command_enabled("translate"))
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 60, commands.BucketType.channel)
     async def translate(self, ctx, to_language_id: Optional[LanguageConverter] = "english", *, text_to_translate: str):
         """
@@ -251,11 +252,14 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
         await ctx.message.delete()
 
     @auto_meta_info_command(enabled=get_command_enabled('available_languages'))
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_languages(self, ctx: commands.Context):
-        await self.bot.not_implemented(ctx)
-        return
+        text = '```fix\n'
+        text += '\n'.join(value for key, value in LANGUAGES.items())
+        text += '\n```'
+        await ctx.send(text, delete_after=120)
+        await delete_message_if_text_channel(ctx)
 # endregion [Commands]
 
 # region [DataStorage]

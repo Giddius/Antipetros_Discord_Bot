@@ -175,7 +175,7 @@ class CommunityServerInfo:
 
     async def check_is_online(self):
         # TODO: Hardcode query_port to port +1
-        log.debug("checking if Server %s is online", self.name)
+        log.debug("checking Server %s", self.name)
         try:
             check_data = await a2s.ainfo(self.query_full_address, timeout=self.timeout)
             self.is_online = True
