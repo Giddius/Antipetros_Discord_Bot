@@ -94,6 +94,7 @@ from .helper import JsonMetaDataProvider, JsonAliasProvider, SourceCodeProvider,
 from antipetros_discordbot.utility.misc import highlight_print
 from antipetros_discordbot.utility.data import COG_CHECKER_ATTRIBUTE_NAMES
 from antipetros_discordbot.utility.checks import dynamic_enabled_checker
+from antipetros_discordbot.schemas import AntiPetrosBaseCommandSchema
 # endregion[Imports]
 
 # region [TODO]
@@ -131,6 +132,7 @@ class AntiPetrosBaseCommand(commands.Command):
     bot_mention_placeholder = '@BOTMENTION'
     gif_folder = APPDATA['gifs']
     example_split_regex = re.compile(r"example\:\n", re.IGNORECASE)
+    schema = AntiPetrosBaseCommandSchema()
 
     def __init__(self, func, **kwargs):
         self.name = func.__name__ if kwargs.get("name") is None else kwargs.get("name")
@@ -151,10 +153,9 @@ class AntiPetrosBaseCommand(commands.Command):
                           'short_doc': None,
                           'usage': None,
                           'signature': None}
-
+        self.categories = kwargs.get('categories')
         super().__init__(func, **kwargs)
         self.module_object = sys.modules[func.__module__]
-        self.categories = kwargs.get('categories')
 
     async def get_source_code_image(self):
         return await asyncio.to_thread(self.data_getters['source_code'], typus='image')
@@ -349,12 +350,15 @@ class AntiPetrosBaseCommand(commands.Command):
             if hasattr(check, "allowed_members"):
                 allowed_members += check.allowed_members(self)
         if allowed_members == []:
-            return 'NA'
+            return ['all']
         if len(allowed_members) > 1 and 'all' in allowed_members:
             allowed_members.remove('all')
         if allowed_members == ['all']:
             return allowed_members
         return list(map(lambda x: x.name, allowed_members))
+
+    def dump(self):
+        return self.schema.dump(self)
 
 
 # region[Main_Exec]

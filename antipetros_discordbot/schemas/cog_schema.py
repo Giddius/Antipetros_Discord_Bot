@@ -54,36 +54,13 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from importlib.machinery import SourceFileLoader
 
 
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
-import discord
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-# from discord import Embed, File
-
-from discord.ext import commands, tasks
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
-
+from marshmallow import Schema, fields
+from antipetros_discordbot.utility.gidtools_functions import writejson, writeit, writebin, readit, loadjson, readbin, pathmaker
+from antipetros_discordbot.schemas.extra_schemas import RequiredFileSchema, RequiredFolderSchema, ListenerSchema
+from antipetros_discordbot.schemas.command_schema import AntiPetrosBaseCommandSchema
 import gidlogger as glog
-from marshmallow import Schema, fields, pre_load
-from antipetros_discordbot.utility.enums import CommandCategory
+
+
 # endregion[Imports]
 
 # region [TODO]
@@ -110,33 +87,20 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class AntiPetrosBaseCommandSchema(Schema):
-    name = fields.Str(required=True)
-    aliases = fields.List(fields.Str())
-    enabled = fields.Bool()
-    hidden = fields.Bool()
-    help = fields.Str()
-    brief = fields.Str()
-    description = fields.Str()
-    short_doc = fields.Str()
-    usage = fields.Str()
-    signature = fields.Str()
-    example = fields.Str()
-    gif = fields.Raw()
-    github_link = fields.Str()
-    allowed_channels = fields.List(fields.Str())
-    allowed_roles = fields.List(fields.Str())
-    allowed_in_dms = fields.Bool()
-    allowed_members = fields.List(fields.Str())
-    parent = fields.Nested(lambda: AntiPetrosBaseCommandSchema(), default=None)
-    categories = fields.Method('cast_categories')
+class AntiPetrosBaseCogSchema(Schema):
+    required_folder = fields.Nested(RequiredFolderSchema())
+    required_files = fields.Nested(RequiredFileSchema())
+    all_listeners = fields.List(fields.Nested(ListenerSchema()))
+    all_commands = fields.List(fields.Nested(AntiPetrosBaseCommandSchema()))
 
-    def cast_categories(self, obj):
-        return obj.categories.serialize()
+    class Meta:
+        additional = ('name', 'config_name', 'public', 'description', 'long_description', 'extra_info', 'qualified_name', 'required_config_data')
+
+    def cast_listeners(self, obj):
+        return {listener_name: listener_method.__name__ for listener_name, listener_method in obj.all_listeners}
 
 
 # region[Main_Exec]
-
 if __name__ == '__main__':
     pass
 

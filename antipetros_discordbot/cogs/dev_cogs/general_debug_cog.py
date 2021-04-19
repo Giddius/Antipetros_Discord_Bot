@@ -788,6 +788,17 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
                      'state': self.is_ready}
         await ctx.send(ic.format(text_dict))
 
+    @auto_meta_info_command()
+    async def check_self_dump(self, ctx: commands.Context):
+        async with ctx.typing():
+            writejson(self.dump(), f'{str(self).lower()}_dump.json')
+        await ctx.send('done')
+
+    @auto_meta_info_command()
+    async def query_rate_limited(self, ctx: commands.Context):
+        result = self.bot.is_ws_ratelimited()
+        await ctx.send(str(result))
+
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))
 

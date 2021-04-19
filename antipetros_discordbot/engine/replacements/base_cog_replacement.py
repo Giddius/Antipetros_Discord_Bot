@@ -32,7 +32,7 @@ import unicodedata
 from io import BytesIO
 from abc import ABC, abstractmethod
 from copy import copy, deepcopy
-from enum import Enum, Flag, auto
+from enum import Enum, Flag, auto, unique
 from time import time, sleep
 from pprint import pprint, pformat
 from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
@@ -60,12 +60,17 @@ from discord.ext import commands, tasks
 
 
 import gidlogger as glog
+from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson, writeit, readit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker, AllowedChannelAndAllowedRoleCheck, BaseAntiPetrosCheck
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, alt_seconds_to_pretty, delete_message_if_text_channel, antipetros_repo_rel_path
+from antipetros_discordbot.utility.misc import pathmaker, STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, alt_seconds_to_pretty, delete_message_if_text_channel, antipetros_repo_rel_path
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from antipetros_discordbot.schemas import AntiPetrosBaseCogSchema
+from antipetros_discordbot.auxiliary_classes.listener_object import ListenerObject
+from antipetros_discordbot.utility.event_data import ListenerEvents
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+from marshmallow import Schema, fields
 
 
 # endregion[Imports]
@@ -105,21 +110,37 @@ class AntiPetrosBaseCog(commands.Cog):
     Adds a `name` attribute.
     Adds `__repr__` and `__str__`.
     """
-    show_in_readme = False
-    is_ready = CogMetaStatus.EMPTY
-    long_description = None
-    extra_info = None
+    public = True
+    meta_status = CogMetaStatus.EMPTY
+    long_description = "Missing"
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
+    required_folder = []
+    required_files = []
+    schema = AntiPetrosBaseCogSchema()
 
     def __init__(self, bot: "AntiPetrosBot") -> None:
         self.name = self.__class__.__name__
         self.config_name = make_config_name(self.name)
         self.bot = bot
         self.support = self.bot.support
+        self._ensure_files_and_folder()
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-        self.required_config_data = {'base_config': {},
-                                     'cogs_config': {}}
+
+    @property
+    def all_listeners(self):
+        return [ListenerObject(event=ListenerEvents(event_name), method=listener_method, cog=self) for event_name, listener_method in self.get_listeners()]
+
+    @ property
+    def all_commands(self) -> list:
+        return self.get_commands()
+
+    def _ensure_files_and_folder(self):
+        for item in self.required_folder + self.required_files:
+            item.ensure()
 
     async def on_ready_setup(self):
         log.debug('setup for cog "%s" finished', str(self))
@@ -130,6 +151,9 @@ class AntiPetrosBaseCog(commands.Cog):
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))
+
+    def dump(self):
+        return self.schema.dump(self)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

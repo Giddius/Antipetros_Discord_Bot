@@ -38,7 +38,7 @@ from pprint import pprint, pformat
 from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
 from timeit import Timer
 from typing import Union, Callable, Iterable
-from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
+from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines, isclass, isfunction, iscoroutine, iscoroutinefunction, isawaitable, cleandoc, getargspec
 from zipfile import ZipFile
 from datetime import tzinfo, datetime, timezone, timedelta
 from tempfile import TemporaryDirectory
@@ -54,36 +54,11 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from importlib.machinery import SourceFileLoader
 
 
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
-import discord
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-# from discord import Embed, File
-
-from discord.ext import commands, tasks
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
-
+from marshmallow import Schema, fields
+from antipetros_discordbot.utility.gidtools_functions import writejson, writeit, writebin, readit, loadjson, readbin, pathmaker
 import gidlogger as glog
-from marshmallow import Schema, fields, pre_load
-from antipetros_discordbot.utility.enums import CommandCategory
+
+
 # endregion[Imports]
 
 # region [TODO]
@@ -110,33 +85,15 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class AntiPetrosBaseCommandSchema(Schema):
-    name = fields.Str(required=True)
-    aliases = fields.List(fields.Str())
-    enabled = fields.Bool()
-    hidden = fields.Bool()
-    help = fields.Str()
-    brief = fields.Str()
-    description = fields.Str()
-    short_doc = fields.Str()
-    usage = fields.Str()
-    signature = fields.Str()
-    example = fields.Str()
-    gif = fields.Raw()
+class ListenerSchema(Schema):
+    name = fields.Str()
+    event = fields.Str()
     github_link = fields.Str()
-    allowed_channels = fields.List(fields.Str())
-    allowed_roles = fields.List(fields.Str())
-    allowed_in_dms = fields.Bool()
-    allowed_members = fields.List(fields.Str())
-    parent = fields.Nested(lambda: AntiPetrosBaseCommandSchema(), default=None)
-    categories = fields.Method('cast_categories')
+    file = fields.Str()
+    code = fields.Str()
+    description = fields.Str()
 
-    def cast_categories(self, obj):
-        return obj.categories.serialize()
-
-
-# region[Main_Exec]
-
+    # region[Main_Exec]
 if __name__ == '__main__':
     pass
 

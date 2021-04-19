@@ -96,7 +96,6 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
 # region [Init]
 
-
     def __init__(self, bot):
 
         self.bot = bot
@@ -122,6 +121,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         FaqItem.bot = self.bot
         FaqItem.faq_channel = self.faq_channel
@@ -146,6 +146,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
 # region [Listener]
 
+
     @commands.Cog.listener(name='on_message')
     async def faq_message_added_listener(self, message):
         if self.ready is False:
@@ -158,7 +159,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
     async def faq_message_deleted_listener(self, payload):
         if self.ready is False:
             return
-        channel = channel = self.bot.get_channel(payload.channel_id)
+        channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
             await self.collect_raw_faq_data()
 
@@ -166,7 +167,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
     async def faq_message_edited_listener(self, payload):
         if self.ready is False:
             return
-        channel = channel = self.bot.get_channel(payload.channel_id)
+        channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
             await self.collect_raw_faq_data()
 
@@ -174,6 +175,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command(enabled=get_command_enabled('post_faq_by_number'))
     @ allowed_channel_and_allowed_role(in_dm_allowed=False)
@@ -219,6 +221,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
 # region [HelperMethods]
 
+
     async def collect_raw_faq_data(self):
         channel = self.faq_channel
         self.faq_items = {}
@@ -231,7 +234,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
                 image = message.attachments[0]
             faq_item = FaqItem(content, created_at, jump_url, image)
             self.faq_items[faq_item.number] = faq_item
-        max_faq_number = max(key for key in self.faq_items)
+        max_faq_number = max(self.faq_items)
         if all(_num in self.faq_items for _num in range(1, max_faq_number + 1)):
             log.info('FAQ items collected: %s', max_faq_number)
         else:
@@ -241,7 +244,6 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

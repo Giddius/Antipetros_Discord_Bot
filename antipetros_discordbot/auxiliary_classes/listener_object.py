@@ -37,8 +37,8 @@ from time import time, sleep
 from pprint import pprint, pformat
 from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
 from timeit import Timer
-from typing import Union, Callable, Iterable
-from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
+from typing import Union, Callable, Iterable, Set, Dict, Mapping, List, Tuple, Generator, Awaitable, Any, TYPE_CHECKING
+from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines, signature, getcomments, getfile, getmodule, getmro, isclass, iscode, iscoroutine
 from zipfile import ZipFile
 from datetime import tzinfo, datetime, timezone, timedelta
 from tempfile import TemporaryDirectory
@@ -70,7 +70,7 @@ import discord
 
 # from discord import Embed, File
 
-from discord.ext import commands, tasks
+from discord.ext import commands, tasks, flags, ipc
 
 # from github import Github, GithubException
 
@@ -82,8 +82,9 @@ from discord.ext import commands, tasks
 
 
 import gidlogger as glog
-from marshmallow import Schema, fields, pre_load
-from antipetros_discordbot.utility.enums import CommandCategory
+from antipetros_discordbot.utility.event_data import ListenerEvents
+from antipetros_discordbot.utility.misc import sync_antipetros_repo_rel_path, get_github_line_link
+from antipetros_discordbot.schemas.extra_schemas.listener_schema import ListenerSchema
 # endregion[Imports]
 
 # region [TODO]
@@ -110,32 +111,48 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class AntiPetrosBaseCommandSchema(Schema):
-    name = fields.Str(required=True)
-    aliases = fields.List(fields.Str())
-    enabled = fields.Bool()
-    hidden = fields.Bool()
-    help = fields.Str()
-    brief = fields.Str()
-    description = fields.Str()
-    short_doc = fields.Str()
-    usage = fields.Str()
-    signature = fields.Str()
-    example = fields.Str()
-    gif = fields.Raw()
-    github_link = fields.Str()
-    allowed_channels = fields.List(fields.Str())
-    allowed_roles = fields.List(fields.Str())
-    allowed_in_dms = fields.Bool()
-    allowed_members = fields.List(fields.Str())
-    parent = fields.Nested(lambda: AntiPetrosBaseCommandSchema(), default=None)
-    categories = fields.Method('cast_categories')
+class ListenerObject:
+    github_base_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/"
 
-    def cast_categories(self, obj):
-        return obj.categories.serialize()
+    def __init__(self, event: Union[str, ListenerEvents], method: Callable, cog: commands.Cog = None):
+        self.event = ListenerEvents(event) if isinstance(event, str) else event
+        self.method = method
+        self.name = self.method.__name__
+        self._cog = cog
+
+    @property
+    def description(self):
+        return getdoc(self.method)
+
+    @property
+    def code(self) -> str:
+        return getsource(self.method)
+
+    @property
+    def file(self):
+        return getsourcefile(self.cog.__class__)
+
+    @property
+    def source_lines(self):
+        return getsourcelines(self.method)
+
+    @property
+    def github_link(self):
+        return get_github_line_link(self.github_base_url, self.file, self.source_lines)
+
+    @property
+    def cog(self) -> commands.Cog:
+        if self._cog is not None:
+            return self._cog
+        # module = getmodule(self.method)
+        # for name, class_object in getmembers(module, isclass):
+        #     if class_object.__module__ == module.__name__ and isinstance(class_object, commands.Cog):
+        #         self._cog = clas
+        #         return class_object
 
 
 # region[Main_Exec]
+
 
 if __name__ == '__main__':
     pass

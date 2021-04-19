@@ -8,7 +8,7 @@ DEFAULT_CONFIG_OPTION_NAMES = {'dm_ids': 'default_allowed_dm_ids', 'channels': '
 COG_CHECKER_ATTRIBUTE_NAMES = {'dm_ids': "allowed_dm_ids", 'channels': 'allowed_channels', 'roles': 'allowed_roles'}
 
 
-COG_NEEDED_ATTRIBUTES = ['on_ready_setup', 'update', 'config_name', 'docattrs', 'required_config_data', 'support', 'allowed_channels', 'allowed_dm_ids', 'allowed_roles']
+COG_NEEDED_ATTRIBUTES = ['on_ready_setup', 'update', 'config_name', 'required_config_data', 'support', 'allowed_channels', 'allowed_dm_ids', 'allowed_roles']
 
 
 DEFAULT_CONFIG_SECTION = """# settings here are used if the options are not specified in the sections

@@ -476,6 +476,14 @@ async def antipetros_repo_rel_path(in_path: str):
     return pathmaker(*in_path_parts)
 
 
+def sync_antipetros_repo_rel_path(in_path: str):
+    in_path = pathmaker(in_path)
+    in_path_parts = in_path.split('/')
+    while in_path_parts[0] != 'antipetros_discordbot':
+        _ = in_path_parts.pop(0)
+    return pathmaker(*in_path_parts)
+
+
 async def async_dict_items_iterator(in_dict: Mapping):
     for key, value in in_dict.items():
         yield key, value
@@ -544,3 +552,17 @@ def rgb_to_hsv(color: Tuple[int], normalized: bool = False):
 
 def hex_to_hex_alt(color: str):
     return color.replace('#', '0x')
+
+
+def datetime_is_aware(in_datetime: datetime) -> bool:
+    return (
+        in_datetime.tzinfo is not None and in_datetime.tzinfo.utcoffset(in_datetime) is not None
+    )
+
+
+def get_github_line_link(base_url: str, file_path, source_lines):
+    rel_path = sync_antipetros_repo_rel_path(file_path)
+    start_line_number = source_lines[1]
+    code_length = len(source_lines[0])
+    full_path = base_url + rel_path + f'#L{start_line_number}-L{start_line_number+code_length-1}'
+    return full_path
