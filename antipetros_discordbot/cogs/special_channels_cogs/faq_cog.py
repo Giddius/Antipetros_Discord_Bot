@@ -18,13 +18,13 @@ from PIL import Image, ImageDraw, ImageFont
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, minute_to_second
-from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role_2, command_enabled_checker, allowed_requester, owner_or_admin
+from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role, command_enabled_checker, allowed_requester, owner_or_admin
 
 from antipetros_discordbot.utility.gidtools_functions import appendwriteit, clearit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_faq_cog import FaqItem
 
@@ -80,10 +80,11 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
     q_emoji = "🇶"
     a_emoji = "🇦"
 
-    docattrs = {'show_in_readme': True,
-                "is_ready": (CogState.WORKING | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-06 03:33:42",
-                             "6e72c93ce50bf8f6a95d55b1a8c1c8b51588f5a804902c2ba57c9f5b2afe3f35b31b5bc52d3f6a71b1a887e82345453771c797b53e41780e4beaff3388b64331")}
+    docattrs = {'show_in_readme': False,
+                "is_ready": CogMetaStatus.WORKING | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                         faq_channel_id = 673410398510383115
@@ -175,7 +176,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # region [Commands]
 
     @auto_meta_info_command(enabled=get_command_enabled('post_faq_by_number'))
-    @ allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @ allowed_channel_and_allowed_role(in_dm_allowed=False)
     @commands.cooldown(1, 10, commands.BucketType.channel)
     async def post_faq_by_number(self, ctx, faq_numbers: commands.Greedy[int]):
         """

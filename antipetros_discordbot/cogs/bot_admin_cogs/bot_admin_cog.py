@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, List, Dict, Optional, Tuple, Any, Union, Calla
 from antipetros_discordbot.utility.misc import make_config_name, seconds_to_pretty, delete_message_if_text_channel
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin, only_giddi
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
@@ -75,15 +75,17 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
 
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-06 05:19:50",
-                             "b0fabfbd25ed7b45a009737879c2ef61262acce2c3e9043d7b2b27e51f6cd8de27fea94d52e1f97739765b4629d534de76bf28b241c5f27bd96917f3eb8c7e6e")}
+                'is_ready': CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                   """)
     alive_phrases_file = pathmaker(APPDATA['fixed_data'], 'alive_phrases.json')
     who_is_trigger_phrases_file = pathmaker(APPDATA['fixed_data'], 'who_is_trigger_phrases.json')
     loop_regex = re.compile(r"\<?(?P<name>[a-zA-Z\.\_]+)\srunning\=(?P<running>True|False)\sclosed\=(?P<closed>True|False)\sdebug\=(?P<debug>True|False)\>", re.IGNORECASE)
+    cog_import_base_path = BASE_CONFIG.get('general_settings', 'cogs_location')
 
     def __init__(self, bot: "AntiPetrosBot"):
         self.bot = bot
@@ -92,12 +94,15 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         self.latest_who_is_triggered_time = datetime.utcnow()
+        self.reaction_remove_ids = []
         self.ready = False
         glog.class_init_notification(log, self)
 # region [Setup]
 
     async def on_ready_setup(self):
         # self.garbage_clean_loop.start()
+        reaction_remove_ids = [self.bot.id] + [_id for _id in self.bot.owner_ids]
+        self.reaction_remove_ids = set(reaction_remove_ids)
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -135,6 +140,14 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
             writejson(std_phrases, self.who_is_trigger_phrases_file)
         return loadjson(self.who_is_trigger_phrases_file)
 
+# region [Listener]
+    @commands.Cog.listener(name='on_reaction_add')
+    async def stop_the_reaction_petros(self, reaction: discord.Reaction, user):
+        message = reaction.message
+        author = message.author
+        if user.id == 155149108183695360 and author.id in self.reaction_remove_ids:
+            await reaction.remove(user)
+
     @commands.Cog.listener(name='on_message')
     async def who_is_this_bot_listener(self, msg: discord.Message):
         if self.ready is False:
@@ -160,6 +173,45 @@ class BotAdminCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}
                 await msg.reply(**embed_data, delete_after=60)
                 log.info("'%s' was triggered by '%s' in '%s'", command_name, msg.author.name, msg.channel.name)
                 self.latest_who_is_triggered_time = datetime.utcnow()
+# endregion[Listener]
+
+    @auto_meta_info_command(enabled=True, aliases=['reload', 'refresh'])
+    @commands.is_owner()
+    async def reload_all_ext(self, ctx):
+        BASE_CONFIG.read()
+        COGS_CONFIG.read()
+        reloaded_extensions = []
+        do_not_reload_cogs = BASE_CONFIG.retrieve('extension_loading', 'do_not_reload_cogs', typus=List[str], direct_fallback=[])
+        async with ctx.typing():
+            for _extension in BASE_CONFIG.options('extensions'):
+                if _extension not in do_not_reload_cogs and BASE_CONFIG.retrieve('extensions', _extension, typus=bool, direct_fallback=False) is True:
+                    _location = self.cog_import_base_path + '.' + _extension
+                    try:
+                        self.bot.unload_extension(_location)
+
+                        self.bot.load_extension(_location)
+                        log.debug('Extension Cog "%s" was successfully reloaded from "%s"', _extension.split('.')[-1], _location)
+                        _category, _extension = _extension.split('.')
+                        for cog_name, cog_object in self.bot.cogs.items():
+                            if cog_name.casefold() == _extension.split('.')[-1].replace('_', '').casefold():
+                                await cog_object.on_ready_setup()
+                                break
+
+                        reloaded_extensions.append(self.bot.field_item(name=_extension, value=f"{ZERO_WIDTH}\n:white_check_mark:\n{ZERO_WIDTH}", inline=False))
+                    except commands.DiscordException as error:
+                        log.error(error)
+            # await self.bot.to_all_cogs('on_ready_setup')
+            _delete_time = 15 if self.bot.is_debug is True else 60
+            _embed_data = await self.bot.make_generic_embed(title="**successfully reloaded the following extensions**", author='bot_author', thumbnail="update", fields=reloaded_extensions)
+            await ctx.send(**_embed_data, delete_after=_delete_time)
+            await ctx.message.delete(delay=float(_delete_time))
+
+    @auto_meta_info_command(enabled=True, aliases=['die', 'rip', 'go-away', 'go_away', 'go.away', 'goaway', 'get_banned'])
+    @owner_or_admin()
+    async def shutdown(self, ctx, *, reason: str = 'No reason given'):
+        log.critical('shutdown command received from "%s" with reason: "%s"', ctx.author.name, reason)
+        await ctx.message.delete()
+        await self.bot.shutdown_mechanic()
 
     @auto_meta_info_command(enabled=True)
     @owner_or_admin()

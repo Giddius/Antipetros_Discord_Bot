@@ -8,6 +8,7 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
+from datetime import datetime, timedelta, timezone
 
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
@@ -21,6 +22,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus
+from antipetros_discordbot.utility.sqldata_storager import general_db
 # endregion[Imports]
 
 # region [TODO]
@@ -51,68 +53,89 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class ChannelStatistician(SubSupportBase):
-    save_folder = APPDATA['stats']
-    temp_folder = APPDATA['temp_files']
-    exclude_channels = ["website-admin-team", "wiki-mods", "sponsors", "probationary-list", "mute-appeals", "moderator-book", "moderation-team", "event-team", "black-book", "admin-team", "admin-meeting-notes"]
-    exclude_categories = ["admin info", "staff rooms", "voice channels"]
-    channel_usage_stats_file = pathmaker(APPDATA['stats'], "channel_usage_stats.json")
+    exclude_channels = ["website-admin-team",
+                        "wiki-mods",
+                        "sponsors",
+                        "probationary-list",
+                        "mute-appeals",
+                        "moderator-book",
+                        "moderation-team",
+                        "event-team",
+                        "black-book",
+                        "admin-team",
+                        "admin-meeting-notes"]
+    exclude_categories = ["admin info",
+                          "staff rooms",
+                          "voice channels"]
+    general_db = general_db
 
     def __init__(self, bot, support):
         self.bot = bot
         self.support = support
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
-        self.channel_usage_stats = None
+        self.ready = False
 
         glog.class_init_notification(log, self)
 
     async def record_channel_usage(self, msg):
+        if self.ready is False:
+            return
         if isinstance(msg.channel, discord.DMChannel):
             return
         if msg.author.id == self.bot.id:
             return
         channel = msg.channel
-        if self.is_debug and channel.name == BASE_CONFIG.get('debug', 'current_testing_channel'):
-            return
-        self.channel_usage_stats['overall'][channel.name] += 1
-        self.channel_usage_stats[await async_date_today()][channel.name] += 1
-        log.debug('channel usage was logged, for channel "%s"', channel.name)
+        if channel.name.casefold() not in self.exclude_channels and channel.category.name.casefold() not in self.exclude_categories:
+            await self.general_db.insert_channel_use(channel)
+            log.info("channel usage recorded for channel '%s'", channel.name)
 
     async def make_heat_map(self):
         pass
 
-    async def get_usage_stats(self, key: str):
-        return await self.bot.execute_in_thread(self.channel_usage_stats.get, key)
+    async def get_usage_stats(self, scope: str = "all"):
+        now = datetime.now(tz=timezone.utc)
+        scope_mapping = {'day': (now - timedelta(days=1), None),
+                         'week': (now - timedelta(weeks=1), None),
+                         'month': (now - timedelta(weeks=4), None),
+                         'year': (now - timedelta(weeks=52), None),
+                         'all': (None, None)}
+        arguments = scope_mapping.get(scope)
+        result_item = await self.general_db.get_channel_usage(arguments[0], arguments[1])
+        await result_item.convert_data_to_channels(self.bot)
+        counter = await result_item.get_as_counter()
+        return counter.most_common()
+
+    async def insert_channels_into_db(self):
+        all_channels = await self.bot.antistasi_guild.fetch_channels()
+        all_channels_map = {channel.type: [] for channel in all_channels}
+        for channel_type in all_channels_map:
+            all_channels_map[channel_type] += [channel for channel in all_channels if channel.type is channel_type]
+
+        for category_channel in all_channels_map.get(discord.ChannelType.category):
+            if category_channel.name.casefold() not in self.exclude_categories:
+                await self.general_db.insert_category_channel(category_channel)
+        for text_channel in all_channels_map.get(discord.ChannelType.text):
+            if not text_channel.name.casefold().startswith('ticket-') and text_channel.name.casefold() not in self.exclude_channels:
+                await self.general_db.insert_text_channel(text_channel)
+        existing_category_ids = {category.id for category in all_channels_map.get(discord.ChannelType.category)}
+        for category_id in await self.general_db.get_category_channel_ids():
+            if category_id not in existing_category_ids:
+                await self.general_db.update_category_channel_deleted(category_id)
+        existing_text_channel_ids = {channel.id for channel in all_channels_map.get(discord.ChannelType.text)}
+        for text_channel_id in await self.general_db.get_text_channel_ids():
+            if text_channel_id not in existing_text_channel_ids:
+                await self.general_db.update_text_channel_deleted(text_channel_id)
 
     async def if_ready(self):
-        if os.path.isfile(self.channel_usage_stats_file) is False:
-            self.channel_usage_stats = {'overall': {}}
-            writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        if self.channel_usage_stats is not None:
-            writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        self.channel_usage_stats = loadjson(self.channel_usage_stats_file)
-        for channel in self.bot.antistasi_guild.channels:
-            if channel.name not in self.channel_usage_stats['overall']:
-                self.channel_usage_stats['overall'][channel.name] = 0
-        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        await self.update(typus=UpdateTypus.DATE)
+        await self.insert_channels_into_db()
+        self.ready = True
         log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self, typus: UpdateTypus):
-        if UpdateTypus.DATE in typus:
-            writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-            if await async_date_today() not in self.channel_usage_stats:
-                self.channel_usage_stats[await async_date_today()] = {}
-            for channel in self.bot.antistasi_guild.channels:
-                if channel.name not in self.channel_usage_stats[await async_date_today()]:
-                    self.channel_usage_stats[await async_date_today()][channel.name] = 0
-            writejson(self.channel_usage_stats, self.channel_usage_stats_file)
-        else:
-            return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):
-        writejson(self.channel_usage_stats, self.channel_usage_stats_file)
         log.debug("'%s' sub_support was RETIRED", str(self))
 
 

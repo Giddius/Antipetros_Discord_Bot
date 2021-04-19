@@ -55,12 +55,12 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, Seperators
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
@@ -131,8 +131,12 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
                              'civis.',
                              '8th RULE': 'If this is your first night at **Antistasi**, you __HAVE__ to '
                              'squadlead.'}
-    docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
+
+    docattrs = {'show_in_readme': False,
+                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                     """).strip('\n')
@@ -180,40 +184,54 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Listener]
 
 
+    @commands.Cog.listener(name="on_raw_message_edit")
+    async def update_rules(self, payload: discord.RawMessageUpdateEvent):
+        if payload.channel_id != self.rules_channel_id:
+            return
+        await self.get_rules_messages()
+
 # endregion [Listener]
 
 # region [Commands]
 
-
-    @auto_meta_info_command(enabled=get_command_enabled('exploits_rules'))
-    @allowed_channel_and_allowed_role_2(False)
+    @auto_meta_info_command(enabled=get_command_enabled('exploits_rules'), categories=['admintools'])
+    @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def exploits_rules(self, ctx: commands.Context):
         embed_data = await self._make_rules_embed(self.rules_messages.get('exploits'))
-        await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
+        msg = await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
+        bertha_emoji = self.bot.bertha_emoji
+        if bertha_emoji is not None:
+            await msg.add_reaction(bertha_emoji)
         if ctx.message.reference is not None:
             await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command(enabled=get_command_enabled('community_rules'))
-    @allowed_channel_and_allowed_role_2(False)
+    @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def community_rules(self, ctx: commands.Context):
         embed_data = await self._make_rules_embed(self.rules_messages.get('community'))
-        await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
+        msg = await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
+        bertha_emoji = self.bot.bertha_emoji
+        if bertha_emoji is not None:
+            await msg.add_reaction(bertha_emoji)
         if ctx.message.reference is not None:
             await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command(enabled=get_command_enabled('server_rules'))
-    @allowed_channel_and_allowed_role_2(False)
+    @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def server_rules(self, ctx: commands.Context):
         embed_data = await self._make_rules_embed(self.rules_messages.get('server'))
-        await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
+        msg = await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
+        bertha_emoji = self.bot.bertha_emoji
+        if bertha_emoji is not None:
+            await msg.add_reaction(bertha_emoji)
         if ctx.message.reference is not None:
             await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command(enabled=get_command_enabled('all_rules'))
-    @allowed_channel_and_allowed_role_2(False)
+    @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 90, commands.BucketType.channel)
     async def all_rules(self, ctx: commands.Context):
         await self.exploits_rules(ctx)
@@ -221,7 +239,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await self.server_rules(ctx)
 
     @auto_meta_info_command(enabled=get_command_enabled('better_rules'))
-    @allowed_channel_and_allowed_role_2(False)
+    @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def better_rules(self, ctx: commands.Context):
         fields = []
@@ -246,7 +264,6 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [HelperMethods]
 
-
     async def _make_rules_embed(self, rule_message: discord.Message):
         fields = await self.parse_rules(rule_message)
         fields.append(self.bot.field_item(name="Additional Rules Documents", value='\n'.join(await self.parse_links())))
@@ -257,14 +274,15 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
                                                        timestamp=timestamp,
                                                        footer={'text': "Last updated:"},
                                                        fields=fields,
-                                                       thumbnail='bertha')
+                                                       thumbnail='bertha_emoji_version',
+                                                       color='red')
         return embed_data
 
     async def get_rules_messages(self):
         self.rules_messages = {}
         async for message in self.rules_channel.history(limit=None):
-            content = message.content.strip().strip('-').strip()
-            first_line = content.splitlines()[0].strip('*').strip('_').casefold()
+            content = message.content.strip().strip('-*').strip()
+            first_line = content.splitlines()[0].strip('*_').casefold()
             if first_line == 'community rules':
                 self.rules_messages['community'] = message
             elif first_line == 'server rules':
@@ -302,6 +320,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

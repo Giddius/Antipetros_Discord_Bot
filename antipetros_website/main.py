@@ -4,6 +4,7 @@ import os
 import subprocess
 import shutil
 import sys
+import asyncio
 from inspect import getmembers, isclass, isfunction
 from pprint import pprint, pformat
 from typing import Union, Dict, Set, List, Tuple
@@ -22,130 +23,59 @@ from time import time, sleep
 from timeit import Timer, timeit
 from textwrap import dedent
 from antipetros_discordbot.utility.gidtools_functions import writejson, writeit, readit, pathmaker, loadjson, clearit, pickleit, get_pickled
-from flask import Flask, request, render_template, redirect, url_for
-from flask_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
+
 from tabulate import tabulate
+from gidappdata import AppDataAccessor
 # endregion [Imports]
-load_dotenv('flask_keys.env')
-load_dotenv('../antipetros_discordbot/token.env')
-app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY').encode('utf-8')
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "true"
+from quart import Quart, render_template, request, url_for, send_from_directory
+from discord.ext import ipc
+from base64 import b64encode
+load_dotenv(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\token.env")
+
+app = Quart(__name__)
+ipc_client = ipc.Client(
+    secret_key=os.getenv("IPC_SECRET_KEY")
+)  # secret_key must be the same as your server
+APPDATA = None
 
 
-app.config["DISCORD_CLIENT_ID"] = 752943453624729640    # Discord client ID.
-app.config["DISCORD_CLIENT_SECRET"] = os.getenv('CLIENT_SECRETS')                # Discord client secret.
-app.config["DISCORD_REDIRECT_URI"] = "http://127.0.0.1:5000/callback"                 # URL to your callback endpoint.
-app.config["DISCORD_BOT_TOKEN"] = os.getenv('DISCORD_TOKEN')                    # Required to access BOT resources.
+async def get_appdata():
+    global APPDATA
+    if APPDATA is None:
 
-discord = DiscordOAuth2Session(app)
+        appdata_accessor_kwargs = await ipc_client.request("get_appdata_accessor_kwargs", data="")
+        APPDATA = AppDataAccessor(**appdata_accessor_kwargs)
+    return APPDATA
 
-
-HYPERLINK = '<a href="{}">{}</a>'
-
-
-@app.route("/")
-def index():
-    if not discord.authorized:
-        return f"""
-        {HYPERLINK.format(url_for(".login"), "Login")} <br />
-        {HYPERLINK.format(url_for(".login_with_data"), "Login with custom data")} <br />
-        {HYPERLINK.format(url_for(".invite_bot"), "Invite Bot with permissions 8")} <br />
-        {HYPERLINK.format(url_for(".invite_oauth"), "Authorize with oauth and bot invite")}
-        """
-
-    return f"""
-    {HYPERLINK.format(url_for(".me"), "@ME")}<br />
-    {HYPERLINK.format(url_for(".logout"), "Logout")}<br />
-    {HYPERLINK.format(url_for(".user_guilds"), "My Servers")}<br />
-    {HYPERLINK.format(url_for(".add_to_guild", guild_id=475549041741135881), "Add me to 475549041741135881.")}
-    """
+ImageItem = namedtuple("ImageItem", ["name", "path", "alt_text", "title_text"])
 
 
-@app.route("/login/")
-def login():
-    return discord.create_session()
+@app.route('/uploads/<path:filename>')
+async def gif_files(filename):
+    appdata = await get_appdata()
+    return await send_from_directory(APPDATA['gifs'], filename, as_attachment=False)
 
 
-@app.route("/login-data/")
-def login_with_data():
-    return discord.create_session(data=dict(redirect="/me/", coupon="15off", number=15, zero=0, status=False))
+@ app.route("/")
+async def index():
+
+    antipetros_image = ImageItem("AntiPetros.png", url_for("static", filename="images/AntiPetros.png"), "AntiPetros", "AntiPetrosBot Avatar")
+    return await render_template('home.html', antipetros_image=antipetros_image)
 
 
-@app.route("/invite-bot/")
-def invite_bot():
-    return discord.create_session(scope=["bot"], permissions=8, guild_id=464488012328468480, disable_guild_select=True)
+@ app.route("/command_list")
+async def command_list():
+    await asyncio.wait_for(get_appdata(), timeout=None)
+    command_data = await ipc_client.request('get_command_list', data="")
 
+    tables = {cog_name: tabulate(value, tablefmt='html') for cog_name, value in command_data.items()}
+    gif_dict = await ipc_client.request('get_gifs', data="")
 
-@app.route("/invite-oauth/")
-def invite_oauth():
-    return discord.create_session(scope=["bot", "identify"], permissions=8)
+    gifs = [ImageItem(image_name, pathmaker(image_path), image_name, image_name.split('.')[0].title()) for image_name, image_path in gif_dict.items()]
 
-
-@app.route("/callback/")
-def callback():
-    data = discord.callback()
-    redirect_to = data.get("redirect", "/")
-    return redirect(redirect_to)
-
-
-@app.route("/me/")
-def me():
-    user = discord.fetch_user()
-    return f"""
-<html>
-<head>
-<title>{user.name}</title>
-</head>
-<body><img src='{user.avatar_url or user.default_avatar_url}' />
-<p>Is avatar animated: {str(user.is_avatar_animated)}</p>
-<p>Is avatar animated: {str(user.id)}</p>
-<a href={url_for("my_connections")}>Connections</a>
-<br />
-</body>
-</html>
-"""
-
-
-@app.route("/me/guilds/")
-def user_guilds():
-    guilds = discord.fetch_guilds()
-    return "<br />".join([f"[ADMIN] {g.name}" if g.permissions.administrator else g.name for g in guilds])
-
-
-@app.route("/add_to/<int:guild_id>/")
-def add_to_guild(guild_id):
-    user = discord.fetch_user()
-    return user.add_to_guild(guild_id)
-
-
-@app.route("/me/connections/")
-def my_connections():
-    user = discord.fetch_user()
-    connections = discord.fetch_connections()
-    return f"""
-<html>
-<head>
-<title>{user.name}</title>
-</head>
-<body>
-{str([f"{connection.name} - {connection.type}" for connection in connections])}
-</body>
-</html>
-"""
-
-
-@app.route("/logout/")
-def logout():
-    discord.revoke()
-    return redirect(url_for(".index"))
-
-
-@app.route("/secret/")
-@requires_authorization
-def secret():
-    return os.urandom(16)
+    return await render_template('command_list.html', tables=tables, gifs=gifs)
 
 
 if __name__ == "__main__":
+
     app.run(debug=True)

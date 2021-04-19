@@ -85,8 +85,9 @@ from discord.ext import commands, tasks
 
 import gidlogger as glog
 
-from .base_command import AntiPetrosBaseCommand
 
+from .base_group import AntiPetrosBaseGroup
+from .base_command import AntiPetrosBaseCommand
 
 # endregion[Imports]
 
@@ -161,7 +162,22 @@ def auto_meta_info_command(name=None, cls=None, **attrs):
     return decorator
 
 
+def auto_meta_info_group(name=None, **attrs):
+    """EXTENDED_BY_GIDDI
+    -----------------
+    A decorator that transforms a function into a :class:`.Group`.
+
+    This is similar to the :func:`.command` decorator but the ``cls``
+    parameter is set to :class:`Group` by default.
+
+    .. versionchanged:: 1.1
+        The ``cls`` parameter can now be passed.
+    """
+
+    attrs.setdefault('cls', AntiPetrosBaseGroup)
+    return auto_meta_info_command(name=name, **attrs)
 # region[Main_Exec]
+
 
 if __name__ == '__main__':
     pass

@@ -19,9 +19,9 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role_2, owner_or_admin, log_invoker, has_attachments
+from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role, owner_or_admin, log_invoker, has_attachments
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson, pathmaker, pickleit, get_pickled, writeit, readit
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
@@ -157,8 +157,10 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
     config_name = CONFIG_NAME
     topics_data_file = pathmaker(APPDATA['json_data'], 'subscription_topics_data.json')
     docattrs = {'show_in_readme': False,
-                'is_ready': (CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-06 05:19:50")}
+                'is_ready': CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                   """)

@@ -60,12 +60,12 @@ from pygments.filters import get_all_filters
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, alt_seconds_to_pretty, delete_message_if_text_channel, antipetros_repo_rel_path
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled, bytes2human, readit, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
@@ -135,8 +135,12 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
     config_name = CONFIG_NAME
     antistasi_guild_id = 449481990513754112
+
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
+                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                     """).strip('\n')
@@ -208,8 +212,9 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
+
     @auto_meta_info_command(enabled=get_command_enabled('info_bot'))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def info_bot(self, ctx: commands.Context):
         name = self.bot.display_name
         cleaned_prefixes = await self._clean_bot_prefixes(ctx)
@@ -241,7 +246,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command(enabled=get_command_enabled('info_guild'))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def info_guild(self, ctx: commands.Context):
         """
         Shows some attributes of the current Guild.
@@ -281,7 +286,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         info_msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command(enabled=get_command_enabled('info_me'))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def info_me(self, ctx: commands.Context):
         async with ctx.typing():
             member = ctx.author
@@ -312,7 +317,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
             embed_data = await self.bot.make_generic_embed(title=member.name, description=f"The one and only {member.mention}", thumbnail=str(member.avatar_url), fields=fields, color=member.color)
             await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
-    @auto_meta_info_command(enabled=get_command_enabled('info_me'))
+    @auto_meta_info_command(enabled=get_command_enabled('info_me'), hidden=True)
     @owner_or_admin(False)
     async def info_other(self, ctx: commands.Context, member_id: int):
         async with ctx.typing():
@@ -337,7 +342,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
             await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     async def info_command(self, ctx: commands.Context, command: CommandConverter, as_codeblock: str = None):
         name = command.name
         aliases = command.aliases
@@ -368,7 +373,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                     await ctx.send(file=gif_file)
                 await asyncio.sleep(2)
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(hidden=True)
     @has_attachments(1)
     async def code_file_to_image(self, ctx: commands.Context, as_codeblock: str = None):
         file = ctx.message.attachments[0]
@@ -396,6 +401,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
 
     async def _get_command_gif(self, command_name):
         gif_name = f"{command_name}_command.gif"
@@ -476,10 +482,8 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         return f'{oldest_member_and_date[0].mention} -> {oldest_member_and_date[0].name}, joined at {oldest_member_and_date[1].strftime("%H:%M:%S on %a the %Y.%b.%d")}'
 
     async def most_used_channel(self):
-        stats = await self.bot.get_usage_stats('overall')
-        channel_data = await self.bot.execute_in_thread(partial(sorted, key=lambda x: x[1], reverse=True), list(stats.items()))
-        channel, amount = channel_data[0]
-        channel = await self.bot.channel_from_name(channel)
+        stats = await self.bot.get_usage_stats('all')
+        channel, amount = stats[0]
         return f"{channel.mention} recorded usages: {amount}"
 
     async def amount_commands(self, with_hidden: bool = False):

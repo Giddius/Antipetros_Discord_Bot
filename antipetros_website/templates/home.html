@@ -1,9 +1,15 @@
 {% extends "base_template.html" %}
-
+{% from "makros/base_makros.html" import html_image %}
+{% block style %}
+img { width: 50%; height: auto;
+     display: block;
+  margin-left: auto;
+  margin-right: auto;}
+h1 {text-align:center; }
+{% endblock %}
 {% block body %}
 <h1>AntiPetros Discord Bot</h1>
- <img src="static/images/{{ image_name }}" alt="AntiPetros Discord Bot">
-<br>
+{{ html_image(antipetros_image) }}
 
-<button class="btn" type="submit", href='http://127.0.0.1:5000/login'>Button</button>
+<a href="{{ url_for('command_list') }}"><button>Home</button></a>
 {% endblock %}

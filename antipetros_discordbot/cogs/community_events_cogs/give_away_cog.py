@@ -18,8 +18,8 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role_2, allowed_requester, command_enabled_checker, log_invoker
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, allowed_requester, command_enabled_checker, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
@@ -73,10 +73,13 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
     config_name = CONFIG_NAME
     give_away_data_file = pathmaker(APPDATA['json_data'], 'give_aways.json')
     give_away_item = GiveAwayEvent
-    docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
-                             "2021-02-06 05:22:34",
-                             "8afa88580ca36d0f7f103683f1fe29c200a2981113b8bb4b8ef9d52a4129de62545f1db6fd27be8c26e2fb52408b9f0f62e07faa4e23adf8e8c5d8864da389b1")}
+
+    docattrs = {'show_in_readme': False,
+                'is_ready': CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
+
     required_config_data = dedent("""
                                   embed_thumbnail = https://upload.wikimedia.org/wikipedia/commons/6/62/Gift_box_icon.png
                                   """)
@@ -218,7 +221,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
     @flags.add_flag("--start-message", "-smsg", type=str)
     @flags.add_flag("--enter-emoji", '-em', type=str, default="🎁")
     @auto_meta_info_command(cls=AntiPetrosFlagCommand, enabled=get_command_enabled("create_giveaway"))
-    @allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @allowed_channel_and_allowed_role(in_dm_allowed=False)
     @log_invoker(logger=log, level="info")
     async def create_giveaway(self, ctx, **flags):
         give_away_title = flags.get('title')
@@ -286,7 +289,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
                                                          message=give_away_message))
 
     @ auto_meta_info_command(enabled=get_command_enabled("abort_give_away"))
-    @ allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @ allowed_channel_and_allowed_role(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def abort_give_away(self, ctx):
         """
@@ -296,7 +299,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
         return
 
     @ auto_meta_info_command(enabled=get_command_enabled("finish_give_away"))
-    @ allowed_channel_and_allowed_role_2(in_dm_allowed=False)
+    @ allowed_channel_and_allowed_role(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def finish_give_away(self, ctx):
         """

@@ -134,7 +134,7 @@ class LogFile:
             pre_content = content[:split_match.end()]
             cleaned_lower = MOD_TABLE_START_REGEX.split(pre_content)[-1]
             mod_table = MOD_TABLE_END_REGEX.split(cleaned_lower)[0]
-            async for line in async_list_iterator(mod_table.splitlines()):
+            for line in mod_table.splitlines():
                 if line != '':
                     line_match = MOD_TABLE_LINE_REGEX.search(line)
                     _out.append({key: value.strip() for key, value in line_match.groupdict().items()})

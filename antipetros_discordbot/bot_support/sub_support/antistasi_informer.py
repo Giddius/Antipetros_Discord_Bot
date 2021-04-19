@@ -64,6 +64,10 @@ class AntistasiInformer(SubSupportBase):
         return False
 
     @property
+    def bertha_emoji(self):
+        return discord.utils.get(self.antistasi_guild.emojis, id=829666475035197470)
+
+    @property
     def antistasi_invite_url(self):
         return BASE_CONFIG.retrieve('antistasi_info', 'invite_url', typus=str, direct_fallback='')
 
@@ -109,6 +113,18 @@ class AntistasiInformer(SubSupportBase):
     def antistasi_guild(self):
         return self.bot.get_guild(self.general_data.get('antistasi_guild_id'))
 
+    @ property
+    def blacklisted_users(self):
+        return loadjson(APPDATA['blacklist.json'])
+
+    def blacklisted_user_ids(self):
+        for user_item in self.blacklisted_users:
+            yield user_item.get('id')
+
+    async def get_message_directly(self, channel_id: int, message_id: int) -> discord.Message:
+        channel = await self.channel_from_id(channel_id)
+        return await channel.fetch_message(message_id)
+
     async def retrieve_antistasi_member(self, user_id):
         return await self.antistasi_guild.fetch_member(user_id)
 
@@ -121,7 +137,7 @@ class AntistasiInformer(SubSupportBase):
     def sync_channel_from_id(self, channel_id: int):
         return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)
 
-    async def channel_from_id(self, channel_id: int):
+    async def channel_from_id(self, channel_id: int) -> discord.abc.GuildChannel:
         return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)
 
     def sync_member_by_id(self, member_id: int) -> discord.Member:

@@ -72,6 +72,11 @@ class GidSQLiteWriter(GidSqliteActionBase):
         finally:
             conn.close()
 
+    def create_aggregate(self, aggregate_name: str, num_params: int, aggregate_class):
+        con = sqlite.connect(self.db_loc, isolation_level=None, detect_types=sqlite.PARSE_DECLTYPES)
+        con.create_aggregate(aggregate_name, num_params, aggregate_class)
+        con.close()
+
     def __repr__(self):
         return f"{self.__class__.__name__} ('{self.db_loc}')"
 
@@ -123,6 +128,11 @@ class AioGidSQLiteWriter(AioGidSqliteActionBase):
         finally:
             await cursor.close()
             await conn.close()
+
+    async def create_aggregate(self, aggregate_name: str, num_params: int, aggregate_class):
+        con = await aiosqlite.connect(self.db_loc, isolation_level=None, detect_types=sqlite.PARSE_DECLTYPES)
+        await con.create_aggregate(aggregate_name, num_params, aggregate_class)
+        await con.close()
 
     def __repr__(self):
         return f"{self.__class__.__name__} ('{self.db_loc}')"

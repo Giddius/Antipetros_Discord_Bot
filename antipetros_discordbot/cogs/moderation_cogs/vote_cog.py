@@ -56,16 +56,17 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel, async_dict_items_iterator
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
+from antipetros_discordbot.engine.replacements import AntiPetrosFlagCommand, AntiPetrosBaseCommand, auto_meta_info_command
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -122,7 +123,10 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
-                'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
+                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
+                'extra_description': dedent("""
+                                            """).strip(),
+                'caveat': None}
 
     required_config_data = dedent("""
                                     """).strip('\n')
@@ -161,7 +165,6 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Properties]
 
 # region [Setup]
-
 
     async def on_ready_setup(self):
 
@@ -210,6 +213,7 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Listener]
 
+
     @commands.Cog.listener(name='on_reaction_add')
     async def vote_reaction_listener(self, reaction: discord.Reaction, user: Union[discord.User, discord.Member]):
 
@@ -235,7 +239,7 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Commands]
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role_2()
+    @allowed_channel_and_allowed_role()
     @log_invoker(log, 'info')
     async def create_vote(self, ctx: commands.Context, title: str, description: str, run_for: int, *options: str):
         if len(options) > 10:
@@ -269,6 +273,7 @@ class VoteCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
 
     async def remove_other_reactions(self, reaction: discord.Reaction, user: Union[discord.User, discord.Member]):
         msg = await reaction.message.channel.fetch_message(reaction.message.id)

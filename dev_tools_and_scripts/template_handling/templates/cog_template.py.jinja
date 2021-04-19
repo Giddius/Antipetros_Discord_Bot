@@ -17,7 +17,7 @@ import subprocess
 from enum import Enum, Flag, auto, unique
 from time import sleep
 from pprint import pprint, pformat
-from typing import Union, TYPE_CHECKING
+from typing import Optional,Union,Any,TYPE_CHECKING,Callable,Iterable,List,Dict,Set,Tuple,Mapping
 from datetime import tzinfo, datetime, timezone, timedelta
 from functools import wraps, lru_cache, singledispatch, total_ordering, partial
 from contextlib import contextmanager
@@ -54,14 +54,14 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role_2, has_attachments, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel,async_write_json, async_load_json
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup, auto_meta_info_group
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
@@ -119,7 +119,7 @@ class {{ cog_name }}(commands.Cog, command_attrs={{ "{" }}'name': COG_NAME {{ "}
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
-            'is_ready': (CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.OUTDATED | CogState.CRASHING | CogState.EMPTY | CogState.DOCUMENTATION_MISSING,)}
+            'is_ready': (CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,)}
 
     required_config_data = dedent("""
                                     """).strip('\n')
@@ -149,7 +149,7 @@ class {{ cog_name }}(commands.Cog, command_attrs={{ "{" }}'name': COG_NAME {{ "}
 
         log.debug('setup for cog "%s" finished', str(self))
 
-    async def update(self, typus):
+    async def update(self, typus:UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 
