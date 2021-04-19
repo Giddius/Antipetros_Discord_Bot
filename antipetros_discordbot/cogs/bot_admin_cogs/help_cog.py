@@ -63,12 +63,12 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
 from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup, auto_meta_info_group
-from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink, make_box
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.converters import FlagArg, CogConverter, CheckConverter, CommandConverter, DateOnlyConverter, LanguageConverter, DateTimeFullConverter, date_time_full_converter_flags, CategoryConverter
 from antipetros_discordbot.utility.exceptions import ParameterError
-
+from rich.panel import Panel
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -124,24 +124,31 @@ def filter_with_user_role(owner_ids: List[int], in_member: discord.Member, only_
     role_names = ['all'] + [role.name.casefold() for role in in_member.roles]
 
     def actual_filter(in_object):
-
+        is_owner = False
+        if in_member.id in owner_ids:
+            is_owner = True
         if isinstance(in_object, (AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand)):
-            if in_member.id in owner_ids:
+            if only_enabled is True and in_object.enabled is False:
+                return False
+            if is_owner is True:
                 return True
             allowed_roles = [c_role.casefold() for c_role in in_object.allowed_roles]
             return any(role in allowed_roles for role in role_names)
         elif isinstance(in_object, commands.Cog):
-            if only_enabled is True and in_object.enabled is False:
+            if str(in_object) == 'GeneralDebugCog':
                 return False
-            if in_member.id in owner_ids:
-                return True
             if only_working is True and CogMetaStatus.WORKING not in in_object.docattrs.get("is_ready"):
                 return False
+            if is_owner is True:
+                return True
+
             if in_object.docattrs.get('show_in_readme') is False:
                 return any(role in ['admin', 'admin lead'] for role in role_names)
             else:
                 return True
         elif isinstance(in_object, CommandCategory):
+            if is_owner is True:
+                return True
             return in_object.visibility_check(role_names)
     return actual_filter
 
@@ -258,11 +265,14 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
         fields = []
         for cog_name, cog in cogs.items():
             if cog_name.casefold() != "generaldebug":
-                value_text = f"> *{cog.description}*\n{SPECIAL_SPACE*4}{ListMarker.circle_star} **Commands:**\n"
-                command_names = [f"`{command.name}` ☑️" if command.enabled is True else f"`{command.name}` ❎" for command in cog.get_commands() if member_filter(command) is True]
+                value_text = f"> *{cog.description}*\n{ZERO_WIDTH}\n"
+                command_names = [f"`{command.name}`" if command.enabled is True else f"`{command.name}`" for command in cog.get_commands() if member_filter(command) is True]
                 command_names.sort()
-                value_text += '\n'.join(f"{SPECIAL_SPACE*16}{ListMarker.triangle} {command_name}" for command_name in command_names)
-                value_text += f'\n{ZERO_WIDTH}'
+                # value_sub_text = f"{ListMarker.circle_star} **Commands:**\n"
+
+                value_sub_text = '\n'.join(f"{SPECIAL_SPACE*0}{ListMarker.triangle} {command_name}" for command_name in command_names)
+                value_sub_text += ''
+                value_text += '\n'.join(map(lambda x: f"{SPECIAL_SPACE*16}{x}", make_box(value_sub_text).splitlines()))
                 fields.append(self.bot.field_item(name=f"{ListMarker.bullet} {split_camel_case_string(cog_name).title()}", value=value_text))
 
         fields.append(self.bot.field_item(name=f"{ListMarker.bullet} Command Tool Sets", value=f'{ZERO_WIDTH}\n' + '\n'.join(f"{SPECIAL_SPACE*8}{ListMarker.circle_star} *{category}*" for category in await self.all_categories(member_filter))))

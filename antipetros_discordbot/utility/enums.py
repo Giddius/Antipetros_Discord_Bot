@@ -174,4 +174,5 @@ class CommandCategory(Flag):
                           CommandCategory.DEVTOOLS: ['admin', 'admin lead', 'dev helper', 'template helper', 'dev team', 'dev team lead'],
                           CommandCategory.TEAMTOOLS: ['admin', 'admin lead'],
                           CommandCategory.META: ['admin', 'admin lead']}
+
         return any(role in visibility_map.get(self) for role in in_roles)

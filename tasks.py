@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, date
 from pprint import pprint
 from time import time, sleep
 import json
+from discord.ext import ipc
 from PIL import Image, ImageFilter, ImageOps
 import toml
 import tomlkit
@@ -21,8 +22,10 @@ from rich import print as rprint, inspect as rinspect, progress_bar
 from rich.progress import track
 from timeit import Timer, timeit
 from zipfile import ZipFile, ZIP_LZMA
-
-
+from importlib import import_module
+import asyncio
+from inspect import getmembers, ismodule
+import isort
 GIT_EXE = shutil.which('git.exe')
 
 
@@ -146,7 +149,6 @@ FOLDER = {'docs': pathmaker(THIS_FILE_DIR, 'docs'),
           'cogs': pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'cogs')}
 
 FILES = {'bot_info.json': pathmaker(FOLDER.get('docs_data'), 'bot_info.json'),
-         'command_data.json': pathmaker(FOLDER.get('docs_data'), 'command_data.json'),
          'links_data.json': pathmaker(FOLDER.get('docs_data'), 'links_data.json'),
          'future_plans.txt': pathmaker(FOLDER.get('docs_raw_text'), 'future_plans.txt'),
          'command_data.json': pathmaker(FOLDER.get('docs_data'), 'command_data.json'),
@@ -363,35 +365,6 @@ def subreadme_toc(c, output_file=None):
         f.write('# Sub-ReadMe Links\n\n')
         for title, link in found_subreadmes:
             f.write(f"\n* [{make_title(title)}]({link})\n\n---\n")
-
-
-@task
-def increment_version(c, increment_part='patch'):
-    init_file = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "__init__.py")
-    with open(init_file, 'r') as f:
-        content = f.read()
-    version_line = None
-
-    for line in content.splitlines():
-        if '__version__' in line:
-            version_line = line
-            break
-    if version_line is None:
-        raise RuntimeError('Version line not found')
-    cleaned_version_line = version_line.replace('__version__', '').replace('=', '').replace('"', '').replace("'", "").strip()
-    major, minor, patch = cleaned_version_line.split('.')
-
-    if increment_part == 'patch':
-        patch = str(int(patch) + 1)
-    elif increment_part == 'minor':
-        minor = str(int(minor) + 1)
-        patch = str(0)
-    elif increment_part == 'major':
-        major = str(int(major) + 1)
-        minor = str(0)
-        patch = str(0)
-    with open(init_file, 'w') as f:
-        f.write(content.replace(version_line, f"__version__ = '{major}.{minor}.{patch}'"))
 
 
 @task
@@ -693,7 +666,6 @@ def create_tocs(content, max_level=3):
     return template.render(tocs=_headings)
 
 
-@task(collect_data, make_cogs_info)
 def make_readme(c):
     bot_info_data = loadjson(FILES.get('bot_info.json'))
     command_data = loadjson(FILES.get('command_data.json'))
@@ -722,26 +694,69 @@ def make_readme(c):
         f.write(result)
 
 
-def commit_push(c, typus='fix', description=None):
-    if typus == 'release':
-        msg = "🎆🎆 Release 🎆🎆"
-    elif typus == 'fix':
-        msg = "🛠️ fix" + f" {description}" if description is not None else "🛠️ fix"
-    elif typus == 'update':
-        msg = "🏷️ update" + f" {description}" if description is not None else "🏷️ update"
-    else:
-        msg = "🍱 misc"
+def get_version(only_version=False):
+    init_file = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "__init__.py")
+    with open(init_file, 'r') as f:
+        content = f.read()
+    version_line = None
+
+    for line in content.splitlines():
+        if '__version__' in line:
+            version_line = line
+            break
+    if version_line is None:
+        raise RuntimeError('Version line not found')
+    cleaned_version_str = version_line.replace('__version__', '').replace('=', '').replace('"', '').replace("'", "").strip()
+    major, minor, patch = cleaned_version_str.split('.')
+    if only_version is True:
+        return major, minor, patch
+    return (major, minor, patch), content, version_line
+
+
+def increment_version(increment_part='patch'):
+    init_file = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "__init__.py")
+    version_tuple, content, version_line = get_version()
+    major, minor, patch = version_tuple
+
+    if increment_part == 'patch':
+        patch = str(int(patch) + 1)
+    elif increment_part == 'update':
+        minor = str(int(minor) + 1)
+        patch = str(0)
+    elif increment_part == 'release':
+        major = str(int(major) + 1)
+        minor = str(0)
+        patch = str(0)
+    with open(init_file, 'w') as f:
+        f.write(content.replace(version_line, f"__version__ = '{major}.{minor}.{patch}'"))
+    return major, minor, patch
+
+
+def commit_push(c, typus='patch', description=None):
+    typus = typus.casefold()
+
+    major, minor, patch = increment_version(typus)
+    make_readme(c)
+    version_str = {'release': f"**{major}**.{minor}.{patch}",
+                   'update': f"{major}.**{minor}**.{patch}",
+                   'patch': f"{major}.{minor}.**{patch}**"}.get(typus, f"{major}.{minor}.{patch}")
+    msg = {'release': f"🎆🎆 Release of version {version_str} 🎆🎆",
+           'update': f"🏷️ update {version_str}",
+           'patch': f"🛠️ fix version: {version_str}"}.get(typus, f"🍱 {typus} {version_str}`")
+
+    if description is not None:
+        msg += f' | {description}'
     os.chdir(main_dir_from_git())
     c.run("git add .", echo=True)
-    sleep(1)
+    sleep(2)
     c.run(f'git commit -am "{msg}"', echo=True)
-    sleep(1)
+    sleep(2)
     c.run('git push', echo=True)
-    sleep(1)
+    sleep(2)
 
 
-@task(pre=[clean_repo, collect_data, store_userdata, increment_version, set_requirements, make_readme])
-def build(c, typus='fix', description=None):
+@task(pre=[clean_repo, collect_data, make_cogs_info, store_userdata, set_requirements, make_readme])
+def build(c, typus='patch', description=None):
     commit_push(c, typus, description)
     os.chdir(main_dir_from_git())
     c.run("flit publish", echo=True)
@@ -831,10 +846,9 @@ def bot_restart(c):
     restart()
 
 
-@task
+@task()
 def shutdown_bot(c):
-    from discord.ext import ipc
-    import asyncio
+
     load_dotenv(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\token.env")
     client = ipc.Client(secret_key=os.getenv('IPC_SECRET_KEY'))
     request_thing = client.request("shut_down", member_id=576522029470056450)
@@ -845,8 +859,7 @@ def shutdown_bot(c):
 
 @task
 def message_hi(c):
-    from discord.ext import ipc
-    import asyncio
+
     load_dotenv(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\antipetros_discordbot\token.env")
     client = ipc.Client(secret_key=os.getenv('IPC_SECRET_KEY'))
     request_thing = client.request("say_hi", name="Giddi is the name")
@@ -982,4 +995,4 @@ def delete_all_git_branches_except_development(c, force=False):
         except Exception as error:
             print(error)
         c.run("git remote prune origin", echo=True, warn=True)
-    print(f"the following branches are not fully merged:\n" + '\n'.join(not_fully_merged))
+    print("the following branches are not fully merged:\n" + '\n'.join(not_fully_merged))

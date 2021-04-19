@@ -1,4 +1,4 @@
-Flask
+--pre flask[async]
 Flask-Discord
 Flask-SQLAlchemy
 Flask-WTF

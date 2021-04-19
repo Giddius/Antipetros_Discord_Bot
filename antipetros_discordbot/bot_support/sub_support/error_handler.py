@@ -227,7 +227,7 @@ class ErrorHandler(SubSupportBase):
         embed = Embed(title=title, description=f"{ZERO_WIDTH}\n{msg}\n{ZERO_WIDTH}", color=self.support.color('red').int, timestamp=datetime.utcnow())
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('warning'))
         embed.add_field(name="🔗", value=embed_hyperlink("invoking message jump url", ctx.message.jump_url), inline=False)
-        embed.add_field(name="prefix used", value=f"`{type(ctx.prefix)}`", inline=False)
+        embed.add_field(name="prefix used", value=f"`{ctx.prefix}`", inline=False)
         embed.add_field(name='invoking message', value=f"```css\n{ctx.message.content}\n```", inline=False)
         embed.add_field(name="args", value=ctx.args, inline=False)
         embed.add_field(name="kwargs", value=ctx.kwargs, inline=False)
