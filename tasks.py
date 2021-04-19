@@ -961,7 +961,7 @@ def get_branch_names(c, branch_type: str = 'local'):
 def create_git_bundle(c, target_folder=None, target_name=None):
     target_folder = pathmaker(os.getenv('BACKUP_FOLDER')) if target_folder is None else pathmaker(target_folder)
     target_name = os.getenv('PROJECT_NAME') if target_name is None else target_name
-    target_name = f"{target_name}[{date.today().strftime('%Y-%m-%d')}].bundle"
+    target_name = f"{target_name}[{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}].bundle"
     target_path = pathmaker(target_folder, target_name, rev=True)
     c.run(f"git bundle create {target_path} --all", echo=True)
 
@@ -972,5 +972,7 @@ def delete_all_git_branches_except_development(c):
     local_branches = get_branch_names(c, 'local')
     for branch in local_branches:
         c.run(f"git branch -d {branch}", echo=True)
-        c.run(f"git push -d origin {branch}", echo=True)
-
+        try:
+            c.run(f"git push -d origin {branch}", echo=True, warn=True)
+        except Exception as error:
+            print(error)
