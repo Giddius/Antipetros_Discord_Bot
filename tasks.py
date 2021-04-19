@@ -967,12 +967,19 @@ def create_git_bundle(c, target_folder=None, target_name=None):
 
 
 @task(name='mass-git-branch-delete', pre=[create_git_bundle])
-def delete_all_git_branches_except_development(c):
-
+def delete_all_git_branches_except_development(c, force=False):
+    force = '-d' if force is False else '-D'
+    not_fully_merged = []
     local_branches = get_branch_names(c, 'local')
     for branch in local_branches:
-        c.run(f"git branch -d {branch}", echo=True)
+        try:
+            c.run(f"git branch {force} {branch}", echo=True)
+        except Exception as error:
+            print(error)
+            not_fully_merged.append(branch)
         try:
             c.run(f"git push -d origin {branch}", echo=True, warn=True)
         except Exception as error:
             print(error)
+        c.run("git remote prune origin", echo=True, warn=True)
+    print(f"the following branches are not fully merged:\n" + '\n'.join(not_fully_merged))

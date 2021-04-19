@@ -263,6 +263,7 @@ class EmbedBuilder(SubSupportBase):
             generic_embed.set_author(**author)
 
         if footer is not None:
+            footer = footer.copy()
             footer['text'] = f"{ZERO_WIDTH}\n" + footer['text']
             generic_embed.set_footer(**footer)
         if thumbnail is not None:

@@ -226,7 +226,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
         embed = message.embeds[0]
         embed_dict = embed.to_dict()
-        writejson(embed_dict, pathmaker(APPDATA["saved_embeds"], f"{message.id}.json"))
+        writejson(embed_dict, pathmaker(APPDATA["debug"], f"{message.id}.json"))
         await ctx.send(f'saved embed from message {message.id}')
 
     async def _get_unique_save_message_path(self, name: str, in_format: str, in_round: int = 0):
