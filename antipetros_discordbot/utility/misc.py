@@ -11,7 +11,7 @@ from functools import wraps, partial
 from concurrent.futures import ThreadPoolExecutor
 from inspect import getclosurevars
 import json
-from typing import Iterable, Union, Set, List, Tuple, Dict, Callable, Mapping, Generator
+from typing import Iterable, Union, Set, List, Tuple, Dict, Callable, Mapping, Generator, Awaitable, TypeVar
 # * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
 from validator_collection import validators
@@ -174,6 +174,20 @@ def sync_to_async(_func):
         func = partial(_func, *args, **kwargs)
         return loop.run_in_executor(executor=EXECUTOR, func=func)
     return wrapped
+
+
+R = TypeVar("R")
+
+
+def async_to_sync(func: Awaitable[R]) -> R:
+    '''Wraps `asyncio.run` on an async function making it sync callable.'''
+    if not asyncio.iscoroutinefunction(func):
+        raise TypeError(f"{func} is not a coroutine function")
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return asyncio.run(func(*args, **kwargs))
+    return wrapper
 
 
 def make_command_subsection_seperator(command_name):

@@ -32,7 +32,7 @@ import unicodedata
 from io import BytesIO
 from textwrap import dedent
 from typing import Optional, Union, Any, TYPE_CHECKING, Callable, Iterable, List, Dict, Set, Tuple, Mapping
-
+from inspect import isclass
 # * Third Party Imports -->
 from icecream import ic
 # import requests
@@ -56,7 +56,7 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel, async_write_json, async_load_json, split_camel_case_string
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker, AllowedChannelAndAllowedRoleCheck, BaseAntiPetrosCheck
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled, writeit, readit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker, Seperators, SPECIAL_SPACE
@@ -67,7 +67,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.converters import FlagArg, CogConverter, CheckConverter, CommandConverter, DateOnlyConverter, LanguageConverter, DateTimeFullConverter, date_time_full_converter_flags, CategoryConverter
-
+from antipetros_discordbot.utility.exceptions import ParameterError
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -120,17 +120,21 @@ def no_name_modifier(in_name: str) -> str:
     return in_name
 
 
-def filter_with_user_role(owner_ids: List[int], in_member: discord.Member, only_working: bool = True):
+def filter_with_user_role(owner_ids: List[int], in_member: discord.Member, only_working: bool = True, only_enabled: bool = True):
     role_names = ['all'] + [role.name.casefold() for role in in_member.roles]
 
     def actual_filter(in_object):
-        if in_member.id in owner_ids:
-            log.debug(f'skipping checks because "{in_member.name}" is owner!')
-            return True
+
         if isinstance(in_object, (AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand)):
+            if in_member.id in owner_ids:
+                return True
             allowed_roles = [c_role.casefold() for c_role in in_object.allowed_roles]
             return any(role in allowed_roles for role in role_names)
         elif isinstance(in_object, commands.Cog):
+            if only_enabled is True and in_object.enabled is False:
+                return False
+            if in_member.id in owner_ids:
+                return True
             if only_working is True and CogState.WORKING not in in_object.docattrs.get("is_ready"):
                 return False
             if in_object.docattrs.get('show_in_readme') is False:
@@ -174,12 +178,19 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self.help_dispatch_map = {commands.Cog: self._send_cog_help,
+                                  AntiPetrosBaseCommand: self._send_command_help,
+                                  AntiPetrosBaseGroup: self._send_command_help,
+                                  AntiPetrosFlagCommand: self._send_command_help,
+                                  CommandCategory: self._send_toolbox_help,
+                                  BaseAntiPetrosCheck: self._send_check_help}
         glog.class_init_notification(log, self)
 
 
 # endregion [Init]
 
 # region [Properties]
+
 
     @property
     def general_help_description(self):
@@ -194,6 +205,7 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Properties]
 
 # region [Setup]
+
 
     async def on_ready_setup(self):
 
@@ -217,12 +229,18 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
+
     @auto_meta_info_command(enabled=True, categories=[CommandCategory.META])
-    async def help(self, ctx: commands.Context, parameter: Optional[Union[CommandConverter, CogConverter, CategoryConverter, CheckConverter]]):
-        if parameter is None:
+    async def help(self, ctx: commands.Context, in_object: Optional[Union[CommandConverter, CogConverter, CategoryConverter, CheckConverter]]):
+        raw_params = ctx.message.content.split(ctx.invoked_with)[-1].strip()
+
+        if in_object is None and raw_params == '':
             await self._send_overall_help(ctx)
+
+        elif in_object is None and raw_params != '':
+            raise ParameterError('in_object', raw_params)
         else:
-            await ctx.send(str(parameter))
+            await self._get_dispatcher(in_object)(ctx, in_object)
 
 # endregion [Commands]
 
@@ -233,23 +251,20 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [HelperMethods]
 
-
     async def _send_overall_help(self, ctx: commands.Context):
         member_filter = filter_with_user_role(self.bot.owner_ids, await self.bot.retrieve_antistasi_member(ctx.author.id), True)
         cogs = await self.all_cogs(member_filter, self.remove_cog_suffix_cog_name_modifier)
         log.debug('preparing help embed')
         fields = []
-        item_no = 1
         for cog_name, cog in cogs.items():
             if cog_name.casefold() != "generaldebug":
-                print(item_no, cog_name)
-                value_text = f"{ZERO_WIDTH}\n> *{cog.description}*\n{ZERO_WIDTH}\n{SPECIAL_SPACE*4}{ListMarker.circle_star} **Commands:**\n"
-                command_names = [command.name for command in cog.get_commands() if member_filter(command) is True]
+                value_text = f"> *{cog.description}*\n{SPECIAL_SPACE*4}{ListMarker.circle_star} **Commands:**\n"
+                command_names = [f"`{command.name}` ☑️" if command.enabled is True else f"`{command.name}` ❎" for command in cog.get_commands() if member_filter(command) is True]
                 command_names.sort()
-                value_text += '\n'.join(f"{SPECIAL_SPACE*16}{ListMarker.triangle} `{command_name}`" for command_name in command_names)
+                value_text += '\n'.join(f"{SPECIAL_SPACE*16}{ListMarker.triangle} {command_name}" for command_name in command_names)
                 value_text += f'\n{ZERO_WIDTH}'
                 fields.append(self.bot.field_item(name=f"{ListMarker.bullet} {split_camel_case_string(cog_name).title()}", value=value_text))
-                item_no += 1
+
         fields.append(self.bot.field_item(name=f"{ListMarker.bullet} Command Tool Sets", value=f'{ZERO_WIDTH}\n' + '\n'.join(f"{SPECIAL_SPACE*8}{ListMarker.circle_star} *{category}*" for category in await self.all_categories(member_filter))))
         async for embed_data in self.bot.make_paginatedfields_generic_embed(title='General Help', description=self.general_help_description,
                                                                             fields=fields,
@@ -257,6 +272,18 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
                                                                             color="GIDDIS_FAVOURITE",
                                                                             timestamp=None):
             await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+    async def _send_cog_help(self, ctx: commands.Context, cog: commands.Cog):
+        await ctx.send('cog')
+
+    async def _send_command_help(self, ctx: commands.Context, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
+        await ctx.send('command')
+
+    async def _send_toolbox_help(self, ctx: commands.Context, toolbox_category: CommandCategory):
+        await ctx.send('toolbox')
+
+    async def _send_check_help(self, ctx: commands.Context, check: BaseAntiPetrosCheck):
+        await ctx.send('check')
 
     async def all_cogs(self, cog_filter: Callable = no_filter, cog_name_modifier: Callable = no_name_modifier):
         _out = {}
@@ -284,6 +311,16 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @staticmethod
     def remove_cog_suffix_cog_name_modifier(cog_name: str):
         return cog_name.removesuffix('Cog')
+
+    def _get_dispatcher(self, in_object):
+        for key, value in self.help_dispatch_map.items():
+            if isclass(in_object):
+                if issubclass(in_object, key):
+                    return value
+            else:
+                if isinstance(in_object, key):
+                    return value
+        raise ParameterError('in_object', in_object)
 
 # endregion [HelperMethods]
 

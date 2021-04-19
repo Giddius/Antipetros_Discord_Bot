@@ -47,9 +47,11 @@ log = glog.aux_logger(__name__)
 
 class BaseAntiPetrosCheck:
 
-    def __init__(self, checked_types: List = None):
+    def __init__(self, checked_types: List = None, allow_creator_skip: bool = False, allow_owner_skip: bool = False):
         self.name = self.__class__.__name__
         self.checked_types = checked_types
+        self.allow_creator_skip = allow_creator_skip
+        self.allow_owner_skip = allow_owner_skip
 
     async def __call__(self, ctx: commands.Context):
         bot = ctx.bot
@@ -61,14 +63,17 @@ class BaseAntiPetrosCheck:
 
         if channel.type is discord.ChannelType.private and self.allowed_in_dm(command) is False:
             raise IsNotTextChannelError(ctx, channel.type)
-
+        if self.allow_creator_skip is True and member.id == bot.creator.id:
+            log.debug("skipping permission checks as user is creator: %s", ctx.bot.creator.name)
+            return True
+        if self.allow_owner_skip is True and member.id in bot.owner_ids:
+            log.debug("skipping permission checks as user is owner: %s", ctx.author.name)
+            return True
         if channel.type is discord.ChannelType.text:
             allowed_channels = self.allowed_channels(command)
             if allowed_channels != {'all'} and channel.name.casefold() not in allowed_channels:
                 raise NotAllowedChannelError(ctx, allowed_channels)
-        if member.id == bot.creator.id:
-            log.debug("skipping permission checks as user is creator: %s", ctx.bot.creator.name)
-            return True
+
         allowed_roles = self.allowed_roles(command)
         if allowed_roles != {'all'} and all(role.name.casefold() not in allowed_roles for role in member.roles):
             raise NotNecessaryRole(ctx, allowed_roles)
@@ -100,7 +105,7 @@ class BaseAntiPetrosCheck:
 class AllowedChannelAndAllowedRoleCheck(BaseAntiPetrosCheck):
     def __init__(self, in_dm_allowed: bool = False):
         self.in_dm_allowed = in_dm_allowed
-        super().__init__(checked_types=["channels", "roles"])
+        super().__init__(checked_types=["channels", "roles"], allow_creator_skip=True, allow_owner_skip=True)
 
     def allowed_channels(self, command: commands.Command):
         allowed_channel_names = getattr(command.cog, COG_CHECKER_ATTRIBUTE_NAMES.get('channels'))
@@ -122,7 +127,7 @@ class AllowedChannelAndAllowedRoleCheck(BaseAntiPetrosCheck):
 class AdminOrAdminLeadCheck(BaseAntiPetrosCheck):
     def __init__(self, in_dm_allowed: bool = False):
         self.in_dm_allowed = in_dm_allowed
-        super().__init__(checked_types="roles")
+        super().__init__(checked_types="roles", allow_creator_skip=True, allow_owner_skip=True)
 
     def allowed_roles(self, command: commands.Command):
         return {'admin', 'admin lead'}
@@ -149,6 +154,18 @@ class OnlyGiddiCheck(BaseAntiPetrosCheck):
         bot = command.cog.bot
         giddi_member = bot.sync_member_by_id(576522029470056450)
         return {giddi_member}
+
+
+class HasAttachmentCheck(BaseAntiPetrosCheck):
+    def __init__(self, min_amount_attachments: int = 1):
+        self.min_amount_attachments = min_amount_attachments
+        super().__init__(checked_types=['attachment'])
+
+    async def __call__(self, ctx: commands.Context):
+        if super().__call__(ctx) is True:
+            if len(ctx.message.attachments) < self.min_amount_attachments:
+                raise MissingAttachmentError(ctx, self.min_amount_attachments)
+            return True
 
 
 def in_allowed_channels():
@@ -225,13 +242,7 @@ PURGE_CHECK_TABLE = {'is_bot': purge_check_is_bot,
 
 
 def has_attachments(min_amount_attachments: int = 1):
-    def predicate(ctx):
-        if len(ctx.message.attachments) >= min_amount_attachments:
-            return True
-        else:
-            raise MissingAttachmentError(ctx, min_amount_attachments)
-    predicate.check_name = sys._getframe().f_code.co_name
-    return commands.check(predicate)
+    return commands.check(HasAttachmentCheck(min_amount_attachments))
 
 
 def is_not_giddi(ctx: commands.Context):
@@ -262,6 +273,12 @@ def mod_func_all_in_int(x):
     if x.casefold() == 'all':
         return x.casefold()
     return int(x)
+
+
+def dynamic_enabled_checker(command: commands.Command, fall_back: bool = True):
+    option_name = command.name + COMMAND_CONFIG_SUFFIXES.get('enabled')[0]
+    config_name = command.cog.config_name
+    return COGS_CONFIG.retrieve(config_name, option_name, typus=bool, direct_fallback=fall_back)
 
 
 def command_enabled_checker(config_name: str):

@@ -35,7 +35,7 @@ from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathma
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogState, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup, AntiPetrosBaseCog
 from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name, normalize_emoji
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
@@ -66,10 +66,6 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "GeneralDebugCog"
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion [Constants]
 
@@ -82,27 +78,15 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 # endregion [TODO]
 
 
-class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
+class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     """
     Cog for debug or test commands, should not be enabled fo normal Bot operations.
     """
 
-    config_name = CONFIG_NAME
-    docattrs = {'show_in_readme': False,
-                'is_ready': CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING | CogState.FOR_DEBUG,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
-    required_config_data = dedent("""
-                                  """)
-
     def __init__(self, bot: "AntiPetrosBot"):
+        super().__init__(bot)
         self.bot = bot
-        self.support = self.bot.support
-
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self.is_ready = CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING | CogState.FOR_DEBUG
         load_dotenv("nextcloud.env")
         self.next_cloud_options = {
             'webdav_hostname': f"https://antistasi.de/dev_drive/remote.php/dav/files/{os.getenv('NX_USERNAME')}/",
@@ -164,7 +148,7 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             log.debug("unicode emoji customized name: '%s'", create_emoji_custom_name(str(emoji)))
             log.debug("unicode emoji normalized: '%s'", normalize_emoji(emoji.name))
 
-    @auto_meta_info_command(enabled=get_command_enabled('roll'))
+    @auto_meta_info_command()
     async def roll_blocking(self, ctx, target_time: int = 1):
         start_time = time()
         time_multiplier = 151267
@@ -793,6 +777,17 @@ class GeneralDebugCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         items = await self.general_db.get_cpu_data_last_24_hours()
         await self.bot.split_to_messages(ctx, '\n'.join(str(item) for item in items), in_codeblock=True, syntax_highlighting='css')
 
+    @auto_meta_info_command()
+    async def show_self_info(self, ctx: commands.Context):
+        text_dict = {'name': self.name,
+                     'config_name': self.config_name,
+                     'self': str(self),
+                     'description': self.description,
+                     'qualified_name': self.qualified_name,
+                     'hidden_test check_performance_data_db': self.check_performance_data_db.hidden,
+                     'state': self.is_ready}
+        await ctx.send(ic.format(text_dict))
+
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))
 
@@ -806,4 +801,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(GeneralDebugCog(bot)))
+    bot.add_cog(GeneralDebugCog(bot))

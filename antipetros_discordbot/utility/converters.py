@@ -24,7 +24,7 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, Ant
 from antipetros_discordbot.utility.enums import CommandCategory
 from antipetros_discordbot.utility.checks import (OnlyGiddiCheck, OnlyBobMurphyCheck, BaseAntiPetrosCheck, AdminOrAdminLeadCheck, AllowedChannelAndAllowedRoleCheck,
                                                   only_bob, only_giddi, log_invoker, is_not_giddi, owner_or_admin, has_attachments,
-                                                  in_allowed_channels, only_dm_only_allowed_id, allowed_channel_and_allowed_role)
+                                                  in_allowed_channels, only_dm_only_allowed_id, allowed_channel_and_allowed_role, HasAttachmentCheck, OnlyGiddiCheck, OnlyBobMurphyCheck)
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -135,10 +135,11 @@ class CogConverter(Converter):
 
     async def convert(self, ctx: commands.Context, argument):
         bot = ctx.bot
-
         mod_argument = argument.casefold()
+        if not mod_argument.endswith('cog'):
+            mod_argument += 'cog'
 
-        cog = bot.cog_name_id_map.get(mod_argument, None)
+        cog = await bot.cog_by_name(mod_argument)
         if cog is None:
             raise ParameterError("cog", argument)
         return cog
@@ -155,19 +156,16 @@ class CategoryConverter(Converter):
 
 class CheckConverter(Converter):
     check_map = {'adminoradminleadcheck': AdminOrAdminLeadCheck,
-                 'allowed_channel_and_allowed_role': allowed_channel_and_allowed_role,
+                 'allowed_channel_and_allowed_role': AllowedChannelAndAllowedRoleCheck,
                  'allowedchannelandallowedrolecheck': AllowedChannelAndAllowedRoleCheck,
                  'baseantipetroscheck': BaseAntiPetrosCheck,
-                 'has_attachments': has_attachments,
-                 'in_allowed_channels': in_allowed_channels,
-                 'is_not_giddi': is_not_giddi,
-                 'log_invoker': log_invoker,
-                 'only_bob': only_bob,
-                 'only_dm_only_allowed_id': only_dm_only_allowed_id,
-                 'only_giddi': only_giddi,
+                 'has_attachments': HasAttachmentCheck,
+                 'hasattachmentcheck': HasAttachmentCheck,
+                 'only_bob': OnlyBobMurphyCheck,
                  'onlybobmurphycheck': OnlyBobMurphyCheck,
+                 'only_giddi': OnlyGiddiCheck,
                  'onlygiddicheck': OnlyGiddiCheck,
-                 'owner_or_admin': owner_or_admin}
+                 'owner_or_admin': AdminOrAdminLeadCheck}
 
     async def convert(self, ctx: commands.Context, argument) -> Callable:
         _out = self.check_map.get(argument.casefold(), None)

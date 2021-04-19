@@ -93,6 +93,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from .helper import JsonMetaDataProvider, JsonAliasProvider, SourceCodeProvider, JsonCategoryProvider
 from antipetros_discordbot.utility.misc import highlight_print
 from antipetros_discordbot.utility.data import COG_CHECKER_ATTRIBUTE_NAMES
+from antipetros_discordbot.utility.checks import dynamic_enabled_checker
 # endregion[Imports]
 
 # region [TODO]
@@ -169,7 +170,7 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def enabled(self):
-        return self.module_object.get_command_enabled(self.name)
+        return dynamic_enabled_checker(self)
 
     @enabled.setter
     def enabled(self, value):

@@ -921,7 +921,7 @@ def pin_reqs(c):
         for line in readit(req_file).splitlines():
             line = line.casefold()
             if line != '' and not line.startswith('https:'):
-                name = req_line_regex.split(line)[0]
+                name = req_line_regex.split(line)[0].replace('_', '-')
                 for pinned_req_name, pinned_req_line in pip_freeze_data.items():
                     if name.casefold() == pinned_req_name:
                         line = pinned_req_line
