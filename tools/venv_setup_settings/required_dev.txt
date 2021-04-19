@@ -32,7 +32,6 @@ pipreqs
 pydeps
 pydoc-markdown
 pypandoc
-pyqt5-tools
 pyspellchecker
 python-magic
 rich

@@ -1,5 +1,6 @@
 --force-reinstall pillow
 Jinja2
+PyPDF2
 WeasyPrint
 aiohttp
 aiosqlite
@@ -36,4 +37,3 @@ tldextract
 validator-collection
 watchgod
 webdavclient3
-PyPDF2

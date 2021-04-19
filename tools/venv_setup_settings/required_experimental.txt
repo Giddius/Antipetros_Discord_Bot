@@ -2,6 +2,7 @@ Flask
 Flask-Discord
 Flask-SQLAlchemy
 Flask-WTF
+Quart
 asyncinit
 dirtools
 discord-pretty-help
@@ -25,4 +26,3 @@ tabulate
 twitchAPI
 vendorize
 wikitextparser
-Quart
