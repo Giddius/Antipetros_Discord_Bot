@@ -26,7 +26,7 @@ from antipetros_discordbot.utility.misc import generate_base_cogs_config, genera
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogMetaStatus
 from antipetros_discordbot.utility.data_gathering import save_cog_command_data
 
 
@@ -145,7 +145,7 @@ def configure_logger():
 
 # region [Helper]
 def get_cog_states(cog_object):
-    return CogState.split(cog_object.docattrs['is_ready'][0])
+    return CogMetaStatus.split(cog_object.docattrs['is_ready'][0])
 
 # endregion [Helper]
 

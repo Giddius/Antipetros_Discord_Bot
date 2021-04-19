@@ -30,7 +30,7 @@ from antipetros_discordbot.utility.sqldata_storager import AioSuggestionDataStor
 from antipetros_discordbot.utility.gidtools_functions import writeit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.id_generation import make_full_cog_id
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
@@ -88,7 +88,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
     auto_accept_user_file = pathmaker(APPDATA["json_data"], "auto_accept_suggestion_users.json")
 
     docattrs = {'show_in_readme': True,
-                'is_ready': CogState.WORKING | CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
+                'is_ready': CogMetaStatus.WORKING | CogMetaStatus.OPEN_TODOS | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.DOCUMENTATION_MISSING,
                 'extra_description': dedent("""
                                             """).strip(),
                 'caveat': None}

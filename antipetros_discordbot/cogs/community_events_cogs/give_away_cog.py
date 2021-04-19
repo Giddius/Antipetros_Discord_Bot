@@ -18,7 +18,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, allowed_requester, command_enabled_checker, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -75,7 +75,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
     give_away_item = GiveAwayEvent
 
     docattrs = {'show_in_readme': False,
-                'is_ready': CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
+                'is_ready': CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
                 'extra_description': dedent("""
                                             """).strip(),
                 'caveat': None}

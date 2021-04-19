@@ -62,12 +62,12 @@ class EmbedType(Enum):
     Link = "link"
 
 
-class CogState(Flag):
+class CogMetaStatus(Flag):
     """
     [summary]
 
     all states template:
-        CogState.READY|CogState.WORKING|CogState.OPEN_TODOS|CogState.UNTESTED|CogState.FEATURE_MISSING|CogState.NEEDS_REFRACTORING|CogState.OUTDATED|CogState.CRASHING|CogState.EMPTY
+        CogMetaStatus.READY|CogMetaStatus.WORKING|CogMetaStatus.OPEN_TODOS|CogMetaStatus.UNTESTED|CogMetaStatus.FEATURE_MISSING|CogMetaStatus.NEEDS_REFRACTORING|CogMetaStatus.OUTDATED|CogMetaStatus.CRASHING|CogMetaStatus.EMPTY
 
 
     Args:

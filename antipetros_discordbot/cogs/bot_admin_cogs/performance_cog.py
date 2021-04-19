@@ -27,7 +27,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, date_today, make_config_name
-from antipetros_discordbot.utility.enums import DataSize, CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import DataSize, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
 from antipetros_discordbot.utility.named_tuples import LatencyMeasurement, MemoryUsageMeasurement
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, make_basic_embed_inline
@@ -85,7 +85,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
     save_folder = APPDATA['performance_data']
 
     docattrs = {'show_in_readme': False,
-                'is_ready': CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.DOCUMENTATION_MISSING,
+                'is_ready': CogMetaStatus.OPEN_TODOS | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.DOCUMENTATION_MISSING,
                 'extra_description': dedent("""
                                             """).strip(),
                 'caveat': None}

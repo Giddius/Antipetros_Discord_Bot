@@ -26,7 +26,7 @@ from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, auto_meta_info_group
 from antipetros_discordbot.utility.exceptions import ParameterError
 from antipetros_discordbot.utility.image_manipulation import make_perfect_fontsize, find_min_fontsize, get_text_dimensions
@@ -69,7 +69,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
 
     docattrs = {'show_in_readme': True,
-                'is_ready': CogState.WORKING | CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
+                'is_ready': CogMetaStatus.WORKING | CogMetaStatus.OPEN_TODOS | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING,
                 'extra_description': dedent("""
                                             """).strip(),
                 'caveat': None}

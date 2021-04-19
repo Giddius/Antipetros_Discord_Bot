@@ -15,7 +15,7 @@ import gidlogger as glog
 from antipetros_discordbot.utility.misc import make_config_name
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, in_allowed_channels
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 
@@ -59,7 +59,7 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": COG_
 
     config_name = CONFIG_NAME
     docattrs = {'show_in_readme': False,
-                'is_ready': CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
+                'is_ready': CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
                 'extra_description': dedent("""
                                             """).strip(),
                 'caveat': None}

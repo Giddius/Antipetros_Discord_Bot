@@ -24,7 +24,7 @@ from antipetros_discordbot.utility.gidtools_functions import appendwriteit, clea
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_faq_cog import FaqItem
 
@@ -81,7 +81,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
     a_emoji = "🇦"
 
     docattrs = {'show_in_readme': False,
-                "is_ready": CogState.WORKING | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.DOCUMENTATION_MISSING,
+                "is_ready": CogMetaStatus.WORKING | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
                 'extra_description': dedent("""
                                             """).strip(),
                 'caveat': None}

@@ -23,7 +23,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.converters import LanguageConverter
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import discord_key_value_text
@@ -100,7 +100,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
                           'Netherlands': 'nl'}
 
     docattrs = {'show_in_readme': True,
-                'is_ready': CogState.WORKING,
+                'is_ready': CogMetaStatus.WORKING,
                 'extra_description': dedent("""
                                             """).strip(),
                 'caveat': None}

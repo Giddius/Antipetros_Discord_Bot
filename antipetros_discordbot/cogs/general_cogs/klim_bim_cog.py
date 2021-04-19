@@ -31,7 +31,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker, Seperators
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import make_box
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command, auto_meta_info_group, AntiPetrosBaseGroup, AntiPetrosBaseCommand, AntiPetrosFlagCommand
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, loadjson, writejson
 from antipetros_discordbot.utility.exceptions import ParseDiceLineError
@@ -80,7 +80,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
-                'is_ready': CogState.WORKING,
+                'is_ready': CogMetaStatus.WORKING,
                 'extra_description': dedent("""
                                             """).strip(),
                 'caveat': None}

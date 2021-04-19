@@ -36,7 +36,7 @@ from pygments.filters import get_all_filters
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writeit, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_SECTION
-from antipetros_discordbot.utility.enums import CogState
+from antipetros_discordbot.utility.enums import CogMetaStatus
 
 log = glog.aux_logger(__name__)
 glog.import_notification(log, __name__)
@@ -242,7 +242,7 @@ async def generate_bot_data(bot, production_bot):
 
 
 def generate_help_data(cog: commands.Cog, output_file=None):
-    if CogState.FOR_DEBUG in CogState.split(cog.docattrs['is_ready'][0]):
+    if CogMetaStatus.FOR_DEBUG in CogMetaStatus.split(cog.docattrs['is_ready'][0]):
         return
     help_data_file = pathmaker(APPDATA['documentation'], 'command_meta_data.json') if output_file is None else pathmaker(output_file)
     if os.path.isfile(help_data_file) is False:

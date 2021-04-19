@@ -29,7 +29,7 @@ from antipetros_discordbot.utility.checks import allowed_requester, command_enab
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writejson, bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_config_cog import AddedAliasChangeEvent
@@ -93,7 +93,7 @@ class BotDevOrgCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME
     bot_development_channel_id = 704838990011826197
 
     docattrs = {'show_in_readme': False,
-                'is_ready': CogState.OPEN_TODOS | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING,
+                'is_ready': CogMetaStatus.OPEN_TODOS | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING,
                 'extra_description': dedent("""
                                             """).strip(),
                 'caveat': None}

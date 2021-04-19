@@ -34,7 +34,7 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejso
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.misc import make_config_name
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker
-from antipetros_discordbot.utility.enums import CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -93,7 +93,7 @@ class SecurityCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
-                'is_ready': CogState.OPEN_TODOS | CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.NEEDS_REFRACTORING | CogState.OUTDATED | CogState.CRASHING,
+                'is_ready': CogMetaStatus.OPEN_TODOS | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING,
                 'extra_description': dedent("""
                                             """).strip(),
                 'caveat': None}

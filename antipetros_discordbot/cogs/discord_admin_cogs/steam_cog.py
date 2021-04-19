@@ -20,7 +20,7 @@ from antipetros_discordbot.utility.checks import command_enabled_checker, allowe
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogState, UpdateTypus
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 
 # endregion[Imports]
@@ -66,7 +66,7 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
     config_name = CONFIG_NAME
 
     docattrs = {'show_in_readme': True,
-                'is_ready': CogState.UNTESTED | CogState.FEATURE_MISSING | CogState.CRASHING | CogState.DOCUMENTATION_MISSING,
+                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.CRASHING | CogMetaStatus.DOCUMENTATION_MISSING,
                 'extra_description': dedent("""
                                             """).strip(),
                 'caveat': None}
