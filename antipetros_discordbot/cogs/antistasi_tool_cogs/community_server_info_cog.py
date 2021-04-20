@@ -101,8 +101,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog):
                         If the failures persist, tell me (`Giddi`).
                         """).strip()
 
-    starter_info_channel_id = 449643062516383747
-    announcements_channel_id = 449553298366791690
     server_symbol = "https://i.postimg.cc/dJgyvGH7/server-symbol.png"
 
     meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
@@ -117,12 +115,10 @@ class CommunityServerInfoCog(AntiPetrosBaseCog):
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.servers = None
-        self.notification_channel = None
-        self.check_server_status_loop_first_run = True
-        self.starter_info_message = None
         CommunityServerInfo.bot = self.bot
         CommunityServerInfo.config_name = self.config_name
         self.log_watcher_cog = None
+        self.ready = False
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -152,6 +148,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog):
 
         # await self._try_to_get_starter_info_message(self)
         self.check_server_status_loop.start()
+        await asyncio.sleep(5)
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     @universal_log_profiler
@@ -163,25 +161,10 @@ class CommunityServerInfoCog(AntiPetrosBaseCog):
 
 # region [Loops]
 
-    @tasks.loop(minutes=15)
-    @universal_log_profiler
-    async def starter_info_loop(self):
-        await self.bot.wait_until_ready()
-        if self.starter_info_message is None:
-            channel = await self.bot.channel_from_id(self.starter_info_channel_id)
-            if self.bot.is_debug is True:
-                channel = await self.bot.channel_from_id(645930607683174401)
-            await self._post_starter_info_message(channel)
-        else:
-            await self._update_starter_info_message()
-
     @tasks.loop(minutes=2)
     @universal_log_profiler
     async def check_server_status_loop(self):
-        await self.bot.wait_until_ready()
-        if self.check_server_status_loop_first_run is True:
-            log.debug('postponing loop "check_server_status_loop", as it should not run directly at the beginning')
-            self.check_server_status_loop_first_run = False
+        if self.ready is False:
             return
 
         for server_holder in self.servers:
@@ -379,14 +362,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog):
         existing_data.remove(server_name.casefold())
         writejson(existing_data, self.server_status_change_exclusions_file)
 
-    @universal_log_profiler
-    async def _try_to_get_starter_info_message(self):
-        if os.path.isfile(self.starter_info_message_pickle) is True:
-            data = get_pickled(self.starter_info_message_pickle)
-            channel = await self.bot.channel_from_id(data.get('channel_id'))
-            self.starter_info_message = await channel.fetch_message(data.get('message_id'))
-        else:
-            self.starter_info_message = None
 
 # endregion [HelperMethods]
 

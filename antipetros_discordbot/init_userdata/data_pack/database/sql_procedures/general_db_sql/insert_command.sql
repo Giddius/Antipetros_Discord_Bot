@@ -13,7 +13,8 @@ INSERT
         "gif_path",
         "github_link",
         "enabled",
-        "hidden"
+        "hidden",
+        "image_id"
     )
 VALUES (
         (
@@ -37,5 +38,10 @@ VALUES (
         ?,
         ?,
         ?,
-        ?
+        ?,
+        (
+            SELECT "id"
+            from "images_tbl"
+            WHERE "name" = ?
+        )
     )

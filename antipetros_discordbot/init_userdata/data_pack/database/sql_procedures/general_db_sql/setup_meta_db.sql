@@ -1,10 +1,13 @@
--- category_tbl definition
+CREATE TABLE IF NOT EXISTS "images_tbl" (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    data BLOB NOT NULL UNIQUE
+);
 CREATE TABLE IF NOT EXISTS cog_categories_tbl (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     CONSTRAINT category_tbl_name_unique UNIQUE (name)
 );
--- cogs_tbl definition
 CREATE TABLE IF NOT EXISTS cogs_tbl (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
@@ -32,6 +35,7 @@ CREATE TABLE IF NOT EXISTS commands_tbl (
     "github_link" TEXT,
     "enabled" BOOL NOT NULL,
     "hidden" BOOL NOT NULL,
+    "image_id" Integer REFERENCES "images_tbl"("id"),
     CONSTRAINT cogs_tbl_name_unique UNIQUE (name),
     CONSTRAINT cog_FK FOREIGN KEY ("cog_id") REFERENCES cogs_tbl(id)
 );

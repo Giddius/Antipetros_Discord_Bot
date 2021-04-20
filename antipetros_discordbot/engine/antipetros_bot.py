@@ -37,6 +37,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.cogs import BOT_ADMIN_COG_PATHS, DISCORD_ADMIN_COG_PATHS, DEV_COG_PATHS
 from antipetros_discordbot.utility.converters import CommandConverter
 from antipetros_discordbot.utility.data_gathering import save_cog_command_data
+from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from .replacements import AntiPetrosBaseHelp
 # endregion[Imports]
 
@@ -122,6 +123,11 @@ class AntiPetrosBot(commands.Bot):
         glog.class_init_notification(log, self)
 
         # endregion[Init]
+
+    def add_cog(self, cog):
+        attribute_checker(cog)
+        return super().add_cog(cog)
+
     async def on_ipc_ready(self):
         """Called upon the IPC Server being ready"""
         log.info(f"{self.ipc.host} {self.ipc.port} is ready")

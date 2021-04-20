@@ -14,4 +14,3 @@ def attribute_checker(cog):
     for attr in COG_NEEDED_ATTRIBUTES:
         if hasattr(cog, attr) is False:
             raise MissingNeededAttributeError(attr, cog)
-    return cog

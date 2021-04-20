@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import asyncio
 import secrets
 from textwrap import dedent
+from typing import TYPE_CHECKING
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from dateparser import parse as date_parse
@@ -24,10 +25,14 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosFlagCommand
+
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_give_away_cog import GiveAwayEvent
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
 
 # region [TODO]
@@ -53,49 +58,40 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-COG_NAME = "GiveAwayCog"
-CONFIG_NAME = make_config_name(COG_NAME)
+
 # endregion[Constants]
 
-# region [Helper]
 
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
-
-# endregion [Helper]
-
-
-class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": "", "hidden": True}):
+class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True}):
     """
     Soon
     """
 # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
+    public = False
+    meta_status = CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {"embed_thumbnail": "https://upload.wikimedia.org/wikipedia/commons/6/62/Gift_box_icon.png"}}
+
     give_away_data_file = pathmaker(APPDATA['json_data'], 'give_aways.json')
+    required_files = [RequiredFile(give_away_data_file, [], RequiredFile.FileType.JSON)]
+    required_folder = []
+
     give_away_item = GiveAwayEvent
 
-    docattrs = {'show_in_readme': False,
-                'is_ready': CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
 
-    required_config_data = dedent("""
-                                  embed_thumbnail = https://upload.wikimedia.org/wikipedia/commons/6/62/Gift_box_icon.png
-                                  """)
 # endregion [ClassAttributes]
 
 # region [Init]
 
-    def __init__(self, bot):
-        self.bot = bot
-        self.support = self.bot.support
+
+    @universal_log_profiler
+    def __init__(self, bot: "AntiPetrosBot"):
+        super().__init__(bot)
         self.give_away_item.bot = self.bot
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-        if os.path.isfile(self.give_away_data_file) is False:
-            writejson([], self.give_away_data_file)
+
         self.ready = False
         glog.class_init_notification(log, self)
 
@@ -104,6 +100,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 # region [Properties]
 
     @async_property
+    @universal_log_profiler
     async def give_aways(self):
         _out = []
         data = loadjson(self.give_away_data_file)
@@ -115,6 +112,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
 # region [Setup]
 
+    @universal_log_profiler
     async def on_ready_setup(self):
         await asyncio.sleep(5)
         self.check_give_away_ended_loop.start()
@@ -122,6 +120,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -131,7 +130,9 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
 # region [Loops]
 
+
     @tasks.loop(seconds=30, reconnect=True)
+    @universal_log_profiler
     async def check_give_away_ended_loop(self):
         await self.bot.wait_until_ready()
         for give_away_event in await self.give_aways:
@@ -139,6 +140,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
                 await self.give_away_finished(give_away_event)
 
     @tasks.loop(seconds=5, reconnect=True)
+    @universal_log_profiler
     async def clean_emojis_from_reaction(self):
         await self.bot.wait_until_ready()
         try:
@@ -155,6 +157,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 # region [Listener]
 
     @commands.Cog.listener()
+    @universal_log_profiler
     async def on_raw_reaction_add(self, payload):
         if self.ready is False:
             return
@@ -174,7 +177,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 # endregion [Listener]
 
 # region [Commands]
-
+    @universal_log_profiler
     async def give_away_finished(self, event_item):
 
         users = []
@@ -207,6 +210,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
         await event_item.message.delete()
         await self.remove_give_away(event_item)
 
+    @universal_log_profiler
     async def notify_author(self, event_item, winners, amount_participants):
         embed_data = await self.bot.make_generic_embed(title=f'Give-Away "{event_item.title}" has finished', description=f'There were {amount_participants} participants',
                                                        fields=[self.bot.field_item(name=f"{index+1}. Winner", value=winner.name, inline=False) for index, winner in enumerate(winners)],
@@ -220,7 +224,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
     @flags.add_flag("--end-message", "-emsg", type=str, default="Give away has finished!")
     @flags.add_flag("--start-message", "-smsg", type=str)
     @flags.add_flag("--enter-emoji", '-em', type=str, default="🎁")
-    @auto_meta_info_command(cls=AntiPetrosFlagCommand, enabled=get_command_enabled("create_giveaway"))
+    @auto_meta_info_command(cls=AntiPetrosFlagCommand)
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
     @log_invoker(logger=log, level="info")
     async def create_giveaway(self, ctx, **flags):
@@ -288,7 +292,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
                                                          channel=ctx.channel,
                                                          message=give_away_message))
 
-    @ auto_meta_info_command(enabled=get_command_enabled("abort_give_away"))
+    @ auto_meta_info_command()
     @ allowed_channel_and_allowed_role(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def abort_give_away(self, ctx):
@@ -298,7 +302,7 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
         await self.bot.not_implemented(ctx)
         return
 
-    @ auto_meta_info_command(enabled=get_command_enabled("finish_give_away"))
+    @ auto_meta_info_command()
     @ allowed_channel_and_allowed_role(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def finish_give_away(self, ctx):
@@ -323,12 +327,13 @@ class GiveAwayCog(commands.Cog, command_attrs={'name': COG_NAME, "description": 
 
 # region [HelperMethods]
 
-
+    @universal_log_profiler
     async def add_give_away(self, give_away_event):
         data = loadjson(self.give_away_data_file)
         data.append(await give_away_event.to_dict())
         writejson(data, self.give_away_data_file)
 
+    @universal_log_profiler
     async def remove_give_away(self, give_away_event):
         data = loadjson(self.give_away_data_file)
         data.remove(await give_away_event.to_dict())
