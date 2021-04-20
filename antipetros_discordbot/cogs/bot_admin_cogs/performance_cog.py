@@ -7,9 +7,9 @@ import os
 import time
 import asyncio
 from io import BytesIO
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timedelta, timezone
-from statistics import mean, stdev, median
+from statistics import mean, stdev, median, StatisticsError
 from collections import deque
 from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
@@ -26,7 +26,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 
-from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, date_today, make_config_name
+from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, date_today, make_config_name, delete_message_if_text_channel
 from antipetros_discordbot.utility.enums import DataSize, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
 from antipetros_discordbot.utility.named_tuples import LatencyMeasurement, MemoryUsageMeasurement
@@ -34,9 +34,16 @@ from antipetros_discordbot.utility.embed_helpers import make_basic_embed, make_b
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, bytes2human, create_folder
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand
+
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.sqldata_storager import general_db
+
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+
 # endregion[Imports]
 
 # region [TODO]
@@ -67,41 +74,34 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-DATA_COLLECT_INTERVALL = 60 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 600  # seconds
-COG_NAME = "PerformanceCog"
+DATA_COLLECT_INTERVALL = 120 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 600  # seconds
 
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
 # endregion[Constants]
 
 
-class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "PerformanceCog"}):
+class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     """
     Collects Latency data and memory usage every 10min and posts every 24h a report of the last 24h as graphs.
     """
 
-    config_name = CONFIG_NAME
+    public = True
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {"threshold_latency_warning": "250",
+                                            "threshold_memory_warning": "0.5",
+                                            "threshold_memory_critical": "0.75",
+                                            "latency_graph_formatting": "r1-",
+                                            "memory_graph_formatting": "b1-"}}
+
     save_folder = APPDATA['performance_data']
+    required_folder = [RequiredFolder(save_folder)]
+    required_files = []
 
-    docattrs = {'show_in_readme': False,
-                'is_ready': CogMetaStatus.OPEN_TODOS | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
-
-    required_config_data = dedent("""
-                                threshold_latency_warning = 250
-                                threshold_memory_warning = 0.5
-                                threshold_memory_critical = 0.75
-                                latency_graph_formatting = r1-
-                                memory_graph_formatting = b1-
-
-                                """)
-
-    def __init__(self, bot):
-        self.bot = bot
-        self.support = self.bot.support
+    @universal_log_profiler
+    def __init__(self, bot: "AntiPetrosBot"):
+        super().__init__(bot)
         self.start_time = datetime.utcnow()
         self.latency_thresholds = {'warning': COGS_CONFIG.getint(self.config_name, "threshold_latency_warning")}
         self.memory_thresholds = {'warning': virtual_memory().total * COGS_CONFIG.getfloat(self.config_name, "threshold_memory_warning"),
@@ -109,14 +109,12 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         self.plot_formatting_info = {'latency': COGS_CONFIG.get(self.config_name, 'latency_graph_formatting'),
                                      'memory': COGS_CONFIG.get(self.config_name, 'memory_graph_formatting'),
                                      'cpu': COGS_CONFIG.get(self.config_name, 'cpu_graph_formatting')}
-        create_folder(self.save_folder)
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+
         self.ready = False
         self.general_db = general_db
         glog.class_init_notification(log, self)
 
+    @universal_log_profiler
     async def on_ready_setup(self):
         _ = psutil.cpu_percent(interval=None)
         self.latency_measure_loop.start()
@@ -125,11 +123,13 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         await asyncio.sleep(5)
         self.ready = True
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
+    @universal_log_profiler
     async def cpu_measure_loop(self):
         if self.ready is False:
             return
@@ -141,6 +141,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         await self.general_db.insert_cpu_performance(now, cpu_percent, cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15)
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
+    @universal_log_profiler
     async def latency_measure_loop(self):
         if self.ready is False:
             return
@@ -155,6 +156,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         await self.general_db.insert_latency_perfomance(now, raw_latency)
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
+    @universal_log_profiler
     async def memory_measure_loop(self):
         if self.ready is False:
             return
@@ -169,13 +171,13 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             log.warning("Memory usage is high! Memory in use: %s", DataSize.GigaBytes.convert(memory_in_use, annotate=True))
         await self.general_db.insert_memory_perfomance(now, memory_in_use)
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @owner_or_admin()
     async def initial_memory_use(self, ctx):
         initial_memory = os.getenv('INITIAL_MEMORY_USAGE')
         await ctx.send(bytes2human(int(initial_memory), annotate=True))
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @owner_or_admin()
     async def report_latency(self, ctx, with_graph: bool = True):
         report_data = await self.general_db.get_latency_data_last_24_hours()
@@ -192,7 +194,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             embed.set_image(url=_url)
         await ctx.send(embed=embed, file=_file)
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @owner_or_admin()
     async def report_memory(self, ctx, with_graph: bool = True, since_last_hours: int = 24):
         report_data = await self.general_db.get_memory_data_last_24_hours()
@@ -215,7 +217,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             embed.set_image(url=_url)
         await ctx.send(embed=embed, file=_file)
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @owner_or_admin()
     async def report_cpu(self, ctx, with_graph: bool = True):
         report_data = await self.general_db.get_cpu_data_last_24_hours()
@@ -232,17 +234,22 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
             embed.set_image(url=_url)
         await ctx.send(embed=embed, file=_file)
 
-    async def format_graph(self):
+    @universal_log_profiler
+    async def format_graph(self, amount_data: int):
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
-        plt.gca().xaxis.set_major_locator(mdates.MinuteLocator(interval=max(24 // 60, 10)))
+        if amount_data <= 3600 // DATA_COLLECT_INTERVALL:
+            plt.gca().xaxis.set_major_locator(mdates.MinuteLocator(interval=DATA_COLLECT_INTERVALL // 60))
+        else:
+            plt.gca().xaxis.set_major_locator(mdates.HourLocator(interval=1))
         plt.rcParams["font.family"] = "Consolas"
         plt.rc('xtick.major', size=6, pad=10)
         plt.rc('xtick', labelsize=9)
 
+    @universal_log_profiler
     async def make_graph(self, data, typus: str, save_to=None):
         plt.style.use('dark_background')
 
-        await asyncio.wait_for(self.format_graph(), timeout=10)
+        await asyncio.wait_for(self.format_graph(len(data)), timeout=10)
         x = [item.date_time for item in data]
 
         if typus == 'latency':
@@ -303,12 +310,14 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
             return discord.File(image_binary, filename=f'{typus}graph.png'), f"attachment://{typus}graph.png"
 
+    @universal_log_profiler
     async def convert_memory_size(self, in_bytes, new_unit: DataSize, annotate: bool = False, extra_digits=2):
 
         if annotate is False:
             return round(int(in_bytes) / new_unit.value, ndigits=extra_digits)
         return str(round(int(in_bytes) / new_unit.value, ndigits=extra_digits)) + ' ' + new_unit.short_name
 
+    @universal_log_profiler
     async def get_time_from_max_y(self, data, max_y, typus):
         for item in data:
             if typus == 'memory':
@@ -319,7 +328,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
                     _out = item.date_time
         return _out
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @owner_or_admin()
     async def get_command_stats(self, ctx):
         data_dict = {item.name: f"{ZERO_WIDTH}\n{item.data}\n{ZERO_WIDTH}" for item in await self.bot.support.get_todays_invoke_data()}
@@ -329,7 +338,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
 
         await ctx.send(embed=embed)
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @owner_or_admin()
     async def report(self, ctx):
         """
@@ -338,9 +347,14 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         Example:
             @AntiPetros report
         """
-        await ctx.invoke(self.bot.get_command('report_memory'))
-        await ctx.invoke(self.bot.get_command('report_latency'))
-        await ctx.invoke(self.bot.get_command('report_cpu'))
+        try:
+            await ctx.invoke(self.bot.get_command('report_memory'))
+            await ctx.invoke(self.bot.get_command('report_latency'))
+            await ctx.invoke(self.bot.get_command('report_cpu'))
+        except StatisticsError as error:
+            # TODO: make as error embed
+            await ctx.send('not enough data points collected to report!', delete_after=120)
+            await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command()
     @owner_or_admin()
@@ -363,8 +377,7 @@ class PerformanceCog(commands.Cog, command_attrs={'hidden': True, "name": "Perfo
         net_connections = psutil.net_connections()
         for item in net_connections:
             out.append(str(item))
-        writejson(out, 'net_stuff.json')
-        await ctx.send('done')
+        await self.bot.split_to_messages(ctx, '\n'.join(out), in_codeblock=True, syntax_highlighting='css')
 
     @auto_meta_info_command()
     @owner_or_admin()

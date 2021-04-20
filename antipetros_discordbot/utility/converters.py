@@ -17,6 +17,8 @@ from googletrans import LANGUAGES
 from discord.ext import commands, tasks, flags
 import discord
 from dateparser import parse as date_parse
+from validator_collection import validators
+import validator_collection
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from antipetros_discordbot.utility.exceptions import ParameterError
@@ -25,7 +27,7 @@ from antipetros_discordbot.utility.enums import CommandCategory
 from antipetros_discordbot.utility.checks import (OnlyGiddiCheck, OnlyBobMurphyCheck, BaseAntiPetrosCheck, AdminOrAdminLeadCheck, AllowedChannelAndAllowedRoleCheck,
                                                   only_bob, only_giddi, log_invoker, is_not_giddi, owner_or_admin, has_attachments,
                                                   in_allowed_channels, only_dm_only_allowed_id, allowed_channel_and_allowed_role, HasAttachmentCheck, OnlyGiddiCheck, OnlyBobMurphyCheck)
-
+from antipetros_discordbot.utility.misc import check_if_url, fix_url_prefix
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
@@ -173,6 +175,14 @@ class CheckConverter(Converter):
             raise ParameterError("check", argument)
         return _out
 
+
+class UrlConverter(Converter):
+
+    async def convert(self, ctx: commands.Context, argument) -> str:
+        if await check_if_url(argument) is False:
+            raise ParameterError("url", argument)
+
+        return fix_url_prefix(argument)
 
         # region[Main_Exec]
 if __name__ == '__main__':

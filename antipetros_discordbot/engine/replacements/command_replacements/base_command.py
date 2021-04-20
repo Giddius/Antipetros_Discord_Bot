@@ -95,6 +95,7 @@ from antipetros_discordbot.utility.misc import highlight_print
 from antipetros_discordbot.utility.data import COG_CHECKER_ATTRIBUTE_NAMES
 from antipetros_discordbot.utility.checks import dynamic_enabled_checker
 from antipetros_discordbot.schemas import AntiPetrosBaseCommandSchema
+from antipetros_discordbot.utility.general_decorator import async_log_profiler
 # endregion[Imports]
 
 # region [TODO]
@@ -156,6 +157,9 @@ class AntiPetrosBaseCommand(commands.Command):
         self.categories = kwargs.get('categories')
         super().__init__(func, **kwargs)
         self.module_object = sys.modules[func.__module__]
+
+    async def set_alias(self, new_alias: str):
+        self.data_setters['alias'](new_alias)
 
     async def get_source_code_image(self):
         return await asyncio.to_thread(self.data_getters['source_code'], typus='image')

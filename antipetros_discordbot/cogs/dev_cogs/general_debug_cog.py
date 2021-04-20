@@ -45,7 +45,7 @@ from antipetros_discordbot.utility.exceptions import NotAllowedChannelError
 from antipetros_discordbot.utility.converters import DateTimeFullConverter, date_time_full_converter_flags, CommandConverter, CogConverter
 from pyyoutube import Api
 from inspect import getmembers, getsourcefile, getsource, getsourcelines, getfullargspec, getmodule, getcallargs, getabsfile, getmodulename, getdoc, getfile, cleandoc, classify_class_attrs
-
+from antipetros_discordbot.utility.general_decorator import async_log_profiler
 from antipetros_discordbot.utility.sqldata_storager import general_db
 
 if TYPE_CHECKING:
@@ -86,7 +86,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.bot = bot
-        self.is_ready = CogMetaStatus.WORKING | CogMetaStatus.OPEN_TODOS | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.DOCUMENTATION_MISSING | CogMetaStatus.FOR_DEBUG
+        self.meta_status = CogMetaStatus.WORKING | CogMetaStatus.OPEN_TODOS | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.DOCUMENTATION_MISSING | CogMetaStatus.FOR_DEBUG
         load_dotenv("nextcloud.env")
         self.next_cloud_options = {
             'webdav_hostname': f"https://antistasi.de/dev_drive/remote.php/dav/files/{os.getenv('NX_USERNAME')}/",
@@ -790,12 +790,22 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
     @auto_meta_info_command()
     async def check_self_dump(self, ctx: commands.Context):
+        """
+        check if dostring survives. here also
+        """
         async with ctx.typing():
-            writejson(self.dump(), f'{str(self).lower()}_dump.json')
+            _out = []
+            for cog_name, cog_object in self.bot.cogs.items():
+                if isinstance(cog_object, AntiPetrosBaseCog):
+                    _out.append(cog_object.dump())
+            writejson(_out, 'cog_dump.json')
         await ctx.send('done')
 
     @auto_meta_info_command()
     async def query_rate_limited(self, ctx: commands.Context):
+        """
+        check if dostring survives.
+        """
         result = self.bot.is_ws_ratelimited()
         await ctx.send(str(result))
 

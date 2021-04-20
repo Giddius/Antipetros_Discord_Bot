@@ -39,9 +39,11 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, auto_meta_info_group
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
+from antipetros_discordbot.auxiliary_classes.for_cogs.required_filesystem_item import RequiredFolder, RequiredFile
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -72,57 +74,40 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "AntistasiLogWatcherCog"
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
-
 # endregion[Constants]
 
-# region [Helper]
 
-
-# endregion [Helper]
-
-
-class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
+class AntistasiLogWatcherCog(AntiPetrosBaseCog):
     """
     Different interactions with saved Antistasi Community Server Logs. Works by connecting to and interacting with the Online Storage where the logs are saved.
     """
 # region [ClassAttributes]
+    long_description = dedent("""
+                            Is not real time, in regards to getting new log files, it can have a delay of up to 10 min.
+                            """).strip()
 
-    config_name = CONFIG_NAME
+    extra_info = dedent("""
+                        The nexcloud library is not written for asyncio and also has some generaly weird behaviours and bugs.
+                        This means, that the `Server?` command and other commands depending on the log files could randomly fail. Just try it again some time later.
+                        If the failures persist, tell me (`Giddi`).
+                        """).strip()
+
     already_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
-    docattrs = {'show_in_readme': True,
-                'is_ready': CogMetaStatus.WORKING | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
 
-                'extra_description': dedent("""
-                                            Is not real time, in regards to getting new log files, it can have a delay of up to 10 min.
-                                            **Currently the framework to interact with the Online Storage is not as stable as it needs be, so there could be intermitten errors with the commands of this cog.
-                                            If they persist, please contact <@576522029470056450>**
-                                            """).strip(),
-                'caveat': None}
-
-    required_config_data = dedent("""
-                                  log_file_warning_size_threshold = 200mb,
-                                  max_amount_get_files = 5
-                                    """).strip('\n')
+    required_config_data = {'base_config': {},
+                            'cogs_config': {"log_file_warning_size_threshold": "200mb",
+                                            "max_amount_get_files": 5}}
+    required_files = [RequiredFile(already_notified_savefile, [], RequiredFile.FileType.JSON)]
+    meta_status = CogMetaStatus.WORKING | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
 # endregion [ClassAttributes]
 
 # region [Init]
-
+    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-
+        super().__init__(bot)
         self.nextcloud_base_folder = "Antistasi_Community_Logs"
         self.server = {}
-        self.update_log_file_data_loop_is_first_loop = True
-        self.check_oversized_logs_loop_is_first_loop = True
+        self.ready = False
         self.mod_lookup_data = loadjson(APPDATA['mod_lookup.json'])
         self.jinja_env = Environment(loader=FileSystemLoader(APPDATA['templates']))
 
@@ -133,11 +118,13 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Properties]
 
     @property
+    @universal_log_profiler
     def already_notified(self):
         if os.path.exists(self.already_notified_savefile) is False:
             writejson([], self.already_notified_savefile)
         return loadjson(self.already_notified_savefile)
 
+    @universal_log_profiler
     async def add_to_already_notified(self, data: Union[str, list, set, tuple], overwrite=False):
         if overwrite is True:
             write_data = data
@@ -150,16 +137,19 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
         writejson(write_data, self.already_notified_savefile)
 
     @property
+    @universal_log_profiler
     def old_logfile_cutoff_date(self):
         time_text = COGS_CONFIG.retrieve(self.config_name, 'log_file_cutoff', typus=str, direct_fallback='5 days')
         return date_parse(time_text, settings={'TIMEZONE': 'UTC'})
 
     @async_property
+    @universal_log_profiler
     async def member_to_notify(self):
         member_ids = COGS_CONFIG.retrieve(self.config_name, 'member_id_to_notify_oversized', typus=List[int], direct_fallback=[])
         return [await self.bot.retrieve_antistasi_member(member_id) for member_id in member_ids]
 
     @property
+    @universal_log_profiler
     def size_limit(self):
         return COGS_CONFIG.retrieve(self.config_name, 'log_file_warning_size_threshold', typus=str, direct_fallback='200mb')
 
@@ -167,12 +157,15 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Setup]
 
+    @universal_log_profiler
     async def on_ready_setup(self):
         await self.get_base_structure()
         self.update_log_file_data_loop.start()
+        self.ready = True
 
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -182,22 +175,22 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Loops]
 
     @tasks.loop(minutes=5, reconnect=True)
+    @universal_log_profiler
     async def update_log_file_data_loop(self):
-        await self.bot.wait_until_ready()
-        if self.update_log_file_data_loop_is_first_loop is True:
-            log.debug('postponing loop "update_log_file_data_loop", as it should not run directly at the beginning')
-            self.update_log_file_data_loop_is_first_loop = False
+        if self.ready is False:
             return
 
         await self.update_log_file_data()
         await self.check_oversized_logs()
 
+    @universal_log_profiler
     async def update_log_file_data(self):
         async for folder_name, folder_item in async_dict_items_iterator(self.server):
             log.debug("updating log files for '%s'", folder_name)
             await folder_item.update()
             await folder_item.sort()
 
+    @universal_log_profiler
     async def check_oversized_logs(self):
         async for folder_name, folder_item in async_dict_items_iterator(self.server):
             log.debug("checking log files of '%s', for oversize", folder_name)
@@ -205,11 +198,9 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
             oversize_items = [log_item for log_item in oversize_items if log_item.etag not in self.already_notified]
             async for item in async_list_iterator(oversize_items):
-                if item.modified.replace(tzinfo=pytz.UTC) <= self.old_logfile_cutoff_date.replace(tzinfo=pytz.UTC):
-                    await self.add_to_already_notified(item.etag)
-                else:
+                if item.modified.replace(tzinfo=pytz.UTC) > self.old_logfile_cutoff_date.replace(tzinfo=pytz.UTC):
                     await self.notify_oversized_log(item)
-                    await self.add_to_already_notified(item.etag)
+                await self.add_to_already_notified(item.etag)
 
 
 # endregion [Loops]
@@ -221,6 +212,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
+    @universal_log_profiler
     def _transform_mod_name(self, mod_name: str):
         mod_name = mod_name.removeprefix('@')
         return mod_name
@@ -328,13 +320,14 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
-
+    @universal_log_profiler
     async def zip_log_file(self, file_path):
         zip_path = pathmaker(os.path.dirname(file_path), os.path.basename(file_path).split('.')[0] + '.zip')
         with ZipFile(zip_path, 'w', ZIP_LZMA) as zippy:
             await self.bot.execute_in_thread(zippy.write, file_path, os.path.basename(file_path))
         return zip_path
 
+    @universal_log_profiler
     async def get_base_structure(self):
         nextcloud_client = Client(get_nextcloud_options())
         async for folder in async_list_iterator(await asyncio.to_thread(nextcloud_client.list, self.nextcloud_base_folder)):
@@ -346,6 +339,7 @@ class AntistasiLogWatcherCog(commands.Cog, command_attrs={'name': COG_NAME}):
             await asyncio.sleep(0)
         log.info(str(self) + ' collected server names: ' + ', '.join([key for key in self.server]))
 
+    @universal_log_profiler
     async def notify_oversized_log(self, log_item):
         async for member in async_list_iterator(await self.member_to_notify):
             embed_data = await self.bot.make_generic_embed(title="Warning Oversized Log File",

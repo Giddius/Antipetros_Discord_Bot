@@ -67,6 +67,7 @@ from antipetros_discordbot.utility.misc import pathmaker, STANDARD_DATETIME_FORM
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.schemas import AntiPetrosBaseCogSchema
 from antipetros_discordbot.auxiliary_classes.listener_object import ListenerObject
+from antipetros_discordbot.auxiliary_classes.for_cogs.required_filesystem_item import RequiredFile, RequiredFolder
 from antipetros_discordbot.utility.event_data import ListenerEvents
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -110,6 +111,7 @@ class AntiPetrosBaseCog(commands.Cog):
     Adds a `name` attribute.
     Adds `__repr__` and `__str__`.
     """
+
     public = True
     meta_status = CogMetaStatus.EMPTY
     long_description = "Missing"

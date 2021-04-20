@@ -42,15 +42,17 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+from antipetros_discordbot.auxiliary_classes.for_cogs.required_filesystem_item import RequiredFile, RequiredFolder
+from antipetros_discordbot.auxiliary_classes.for_cogs.aux_community_server_info_cog import CommunityServerInfo, ServerStatusChange
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from antipetros_discordbot.auxiliary_classes.for_cogs.aux_community_server_info_cog import CommunityServerInfo, ServerStatusChange
 
 
 # endregion[Imports]
@@ -80,47 +82,40 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "CommunityServerInfoCog"
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion[Constants]
 
 
-class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
+class CommunityServerInfoCog(AntiPetrosBaseCog):
     """
     soon
     """
 # region [ClassAttributes]
+    long_description = dedent("""
+                            Is not real time, in regards to getting new log files, it can have a delay of up to 10 min.
+                            """).strip()
 
-    config_name = CONFIG_NAME
-    base_server_info_file = APPDATA['base_server_info.json']
-    server_status_change_exclusions_file = pathmaker(APPDATA['json_data'], 'server_status_change_exclusions.json')
-    starter_info_message_pickle = pathmaker(APPDATA['misc'], 'starter_info_msg_data.pkl')
+    extra_info = dedent("""
+                        The nexcloud library is not written for asyncio and also has some generaly weird behaviours and bugs.
+                        This means, that the `Server?` command and other commands depending on the log files could randomly fail. Just try it again some time later.
+                        If the failures persist, tell me (`Giddi`).
+                        """).strip()
+
     starter_info_channel_id = 449643062516383747
     announcements_channel_id = 449553298366791690
     server_symbol = "https://i.postimg.cc/dJgyvGH7/server-symbol.png"
-    docattrs = {'show_in_readme': True,
-                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None
-                }
 
-    required_config_data = dedent("""
-                                    """).strip('\n')
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
+
+    base_server_info_file = pathmaker(APPDATA['fixed_data'], 'base_server_info.json')
+    server_status_change_exclusions_file = pathmaker(APPDATA['json_data'], 'server_status_change_exclusions.json')
+    required_files = [RequiredFile(base_server_info_file, {}, RequiredFile.FileType.JSON), RequiredFile(server_status_change_exclusions_file, [], RequiredFile.FileType.JSON)]
 # endregion [ClassAttributes]
 
 # region [Init]
-
+    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        super().__init__(bot)
         self.servers = None
         self.notification_channel = None
         self.check_server_status_loop_first_run = True
@@ -135,19 +130,21 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Properties]
 
     @property
+    @universal_log_profiler
     def server_status_change_exclusions(self):
         if os.path.isfile(self.server_status_change_exclusions_file) is False:
             writejson([], self.server_status_change_exclusions_file)
         return loadjson(self.server_status_change_exclusions_file)
 
     @property
+    @universal_log_profiler
     def server_message_remove_time(self):
         return COGS_CONFIG.retrieve(self.config_name, 'server_message_delete_after_seconds', typus=int, direct_fallback=300)
 
 # endregion [Properties]
 
 # region [Setup]
-
+    @universal_log_profiler
     async def on_ready_setup(self):
         self.notification_channel = await self.bot.channel_from_name('bot-testing')
         await self._initialise_server_holder()
@@ -157,6 +154,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         self.check_server_status_loop.start()
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -166,6 +164,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Loops]
 
     @tasks.loop(minutes=15)
+    @universal_log_profiler
     async def starter_info_loop(self):
         await self.bot.wait_until_ready()
         if self.starter_info_message is None:
@@ -177,6 +176,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
             await self._update_starter_info_message()
 
     @tasks.loop(minutes=2)
+    @universal_log_profiler
     async def check_server_status_loop(self):
         await self.bot.wait_until_ready()
         if self.check_server_status_loop_first_run is True:
@@ -208,8 +208,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
-
-    @auto_meta_info_command(enabled=get_command_enabled("current_online_server"), aliases=['server', 'servers'])
+    @auto_meta_info_command(aliases=['server', 'servers'])
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 60, commands.BucketType.channel)
     async def current_online_server(self, ctx: commands.Context):
@@ -270,7 +269,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await asyncio.sleep(self.server_message_remove_time)
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command(enabled=get_command_enabled("current_players"))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 120, commands.BucketType.member)
     async def current_players(self, ctx: commands.Context, *, server: str = "mainserver_1"):
@@ -314,7 +313,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await asyncio.sleep(120)
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command(enabled=get_command_enabled('exclude_from_server_status_notification'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
     @log_invoker(log, 'critical')
     async def exclude_from_server_status_notification(self, ctx: commands.Context, server_name: str):
@@ -327,7 +326,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await self._add_to_server_status_change_exclusions(server_name)
         await ctx.send(f'Excluded {server_name} from status change notifications')
 
-    @auto_meta_info_command(enabled=get_command_enabled('undo_exclude_from_server_status_notification'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
     @log_invoker(log, 'critical')
     async def undo_exclude_from_server_status_notification(self, ctx: commands.Context, server_name: str):
@@ -347,7 +346,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
-
+    @universal_log_profiler
     async def server_status_notification(self, server_item: CommunityServerInfo, switched_to_status: ServerStatusChange):
         status_message = "Was switched ON" if switched_to_status is ServerStatusChange.TO_ON else "Was switched OFF"
         embed_data = await self.bot.make_generic_embed(title=server_item.name.replace('_', ' ').title(), description=status_message,
@@ -356,6 +355,7 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                                                        thumbnail="server")
         await self.notification_channel.send(**embed_data)
 
+    @universal_log_profiler
     async def _initialise_server_holder(self):
         self.servers = []
         for name, info in loadjson(self.base_server_info_file).items():
@@ -367,16 +367,19 @@ class CommunityServerInfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                 log.debug("Server %s IS NOT online", new_server_holder.name)
             self.servers.append(new_server_holder)
 
+    @universal_log_profiler
     async def _add_to_server_status_change_exclusions(self, server_name: str):
         existing_data = self.server_status_change_exclusions
         existing_data.append(server_name.casefold())
         writejson(existing_data, self.server_status_change_exclusions_file)
 
+    @universal_log_profiler
     async def _remove_from_server_status_change_exclusions(self, server_name: str):
         existing_data = self.server_status_change_exclusions
         existing_data.remove(server_name.casefold())
         writejson(existing_data, self.server_status_change_exclusions_file)
 
+    @universal_log_profiler
     async def _try_to_get_starter_info_message(self):
         if os.path.isfile(self.starter_info_message_pickle) is True:
             data = get_pickled(self.starter_info_message_pickle)

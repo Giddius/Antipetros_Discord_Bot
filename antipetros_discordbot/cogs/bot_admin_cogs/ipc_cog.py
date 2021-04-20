@@ -61,10 +61,13 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, auto_meta_info_command, AntiPetrosBaseGroup, AntiPetrosFlagCommand
+
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
+
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -96,47 +99,31 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "IpcCog"
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion[Constants]
 
-# region [Helper]
 
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
-
-# endregion [Helper]
-
-
-class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
+class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     """
     WiP
     """
 # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
-
-    docattrs = {'show_in_readme': False,
-                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
-
-    required_config_data = dedent("""
-                                    """).strip('\n')
+    public = False
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
+    required_folder = []
+    required_files = []
 # endregion [ClassAttributes]
 
 # region [Init]
-
+    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        super().__init__(bot)
+        self.ready = False
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -148,11 +135,12 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Setup]
 
-
+    @universal_log_profiler
     async def on_ready_setup(self):
-
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -172,6 +160,7 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Commands]
 
     @ipc.server.route()
+    @universal_log_profiler
     async def shut_down(self, data):
         member = await self.bot.retrieve_antistasi_member(data.member_id)
         admin_role = {role.name.casefold(): role for role in self.bot.antistasi_guild.roles}.get('admin')
@@ -183,32 +172,11 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
         return {"success": False}
 
     @ipc.server.route()
+    @universal_log_profiler
     async def get_appdata_accessor_kwargs(self, data):
         return APPDATA.accessor_necessary_kwargs
 
-    @ipc.server.route()
-    async def get_command_list(self, data):
-        _out = {}
-        for command in self.bot.commands:
-            cog_name = str(command.cog)
-            if cog_name not in ['general_debug_cog.py', 'None'] and command.enabled is True and command.hidden is False:
-                if cog_name not in _out:
-                    _out[cog_name] = []
-                if hasattr(command, 'allowed_channels'):
-                    _out[cog_name].append({'name': command.name, 'help': command.help, 'hidden': command.hidden, 'enabled': command.enabled, 'aliases': ', '.join(command.aliases), "allowed_channels": '\n'.join(command.allowed_channels)})
-                else:
-                    print(command)
-        return _out
 
-    @auto_meta_info_command()
-    async def serialize_config(self, ctx: commands.Context):
-        base_config_dict = await BASE_CONFIG.async_to_dict()
-        await async_write_json(base_config_dict, 'base_config_check.json')
-        await ctx.send("Dumped `BASE_CONFIG` to `base_config_check.json`")
-
-        cogs_config_dict = await COGS_CONFIG.async_to_dict()
-        await async_write_json(cogs_config_dict, 'cogs_config_check.json')
-        await ctx.send("Dumped `COGS_CONFIG` to `cogs_config_check.json`")
 # endregion [Commands]
 
 # region [DataStorage]
@@ -217,6 +185,7 @@ class IpcCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
 
     async def execute_shutdown(self):
         await asyncio.sleep(5)

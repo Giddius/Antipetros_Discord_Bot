@@ -27,7 +27,7 @@ from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import discord_key_value_text
-
+from antipetros_discordbot.utility.general_decorator import async_log_profiler
 # endregion[Imports]
 
 # region [TODO]
@@ -175,6 +175,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
         return True
 
     @commands.Cog.listener(name="on_raw_reaction_add")
+    @async_log_profiler
     async def emoji_translate_listener(self, payload):
         """
         Translates a Message when you add a Flag Emoji to it.
@@ -228,9 +229,10 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 
 # region [Commands]
 
-    @auto_meta_info_command(enabled=get_command_enabled("translate"))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 60, commands.BucketType.channel)
+    @async_log_profiler
     async def translate(self, ctx, to_language_id: Optional[LanguageConverter] = "english", *, text_to_translate: str):
         """
         Translates text into multiple different languages.
@@ -251,9 +253,10 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
         await ctx.send(f"__from {ctx.author.display_name}:__ *{translated.text}*")
         await ctx.message.delete()
 
-    @auto_meta_info_command(enabled=get_command_enabled('available_languages'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 120, commands.BucketType.channel)
+    @async_log_profiler
     async def available_languages(self, ctx: commands.Context):
         text = '```fix\n'
         text += '\n'.join(value for key, value in LANGUAGES.items())

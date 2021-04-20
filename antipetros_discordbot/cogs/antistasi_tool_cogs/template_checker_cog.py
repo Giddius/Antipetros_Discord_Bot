@@ -38,12 +38,13 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-
+from antipetros_discordbot.auxiliary_classes.for_cogs.required_filesystem_item import RequiredFile, RequiredFolder
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -73,48 +74,23 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "TemplateCheckerCog"
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
-
 # endregion[Constants]
 
-# region [Helper]
 
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
-
-# endregion [Helper]
-
-
-class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME}):
+class TemplateCheckerCog(AntiPetrosBaseCog):
     """
     soon
     """
 # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
-    already_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
-    docattrs = {'show_in_readme': True,
-                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING
 
-    required_config_data = dedent("""
-
-                                    """).strip('\n')
 # endregion [ClassAttributes]
 
 # region [Init]
-
+    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        super().__init__(bot)
 
         glog.class_init_notification(log, self)
 
@@ -127,10 +103,12 @@ class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Setup]
 
+    @universal_log_profiler
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -149,7 +127,7 @@ class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
-
+    @universal_log_profiler
     async def correct_template(self, template_content, item_data):
         new_content = template_content
         for item in item_data:
@@ -157,7 +135,7 @@ class TemplateCheckerCog(commands.Cog, command_attrs={'name': COG_NAME}):
                 new_content = new_content.replace(f'"{item.item}"', f'"{item.correction}"')
         return new_content
 
-    @auto_meta_info_command(enabled=get_command_enabled("check_template"))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
     @has_attachments(1)
     async def check_template(self, ctx, all_items_file=True, case_insensitive: bool = False):

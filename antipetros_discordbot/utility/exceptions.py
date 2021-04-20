@@ -180,6 +180,15 @@ class ParameterError(BaseExtendedCommandError):
         super().__init__(self.msg)
 
 
+class ParameterErrorWithPossibleParameter(BaseExtendedCommandError):
+    def __init__(self, parameter_name: str, parameter_value, possible_parameter: list):
+        self.name = parameter_name
+        self.value = parameter_value
+        self.possible_parameter = possible_parameter
+        self.msg = f"'{self.value}' is not a valid input for '{self.name}'\nPossible values are:\n" + "\n".join(f"\t`{item}`" for item in self.possible_parameter)
+        super().__init__(self.msg)
+
+
 class ParseDiceLineError(BaseExtendedCommandError):
     def __init__(self, statement) -> None:
         self.statement = statement

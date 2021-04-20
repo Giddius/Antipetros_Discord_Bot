@@ -3,10 +3,12 @@
 import os
 import sys
 import asyncio
+from io import BytesIO
 import inspect
 from asyncio import get_event_loop
 from datetime import datetime
 from textwrap import dedent
+from PIL import Image, ImageFilter, ImageEnhance
 from functools import wraps, partial
 from concurrent.futures import ThreadPoolExecutor
 from inspect import getclosurevars
@@ -428,6 +430,12 @@ async def delete_message_if_text_channel(ctx: commands.Context):
         log.error(error.text)
 
 
+def fix_url_prefix(in_url: str):
+    if not in_url.startswith('http://') and not in_url.startswith('https://'):
+        in_url = 'https://' + in_url
+    return in_url
+
+
 async def check_if_url(possible_url: str):
     """
     checks if input `possible_url` is and valid url.
@@ -440,8 +448,7 @@ async def check_if_url(possible_url: str):
     Returns:
         `bool`: `True` if it is and valid url.
     """
-    if not possible_url.startswith('http://') and not possible_url.startswith('https://'):
-        possible_url = 'https://' + possible_url
+    possible_url = fix_url_prefix(possible_url)
     try:
         validators.url(possible_url)
         return True
@@ -536,6 +543,36 @@ async def make_other_source_code_images(file_content: str, lexer: str = 'guess',
                                                                                    font_size=20,
                                                                                    line_number_bold=True))
     return image
+
+
+async def make_other_source_code_images_to_pil(file_content: str, lexer: str = 'guess', style: str = 'dracula'):
+
+    lexer_map = {'guess': guess_lexer(file_content),
+                 'python': PythonLexer(),
+                 'ini': get_lexer_by_name('INI')}
+    style_map = {'dracula': DraculaStyle,
+                 'github': GithubStyle}
+
+    lexer = lexer_map.get(lexer.casefold())
+    with BytesIO() as bitey:
+        image = await asyncio.to_thread(highlight, file_content, lexer, ImageFormatter(style=style_map.get(style.casefold()),
+                                                                                       font_name='Fira Code',
+                                                                                       line_number_bg="#2f3136",
+                                                                                       line_number_fg="#ffffff",
+                                                                                       line_number_chars=3,
+                                                                                       line_pad=5,
+                                                                                       font_size=20,
+                                                                                       line_number_bold=True), outfile=bitey)
+        bitey.seek(0)
+        pil_image = Image.open(bitey)
+        pil_image.load()
+
+    height, width = pil_image.size
+    while height > 5000 or width > 5000:
+        pil_image = pil_image.resize((height // 2, width // 2))
+        height, width = pil_image.size
+    image_bytes = pil_image.tobytes()
+    return image_bytes
 
 
 def hex_to_rgb(color: str, normalized: bool = False):

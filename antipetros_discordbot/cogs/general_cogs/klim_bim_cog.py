@@ -24,8 +24,8 @@ import discord
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import is_even, make_config_name
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role
+from antipetros_discordbot.utility.misc import is_even, make_config_name, delete_message_if_text_channel
+from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, owner_or_admin, log_invoker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker, Seperators
@@ -35,7 +35,8 @@ from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, Up
 from antipetros_discordbot.engine.replacements import auto_meta_info_command, auto_meta_info_group, AntiPetrosBaseGroup, AntiPetrosBaseCommand, AntiPetrosFlagCommand
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, loadjson, writejson
 from antipetros_discordbot.utility.exceptions import ParseDiceLineError
-
+from antipetros_discordbot.utility.converters import UrlConverter
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler
 # endregion[Imports]
 
 # region [TODO]
@@ -93,7 +94,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
     # endregion [ClassAttributes]
 
     # region [Init]
-
+    @sync_log_profiler
     def __init__(self, bot):
         self.bot = bot
         self.support = self.bot.support
@@ -122,11 +123,12 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 # endregion [Properties]
 
 # region [Setup]
-
+    @async_log_profiler
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
 
+    @async_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -146,7 +148,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
 # region [Commands]
 
-    @ auto_meta_info_command(enabled=get_command_enabled('the_dragon'))
+    @ auto_meta_info_command()
     @ allowed_channel_and_allowed_role()
     @commands.cooldown(1, 60, commands.BucketType.channel)
     async def the_dragon(self, ctx):
@@ -212,7 +214,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         embed = discord.Embed(description=f"{ctx.author.mention} flipped a Coin: **{coin.title()}**", color=self.bot.get_discord_color(color))
         await ctx.reply(embed=embed, allowed_mentions=AllowedMentions.none())
 
-    @ auto_meta_info_command(enabled=get_command_enabled('urban_dictionary'))
+    @ auto_meta_info_command()
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 30, commands.BucketType.user)
     async def urban_dictionary(self, ctx, term: str, entries: int = 1):
@@ -249,7 +251,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
                         await ctx.send(**_embed_data)
                         await asyncio.sleep(1)
 
-    @ auto_meta_info_command(enabled=get_command_enabled('make_figlet'))
+    @ auto_meta_info_command()
     @ allowed_channel_and_allowed_role()
     @ commands.cooldown(1, 60, commands.BucketType.channel)
     async def make_figlet(self, ctx, *, text: str):
@@ -415,7 +417,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
                                                        image=None, timestamp=None)
         await ctx.reply(**embed_data, allowed_mentions=AllowedMentions.none())
 
-    @auto_meta_info_command(enabled=get_command_enabled('choose_random'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=True)
     @commands.cooldown(1, 5, commands.BucketType.member)
     async def choose_random(self, ctx: commands.Context, select_amount: Optional[int] = 1, *, choices: str):
@@ -466,7 +468,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
                                                            thumbnail="random")
             await ctx.reply(**embed_data)
 
-    @auto_meta_info_command(enabled=get_command_enabled('random_music'), aliases=['music', 'good_music'])
+    @auto_meta_info_command(aliases=['music', 'good_music'])
     @allowed_channel_and_allowed_role(False)
     async def random_music(self, ctx: commands.Context):
         data = self.youtube_links
@@ -474,6 +476,25 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         band, song_title = selection.split('-')
         link = data.get(selection)
         await ctx.send(make_box(f"**Band:** {band.strip()}\n**Title:** {song_title.strip()}") + f"\n\n{link}", allowed_mentions=AllowedMentions.none())
+
+    @auto_meta_info_command()
+    @owner_or_admin()
+    @log_invoker(log, 'warning')
+    async def add_music(self, ctx: commands.Context, band: str, title: str, youtube_link: UrlConverter):
+        if "youtube" not in youtube_link.casefold():
+            await ctx.send('Please only provide links to youtube in the format `https://www.youtube.com/watch?v=XXXXXX`!', delete_after=120)
+            await delete_message_if_text_channel(ctx)
+            return
+        key = f"{band} - {title}"
+        data = self.youtube_links
+        if key in data or youtube_link in {value for key, value in data.items()}:
+            await ctx.send(f'`{youtube_link}` already is in my Database!', delete_after=120)
+            await delete_message_if_text_channel(ctx)
+            return
+        data[key] = youtube_link
+        writejson(data, self.music_data_file)
+        await ctx.send(f"Added `{key}` <-> `{youtube_link}` to my Database!")
+        await delete_message_if_text_channel(ctx)
 
 # endregion [Commands]
 

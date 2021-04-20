@@ -39,7 +39,7 @@ def set_env():
     os.chdir(old_cd)
     os.environ['DISABLE_IMPORT_LOGCALLS'] = "1"
     os.environ['DISABLE_INITIATION_LOG_CALLS'] = "1"
-
+    os.environ['ANTIPETROS_PROFILING'] = '0'
     _mem_item = virtual_memory()
     memory_in_use = _mem_item.total - _mem_item.available
     os.environ['INITIAL_MEMORY_USAGE'] = str(memory_in_use)

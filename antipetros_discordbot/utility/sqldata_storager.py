@@ -21,6 +21,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.misc import antipetros_repo_rel_path
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT
 from antipetros_discordbot.engine.replacements import auto_meta_info_command, auto_meta_info_group, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.general_decorator import async_log_profiler
 # endregion[Imports]
 
 # region [Constants]
@@ -147,14 +148,17 @@ class AioGeneralStorageSQLite:
         self.db.vacuum()
         glog.class_init_notification(log, self)
 
+    @async_log_profiler
     async def aio_vacuum(self):
         await self.db.aio_vacuum()
 
+    @async_log_profiler
     async def insert_command_usage(self, command: Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
         timestamp = datetime.now(tz=timezone.utc)
         command_name = command.name
         await self.db.aio_write('insert_command_usage', (timestamp, command_name))
 
+    @async_log_profiler
     async def insert_cog(self, cog: commands.Cog):
         abs_path = getsourcefile(cog.__class__)
         rel_path = await antipetros_repo_rel_path(abs_path)
@@ -164,6 +168,7 @@ class AioGeneralStorageSQLite:
             await self.db.aio_write('insert_cog_category', (category, category))
             await self.db.aio_write('insert_cog', (str(cog), str(cog), cog.config_name, description, category, rel_path))
 
+    @async_log_profiler
     async def insert_command(self, command: Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
         name = command.name
         cog_name = str(command.cog)
@@ -179,11 +184,13 @@ class AioGeneralStorageSQLite:
         params = tuple(params)
         await self.db.aio_write('insert_command', params)
 
+    @async_log_profiler
     async def insert_channel_use(self, text_channel: discord.TextChannel):
         channel_id = text_channel.id
         timestamp = datetime.now(tz=timezone.utc)
         await self.db.aio_write('insert_channel_use', (timestamp, channel_id))
 
+    @async_log_profiler
     async def insert_text_channel(self, text_channel: discord.TextChannel):
         _id = text_channel.id
         name = text_channel.name
@@ -193,6 +200,7 @@ class AioGeneralStorageSQLite:
         topic = text_channel.topic
         await self.db.aio_write("insert_text_channel", (_id, name, position, created_at, category_id, topic, False))
 
+    @async_log_profiler
     async def insert_category_channel(self, category_channel: discord.CategoryChannel):
         _id = category_channel.id
         name = category_channel.name
@@ -200,20 +208,25 @@ class AioGeneralStorageSQLite:
         created_at = category_channel.created_at
         await self.db.aio_write("insert_category_channel", (_id, name, position, created_at, False))
 
+    @async_log_profiler
     async def update_text_channel_deleted(self, text_channel_id: int):
         await self.db.aio_write("update_text_channel_deleted", (text_channel_id, True))
 
+    @async_log_profiler
     async def update_category_channel_deleted(self, category_channel_id: int):
         await self.db.aio_write("updated_category_channels_deleted", (category_channel_id, True))
 
+    @async_log_profiler
     async def get_category_channel_ids(self):
         result = await self.db.aio_query("get_all_category_channel_ids", row_factory=True)
         return [row['id'] for row in result]
 
+    @async_log_profiler
     async def get_text_channel_ids(self):
         result = await self.db.aio_query("get_all_text_channel_ids", row_factory=True)
         return [row['id'] for row in result]
 
+    @async_log_profiler
     async def get_cpu_data_last_24_hours(self):
         now = datetime.now(tz=timezone.utc)
         one_day_ago = now - timedelta(hours=24)
@@ -225,6 +238,7 @@ class AioGeneralStorageSQLite:
             all_items.append(CpuPerformanceItem(**row))
         return all_items
 
+    @async_log_profiler
     async def get_latency_data_last_24_hours(self):
         now = datetime.now(tz=timezone.utc)
         one_day_ago = now - timedelta(hours=24)
@@ -236,6 +250,7 @@ class AioGeneralStorageSQLite:
             all_items.append(LatencyPerformanceItem(**row))
         return all_items
 
+    @async_log_profiler
     async def get_memory_data_last_24_hours(self):
         now = datetime.now(tz=timezone.utc)
         one_day_ago = now - timedelta(hours=24)
@@ -247,6 +262,7 @@ class AioGeneralStorageSQLite:
             all_items.append(MemoryPerformanceItem(**row))
         return all_items
 
+    @async_log_profiler
     async def get_channel_usage(self, from_datetime: datetime = None, to_datetime: datetime = None) -> ChannelUsageResult:
         script_name = "get_channel_usage"
         if from_datetime is None and to_datetime is None:
@@ -263,12 +279,15 @@ class AioGeneralStorageSQLite:
             await result_item.add_data(row['channel_id'])
         return result_item
 
+    @async_log_profiler
     async def insert_cpu_performance(self, timestamp: datetime, usage_percent: int, load_avg_1: int, load_avg_5: int, load_avg_15: int):
         await self.db.aio_write("insert_cpu_performance", (timestamp, usage_percent, load_avg_1, load_avg_5, load_avg_15))
 
+    @async_log_profiler
     async def insert_latency_perfomance(self, timestamp: datetime, latency: int):
         await self.db.aio_write('insert_latency_performance', (timestamp, latency))
 
+    @async_log_profiler
     async def insert_memory_perfomance(self, timestamp: datetime, memory_in_use: int):
         await self.db.aio_write('insert_memory_performance', (timestamp, memory_in_use))
 

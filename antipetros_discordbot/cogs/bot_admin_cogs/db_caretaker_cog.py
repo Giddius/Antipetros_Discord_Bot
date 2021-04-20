@@ -61,11 +61,13 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup, auto_meta_info_group
+
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.sqldata_storager import general_db
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -96,49 +98,31 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "DbCaretakerCog"
 
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
-
-# endregion[Constants]
-
-# region [Helper]
-
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
-
-# endregion [Helper]
-
-
-class DbCaretakerCog(commands.Cog, command_attrs={'name': COG_NAME}):
+class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     """
     WiP
     """
 # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
+    public = False
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
 
-    docattrs = {'show_in_readme': False,
-                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
-
-    required_config_data = dedent("""
-                                    """).strip('\n')
+    required_files = []
+    required_folder = []
 
 # endregion [ClassAttributes]
 
 # region [Init]
-
+    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        super().__init__(bot)
         self.db = general_db
+        self.ready = False
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -150,10 +134,13 @@ class DbCaretakerCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Setup]
 
+    @universal_log_profiler
     async def on_ready_setup(self):
         self.scheduled_vacuum.start()
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         if typus in [UpdateTypus.ALIAS, UpdateTypus.CONFIG]:
             await self.bot.insert_command_data()
@@ -164,7 +151,10 @@ class DbCaretakerCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Loops]
 
     @tasks.loop(hours=12)
+    @universal_log_profiler
     async def scheduled_vacuum(self):
+        if self.ready is False:
+            return
         await self.db.aio_vacuum()
         log.info("%s was scheduled vacuumed", str(self.db))
 
@@ -173,21 +163,25 @@ class DbCaretakerCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Listener]
 
     @commands.Cog.listener(name="on_guild_channel_delete")
+    @universal_log_profiler
     async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):
         await self.bot.insert_channels_into_db()
         log.info('updated channels in %s, because Guild channel "%s" was removed', self.db, channel.name)
 
     @commands.Cog.listener(name="on_guild_channel_create")
+    @universal_log_profiler
     async def guild_structure_changes_listener_create(self, channel: discord.abc.GuildChannel):
         await self.bot.insert_channels_into_db()
         log.info('updated channels in %s, because Guild channel "%s" was created', self.db, channel.name)
 
     @commands.Cog.listener(name="on_guild_channel_update")
+    @universal_log_profiler
     async def guild_structure_changes_listener_update(self, before_channel: discord.abc.GuildChannel, after_channel: discord.abc.GuildChannel):
         await self.bot.insert_channels_into_db()
         log.info('updated channels in %s, because Guild channel "%s"/"%s" was updated', self.db, before_channel.name, after_channel.name)
 
     @commands.Cog.listener(name="on_guild_update")
+    @universal_log_profiler
     async def guild_update_listener(self, before_guild: discord.Guild, after_guild: discord.Guild):
         await self.bot.insert_channels_into_db()
         log.info('updated channels in %s, because Guild was updated', self.db)
@@ -211,6 +205,7 @@ class DbCaretakerCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

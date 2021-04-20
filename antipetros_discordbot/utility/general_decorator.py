@@ -14,7 +14,7 @@ from functools import wraps
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+from inspect import iscoroutine, iscoroutinefunction
 # endregion[Imports]
 
 # region [TODO]
@@ -78,6 +78,65 @@ def debug_timing_log(logger):
         else:
             return func
     return _decorator
+
+
+def async_log_profiler(f):
+    @wraps(f)
+    async def wrapper(*args, **kwargs):
+        if os.getenv('ANTIPETROS_PROFILING') == '1':
+            logger = glog.aux_logger(__name__)
+            start_time = time()
+            _out = await f(*args, **kwargs)
+            time_taken = round(time() - start_time, 4)
+            logger.debug("<PROFILING> module: %s, command: %s, time_taken: %s s</PROFILING>", f.__module__, f.__name__, str(time_taken))
+        else:
+            _out = await f(*args, **kwargs)
+        return _out
+    return wrapper
+
+
+def sync_log_profiler(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if os.getenv('ANTIPETROS_PROFILING') == '1':
+            logger = glog.aux_logger(__name__)
+            start_time = time()
+            _out = f(*args, **kwargs)
+            time_taken = round(time() - start_time, 4)
+            logger.debug("<PROFILING> module: %s, command: %s, time_taken: %s s</PROFILING>", f.__module__, f.__name__, str(time_taken))
+        else:
+            _out = f(*args, **kwargs)
+        return _out
+    return wrapper
+
+
+def universal_log_profiler(f):
+    @wraps(f)
+    async def async_wrapper(*args, **kwargs):
+        if os.getenv('ANTIPETROS_PROFILING') == '1':
+            logger = glog.aux_logger(__name__)
+            start_time = time()
+            _out = await f(*args, **kwargs)
+            time_taken = round(time() - start_time, 4)
+            logger.debug("<PROFILING> module: %s, command: %s, time_taken: %s s</PROFILING>", f.__module__, f.__name__, str(time_taken))
+        else:
+            _out = await f(*args, **kwargs)
+        return _out
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if os.getenv('ANTIPETROS_PROFILING') == '1':
+            logger = glog.aux_logger(__name__)
+            start_time = time()
+            _out = f(*args, **kwargs)
+            time_taken = round(time() - start_time, 4)
+            logger.debug("<PROFILING> module: %s, command: %s, time_taken: %s s</PROFILING>", f.__module__, f.__name__, str(time_taken))
+        else:
+            _out = f(*args, **kwargs)
+        return _out
+    if iscoroutinefunction(f):
+        return async_wrapper
+    return wrapper
 
 # region[Main_Exec]
 

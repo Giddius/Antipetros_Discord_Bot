@@ -66,13 +66,14 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle
 from github import Github
-
+from antipetros_discordbot.auxiliary_classes.for_cogs.required_filesystem_item import RequiredFile, RequiredFolder
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -81,6 +82,7 @@ if TYPE_CHECKING:
 
 # region [TODO]
 
+# TODO: Transfer the classattribute urls into the config
 
 # endregion [TODO]
 
@@ -103,55 +105,36 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "GithubCog"
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion[Constants]
 
-# region [Helper]
 
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
-
-# endregion [Helper]
-
-
-class GithubCog(commands.Cog, command_attrs={'name': COG_NAME}):
+class GithubCog(AntiPetrosBaseCog):
     """
     WiP
     """
 # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
     antistasi_repo_url = "https://github.com/official-antistasi-community/A3-Antistasi"
     antistasi_base_file_url = "https://github.com/official-antistasi-community/A3-Antistasi/blob/"
     antistasi_repo_identifier = "official-antistasi-community/A3-Antistasi"
-    docattrs = {'show_in_readme': True,
-                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
 
-    required_config_data = dedent("""
-                                    """).strip('\n')
     code_style_map = {'dracula': DraculaStyle,
                       'tomorrow': TomorrowStyle,
                       'tomorrownight': TomorrownightStyle,
                       'tomorrownightbright': TomorrownightbrightStyle,
                       'tomorrownightblue': TomorrownightblueStyle,
                       'tomorrownighteighties': TomorrownighteightiesStyle} | {name.casefold(): get_style_by_name(name) for name in get_all_styles()}
+
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.CRASHING | CogMetaStatus.DOCUMENTATION_MISSING
+    required_config_data = {'cogs_config': {'code_style': 'dracula'},
+                            'base_config': {}}
 # endregion [ClassAttributes]
 
 # region [Init]
-
+    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        super().__init__(bot)
         self.github_access = Github(os.getenv('GITHUB_TOKEN'))
         self.antistasi_repo = self.github_access.get_repo(self.antistasi_repo_identifier)
         glog.class_init_notification(log, self)
@@ -161,10 +144,12 @@ class GithubCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Properties]
 
     @property
+    @universal_log_profiler
     def branches(self):
         return [branch.name for branch in self.antistasi_repo.get_branches()]
 
     @property
+    @universal_log_profiler
     def code_style(self):
         style_name = COGS_CONFIG.retrieve(self.config_name, 'code_style', typus=str, direct_fallback='dracula')
         style = self.code_style_map.get(style_name.casefold())
@@ -175,11 +160,12 @@ class GithubCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Properties]
 
 # region [Setup]
-
+    @universal_log_profiler
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -271,11 +257,13 @@ class GithubCog(commands.Cog, command_attrs={'name': COG_NAME}):
             image_binary.seek(0)
             yield image_binary
 
+    @universal_log_profiler
     async def download_to_string(self, file):
         async with self.bot.aio_request_session.get(file.download_url) as _response:
             if RequestStatus(_response.status) is RequestStatus.Ok:
                 return await _response.text('utf-8', 'ignore')
 
+    @universal_log_profiler
     async def all_repo_files(self, branch_name: str = 'unstable', folder: str = ""):
         for item in await self.bot.execute_in_thread(self.antistasi_repo.get_contents, folder, branch_name):
             if 'jeroenarsenal' not in item.path.casefold() and 'upsmon' not in item.path.casefold():

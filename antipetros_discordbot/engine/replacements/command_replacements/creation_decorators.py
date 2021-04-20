@@ -84,7 +84,7 @@ from discord.ext import commands, tasks
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 import gidlogger as glog
-
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, universal_log_profiler
 
 from .base_group import AntiPetrosBaseGroup
 from .base_command import AntiPetrosBaseCommand
@@ -157,7 +157,8 @@ def auto_meta_info_command(name=None, cls=None, **attrs):
         cls = AntiPetrosBaseCommand
 
     def decorator(func):
-        return cls(func, name=name, **attrs)
+
+        return cls(universal_log_profiler(func), name=name, **attrs)
 
     return decorator
 

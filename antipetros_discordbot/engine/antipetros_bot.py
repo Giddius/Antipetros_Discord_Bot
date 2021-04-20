@@ -82,6 +82,7 @@ class AntiPetrosBot(commands.Bot):
 
 # endregion[ClassAttributes]
 
+
     def __init__(self, help_invocation='help', token=None, is_test=False, ** kwargs):
 
         # region [Init]
@@ -96,6 +97,7 @@ class AntiPetrosBot(commands.Bot):
                          help_command=None,
                          strip_after_prefix=True,
                          ** kwargs)
+        self._update_profiling_check()
         self.token = token
         self.help_invocation = help_invocation
         self.description = readit(APPDATA['bot_description.md'])
@@ -127,6 +129,11 @@ class AntiPetrosBot(commands.Bot):
     async def on_ipc_error(self, endpoint, error):
         """Called upon an error being raised within an IPC route"""
         log.critical(endpoint, "raised", error)
+
+    def _update_profiling_check(self):
+        profiling_enabled = BASE_CONFIG.retrieve('profiling', 'enable_profiling', typus=str, direct_fallback='0')
+        os.environ['ANTIPETROS_PROFILING'] = profiling_enabled
+        log.info("Profiling is %s", "ENABLED" if profiling_enabled == "1" else "DISABLED")
 
     @staticmethod
     def get_intents():
@@ -222,8 +229,7 @@ class AntiPetrosBot(commands.Bot):
         async for changes in awatch(APPDATA['config'], loop=self.loop):
             for change_typus, change_path in changes:
                 log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
-            BASE_CONFIG.read()
-            COGS_CONFIG.read()
+            self._update_profiling_check()
             await self.to_all_cogs('update', typus=UpdateTypus.CONFIG)
 
     @ tasks.loop(count=1, reconnect=True)

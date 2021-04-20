@@ -62,13 +62,16 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker, Seperators, SPECIAL_SPACE
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup, auto_meta_info_group
+
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink, make_box
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.converters import FlagArg, CogConverter, CheckConverter, CommandConverter, DateOnlyConverter, LanguageConverter, DateTimeFullConverter, date_time_full_converter_flags, CategoryConverter
 from antipetros_discordbot.utility.exceptions import ParameterError
-from rich.panel import Panel
+
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup, AntiPetrosBaseContext
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -99,27 +102,22 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "HelpCog"
-
-CONFIG_NAME = "help_settings"
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion[Constants]
 
 # region [Helper]
 
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
-
-
+@universal_log_profiler
 def no_filter(in_object):
     return True
 
 
+@universal_log_profiler
 def no_name_modifier(in_name: str) -> str:
     return in_name
 
 
+@universal_log_profiler
 def filter_with_user_role(owner_ids: List[int], in_member: discord.Member, only_working: bool = True, only_enabled: bool = True):
     role_names = ['all'] + [role.name.casefold() for role in in_member.roles]
 
@@ -155,42 +153,41 @@ def filter_with_user_role(owner_ids: List[int], in_member: discord.Member, only_
 # endregion [Helper]
 
 
-class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
+class HelpCog(AntiPetrosBaseCog):
     """
     WiP
     """
 # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
+    public = True
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
 
-    docattrs = {'show_in_readme': False,
-                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
-
-    required_config_data = dedent("""
-                                    """).strip('\n')
     data_folder = pathmaker(APPDATA['documentation'], 'help_data')
     general_help_description_file = pathmaker(data_folder, 'general_help_description.md')
+
+    required_folder = [RequiredFolder(data_folder)]
+    required_files = [RequiredFile(general_help_description_file, "WiP", RequiredFile.FileType.TEXT)]
+
     emoji_strings = {'commands': f'{ZERO_WIDTH}'.join(["🇨", "🇴", "🇲", "🇲", "🇦", "🇳", "🇩", "🇸"]),
                      "description": f'{ZERO_WIDTH}'.join(["🇩", "🇪", "🇸", "🇨", "🇷", "🇮", "🇵", "🇹", "🇮", "🇴", "🇳"])}
+
 # endregion [ClassAttributes]
 
 # region [Init]
-
+    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        super().__init__(bot)
         self.help_dispatch_map = {commands.Cog: self._send_cog_help,
                                   AntiPetrosBaseCommand: self._send_command_help,
                                   AntiPetrosBaseGroup: self._send_command_help,
                                   AntiPetrosFlagCommand: self._send_command_help,
                                   CommandCategory: self._send_toolbox_help,
                                   BaseAntiPetrosCheck: self._send_check_help}
+        self.ready = False
         glog.class_init_notification(log, self)
 
 
@@ -198,8 +195,8 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Properties]
 
-
     @property
+    @universal_log_profiler
     def general_help_description(self):
         if os.path.isfile(self.general_help_description_file) is False:
             writeit(self.general_help_description_file, 'WiP')
@@ -214,10 +211,12 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Setup]
 
 
+    @universal_log_profiler
     async def on_ready_setup(self):
-
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -236,8 +235,7 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
-
-    @auto_meta_info_command(enabled=True, categories=[CommandCategory.META])
+    @auto_meta_info_command(categories=[CommandCategory.META])
     async def help(self, ctx: commands.Context, in_object: Optional[Union[CommandConverter, CogConverter, CategoryConverter, CheckConverter]]):
         raw_params = ctx.message.content.split(ctx.invoked_with)[-1].strip()
 
@@ -258,6 +256,8 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [HelperMethods]
 
+
+    @universal_log_profiler
     async def _send_overall_help(self, ctx: commands.Context):
         member_filter = filter_with_user_role(self.bot.owner_ids, await self.bot.retrieve_antistasi_member(ctx.author.id), True)
         cogs = await self.all_cogs(member_filter, self.remove_cog_suffix_cog_name_modifier)
@@ -283,18 +283,23 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
                                                                             timestamp=None):
             await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
+    @universal_log_profiler
     async def _send_cog_help(self, ctx: commands.Context, cog: commands.Cog):
         await ctx.send('cog')
 
+    @universal_log_profiler
     async def _send_command_help(self, ctx: commands.Context, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
         await ctx.send('command')
 
+    @universal_log_profiler
     async def _send_toolbox_help(self, ctx: commands.Context, toolbox_category: CommandCategory):
         await ctx.send('toolbox')
 
+    @universal_log_profiler
     async def _send_check_help(self, ctx: commands.Context, check: BaseAntiPetrosCheck):
         await ctx.send('check')
 
+    @universal_log_profiler
     async def all_cogs(self, cog_filter: Callable = no_filter, cog_name_modifier: Callable = no_name_modifier):
         _out = {}
         for cog_name, cog in self.bot.cogs.items():
@@ -302,6 +307,7 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
                 _out[cog_name_modifier(cog_name)] = cog
         return _out
 
+    @universal_log_profiler
     async def all_categories(self, category_filter: Callable = no_filter, category_name_modifier: Callable = no_name_modifier):
         _out = {}
         for category_name, category_member in CommandCategory.__members__.items():
@@ -311,6 +317,7 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
         return _out
 
     @staticmethod
+    @universal_log_profiler
     def not_hidden_working_cog_filter(cog: commands.Cog):
         if cog.docattrs.get('show_in_readme') is False:
             return False
@@ -319,9 +326,11 @@ class HelpCog(commands.Cog, command_attrs={'name': COG_NAME}):
         return True
 
     @staticmethod
+    @universal_log_profiler
     def remove_cog_suffix_cog_name_modifier(cog_name: str):
         return cog_name.removesuffix('Cog')
 
+    @universal_log_profiler
     def _get_dispatcher(self, in_object):
         for key, value in self.help_dispatch_map.items():
             if isclass(in_object):
