@@ -68,9 +68,14 @@ from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.exceptions import CustomEmojiError, NameInUseError
 from antipetros_discordbot.abstracts import BaseReactionInstruction
+
+from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-
 
 # endregion[Imports]
 
@@ -98,19 +103,7 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "AutoReactionCog"
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
-
 # endregion[Constants]
-
-# region [Helper]
-
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
-
-# endregion [Helper]
 
 
 class ChannelReactionInstruction(BaseReactionInstruction):
@@ -262,33 +255,33 @@ class WordReactionInstruction(BaseReactionInstruction):
         return f"{self.__class__.__name__}({self._word}, {self.case_insensitive}, {self.wrap_in_spaces}, {self.emojis})"
 
 
-class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
+class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADMINTOOLS, "hidden": True}):
     """
     WiP
     """
 # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
+    public = False
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
     reaction_instructions_data_file = pathmaker(APPDATA['json_data'], "message_reaction_instructions_dat.json")
-    custom_emoji_regex = re.compile(r"\<\:(?P<name>.*)\:(?P<id>\d+)\>")
-    docattrs = {'show_in_readme': False,
-                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
+    required_folder = []
+    required_files = [RequiredFile(reaction_instructions_data_file, [], RequiredFile.FileType.JSON)]
 
-    required_config_data = dedent("""
-                                    """).strip('\n')
+    custom_emoji_regex = re.compile(r"\<\:(?P<name>.*)\:(?P<id>\d+)\>")
+
+
 # endregion [ClassAttributes]
 
 # region [Init]
 
+
+    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        super().__init__(bot)
         self.reaction_instructions = None
         BaseReactionInstruction.bot = self.bot
         self.ready = False
@@ -300,24 +293,27 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Properties]
 
     @property
+    @universal_log_profiler
     def reaction_instructions_data(self):
         if os.path.isfile(self.reaction_instructions_data_file) is False:
             writejson([], self.reaction_instructions_data_file)
         return loadjson(self.reaction_instructions_data_file)
 
     @property
+    @universal_log_profiler
     def antistasi_custom_emojis(self):
         return {emoji.name: emoji for emoji in self.bot.antistasi_guild.emojis}
 
 # endregion [Properties]
 
 # region [Setup]
-
+    @universal_log_profiler
     async def on_ready_setup(self):
         await self._load_reaction_instructions()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -331,8 +327,8 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_message')
+    @universal_log_profiler
     async def add_reaction_to_message_sorter_listener(self, msg: discord.Message):
         if self.ready is False:
             return
@@ -348,7 +344,6 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command()
     @owner_or_admin(False)
@@ -451,12 +446,10 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # endregion [Commands]
 
-# region [DataStorage]
-
-# endregion [DataStorage]
 
 # region [HelperMethods]
 
+    @universal_log_profiler
     async def _handle_exceptions_data(self, exception_data):
         if exception_data.casefold() == 'none':
             return None
@@ -467,6 +460,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
             _out.append((typus.strip(), int(value_id.strip())))
         return _out
 
+    @universal_log_profiler
     async def _handle_custom_emoji_input(self, emoji: str):
         emoji_match = self.custom_emoji_regex.match(emoji)
         if emoji_match:
@@ -476,6 +470,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
             return self.antistasi_custom_emojis.get(name)
         return emoji
 
+    @universal_log_profiler
     async def _load_reaction_instructions(self):
         self.reaction_instructions = []
         for item in self.reaction_instructions_data:
@@ -484,6 +479,7 @@ class AutoReactionCog(commands.Cog, command_attrs={'name': COG_NAME}):
             elif item.get('typus') == "WordReactionInstruction":
                 self.reaction_instructions.append(await WordReactionInstruction.from_dict(**item.get('data')))
 
+    @universal_log_profiler
     async def _save_reaction_instruction(self):
         data = [await instruction.to_dict() for instruction in self.reaction_instructions]
         writejson(data, self.reaction_instructions_data_file)

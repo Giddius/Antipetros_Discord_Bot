@@ -66,9 +66,13 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 
+from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-
 
 # endregion[Imports]
 
@@ -96,28 +100,24 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "RulesCog"
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
-
 # endregion[Constants]
 
-# region [Helper]
 
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
-
-# endregion [Helper]
-
-
-class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
+class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADMINTOOLS, "hidden": True}):
     """
     WiP
     """
 # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
+    public = False
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
+    required_folder = []
+    required_files = []
+
     rules_channel_id = 648725988813045765
     rules_message_regex = re.compile(r"^(?P<number>\d+(\.\d)?)[\)\.]\s?\-?(?P<text>.*)")
     links_message_regex = re.compile(r"(?P<name>.*)\n(?P<link>https\:\/\/.*)")
@@ -132,26 +132,17 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
                              '8th RULE': 'If this is your first night at **Antistasi**, you __HAVE__ to '
                              'squadlead.'}
 
-    docattrs = {'show_in_readme': False,
-                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
 
-    required_config_data = dedent("""
-                                    """).strip('\n')
 # endregion [ClassAttributes]
 
 # region [Init]
 
-    def __init__(self, bot: "AntiPetrosBot"):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
 
+    @universal_log_profiler
+    def __init__(self, bot: "AntiPetrosBot"):
+        super().__init__(bot)
         self.rules_messages = {}
+        self.ready = False
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -159,17 +150,20 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Properties]
 
     @property
+    @universal_log_profiler
     def rules_channel(self):
         return self.bot.sync_channel_from_id(self.rules_channel_id)
 
 # endregion [Properties]
 
 # region [Setup]
-
+    @universal_log_profiler
     async def on_ready_setup(self):
         asyncio.create_task(self.get_rules_messages())
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -185,6 +179,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 
     @commands.Cog.listener(name="on_raw_message_edit")
+    @universal_log_profiler
     async def update_rules(self, payload: discord.RawMessageUpdateEvent):
         if payload.channel_id != self.rules_channel_id:
             return
@@ -194,7 +189,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
-    @auto_meta_info_command(enabled=get_command_enabled('exploits_rules'), categories=['admintools'])
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def exploits_rules(self, ctx: commands.Context):
@@ -206,7 +201,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
         if ctx.message.reference is not None:
             await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command(enabled=get_command_enabled('community_rules'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def community_rules(self, ctx: commands.Context):
@@ -218,7 +213,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
         if ctx.message.reference is not None:
             await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command(enabled=get_command_enabled('server_rules'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def server_rules(self, ctx: commands.Context):
@@ -230,7 +225,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
         if ctx.message.reference is not None:
             await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command(enabled=get_command_enabled('all_rules'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 90, commands.BucketType.channel)
     async def all_rules(self, ctx: commands.Context):
@@ -238,7 +233,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await self.community_rules(ctx)
         await self.server_rules(ctx)
 
-    @auto_meta_info_command(enabled=get_command_enabled('better_rules'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def better_rules(self, ctx: commands.Context):
@@ -264,6 +259,8 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [HelperMethods]
 
+
+    @universal_log_profiler
     async def _make_rules_embed(self, rule_message: discord.Message):
         fields = await self.parse_rules(rule_message)
         fields.append(self.bot.field_item(name="Additional Rules Documents", value='\n'.join(await self.parse_links())))
@@ -278,6 +275,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
                                                        color='red')
         return embed_data
 
+    @universal_log_profiler
     async def get_rules_messages(self):
         self.rules_messages = {}
         async for message in self.rules_channel.history(limit=None):
@@ -292,6 +290,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
             elif first_line == 'a summary of currently known and reported exploits:':
                 self.rules_messages['exploits'] = message
 
+    @universal_log_profiler
     async def parse_rules(self, message: discord.Message) -> list:
         fields = []
         for line in message.content.splitlines():
@@ -308,6 +307,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
         fields.append(self.bot.field_item(name=Seperators.make_line('double', 10), value=ZERO_WIDTH))
         return fields
 
+    @universal_log_profiler
     async def parse_links(self) -> list:
         links = []
         for item_match in self.links_message_regex.finditer(self.rules_messages.get('links').content):

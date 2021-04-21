@@ -28,6 +28,15 @@ from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_faq_cog import FaqItem
 
+from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+
+
 # endregion[Imports]
 
 # region [TODO]
@@ -54,56 +63,38 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = 'FaqCog'
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
-
 # endregion[Constants]
 
-# region [Helper]
 
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
-
-# endregion [Helper]
-
-
-class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
+class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADMINTOOLS, "hidden": True}):
 
     """
     Creates Embed FAQ items.
 
     """
 # region [ClassAttributes]
-    config_name = CONFIG_NAME
+    public = False
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING | CogMetaStatus.WORKING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {"faq_channel_id": "673410398510383115",
+                                            "numbers_background_image": "faq_num_background.png"}}
+    required_folder = []
+    required_files = []
     q_emoji = "🇶"
     a_emoji = "🇦"
-
-    docattrs = {'show_in_readme': False,
-                "is_ready": CogMetaStatus.WORKING | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
-
-    required_config_data = dedent("""
-                                        faq_channel_id = 673410398510383115
-                                        numbers_background_image = faq_num_background.png
-                                        """)
 
 
 # endregion [ClassAttributes]
 
 # region [Init]
 
-    def __init__(self, bot):
 
-        self.bot = bot
-        self.support = self.bot.support
+    @universal_log_profiler
+    def __init__(self, bot: "AntiPetrosBot"):
+        super().__init__(bot)
         self.faq_items = {}
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         self.ready = False
         glog.class_init_notification(log, self)
 
@@ -112,6 +103,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # region [Properties]
 
     @property
+    @universal_log_profiler
     def faq_channel(self):
         channel_id = COGS_CONFIG.retrieve(self.config_name, 'faq_channel_id', typus=int, direct_fallback=673410398510383115)
         return self.bot.sync_channel_from_id(channel_id)
@@ -122,6 +114,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # region [Setup]
 
 
+    @universal_log_profiler
     async def on_ready_setup(self):
         FaqItem.bot = self.bot
         FaqItem.faq_channel = self.faq_channel
@@ -132,6 +125,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -146,8 +140,8 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_message')
+    @universal_log_profiler
     async def faq_message_added_listener(self, message):
         if self.ready is False:
             return
@@ -156,6 +150,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
             asyncio.create_task(self.collect_raw_faq_data())
 
     @commands.Cog.listener(name='on_raw_message_delete')
+    @universal_log_profiler
     async def faq_message_deleted_listener(self, payload):
         if self.ready is False:
             return
@@ -164,6 +159,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
             asyncio.create_task(self.collect_raw_faq_data())
 
     @commands.Cog.listener(name='on_raw_message_edit')
+    @universal_log_profiler
     async def faq_message_edited_listener(self, payload):
         if self.ready is False:
             return
@@ -176,8 +172,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 
 # region [Commands]
 
-
-    @auto_meta_info_command(enabled=get_command_enabled('post_faq_by_number'))
+    @auto_meta_info_command()
     @ allowed_channel_and_allowed_role(in_dm_allowed=False)
     @commands.cooldown(1, 10, commands.BucketType.channel)
     async def post_faq_by_number(self, ctx, faq_numbers: commands.Greedy[int]):
@@ -222,6 +217,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # region [HelperMethods]
 
 
+    @universal_log_profiler
     async def collect_raw_faq_data(self):
         channel = self.faq_channel
         self.faq_items = {}
@@ -244,6 +240,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

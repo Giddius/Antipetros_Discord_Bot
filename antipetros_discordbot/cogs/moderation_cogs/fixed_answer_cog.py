@@ -66,6 +66,11 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 
+from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -96,47 +101,36 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "FixedAnswerCog"
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
-
 # endregion[Constants]
 
-# region [Helper]
 
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
-
-# endregion [Helper]
-
-
-class FixedAnswerCog(commands.Cog, command_attrs={'name': COG_NAME}):
+class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADMINTOOLS, "hidden": True}):
     """
     WiP
     """
 # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
-    soon_thumbnails_file = pathmaker(APPDATA["embed_data"], 'soon_thumbnails.json')
-    docattrs = {'show_in_readme': False,
-                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
+    public = False
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
 
-    required_config_data = dedent("""
-                                    """).strip('\n')
+    soon_thumbnails_file = pathmaker(APPDATA["embed_data"], 'soon_thumbnails.json')
+
+    required_folder = []
+    required_files = [RequiredFile(soon_thumbnails_file, [], RequiredFile.FileType.JSON)]
+
 # endregion [ClassAttributes]
+
 
 # region [Init]
 
+    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        super().__init__(bot)
+        self.ready = False
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -144,6 +138,7 @@ class FixedAnswerCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Properties]
 
     @property
+    @universal_log_profiler
     def soon_thumbnails(self):
         if os.path.isfile(self.soon_thumbnails_file) is False:
             writejson([""], self.soon_thumbnails_file)
@@ -154,10 +149,12 @@ class FixedAnswerCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Setup]
 
+    @universal_log_profiler
     async def on_ready_setup(self):
-
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -176,7 +173,7 @@ class FixedAnswerCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
-    @auto_meta_info_command(enabled=get_command_enabled('new_version_eta'), aliases=['eta', "update"])
+    @auto_meta_info_command(aliases=['eta', "update"])
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def new_version_eta(self, ctx: commands.Context):
         title = COGS_CONFIG.retrieve(self.config_name, "eta_message_title", typus=str, direct_fallback='When it is ready')
@@ -191,7 +188,7 @@ class FixedAnswerCog(commands.Cog, command_attrs={'name': COG_NAME}):
         if ctx.message.reference is not None:
             await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command(enabled=get_command_enabled('bob_streaming'), aliases=['bobdev'])
+    @auto_meta_info_command(aliases=['bobdev'])
     @only_bob()
     async def bob_streaming(self, ctx: commands.Context, *, extra_msg: str = None):
         announcement_channel_name = COGS_CONFIG.retrieve(self.config_name, 'bob_streaming_announcement_channel_name', typus=str, direct_fallback='announcements')
@@ -220,7 +217,7 @@ class FixedAnswerCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [HelperMethods]
 
-
+    @universal_log_profiler
     async def _spread_out_text(self, text: str):
         return f"\n{ZERO_WIDTH}\n".join(line for line in text.splitlines() if line != '')
 
@@ -228,6 +225,7 @@ class FixedAnswerCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True
