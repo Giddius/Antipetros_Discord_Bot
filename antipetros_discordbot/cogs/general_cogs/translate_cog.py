@@ -28,6 +28,15 @@ from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import discord_key_value_text
 from antipetros_discordbot.utility.general_decorator import async_log_profiler
+
+from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+
 # endregion[Imports]
 
 # region [TODO]
@@ -52,18 +61,24 @@ APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))  # location of this file, does not work if app gets compiled to exe with pyinstaller
-COG_NAME = "TranslateCog"
-CONFIG_NAME = make_config_name(COG_NAME)
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion[Constants]
 
 
-class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
+class TranslateCog(AntiPetrosBaseCog):
     """
     Collection of commands that help in translating text to different Languages.
     """
     # region [ClassAttributes]
+
+    public = True
+    meta_status = CogMetaStatus.WORKING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
+    required_folder = []
+    required_files = []
 
     language_dict = {value: key for key, value in LANGUAGES.items()}
     language_emoji_map = {'Germany': 'de',
@@ -99,29 +114,20 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
                           'Hungary': 'hu',
                           'Netherlands': 'nl'}
 
-    docattrs = {'show_in_readme': True,
-                'is_ready': CogMetaStatus.WORKING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
-
     required_config_data = dedent("""
                                         emoji_translate_listener_enabled = yes
                                         emoji_translate_listener_allowed_channels = bot-testing
                                         emoji_translate_listener_allowed_roles = member""")
-    config_name = CONFIG_NAME
+
 # endregion [ClassAttributes]
 
 # region [Init]
-
-    def __init__(self, bot):
-        self.bot = bot
-        self.support = self.bot.support
+    @universal_log_profiler
+    def __init__(self, bot: "AntiPetrosBot"):
+        super().__init__(bot)
         self.translator = Translator()
         self.flag_emoji_regex = re.compile(r'REGIONAL INDICATOR SYMBOL LETTER (?P<letter>\w)')
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self.ready = False
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -133,10 +139,12 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 
 # region [Setup]
 
+    @universal_log_profiler
     async def on_ready_setup(self):
-
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -150,7 +158,10 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 
 # region [Listener]
 
+    @universal_log_profiler
     async def _emoji_translate_checks(self, payload):
+        if self.ready is False:
+            return
         command_name = "emoji_translate_listener"
         channel = self.bot.get_channel(payload.channel_id)
         if channel.type is not discord.ChannelType.text:
@@ -158,7 +169,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
         if self.allowed_channels(command_name) != ['all'] and channel.name.casefold() not in self.allowed_channels(command_name):
             return False
 
-        if get_command_enabled(command_name) is False:
+        if COGS_CONFIG.retrieve(self.config_name, command_name + '_enabled', typus=bool, direct_fallback=False) is False:
             return False
 
         member = payload.member
@@ -199,6 +210,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
         # TODO: Make embed with Hyperlink
         await payload.member.send(f"{message.jump_url}\n**in {LANGUAGES.get(country_code)}:**\n {translated.text.strip('.')}", allowed_mentions=AllowedMentions.none())
 
+    @universal_log_profiler
     async def translate_embed(self, member, channel, message, embed, country_code):
         embed_dict = embed.to_dict()
         if "author" in embed_dict:
@@ -217,6 +229,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
         embed_dict['fields'] = _new_fields
         await member.send(embed=discord.Embed.from_dict(embed_dict), allowed_mentions=AllowedMentions.none())
 
+    @universal_log_profiler
     async def _translate_text(self, text: str, country_code: str):
         try:
             return self.translator.translate(text=text, dest=country_code, src='auto').text.strip('.')
@@ -232,7 +245,6 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 60, commands.BucketType.channel)
-    @async_log_profiler
     async def translate(self, ctx, to_language_id: Optional[LanguageConverter] = "english", *, text_to_translate: str):
         """
         Translates text into multiple different languages.
@@ -256,7 +268,6 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 120, commands.BucketType.channel)
-    @async_log_profiler
     async def available_languages(self, ctx: commands.Context):
         text = '```fix\n'
         text += '\n'.join(value for key, value in LANGUAGES.items())
@@ -276,6 +287,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 # region [HelperMethods]
 
     @staticmethod
+    @universal_log_profiler
     def get_emoji_name(s):
         return s.encode('ascii', 'namereplace').decode('utf-8', 'namereplace')
 
@@ -283,6 +295,7 @@ class TranslateCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAM
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

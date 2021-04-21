@@ -17,17 +17,15 @@ import subprocess
 from enum import Enum, Flag, auto, unique
 from time import sleep
 from pprint import pprint, pformat
-from typing import Union, TYPE_CHECKING
+
 from datetime import tzinfo, datetime, timezone, timedelta
 from functools import wraps, lru_cache, singledispatch, total_ordering, partial, cached_property
 from contextlib import contextmanager, asynccontextmanager
 from collections import Counter, ChainMap, deque, namedtuple, defaultdict
 from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from tempfile import TemporaryDirectory
 from urllib.parse import urlparse
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 import unicodedata
 from io import BytesIO
 from textwrap import dedent, indent, TextWrapper
@@ -64,15 +62,20 @@ from antipetros_discordbot.utility.checks import command_enabled_checker, allowe
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled, bytes2human, readit, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+
+
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock, html_codeblock
 from antipetros_discordbot.utility.converters import CommandConverter
 from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle
+
+from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -103,19 +106,7 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "InfoCog"
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
-
 # endregion[Constants]
-
-# region [Helper]
-
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
-
-# endregion [Helper]
 
 
 class CodeHighlighStyle(Enum):
@@ -127,39 +118,36 @@ class CodeHighlighStyle(Enum):
     TOMORROWNIGHTEIGHTIES = TomorrownighteightiesStyle
 
 
-class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
+class InfoCog(AntiPetrosBaseCog):
     """
     WiP
     """
 # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
+    public = True
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
+    required_folder = []
+    required_files = []
+
     antistasi_guild_id = 449481990513754112
-
-    docattrs = {'show_in_readme': True,
-                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
-
-    required_config_data = dedent("""
-                                    """).strip('\n')
     code_style_map = {'dracula': DraculaStyle,
                       'tomorrow': TomorrowStyle,
                       'tomorrownight': TomorrownightStyle,
                       'tomorrownightbright': TomorrownightbrightStyle,
                       'tomorrownightblue': TomorrownightblueStyle,
                       'tomorrownighteighties': TomorrownighteightiesStyle} | {name.casefold(): get_style_by_name(name) for name in get_all_styles()}
+
 # endregion [ClassAttributes]
 
 # region [Init]
-
+    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        super().__init__(bot)
+        self.ready = False
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -167,6 +155,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Properties]
 
     @property
+    @universal_log_profiler
     def uptime(self):
         now_time = datetime.utcnow()
         delta_time = now_time - self.bot.start_time
@@ -174,12 +163,14 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         return alt_seconds_to_pretty(seconds)
 
     @cached_property
+    @universal_log_profiler
     def join_rankdict(self):
         all_members_and_date = [(member, member.joined_at) for member in self.bot.antistasi_guild.members]
         all_members_sorted = sorted(all_members_and_date, key=lambda x: x[1])
         return {member_data[0]: join_index + 1 for join_index, member_data in enumerate(all_members_sorted)}
 
     @property
+    @universal_log_profiler
     def code_style(self):
         style_name = COGS_CONFIG.retrieve(self.config_name, 'code_style', typus=str, direct_fallback='dracula')
         style = self.code_style_map.get(style_name.casefold())
@@ -190,10 +181,12 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # endregion [Properties]
 
 # region [Setup]
-
+    @universal_log_profiler
     async def on_ready_setup(self):
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -212,8 +205,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Commands]
 
-
-    @auto_meta_info_command(enabled=get_command_enabled('info_bot'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def info_bot(self, ctx: commands.Context):
         name = self.bot.display_name
@@ -245,7 +237,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                                                        thumbnail=None)
         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
-    @auto_meta_info_command(enabled=get_command_enabled('info_guild'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def info_guild(self, ctx: commands.Context):
         """
@@ -285,7 +277,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         embed_data = await self.bot.make_generic_embed(title=as_guild.name, url="https://antistasi.de/", description=description, thumbnail=thumbnail, fields=fields, image=image)
         info_msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
-    @auto_meta_info_command(enabled=get_command_enabled('info_me'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def info_me(self, ctx: commands.Context):
         async with ctx.typing():
@@ -317,7 +309,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
             embed_data = await self.bot.make_generic_embed(title=member.name, description=f"The one and only {member.mention}", thumbnail=str(member.avatar_url), fields=fields, color=member.color)
             await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
-    @auto_meta_info_command(enabled=get_command_enabled('info_me'), hidden=True)
+    @auto_meta_info_command(hidden=True, categories=CommandCategory.ADMINTOOLS)
     @owner_or_admin(False)
     async def info_other(self, ctx: commands.Context, member_id: int):
         async with ctx.typing():
@@ -373,7 +365,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                     await ctx.send(file=gif_file)
                 await asyncio.sleep(2)
 
-    @auto_meta_info_command(hidden=True)
+    @auto_meta_info_command()
     @has_attachments(1)
     async def code_file_to_image(self, ctx: commands.Context, as_codeblock: str = None):
         async with ctx.typing():
@@ -397,14 +389,9 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # endregion [Commands]
 
-# region [DataStorage]
-
-
-# endregion [DataStorage]
-
 # region [HelperMethods]
 
-
+    @universal_log_profiler
     async def _get_command_gif(self, command_name):
         gif_name = f"{command_name}_command.gif"
         for file in os.scandir(APPDATA['gifs']):
@@ -412,6 +399,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                 return file.path
         return None
 
+    @universal_log_profiler
     async def _make_other_source_code_images(self, scode: str):
 
         lexer = guess_lexer(scode)
@@ -432,20 +420,21 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         rel_path = await antipetros_repo_rel_path(getsourcefile(command.cog.__class__))
         raw_source_code = f'\t# {rel_path}\n\n' + getsource(command.callback)
 
-        image = highlight(raw_source_code, PythonLexer(), ImageFormatter(style=self.code_style,
-                                                                         font_name='Fira Code',
-                                                                         line_number_start=start_line_number,
-                                                                         line_number_bg="#2f3136",
-                                                                         line_number_fg="#ffffff",
-                                                                         line_number_chars=3,
-                                                                         line_pad=5,
-                                                                         font_size=20,
-                                                                         line_number_bold=True))
+        image = await asyncio.to_thread(highlight, raw_source_code, PythonLexer(), ImageFormatter(style=self.code_style,
+                                                                                                  font_name='Fira Code',
+                                                                                                  line_number_start=start_line_number,
+                                                                                                  line_number_bg="#2f3136",
+                                                                                                  line_number_fg="#ffffff",
+                                                                                                  line_number_chars=3,
+                                                                                                  line_pad=5,
+                                                                                                  font_size=20,
+                                                                                                  line_number_bold=True))
         with BytesIO() as image_binary:
             image_binary.write(image)
             image_binary.seek(0)
             yield image_binary
 
+    @universal_log_profiler
     async def _get_github_line_link(self, command: commands.Command):
         base_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/"
         rel_path = await antipetros_repo_rel_path(getsourcefile(command.cog.__class__))
@@ -455,6 +444,7 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
         full_path = base_url + rel_path + f'#L{start_line_number}-L{start_line_number+code_length-1}'
         return full_path, start_line_number
 
+    @universal_log_profiler
     async def _get_allowed_channels(self):
         indicator_permissions = ['read_messages', 'send_messages', 'manage_messages', 'add_reactions']
         allowed_channels = []
@@ -465,12 +455,14 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                     allowed_channels.append(channel)
         return [channel.mention for channel in sorted(allowed_channels, key=lambda x: x.position, reverse=False)]
 
+    @universal_log_profiler
     async def _clean_bot_prefixes(self, ctx: commands.Context):
         raw_prefixes = await self.bot.get_prefix(ctx.message)
         cleaned_prefixes = list(set(map(lambda x: x.strip(), raw_prefixes)))
         cleaned_prefixes = [f"`{prefix}`" if not prefix.startswith('<') else prefix for prefix in cleaned_prefixes if '804194400611729459' not in prefix]
         return sorted(cleaned_prefixes, key=lambda x: x.startswith('<'), reverse=True)
 
+    @universal_log_profiler
     async def _oldest_youngest_member(self, get_oldest=True):
         all_members_and_date = [(member, member.joined_at) for member in self.bot.antistasi_guild.members if member is not self.bot.antistasi_guild.owner]
         oldest_member_and_date = await self.bot.execute_in_thread(partial(sorted, all_members_and_date, key=lambda x: x[1]))
@@ -480,11 +472,13 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
             oldest_member_and_date = oldest_member_and_date[-1]
         return f'{oldest_member_and_date[0].mention} -> {oldest_member_and_date[0].name}, joined at {oldest_member_and_date[1].strftime("%H:%M:%S on %a the %Y.%b.%d")}'
 
+    @universal_log_profiler
     async def most_used_channel(self):
         stats = await self.bot.get_usage_stats('all')
         channel, amount = stats[0]
         return f"{channel.mention} recorded usages: {amount}"
 
+    @universal_log_profiler
     async def amount_commands(self, with_hidden: bool = False):
         all_commands = self.bot.commands
         if with_hidden is False:

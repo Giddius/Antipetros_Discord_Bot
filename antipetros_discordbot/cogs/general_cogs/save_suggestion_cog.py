@@ -32,8 +32,17 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
 from antipetros_discordbot.engine.replacements import auto_meta_info_command
+
+from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+
+
 # endregion[Imports]
 
 # region [Logging]
@@ -49,11 +58,6 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-COG_NAME = "SaveSuggestionCog"
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion [Constants]
 
@@ -66,17 +70,25 @@ get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion[TODO]
 
-class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
+class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categories": CommandCategory.TEAMTOOLS}):
     """
     Provides functionality for each Antistasi Team to save suggestions by reacting with emojis.
     """
 
     # region [ClassAttributes]
-    cog_id = 13
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
-    suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
 
-    config_name = CONFIG_NAME
+    public = False
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.OUTDATED
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {"downvote_emoji": "👎",
+                                            "upvote_emoji": "👍",
+                                            "add_success_embed_verbose": "yes"}}
+    required_folder = []
+    required_files = []
+
+    suggestion_name_regex = re.compile(r"(?P<name>(?<=#).*)")
 
     jinja_env = Environment(loader=FileSystemLoader(APPDATA["report_templates"]))
 
@@ -87,31 +99,17 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
     auto_accept_user_file = pathmaker(APPDATA["json_data"], "auto_accept_suggestion_users.json")
 
-    docattrs = {'show_in_readme': True,
-                'is_ready': CogMetaStatus.WORKING | CogMetaStatus.OPEN_TODOS | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
-
-    required_config_data = dedent("""
-                                        suggestion_reaction_listener_enabled = yes
-                                        suggestion_reaction_listener_allowed_channels = suggestions, bot-testing
-                                        suggestion_reaction_listener_allowed_roles = Dev Helper, Admin
-                                        downvote_emoji = 👎
-                                        upvote_emoji = 👍
-                                        add_success_embed_verbose = yes""")
 
 # endregion [ClassAttributes]
 
 # region [Init]
 
-    def __init__(self, bot):
-        self.bot = bot
-        self.support = self.bot.support
+
+    @universal_log_profiler
+    def __init__(self, bot: "AntiPetrosBot"):
+        super().__init__(bot)
         self.data_storage_handler = AioSuggestionDataStorageSQLite()
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+
         self.command_emojis = None
         self.categories_emojis = None
         self.vote_emojis = None
@@ -123,6 +121,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 # endregion [Init]
 # region [Setup]
 
+    @universal_log_profiler
     async def on_ready_setup(self):
         self.command_emojis = await self.get_command_emojis()
         self.categories_emojis = await self.get_categories_emojis()
@@ -130,6 +129,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -138,48 +138,57 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 # endregion[Setup]
 # region [Properties]
 
-
+    @universal_log_profiler
     async def get_command_emojis(self):
         _out = await self.data_storage_handler.get_save_emojis()
 
         return _out
 
+    @universal_log_profiler
     async def get_upvote_downvote_emojis(self):
         return {'upvote': normalize_emoji(COGS_CONFIG.get(self.config_name, 'upvote_emoji')),
                 'downvote': normalize_emoji(COGS_CONFIG.get(self.config_name, 'downvote_emoji'))}
 
+    @universal_log_profiler
     async def get_categories_emojis(self):
 
         categories_emojis = await self.data_storage_handler.category_emojis()
 
         return {normalize_emoji(key): value for key, value in categories_emojis.items()}
 
+    @universal_log_profiler
     async def get_category_name(self, emoji_name):
         data = await self.data_storage_handler.category_emojis()
         if emoji_name in data:
             return data.get(emoji_name)
 
     @ property
+    @universal_log_profiler
     def notify_contact_member(self):
         return COGS_CONFIG.get(self.config_name, 'notify_contact_member')
 
+    @universal_log_profiler
     async def messages_to_watch(self):
         return await self.data_storage_handler.get_all_non_discussed_message_ids()
 
+    @universal_log_profiler
     async def saved_messages(self):
         saved_messages = await self.data_storage_handler.get_all_message_ids()
         return saved_messages
 
     @ property
+    @universal_log_profiler
     def std_datetime_format(self):
         return self.bot.std_date_time_format
 
     @ property
+    @universal_log_profiler
     def auto_accept_user_dict(self):
         if os.path.isfile(self.auto_accept_user_file) is False:
             writejson({}, self.auto_accept_user_file)
         return loadjson(self.auto_accept_user_file)
 
+    @universal_log_profiler
     async def get_team_from_emoji(self, emoji_name):
         for key, value in self.command_emojis.items():
             if value == emoji_name:
@@ -189,11 +198,11 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 # endregion [Properties]
 
 # region [Listener]
-
+    @universal_log_profiler
     async def _suggestion_listen_checks(self, payload):
         command_name = "suggestion_reaction_listener"
-        if get_command_enabled(command_name) is False:
-            return False
+        if COGS_CONFIG.retrieve(self.config_name, command_name + "_enabled", typus=bool, direct_fallback=False) is False:
+            return
 
         channel = self.bot.get_channel(payload.channel_id)
         emoji = payload.emoji
@@ -227,6 +236,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         return True
 
     @ commands.Cog.listener(name="on_raw_reaction_add")
+    @universal_log_profiler
     async def suggestion_reaction_listener(self, payload):
         if self.ready is False:
             return
@@ -427,7 +437,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 # endregion [Commands]
 
 # region [DataStorage]
-
+    @universal_log_profiler
     async def _add_suggestion(self, suggestion_item: SUGGESTION_DATA_ITEM, extra_data=None):
         if extra_data is not None:
             _path = pathmaker(APPDATA['suggestion_extra_data'], extra_data[0])
@@ -441,6 +451,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             log.error(error)
             return False, suggestion_item
 
+    @universal_log_profiler
     async def _set_category(self, category, message_id):
         try:
             await self.data_storage_handler.update_category(category, message_id)
@@ -449,6 +460,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             log.error(error)
             return False
 
+    @universal_log_profiler
     async def _clear_suggestions(self, ctx, answer):
         if answer.casefold() == 'yes':
             # TODO: make as embed
@@ -466,7 +478,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
 # region [Embeds]
 
-
+    @universal_log_profiler
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -493,6 +505,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         embed.set_footer(text=DEFAULT_FOOTER)
         return embed
 
+    @universal_log_profiler
     async def make_changed_category_embed(self, message, category):
         embed = discord.Embed(title="**Updated Suggestion Category**", description="I updated the category an Suggestion\n\n", color=0xf2a44a)
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('update', None))
@@ -502,6 +515,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
         return embed
 
+    @universal_log_profiler
     async def make_already_saved_embed(self):
         embed = discord.Embed(title="**This Suggestion was already saved!**", description="I did not save the Suggestion as I have it already saved", color=0xe04d7e)
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('not_possible', None))
@@ -514,7 +528,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
 
 # region [HelperMethods]
 
-
+    @universal_log_profiler
     async def _collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)
         if name_result:
@@ -524,11 +538,13 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             name = None
         return name
 
+    @universal_log_profiler
     async def specifc_reaction_from_message(self, message, target_reaction):
         for reaction in message.reactions:
             if normalize_emoji(reaction.emoji) == target_reaction:
                 return reaction
 
+    @universal_log_profiler
     async def _new_suggestion(self, channel, message, reaction_user, team):
         if message.id in await self.saved_messages():
             await channel.send(embed=await self.make_already_saved_embed())
@@ -553,6 +569,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
             await channel.send(embed=await self.make_add_success_embed(suggestion_item), delete_after=120)
         return True
 
+    @universal_log_profiler
     async def _remove_previous_categories(self, target_message, new_emoji_name):
         for reaction_emoji in self.categories_emojis:
             if reaction_emoji is not None and reaction_emoji != new_emoji_name:
@@ -560,6 +577,7 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
                 if other_reaction is not None:
                     await other_reaction.clear()
 
+    @universal_log_profiler
     async def _change_category(self, channel, message, emoji_name):
         category = await self.get_category_name(emoji_name)
         if category:
@@ -569,12 +587,14 @@ class SaveSuggestionCog(commands.Cog, command_attrs={'hidden': True, "name": COG
                 log.info("updated category for suggestion (id: %s) to category '%s'", message.id, category)
                 await self._remove_previous_categories(message, emoji_name)
 
+    @universal_log_profiler
     async def _change_votes(self, message, emoji_name):
         reaction = await self.specifc_reaction_from_message(message, emoji_name)
         _count = reaction.count
         await self.data_storage_handler.update_votes(emoji_name, _count, message.id)
         log.info("updated votecount for suggestion (id: %s) for type: '%s' to count: %s", message.id, emoji_name, _count)
 
+    @universal_log_profiler
     async def _row_to_json_user_data(self, data):
         _out = {}
         for row in data:

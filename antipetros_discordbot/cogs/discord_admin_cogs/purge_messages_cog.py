@@ -109,6 +109,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
             return message.author.id in [self.bot.id, self.bot.creator.id]
 
         await ctx.channel.purge(limit=command_flags.get('number_of_messages'), check=is_antipetros, bulk=True)
+        await ctx.send('done', delete_after=60)
 
 # endregion[Commands]
 

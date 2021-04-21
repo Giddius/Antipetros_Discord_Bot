@@ -134,7 +134,8 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
     @tasks.loop(seconds=30, reconnect=True)
     @universal_log_profiler
     async def check_give_away_ended_loop(self):
-        await self.bot.wait_until_ready()
+        if self.ready is False:
+            return
         for give_away_event in await self.give_aways:
             if datetime.utcnow() >= give_away_event.end_date_time:
                 await self.give_away_finished(give_away_event)
@@ -142,13 +143,14 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
     @tasks.loop(seconds=5, reconnect=True)
     @universal_log_profiler
     async def clean_emojis_from_reaction(self):
-        await self.bot.wait_until_ready()
+        if self.ready is False:
+            return
         try:
             for give_away_event in await self.give_aways:
                 for reaction in give_away_event.message.reactions:
                     if normalize_emoji(str(reaction.emoji)) != normalize_emoji(give_away_event.enter_emoji):
-                        await give_away_event.message.clear_reaction(reaction.emoji)
-                        await give_away_event.message.clear_reaction(str(reaction))
+                        asyncio.create_task(give_away_event.message.clear_reaction(reaction.emoji))
+                        asyncio.create_task(give_away_event.message.clear_reaction(str(reaction)))
         except discord.errors.NotFound:
             pass
 

@@ -20,16 +20,24 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name, alt_seconds_to_pretty
-from antipetros_discordbot.utility.enums import WatermarkPosition
+
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, command_enabled_checker, allowed_requester, log_invoker, has_attachments, owner_or_admin
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, auto_meta_info_group
+
+
 from antipetros_discordbot.utility.exceptions import ParameterError
 from antipetros_discordbot.utility.image_manipulation import make_perfect_fontsize, find_min_fontsize, get_text_dimensions
+
+from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory, WatermarkPosition
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+
 
 # endregion[Imports]
 
@@ -52,39 +60,39 @@ APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))  # location of this file, does not work if app gets compiled to exe with pyinstaller
-COG_NAME = "ImageManipulationCog"
-CONFIG_NAME = make_config_name(COG_NAME)
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
+
 # endregion [Constants]
 
 
-class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
+class ImageManipulatorCog(AntiPetrosBaseCog):
     """
     Commands that manipulate or generate images.
     """
     # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
-    allowed_stamp_formats = set(loadjson(APPDATA["image_file_extensions.json"]))
+    public = True
+    meta_status = CogMetaStatus.WORKING | CogMetaStatus.OPEN_TODOS | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {"avatar_stamp": "ASLOGO1",
+                                            "avatar_stamp_fraction": "0.2",
+                                            "stamps_margin": "5",
+                                            "stamp_fraction": "0.3"}}
+    required_folder = []
+    required_files = []
+
+    allowed_stamp_formats = {".jpg", ".jpeg", ".png", ".tga", ".tiff", ".ico", ".icns", ".gif"}
     stamp_positions = {'top': WatermarkPosition.Top, 'bottom': WatermarkPosition.Bottom, 'left': WatermarkPosition.Left, 'right': WatermarkPosition.Right, 'center': WatermarkPosition.Center}
 
-    docattrs = {'show_in_readme': True,
-                'is_ready': CogMetaStatus.WORKING | CogMetaStatus.OPEN_TODOS | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
 
-    required_config_data = dedent("""  avatar_stamp = ASLOGO1
-                                avatar_stamp_fraction = 0.2
-                                stamps_margin = 5
-                                stamp_fraction = 0.3""")
 # endregion[ClassAttributes]
 
 # region [Init]
 
-    def __init__(self, bot):
-        self.bot = bot
-        self.support = self.bot.support
+    @universal_log_profiler
+    def __init__(self, bot: "AntiPetrosBot"):
+        super().__init__(bot)
         self.stamp_location = APPDATA['stamps']
         self.stamps = {}
         self.nato_symbol_parts_location = APPDATA['nato_symbol_parts']
@@ -117,9 +125,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         #                         'volcano': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_volcano_marker.png"),
         #                         'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
         self.old_map_message = None
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self.ready = False
         glog.class_init_notification(log, self)
 
 
@@ -127,12 +133,14 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 # region [Setup]
 
-
+    @universal_log_profiler
     async def on_ready_setup(self):
         self._get_stamps()
         self._get_nato_symbol_parts()
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         self._get_stamps()
         log.debug('cog "%s" was updated', str(self))
@@ -142,25 +150,28 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 # region [Properties]
 
     @property
+    @universal_log_profiler
     def target_stamp_fraction(self):
-
-        return COGS_CONFIG.getfloat(CONFIG_NAME, 'stamp_fraction')
+        return COGS_CONFIG.retrieve(self.config_name, 'stamp_fraction', typus=float, direct_fallback=0.2)
 
     @property
+    @universal_log_profiler
     def stamp_margin(self):
-
-        return COGS_CONFIG.getint(CONFIG_NAME, 'stamps_margin')
+        return COGS_CONFIG.retrieve(self.config_name, 'stamps_margin', typus=int, direct_fallback=5)
 
     @property
+    @universal_log_profiler
     def avatar_stamp_fraction(self):
-        return COGS_CONFIG.getfloat(CONFIG_NAME, 'avatar_stamp_fraction')
+        return COGS_CONFIG.retrieve(self.config_name, 'avatar_stamp_fraction', typus=float, direct_fallback=0.3)
 
     @property
+    @universal_log_profiler
     def avatar_stamp(self):
-        stamp_name = COGS_CONFIG.retrieve(CONFIG_NAME, 'avatar_stamp', direct_fallback='aslogo').upper()
+        stamp_name = COGS_CONFIG.retrieve(self.config_name, 'avatar_stamp', typus=str, direct_fallback='ASLOGO1').upper()
         return self._get_stamp_image(stamp_name, 1)
 
     @property
+    @universal_log_profiler
     def fonts(self):
         fonts = {}
         for file in os.scandir(APPDATA['fonts']):
@@ -171,145 +182,21 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
 
 # endregion[Properties]
 
-# region [Commands]
-
-
-# endregion[Commands]
-
-# region [HelperMethods]
-
-
-# endregion[HelperMethods]
-
 # region [Listener]
 
 
 # endregion[Listener]
 
-    def _get_nato_symbol_parts(self):
-        self.nato_symbol_parts_images = {}
-        for file in os.scandir(self.nato_symbol_parts_location):
-            if os.path.isfile(file.path) is True:
-                name = file.name.split('.')[0].replace(' ', '_').strip().upper()
-                self.nato_symbol_parts_images[name] = file.path
 
-    def _get_stamps(self):
-        self.stamps = {}
-        for file in os.scandir(self.stamp_location):
-            if os.path.isfile(file.path) is True:
-                name = file.name.split('.')[0].replace(' ', '_').strip().upper()
-                self.stamps[name] = file.path
+# region [Commands]
 
-    def _get_stamp_image(self, stamp_name, stamp_opacity):
-        stamp_name = stamp_name.upper()
-        image = Image.open(self.stamps.get(stamp_name))
-        alpha = image.split()[3]
-        alpha = ImageEnhance.Brightness(alpha).enhance(stamp_opacity)
-        image.putalpha(alpha)
-        return image.copy()
-
-    @staticmethod
-    def _stamp_resize(input_image, stamp_image, factor):
-        input_image_width, input_image_height = input_image.size
-        input_image_width_fractioned = input_image_width * factor
-        input_image_height_fractioned = input_image_height * factor
-        transform_factor_width = input_image_width_fractioned / stamp_image.size[0]
-        transform_factor_height = input_image_height_fractioned / stamp_image.size[1]
-        transform_factor = (transform_factor_width + transform_factor_height) / 2
-        return stamp_image.resize((round(stamp_image.size[0] * transform_factor), round(stamp_image.size[1] * transform_factor)), resample=Image.LANCZOS)
-
-    def _to_bottom_right(self, input_image, stamp_image, factor):
-        log.debug('pasting image to bottom_right')
-        input_image_width, input_image_height = input_image.size
-        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
-        input_image.paste(_resized_stamp,
-                          (input_image_width - _resized_stamp.size[0] - self.stamp_margin, input_image_height - _resized_stamp.size[1] - self.stamp_margin),
-                          _resized_stamp)
-        return input_image
-
-    def _to_top_right(self, input_image, stamp_image, factor):
-        input_image_width, input_image_height = input_image.size
-        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
-        input_image.paste(_resized_stamp,
-                          (input_image_width - _resized_stamp.size[0] - self.stamp_margin, 0 + self.stamp_margin),
-                          _resized_stamp)
-        return input_image
-
-    def _to_center_right(self, input_image, stamp_image, factor):
-        input_image_width, input_image_height = input_image.size
-        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
-        input_image.paste(_resized_stamp,
-                          (input_image_width - _resized_stamp.size[0] - self.stamp_margin, round((input_image_height / 2) - (_resized_stamp.size[1] / 2))),
-                          _resized_stamp)
-        return input_image
-
-    def _to_bottom_left(self, input_image, stamp_image, factor):
-        input_image_width, input_image_height = input_image.size
-        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
-        input_image.paste(_resized_stamp,
-                          (0 + self.stamp_margin, input_image_height - _resized_stamp.size[1] - self.stamp_margin),
-                          _resized_stamp)
-        return input_image
-
-    def _to_top_left(self, input_image, stamp_image, factor):
-
-        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
-        input_image.paste(_resized_stamp,
-                          (0 + self.stamp_margin, 0 + self.stamp_margin),
-                          _resized_stamp)
-        return input_image
-
-    def _to_center_left(self, input_image, stamp_image, factor):
-        input_image_width, input_image_height = input_image.size
-        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
-        input_image.paste(_resized_stamp,
-                          (0 + self.stamp_margin, round((input_image_height / 2) - (_resized_stamp.size[1] / 2))),
-                          _resized_stamp)
-        return input_image
-
-    def _to_center_center(self, input_image, stamp_image, factor):
-        input_image_width, input_image_height = input_image.size
-        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
-        input_image.paste(_resized_stamp,
-                          (round((input_image_width / 2) - (_resized_stamp.size[0] / 2)), round((input_image_height / 2) - (_resized_stamp.size[1] / 2))),
-                          _resized_stamp)
-        return input_image
-
-    def _to_top_center(self, input_image, stamp_image, factor):
-        input_image_width, input_image_height = input_image.size
-        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
-        input_image.paste(_resized_stamp,
-                          (round((input_image_width / 2) - (_resized_stamp.size[0] / 2)), 0 + self.stamp_margin),
-                          _resized_stamp)
-        return input_image
-
-    def _to_bottom_center(self, input_image, stamp_image, factor):
-        input_image_width, input_image_height = input_image.size
-        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
-        input_image.paste(_resized_stamp,
-                          (round((input_image_width / 2) - (_resized_stamp.size[0] / 2)), input_image_height - _resized_stamp.size[1] - self.stamp_margin),
-                          _resized_stamp)
-        return input_image
-
-    async def _send_image(self, ctx, image, name, message_title, message_text=None, image_format=None, delete_after=None):
-        image_format = 'png' if image_format is None else image_format
-        with BytesIO() as image_binary:
-            image.save(image_binary, image_format.upper(), optimize=True)
-            image_binary.seek(0)
-            file = discord.File(fp=image_binary, filename=name.replace('_', '') + '.' + image_format)
-            embed = discord.Embed(title=message_title, description=message_text, color=self.support.cyan.discord_color, timestamp=datetime.now(tz=timezone("Europe/Berlin")), type='image')
-            embed.set_author(name='AntiPetros', icon_url="https://www.der-buntspecht-shop.de/wp-content/uploads/Baumwollstoff-Camouflage-olivegruen-2.jpg")
-            embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
-            if delete_after is not None:
-                embed.add_field(name='This Message will self destruct', value=f"in {alt_seconds_to_pretty(delete_after)}")
-            await ctx.send(embed=embed, file=file, delete_after=delete_after)
 
     @flags.add_flag("--stamp-image", "-si", type=str, default='ASLOGO')
     @flags.add_flag("--first-pos", '-fp', type=str, default="bottom")
     @flags.add_flag("--second-pos", '-sp', type=str, default="right")
     @flags.add_flag("--stamp-opacity", '-so', type=float, default=1.0)
     @flags.add_flag('--factor', '-f', type=float, default=None)
-    @auto_meta_info_command(enabled=get_command_enabled("stamp_image"), cls=AntiPetrosFlagCommand)
+    @auto_meta_info_command(cls=AntiPetrosFlagCommand)
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
     @commands.max_concurrency(1, per=commands.BucketType.guild, wait=True)
     async def stamp_image(self, ctx, **flags):
@@ -363,7 +250,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
                     # TODO: make as embed
                     await self._send_image(ctx, in_image, name, f"__**{name}**__")
 
-    @auto_meta_info_command(enabled=get_command_enabled("available_stamps"))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_stamps(self, ctx):
@@ -390,12 +277,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
                 embed.add_field(name='Stamp Name:', value=name)
                 embed.set_image(url=f"attachment://{name}.png")
                 await ctx.send(embed=embed, file=_file, delete_after=120)
-
-    async def _member_avatar_helper(self, user: discord.Member, placement: callable, opacity: float):
-        avatar_image = await self.get_avatar_from_user(user)
-        stamp = self._get_stamp_image('ASLOGO', opacity)
-        modified_avatar = await self.bot.execute_in_thread(placement, avatar_image, stamp, self.avatar_stamp_fraction)
-        return modified_avatar
 
     @auto_meta_info_group(case_insensitive=True, cls=AntiPetrosBaseGroup)
     async def member_avatar(self, ctx):
@@ -437,14 +318,6 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**", delete_after=300)  # change completion line to "Pledge your allegiance to the Antistasi Rebellion!"?
         await ctx.message.delete()
 
-    async def _normalize_pos(self, pos: str):
-        pos = pos.casefold()
-        if pos not in self.position_normalization_table:
-            for key, value in self.position_normalization_table.items():
-                if pos in value:
-                    return key
-        raise ParameterError('image_position', pos)
-
     @member_avatar.command()
     async def by_place(self, ctx, first_pos: str, second_pos: str):
         first_pos = await self._normalize_pos(first_pos)
@@ -455,30 +328,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         await self._send_image(ctx, modified_avatar, name, "**Your New Avatar**", delete_after=300)  # change completion line to "Pledge your allegiance to the Antistasi Rebellion!"?
         await ctx.message.delete()
 
-    async def get_avatar_from_user(self, user):
-        avatar = user.avatar_url
-        temp_dir = TemporaryDirectory()
-        temp_file = pathmaker(temp_dir.name, 'user_avatar.png')
-        log.debug("Tempfile '%s' created", temp_file)
-        await avatar.save(temp_file)
-        avatar_image = Image.open(temp_file)
-        avatar_image = avatar_image.copy()
-        avatar_image = avatar_image.convert('RGB')
-        temp_dir.cleanup()
-        return avatar_image
-
-    def map_image_handling(self, base_image, marker_name, color, bytes_out):
-        log.debug("creating changed map, changed_location: '%s', changed_color: '%s'", marker_name, color)
-        marker_image = self.outpost_overlay.get(marker_name)
-        marker_alpha = marker_image.getchannel('A')
-        marker_image = Image.new('RGBA', marker_image.size, color=color)
-        marker_image.putalpha(marker_alpha)
-        base_image.paste(marker_image, mask=marker_alpha)
-        base_image.save(bytes_out, 'PNG', optimize=True)
-        bytes_out.seek(0)
-        return base_image, bytes_out
-
-    @auto_meta_info_command(enabled=get_command_enabled('get_stamp_image'), aliases=["get_image"])
+    @auto_meta_info_command(aliases=["get_image"])
     @allowed_channel_and_allowed_role()
     async def get_stamp_image(self, ctx: commands.Context, image_name: str):
         image_name = image_name.split('.')[0].upper()
@@ -489,7 +339,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         embed_data = await self.bot.make_generic_embed(title=image_name, description="Your requested image", thumbnail=None, image=image)
         await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
-    @auto_meta_info_command(enabled=get_command_enabled('add_stamp'), aliases=["add_image"])
+    @auto_meta_info_command(aliases=["add_image"])
     @allowed_channel_and_allowed_role()
     @has_attachments(1)
     @log_invoker(log, "critical")
@@ -514,25 +364,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         await self.bot.creator.member_object.send(f"New stamp was added by `{ctx.author.name}`", file=await attachment.to_file())
         self._get_stamps()
 
-    def draw_text_line(self, image: Image, text_line: str, top_space: int, in_font: ImageFont.FreeTypeFont):
-        width, height = image.size
-        pfont = in_font
-        draw = ImageDraw.Draw(image)
-        w, h = draw.textsize(text_line, font=pfont)
-        draw.text(((width - w) / 2, h + top_space), text_line, fill=(0, 0, 0), stroke_width=width // 150, stroke_fill=(50, 200, 25), font=pfont)
-
-        return image, top_space + h + (height // 20)
-
-    def draw_text_center(self, image: Image, text: str, in_font: ImageFont.FreeTypeFont):
-        width, height = image.size
-        pfont = in_font
-        draw = ImageDraw.Draw(image)
-        w, h = draw.textsize(text, font=pfont)
-        draw.text(((width - w) / 2, (height - h) / 2), text, fill=(0, 0, 0), stroke_width=width // 150, stroke_fill=(204, 255, 204), font=pfont)
-
-        return image
-
-    @auto_meta_info_command(enabled=get_command_enabled('text_to_image'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
     @has_attachments(1)
     async def text_to_image(self, ctx: commands.Context, font: str, *, text: str):
@@ -565,7 +397,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
                 base_image, top_space = await self.bot.execute_in_thread(self.draw_text_line, base_image, line, top_space, image_font)
         await self._send_image(ctx, base_image, image_attachment.filename.split('.')[0] + '_with_text.png', "Modified Image", message_text="Here is your image with pasted Text", image_format='png')
 
-    @auto_meta_info_command(enabled=get_command_enabled('add_font'))
+    @auto_meta_info_command()
     @owner_or_admin()
     @has_attachments(1)
     async def add_font(self, ctx: commands.Context):
@@ -587,7 +419,7 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         preview_image = await self.bot.execute_in_thread(self.draw_text_center, b_image, font_name, image_font)
         return preview_image
 
-    @auto_meta_info_command(enabled=get_command_enabled('add_font'))
+    @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
     async def list_fonts(self, ctx: commands.Context):
         embed = discord.Embed(title="Available Fonts")
@@ -600,7 +432,210 @@ class ImageManipulatorCog(commands.Cog, command_attrs={'hidden': False, "name": 
         await asyncio.sleep(60)
         await ctx.message.delete()
 
+
+# endregion[Commands]
+
+# region [HelperMethods]
+
+
+    @universal_log_profiler
+    def _get_nato_symbol_parts(self):
+        self.nato_symbol_parts_images = {}
+        for file in os.scandir(self.nato_symbol_parts_location):
+            if os.path.isfile(file.path) is True:
+                name = file.name.split('.')[0].replace(' ', '_').strip().upper()
+                self.nato_symbol_parts_images[name] = file.path
+
+    @universal_log_profiler
+    def _get_stamps(self):
+        self.stamps = {}
+        for file in os.scandir(self.stamp_location):
+            if os.path.isfile(file.path) is True:
+                name = file.name.split('.')[0].replace(' ', '_').strip().upper()
+                self.stamps[name] = file.path
+
+    @universal_log_profiler
+    def _get_stamp_image(self, stamp_name, stamp_opacity):
+        stamp_name = stamp_name.upper()
+        image = Image.open(self.stamps.get(stamp_name))
+        alpha = image.split()[3]
+        alpha = ImageEnhance.Brightness(alpha).enhance(stamp_opacity)
+        image.putalpha(alpha)
+        return image.copy()
+
+    @staticmethod
+    @universal_log_profiler
+    def _stamp_resize(input_image, stamp_image, factor):
+        input_image_width, input_image_height = input_image.size
+        input_image_width_fractioned = input_image_width * factor
+        input_image_height_fractioned = input_image_height * factor
+        transform_factor_width = input_image_width_fractioned / stamp_image.size[0]
+        transform_factor_height = input_image_height_fractioned / stamp_image.size[1]
+        transform_factor = (transform_factor_width + transform_factor_height) / 2
+        return stamp_image.resize((round(stamp_image.size[0] * transform_factor), round(stamp_image.size[1] * transform_factor)), resample=Image.LANCZOS)
+
+    @universal_log_profiler
+    def _to_bottom_right(self, input_image, stamp_image, factor):
+        log.debug('pasting image to bottom_right')
+        input_image_width, input_image_height = input_image.size
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
+        input_image.paste(_resized_stamp,
+                          (input_image_width - _resized_stamp.size[0] - self.stamp_margin, input_image_height - _resized_stamp.size[1] - self.stamp_margin),
+                          _resized_stamp)
+        return input_image
+
+    @universal_log_profiler
+    def _to_top_right(self, input_image, stamp_image, factor):
+        input_image_width, input_image_height = input_image.size
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
+        input_image.paste(_resized_stamp,
+                          (input_image_width - _resized_stamp.size[0] - self.stamp_margin, 0 + self.stamp_margin),
+                          _resized_stamp)
+        return input_image
+
+    @universal_log_profiler
+    def _to_center_right(self, input_image, stamp_image, factor):
+        input_image_width, input_image_height = input_image.size
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
+        input_image.paste(_resized_stamp,
+                          (input_image_width - _resized_stamp.size[0] - self.stamp_margin, round((input_image_height / 2) - (_resized_stamp.size[1] / 2))),
+                          _resized_stamp)
+        return input_image
+
+    @universal_log_profiler
+    def _to_bottom_left(self, input_image, stamp_image, factor):
+        input_image_width, input_image_height = input_image.size
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
+        input_image.paste(_resized_stamp,
+                          (0 + self.stamp_margin, input_image_height - _resized_stamp.size[1] - self.stamp_margin),
+                          _resized_stamp)
+        return input_image
+
+    @universal_log_profiler
+    def _to_top_left(self, input_image, stamp_image, factor):
+
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
+        input_image.paste(_resized_stamp,
+                          (0 + self.stamp_margin, 0 + self.stamp_margin),
+                          _resized_stamp)
+        return input_image
+
+    @universal_log_profiler
+    def _to_center_left(self, input_image, stamp_image, factor):
+        input_image_width, input_image_height = input_image.size
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
+        input_image.paste(_resized_stamp,
+                          (0 + self.stamp_margin, round((input_image_height / 2) - (_resized_stamp.size[1] / 2))),
+                          _resized_stamp)
+        return input_image
+
+    @universal_log_profiler
+    def _to_center_center(self, input_image, stamp_image, factor):
+        input_image_width, input_image_height = input_image.size
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
+        input_image.paste(_resized_stamp,
+                          (round((input_image_width / 2) - (_resized_stamp.size[0] / 2)), round((input_image_height / 2) - (_resized_stamp.size[1] / 2))),
+                          _resized_stamp)
+        return input_image
+
+    @universal_log_profiler
+    def _to_top_center(self, input_image, stamp_image, factor):
+        input_image_width, input_image_height = input_image.size
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
+        input_image.paste(_resized_stamp,
+                          (round((input_image_width / 2) - (_resized_stamp.size[0] / 2)), 0 + self.stamp_margin),
+                          _resized_stamp)
+        return input_image
+
+    @universal_log_profiler
+    def _to_bottom_center(self, input_image, stamp_image, factor):
+        input_image_width, input_image_height = input_image.size
+        _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
+        input_image.paste(_resized_stamp,
+                          (round((input_image_width / 2) - (_resized_stamp.size[0] / 2)), input_image_height - _resized_stamp.size[1] - self.stamp_margin),
+                          _resized_stamp)
+        return input_image
+
+    @universal_log_profiler
+    async def _send_image(self, ctx, image, name, message_title, message_text=None, image_format=None, delete_after=None):
+        image_format = 'png' if image_format is None else image_format
+        with BytesIO() as image_binary:
+            image.save(image_binary, image_format.upper(), optimize=True)
+            image_binary.seek(0)
+            file = discord.File(fp=image_binary, filename=name.replace('_', '') + '.' + image_format)
+            embed = discord.Embed(title=message_title, description=message_text, color=self.support.cyan.discord_color, timestamp=datetime.now(tz=timezone("Europe/Berlin")), type='image')
+            embed.set_author(name='AntiPetros', icon_url="https://www.der-buntspecht-shop.de/wp-content/uploads/Baumwollstoff-Camouflage-olivegruen-2.jpg")
+            embed.set_image(url=f"attachment://{name.replace('_','')}.{image_format}")
+            if delete_after is not None:
+                embed.add_field(name='This Message will self destruct', value=f"in {alt_seconds_to_pretty(delete_after)}")
+            await ctx.send(embed=embed, file=file, delete_after=delete_after)
+
+    @universal_log_profiler
+    async def _member_avatar_helper(self, user: discord.Member, placement: callable, opacity: float):
+        avatar_image = await self.get_avatar_from_user(user)
+        stamp = self._get_stamp_image('ASLOGO', opacity)
+        modified_avatar = await self.bot.execute_in_thread(placement, avatar_image, stamp, self.avatar_stamp_fraction)
+        return modified_avatar
+
+    @universal_log_profiler
+    async def _normalize_pos(self, pos: str):
+        pos = pos.casefold()
+        if pos not in self.position_normalization_table:
+            for key, value in self.position_normalization_table.items():
+                if pos in value:
+                    return key
+        raise ParameterError('image_position', pos)
+
+    @universal_log_profiler
+    async def get_avatar_from_user(self, user):
+        avatar = user.avatar_url
+        temp_dir = TemporaryDirectory()
+        temp_file = pathmaker(temp_dir.name, 'user_avatar.png')
+        log.debug("Tempfile '%s' created", temp_file)
+        await avatar.save(temp_file)
+        avatar_image = Image.open(temp_file)
+        avatar_image = avatar_image.copy()
+        avatar_image = avatar_image.convert('RGB')
+        temp_dir.cleanup()
+        return avatar_image
+
+    @universal_log_profiler
+    def map_image_handling(self, base_image, marker_name, color, bytes_out):
+        log.debug("creating changed map, changed_location: '%s', changed_color: '%s'", marker_name, color)
+        marker_image = self.outpost_overlay.get(marker_name)
+        marker_alpha = marker_image.getchannel('A')
+        marker_image = Image.new('RGBA', marker_image.size, color=color)
+        marker_image.putalpha(marker_alpha)
+        base_image.paste(marker_image, mask=marker_alpha)
+        base_image.save(bytes_out, 'PNG', optimize=True)
+        bytes_out.seek(0)
+        return base_image, bytes_out
+
+    @universal_log_profiler
+    def draw_text_line(self, image: Image, text_line: str, top_space: int, in_font: ImageFont.FreeTypeFont):
+        width, height = image.size
+        pfont = in_font
+        draw = ImageDraw.Draw(image)
+        w, h = draw.textsize(text_line, font=pfont)
+        draw.text(((width - w) / 2, h + top_space), text_line, fill=(0, 0, 0), stroke_width=width // 150, stroke_fill=(50, 200, 25), font=pfont)
+
+        return image, top_space + h + (height // 20)
+
+    @universal_log_profiler
+    def draw_text_center(self, image: Image, text: str, in_font: ImageFont.FreeTypeFont):
+        width, height = image.size
+        pfont = in_font
+        draw = ImageDraw.Draw(image)
+        w, h = draw.textsize(text, font=pfont)
+        draw.text(((width - w) / 2, (height - h) / 2), text, fill=(0, 0, 0), stroke_width=width // 150, stroke_fill=(204, 255, 204), font=pfont)
+
+        return image
+
+# endregion[HelperMethods]
+
+
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
