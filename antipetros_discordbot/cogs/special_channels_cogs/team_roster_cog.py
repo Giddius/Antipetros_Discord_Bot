@@ -66,7 +66,13 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.exceptions import NeededClassAttributeNotSet, NeededConfigValueMissing, TeamMemberRoleNotFoundError
-from antipetros_discordbot.utility.id_generation import make_full_cog_id
+
+
+from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -97,19 +103,7 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "TeamRosterCog"
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
-
 # endregion[Constants]
-
-# region [Helper]
-
-_from_cog_config = CogConfigReadOnly(CONFIG_NAME)
-
-# endregion [Helper]
 
 
 class TeamItem:
@@ -295,33 +289,31 @@ class TeamItem:
         await self.all_member_list_message.delete()
 
 
-class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
+class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADMINTOOLS, "hidden": True}):
     """
     WiP
     """
 # region [ClassAttributes]
-    cog_id = 12
-    full_cog_id = make_full_cog_id(THIS_FILE_DIR, cog_id)
-    config_name = CONFIG_NAME
-    team_item_data_file = pathmaker(APPDATA['json_data'], "team_items.json")
-    docattrs = {'show_in_readme': False,
-                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.OUTDATED | CogMetaStatus.CRASHING | CogMetaStatus.EMPTY | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
 
-    required_config_data = dedent("""
-                                    """).strip('\n')
+    public = False
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING | CogMetaStatus.WORKING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
+    team_item_data_file = pathmaker(APPDATA['json_data'], "team_items.json")
+
+    required_folder = []
+    required_files = [RequiredFile(team_item_data_file, [], RequiredFile.FileType.JSON)]
+
+
 # endregion [ClassAttributes]
 
 # region [Init]
 
+    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        super().__init__(bot)
         self.team_items = None
         self.last_changed_message = None
         TeamItem.config_name = self.config_name
@@ -338,12 +330,14 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [Setup]
 
+    @universal_log_profiler
     async def on_ready_setup(self):
         await self.bot.antistasi_guild.chunk(cache=True)
         await self._load_team_items()
         self.is_ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         await self.bot.antistasi_guild.chunk(cache=True)
         log.debug('cog "%s" was updated', str(self))
@@ -359,6 +353,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 
     @commands.Cog.listener(name="on_member_update")
+    @universal_log_profiler
     async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):
         if self.is_ready is False:
             return
@@ -367,6 +362,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
             await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_create")
+    @universal_log_profiler
     async def role_added_listener(self, role: discord.Role):
         if self.is_ready is False:
             return
@@ -374,6 +370,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_delete")
+    @universal_log_profiler
     async def role_removed_listener(self, role: discord.Role):
         if self.is_ready is False:
             return
@@ -381,6 +378,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_update")
+    @universal_log_profiler
     async def role_updated_listener(self, before: discord.Role, after: discord.Role):
         if self.is_ready is False:
             return
@@ -436,7 +434,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @commands.is_owner()
     @log_invoker(log, 'critical')
     async def delete_and_redo_team_roster(self, ctx: commands.Context, channel: discord.TextChannel):
@@ -445,7 +443,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await self.last_changed_message.delete()
         await self.initialize_team_roster(ctx, channel)
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @log_invoker(log, 'critical')
     async def team_roster_change_description(self, ctx: commands.Context, team: str, *, new_description: str):
         team_item = {item.name.casefold(): item for item in self.team_items}.get(team.casefold(), None)
@@ -461,7 +459,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await self.force_update_team_roster(ctx)
         await self._send_updated_embed(ctx, team_item, 'Description')
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @log_invoker(log, 'critical')
     async def team_roster_change_join_description(self, ctx: commands.Context, team: str, *, new_join_description: str):
         team_item = {item.name.casefold(): item for item in self.team_items}.get(team.casefold(), None)
@@ -477,7 +475,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await self.force_update_team_roster(ctx)
         await self._send_updated_embed(ctx, team_item, 'Join Description')
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @log_invoker(log, 'critical')
     async def team_roster_change_extra_role(self, ctx: commands.Context, team: str, *, extra_role_name: str):
         team_item = {item.name.casefold(): item for item in self.team_items}.get(team.casefold(), None)
@@ -493,7 +491,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await self.force_update_team_roster(ctx)
         await self._send_updated_embed(ctx, team_item, 'Extra Role')
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @log_invoker(log, 'critical')
     async def team_roster_change_image(self, ctx: commands.Context, team: str, *, image_url: str):
         team_item = {item.name.casefold(): item for item in self.team_items}.get(team.casefold(), None)
@@ -524,6 +522,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
 
 # region [HelperMethods]
 
+    @universal_log_profiler
     async def _update_team_roster(self):
         for team_item in self.team_items:
             try:
@@ -533,12 +532,14 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
                 await self._save_team_items()
         await self.update_last_changed_message()
 
+    @universal_log_profiler
     async def _send_updated_embed(self, ctx: commands.Context, team_item: TeamItem, field: str):
         embed_data = await self.bot.make_generic_embed(title=f'{field} updated', description=f"{field} for Team `{team_item.name}` was updated!",
                                                        thumbnail="update")
         await ctx.send(**embed_data, delete_after=120, allowed_mentions=discord.AllowedMentions.none())
         await delete_message_if_text_channel(ctx)
 
+    @universal_log_profiler
     async def _send_team_not_found_embed(self, ctx: commands.Context, team: str):
         fields = []
         for team_name in (item.name for item in self.team_items):
@@ -549,12 +550,14 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
         await ctx.send(**embed_data, delete_after=120)
         await delete_message_if_text_channel(ctx)
 
+    @universal_log_profiler
     async def _send_not_team_lead_embed(self, ctx: commands.Context, team_item: TeamItem):
         embed_data = await self.bot.make_generic_embed(title='Not your Team', description=f"To modify an item you have to be Team lead of that Team!\nYou do not have the necessary role {team_item.lead_role.mention} !",
                                                        thumbnail="cancelled")
         await ctx.send(**embed_data, delete_after=120, allowed_mentions=discord.AllowedMentions.none())
         await delete_message_if_text_channel(ctx)
 
+    @universal_log_profiler
     async def update_last_changed_message(self):
         embed = discord.Embed(title='Last Modified', description=datetime.utcnow().strftime(self.bot.std_date_time_format) + ' UTC', timestamp=datetime.utcnow(), color=self.bot.fake_colorless)
         embed.set_footer(text='last modified your local time')
@@ -562,12 +565,14 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
         log.debug('Updating Team Roster last modified message')
         await self.last_changed_message.edit(embed=embed)
 
+    @universal_log_profiler
     async def create_last_changed_message(self, channel: discord.TextChannel):
         embed = discord.Embed(title='Last Modified', description=datetime.utcnow().strftime(self.bot.std_date_time_format) + ' UTC', timestamp=datetime.utcnow(), color=self.bot.fake_colorless)
         embed.set_footer(text='last modified your local time')
         embed.set_author(**self.bot.special_authors.get('bot_author'))
         self.last_changed_message = await channel.send(embed=embed)
 
+    @universal_log_profiler
     async def _load_team_items(self):
         if os.path.isfile(self.team_item_data_file) is False:
             writejson({"team_items": [], "last_changed_message": None}, self.team_item_data_file)
@@ -579,6 +584,7 @@ class TeamRosterCog(commands.Cog, command_attrs={'name': COG_NAME}):
             last_changed_channel = await self.bot.channel_from_id(last_changed_data.get('channel_id'))
             self.last_changed_message = await last_changed_channel.fetch_message(last_changed_data.get('message_id'))
 
+    @universal_log_profiler
     async def _save_team_items(self):
         data = {"team_items": [item.to_dict() for item in self.team_items],
                 'last_changed_message': {'channel_id': self.last_changed_message.channel.id,

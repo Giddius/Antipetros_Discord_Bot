@@ -29,6 +29,14 @@ from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
 
+from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+
 
 # endregion[Imports]
 
@@ -55,11 +63,7 @@ APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-COG_NAME = "SubscriptionCog"
 
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
 # endregion[Constants]
 
 
@@ -148,33 +152,28 @@ class TopicItem:
                 "image": self.image}
 
 
-class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
+class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADMINTOOLS, "hidden": True}):
     """
     Organizes Topic so they can be subscribed and mentioned selectively.
     """
     # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
+    public = False
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING | CogMetaStatus.WORKING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
     topics_data_file = pathmaker(APPDATA['json_data'], 'subscription_topics_data.json')
-    docattrs = {'show_in_readme': False,
-                'is_ready': CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
-
-    required_config_data = dedent("""
-                                  """)
+    required_folder = []
+    required_files = [RequiredFile(topics_data_file, [], RequiredFile.FileType.JSON)]
 
     # endregion[ClassAttributes]
 
 # region [Init]
-
-    def __init__(self, bot):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+    @universal_log_profiler
+    def __init__(self, bot: "AntiPetrosBot"):
+        super().__init__(bot)
         self.topics = []
         self.ready = False
 
@@ -183,12 +182,13 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 # endregion[Init]
 
 # region [Setup]
-
+    @universal_log_profiler
     async def on_ready_setup(self):
         await self._load_topic_items()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -198,8 +198,8 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
 # region [Properties]
 
-
     @property
+    @universal_log_profiler
     def subscription_channel(self):
         name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
         if name is None:
@@ -207,6 +207,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         return self.bot.sync_channel_from_name(name)
 
     @property
+    @universal_log_profiler
     def topic_data(self):
         if os.path.isfile(self.topics_data_file) is False:
             writejson([], self.topics_data_file)
@@ -217,6 +218,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 # region [Listener]
 
     @commands.Cog.listener(name='on_raw_reaction_add')
+    @universal_log_profiler
     async def subscription_reaction(self, payload):
         if self.ready is False:
             return
@@ -245,6 +247,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             return
 
     @commands.Cog.listener(name='on_raw_reaction_remove')
+    @universal_log_profiler
     async def unsubscription_reaction(self, payload):
         if self.ready is False:
             return
@@ -275,44 +278,52 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 # endregion[Listener]
 
 # region [Helper]
-
+    @universal_log_profiler
     async def _get_header_message(self):
         msg_id = COGS_CONFIG.retrieve(self.config_name, 'header_message_id', typus=int, direct_fallback=0)
         if msg_id == 0:
             return None
         return await self.subscription_channel.fetch_message(msg_id)
 
+    @universal_log_profiler
     async def _add_topic_data(self, topic_item):
         current_data = self.topic_data
         current_data.append(await topic_item.serialize())
         writejson(current_data, self.topics_data_file)
 
+    @universal_log_profiler
     async def _remove_topic_data(self, topic_item: TopicItem):
         current_data = self.topic_data
         current_data.remove(await topic_item.serialize())
         writejson(current_data, self.topics_data_file)
 
+    @universal_log_profiler
     async def _save_topic_data(self):
         writejson([await item.serialize() for item in self.topics], self.topics_data_file)
         await self._load_topic_items()
 
+    @universal_log_profiler
     async def _clear_other_emojis(self, topic_item):
         pass
 
+    @universal_log_profiler
     async def _post_new_topic(self, topic_item: TopicItem):
         embed_data = await self.bot.make_generic_embed(**topic_item.embed_data)
         msg = await self.subscription_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
         await msg.add_reaction(topic_item.emoji)
         topic_item.message = msg
 
+    @universal_log_profiler
     async def _remove_topic_role(self, member: discord.Member, topic_item: TopicItem):
         await member.remove_roles(topic_item.role, reason=f'User unsibscribed from topic "{topic_item.name}"')
         log.info(f"removed role {topic_item.role.name} to {member.display_name}")
 
+    @universal_log_profiler
     async def _give_topic_role(self, member: discord.Member, topic_item):
         await member.add_roles(topic_item.role, reason=f"User subscribed to Topic '{topic_item.name}'")
         log.info(f"assigned role {topic_item.role.name} to {member.display_name}")
 
+    @universal_log_profiler
     async def _load_topic_items(self):
         self.topics = []
         data = self.topic_data
@@ -320,11 +331,13 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             topic_item = await TopicItem.from_data(self.bot, self.subscription_channel, **item)
             self.topics.append(topic_item)
 
+    @universal_log_profiler
     async def convert_hex_color(self, color):
         h = color.lstrip('#')
         rgb = tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
         return discord.Color.from_rgb(*rgb)
 
+    @universal_log_profiler
     async def _create_topic_role(self, topic_item: TopicItem):
         """
         Creates the new subscriber role.
@@ -341,6 +354,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         topic_item.role = new_role
         log.debug(f"finished creating role '{topic_item.name}_Subscriber'")
 
+    @universal_log_profiler
     async def _create_topic_subscription_header_embed(self):
         embed_data = await self.bot.make_generic_embed(title="Topic Subscription", description=COGS_CONFIG.retrieve(self.config_name, 'header_description', typus=str, direct_fallback=''),
                                                        fields=[self.bot.field_item(name='How to subscribe', value=">>> " + COGS_CONFIG.retrieve(self.config_name, 'header_how_to_subscribe_text', typus=str, direct_fallback='')),
@@ -351,16 +365,19 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
         return embed_data
 
+    @universal_log_profiler
     async def _get_subscription_channel(self):
         name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
         if name is None:
             return None
         return await self.bot.channel_from_name(name)
 
+    @universal_log_profiler
     async def _remove_subscription_reaction(self, member: discord.member, topic_item: TopicItem):
         message = topic_item.message
         await message.remove_reaction(topic_item.emoji, member)
 
+    @universal_log_profiler
     async def _send_topic_remove_notification(self, topic_item: TopicItem):
         role = topic_item.role
         for member in role.members:
@@ -369,6 +386,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
             await asyncio.sleep(0.25)
 
+    @universal_log_profiler
     async def sucess_subscribed_embed(self, member: discord.Member, topic: TopicItem):
         embed_data = await self.bot.make_generic_embed(title="Successfully Subscribed", description=f"You are now subscribed to {topic.name} and will get pinged if they have an Announcement.",
                                                        thumbnail="subscribed",
@@ -377,12 +395,14 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
                                                                self.bot.field_item(name="Unsubscribe Command", value=f"You can also use the command `@AntiPetros unsubscribe {topic.name}`", inline=False)])
         await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
+    @universal_log_profiler
     async def sucess_unsubscribed_embed(self, member: discord.Member, topic: TopicItem):
         embed_data = await self.bot.make_generic_embed(title="Successfully Unsubscribed", description=f"You are now no longer subscribed to {topic.name} and will NOT get pinged anymore if they have an Announcement.",
                                                        thumbnail="update",
                                                        fields=[self.bot.field_item(name="Subscription Role", value=f"The Role {topic.role.name} has been removed", inline=False)])
         await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
+    @universal_log_profiler
     async def _confirm_topic_creation_deletion(self, ctx: commands.Context, topic_item: TopicItem, typus: str):
         topic_embed_data = await self.bot.make_generic_embed(**topic_item.embed_data)
         description = f"Are you sure you want to create the Topic `{topic_item.name}`, with the following subscription message?" if typus == 'creation' else f"Are you sure you want to REMOVE the topic `{topic_item.name}`, with that subscription message above?"
@@ -424,6 +444,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             await ctx.send(**embed_data)
             return True
 
+    @universal_log_profiler
     async def _update_topic_embed(self, topic_item: TopicItem):
         embed_data = await self.bot.make_generic_embed(**topic_item.embed_data)
         await topic_item.message.edit(**embed_data)
@@ -432,7 +453,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
 
 # region [Commands]
 
-    @auto_meta_info_command(enabled=get_command_enabled('create_subscription_channel_header'))
+    @auto_meta_info_command()
     @commands.is_owner()
     async def create_subscription_channel_header(self, ctx: commands.Context):
         embed_data = await self._create_topic_subscription_header_embed()
@@ -440,7 +461,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         COGS_CONFIG.set(self.config_name, 'header_message_id', str(header_message.id))
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command(enabled=get_command_enabled('remove_topic'))
+    @auto_meta_info_command()
     @commands.is_owner()
     async def update_subscription_channel_header(self, ctx: commands.Context):
         embed_data = await self._create_topic_subscription_header_embed()
@@ -448,7 +469,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await header_message.edit(**embed_data)
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command(enabled=get_command_enabled('remove_topic'))
+    @auto_meta_info_command()
     @commands.is_owner()
     async def remove_topic(self, ctx: commands.context, topic_name: str):
         topic_item = {item.name.casefold(): item for item in self.topics}.get(topic_name.casefold(), None)
@@ -461,7 +482,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
             await ctx.message.delete()
         log.info(f"Topic '{topic_item.name}' was removed, by {ctx.author.display_name}")
 
-    @auto_meta_info_command(enabled=get_command_enabled('new_topic'))
+    @auto_meta_info_command()
     @commands.is_owner()
     @has_attachments(1)
     async def new_topic(self, ctx: commands.Context, topic_creator_id: int = None):
@@ -524,7 +545,7 @@ class SubscriptionCog(commands.Cog, command_attrs={'hidden': True, "name": COG_N
         await self._update_topic_embed(topic_item)
         await self._save_topic_data()
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @commands.dm_only()
     async def unsubscribe(self, ctx: commands.Context, topic_name: str):
         topic_item = {item.name.casefold(): item for item in self.topics}.get(topic_name.casefold(), None)
