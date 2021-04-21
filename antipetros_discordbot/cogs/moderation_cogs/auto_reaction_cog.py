@@ -521,7 +521,7 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(AutoReactionCog(bot)))
+    bot.add_cog(AutoReactionCog(bot))
 
 
 # region [Main_Exec]

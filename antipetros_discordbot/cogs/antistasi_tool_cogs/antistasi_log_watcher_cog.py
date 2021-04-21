@@ -159,10 +159,10 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog):
 
     @universal_log_profiler
     async def on_ready_setup(self):
-        await self.get_base_structure()
-        self.update_log_file_data_loop.start()
-        self.ready = True
+        asyncio.create_task(self.get_base_structure())
 
+        self.update_log_file_data_loop.start()
+        self.ready = await asyncio.sleep(5, True)
         log.debug('setup for cog "%s" finished', str(self))
 
     @universal_log_profiler
@@ -181,7 +181,7 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog):
             return
 
         await self.update_log_file_data()
-        await self.check_oversized_logs()
+        asyncio.create_task(self.check_oversized_logs())
 
     @universal_log_profiler
     async def update_log_file_data(self):
@@ -385,7 +385,7 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(AntistasiLogWatcherCog(bot)))
+    bot.add_cog(AntistasiLogWatcherCog(bot))
 
 
 # region [Main_Exec]

@@ -353,7 +353,7 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(VoteCog(bot)))
+    bot.add_cog(VoteCog(bot))
 
 
 # region [Main_Exec]

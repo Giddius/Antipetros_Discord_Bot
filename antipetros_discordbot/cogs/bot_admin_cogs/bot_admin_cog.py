@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, List, Dict, Optional, Tuple, Any, Union, Calla
 from antipetros_discordbot.utility.misc import make_config_name, seconds_to_pretty, delete_message_if_text_channel
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin, only_giddi
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, CommandCategory
 from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
@@ -64,10 +64,11 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
+class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': CommandCategory.META}):
     """
      General Commands and methods that are needed to Administrate the Bot itself.
     """
+# region [ClassAttributes]
 
     public = False
     meta_status = CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
@@ -84,6 +85,11 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     required_folder = [RequiredFolder(APPDATA["fixed_data"])]
     required_files = [RequiredFile(alive_phrases_file, [], RequiredFile.FileType.JSON), RequiredFile(who_is_trigger_phrases_file, [], RequiredFile.FileType.JSON)]
 
+
+# endregion[ClassAttributes]
+
+# region [Init]
+
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
@@ -93,6 +99,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         self.listeners_enabled = {'stop_the_reaction_petros_listener': False,
                                   'who_is_this_bot_listener': False}
         glog.class_init_notification(log, self)
+# endregion[Init]
 
 # region [Setup]
     @universal_log_profiler
@@ -100,19 +107,18 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         # self.garbage_clean_loop.start()
         reaction_remove_ids = [self.bot.id] + [_id for _id in self.bot.owner_ids]
         self.reaction_remove_ids = set(reaction_remove_ids)
-        await self._update_listener_enabled()
+        asyncio.create_task(self._update_listener_enabled())
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         if UpdateTypus.CONFIG in typus:
-            await self._update_listener_enabled()
+            asyncio.create_task(self._update_listener_enabled())
         log.debug('cog "%s" was updated', str(self))
 
 
 # endregion [Setup]
-
 
 # region [Loops]
 
@@ -125,6 +131,8 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         log.info('Garbage Clean collected "%s"', x)
 
 # endregion[Loops]
+
+# region [Properties]
 
     @property
     @universal_log_profiler
@@ -142,6 +150,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         if os.path.isfile(self.who_is_trigger_phrases_file) is False:
             writejson(std_phrases, self.who_is_trigger_phrases_file)
         return loadjson(self.who_is_trigger_phrases_file)
+# endregion[Properties]
 
 # region [Listener]
     @commands.Cog.listener(name='on_reaction_add')
@@ -154,7 +163,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         message = reaction.message
         author = message.author
         if user.id == 155149108183695360 and author.id in self.reaction_remove_ids:
-            await reaction.remove(user)
+            asyncio.create_task(reaction.remove(user))
 
     @commands.Cog.listener(name='on_message')
     @universal_log_profiler
@@ -420,6 +429,6 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(BotAdminCog(bot)))
+    bot.add_cog(BotAdminCog(bot))
 
 # endregion[Main_Exec]

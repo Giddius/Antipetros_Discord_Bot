@@ -313,4 +313,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(TranslateCog(bot)))
+    bot.add_cog(TranslateCog(bot))

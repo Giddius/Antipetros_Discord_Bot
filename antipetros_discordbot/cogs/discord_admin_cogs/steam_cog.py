@@ -7,7 +7,7 @@ from datetime import datetime
 from textwrap import dedent
 from collections import namedtuple
 import re
-from typing import Union, List, Set, Tuple, Dict
+from typing import Union, List, Set, Tuple, Dict, TYPE_CHECKING
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, tasks
 
@@ -20,13 +20,21 @@ from antipetros_discordbot.utility.checks import command_enabled_checker, allowe
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+
+
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+
 
 # endregion[Imports]
 
 # region [TODO]
 
+# TODO: Add all special Cog methods
 
 # endregion [TODO]
 
@@ -49,34 +57,29 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "SteamCog"
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion[Constants]
 
 
-class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
+class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.TEAMTOOLS | CommandCategory.ADMINTOOLS}):
     """
     Soon
     """
     # region [ClassAttributes]
-    config_name = CONFIG_NAME
 
-    docattrs = {'show_in_readme': True,
-                'is_ready': CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.CRASHING | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
-
-    required_config_data = dedent("""
-                                  """)
-
-    base_url = "https://steamcommunity.com/sharedfiles/filedetails/?id="
+    public = False
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.CRASHING | CogMetaStatus.DOCUMENTATION_MISSING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
 
     registered_workshop_items_file = pathmaker(APPDATA['json_data'], 'registered_steam_workshop_items.json')
+
+    required_folder = []
+    required_files = [RequiredFile(registered_workshop_items_file, [], RequiredFile.FileType.JSON)]
+
+    base_url = "https://steamcommunity.com/sharedfiles/filedetails/?id="
 
     month_map = {'jan': 1,
                  'feb': 2,
@@ -90,21 +93,18 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
                  'oct': 10,
                  'nov': 11,
                  'dec': 12}
+
     image_link_regex = re.compile(r"(?<=\')(?P<image_link>.*)(?=\')")
     workshop_item = namedtuple("WorkshopItem", ['title', 'updated', 'requirements', 'url', "image_link", "size", "id"])
     date_time_format = "%Y-%m-%d %H:%M"
     # endregion [ClassAttributes]
 
     # region [Init]
+    @universal_log_profiler
+    def __init__(self, bot: "AntiPetrosBot"):
+        super().__init__(bot)
+        self.ready = False
 
-    def __init__(self, bot):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-        if os.path.isfile(self.registered_workshop_items_file) is False:
-            writejson([], self.registered_workshop_items_file)
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -112,10 +112,12 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 # region [Properties]
 
     @property
+    @universal_log_profiler
     def registered_workshop_items(self):
         return [self.workshop_item(**item) for item in loadjson(self.registered_workshop_items_file)]
 
     @property
+    @universal_log_profiler
     def notify_members(self):
         members = [self.bot.creator.member_object]
         member_ids = COGS_CONFIG.retrieve(self.config_name, "notify_member_ids", typus=List[int], direct_fallback=[])
@@ -126,10 +128,13 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 
 # region [Setup]
 
+    @universal_log_profiler
     async def on_ready_setup(self):
         self.check_for_updates.start()
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -140,6 +145,7 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 # region [Loops]
 
     @tasks.loop(minutes=5, reconnect=True)
+    @universal_log_profiler
     async def check_for_updates(self):
         await self.bot.wait_until_ready()
         for item in self.registered_workshop_items:
@@ -153,8 +159,12 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
                 await self.notify_update(item, new_item)
 
 # endregion [Loops]
+
 # region [Listener]
+
+
 # endregion [Listener]
+
 # region [Commands]
 
     @auto_meta_info_command()
@@ -190,17 +200,15 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 
         await ctx.send(**embed_data)
 # endregion [Commands]
-# region [DataStorage]
-# endregion [DataStorage]
-# region [Embeds]
-# endregion [Embeds]
-# region [HelperMethods]
 
+# region [HelperMethods]
+    @universal_log_profiler
     async def notify_update(self, old_item, new_item):
         log.info(f"{new_item.title} had an update")
         for member in self.notify_members:
             await member.send(f"{new_item.title} had an update")
 
+    @universal_log_profiler
     async def _add_item_to_registered_items(self, item):
         data = loadjson(self.registered_workshop_items_file)
         if item.id not in [existing_item.get('id') for existing_item in data]:
@@ -210,6 +218,7 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
         else:
             return False
 
+    @universal_log_profiler
     async def _remove_item_from_registered_items(self, item):
         data = loadjson(self.registered_workshop_items_file)
         if item.id in [existing_item.get('id') for existing_item in data]:
@@ -219,6 +228,7 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
         else:
             return False
 
+    @universal_log_profiler
     async def _update_item_in_registered_items(self, old_item, new_item):
         data = loadjson(self.registered_workshop_items_file)
         old_item_data = old_item._asdict()
@@ -226,6 +236,7 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
         data.append(new_item._asdict())
         writejson(data, self.registered_workshop_items_file)
 
+    @universal_log_profiler
     async def _parse_update_date(self, in_update_data: str):
         date, time = in_update_data.split('@')
         if ',' not in date:
@@ -244,14 +255,17 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
         update_datetime = datetime(year=int(year), month=int(month), day=int(day), hour=int(hours), minute=int(minutes))
         return update_datetime
 
+    @universal_log_profiler
     async def _get_title(self, in_soup: BeautifulSoup):
         title = in_soup.find_all("div", {"class": "workshopItemTitle"})[0]
         return title.text
 
+    @universal_log_profiler
     async def _get_updated(self, in_soup: BeautifulSoup):
         updated_data = in_soup.findAll("div", {"class": "detailsStatRight"})[2]
         return await self._parse_update_date(updated_data.text)
 
+    @universal_log_profiler
     async def _get_requirements(self, in_soup: BeautifulSoup):
         _out = []
         try:
@@ -264,16 +278,19 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
             pass
         return _out
 
+    @universal_log_profiler
     async def _get_image_link(self, in_soup: BeautifulSoup):
         image = in_soup.find_all('div', {'class': "workshopItemPreviewImageMain"})[0].find_all('a')[0].get('onclick')
         match = self.image_link_regex.search(image)
         if match:
             return match.group('image_link')
 
+    @universal_log_profiler
     async def _get_item_size(self, in_soup: BeautifulSoup):
         size = in_soup.findAll("div", {"class": "detailsStatRight"})[0]
         return size.text
 
+    @universal_log_profiler
     async def _get_fresh_item_data(self, item_id: int):
         item_url = f"{self.base_url}{item_id}"
         async with self.bot.aio_request_session.get(item_url) as response:
@@ -291,6 +308,7 @@ class SteamCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
 
 
 # endregion [HelperMethods]
+
 # region [SpecialMethods]
 
 
@@ -312,4 +330,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(SteamCog(bot)))
+    bot.add_cog(SteamCog(bot))

@@ -7,7 +7,7 @@ import os
 from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, flags
-
+from typing import TYPE_CHECKING, Any, Union, Optional
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -15,14 +15,19 @@ import gidlogger as glog
 from antipetros_discordbot.utility.misc import make_config_name
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, in_allowed_channels
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, CommandCategory
 from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
 
 # region [TODO]
 
+# TODO: Add all special Cog methods
 
 # endregion [TODO]
 
@@ -44,35 +49,44 @@ APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-COG_NAME = "PurgeMessagesCog"
 
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
 # endregion[Constants]
 
 
-class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
+class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categories": CommandCategory.ADMINTOOLS}):
     """
     Soon
     """
 
-    config_name = CONFIG_NAME
-    docattrs = {'show_in_readme': False,
-                'is_ready': CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
+# region [ClassAttributes]
 
-    required_config_data = dedent("""
-                                  """)
+    public = False
+    meta_status = CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
+    required_folder = []
+    required_files = []
 
+# endregion[ClassAttributes]
+
+# region [Init]
+    @universal_log_profiler
+    def __init__(self, bot: "AntiPetrosBot"):
+        super().__init__(bot)
+        glog.class_init_notification(log, self)
+
+
+# endregion[Init]
 # region [Setup]
 
+    @universal_log_profiler
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -80,18 +94,11 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": COG_
 
 # endregion [Setup]
 
-
-    def __init__(self, bot):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-        glog.class_init_notification(log, self)
+# region [Commands]
 
     @flags.add_flag("--and-giddi", '-gid', type=bool, default=False)
     @flags.add_flag("--number-of-messages", '-n', type=int, default=99999999999)
-    @auto_meta_info_command(enabled=get_command_enabled("purge_antipetros"), cls=AntiPetrosFlagCommand)
+    @auto_meta_info_command(cls=AntiPetrosFlagCommand)
     @commands.is_owner()
     @in_allowed_channels()
     async def purge_antipetros(self, ctx: commands.Context, **command_flags):
@@ -103,6 +110,10 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": COG_
 
         await ctx.channel.purge(limit=command_flags.get('number_of_messages'), check=is_antipetros, bulk=True)
 
+# endregion[Commands]
+
+# region [SpecialMethods]
+
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"
 
@@ -111,6 +122,7 @@ class PurgeMessagesCog(commands.Cog, command_attrs={'hidden': True, "name": COG_
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))
+# endregion[SpecialMethods]
 
 # region[Main_Exec]
 
@@ -119,6 +131,6 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(PurgeMessagesCog(bot)))
+    bot.add_cog(PurgeMessagesCog(bot))
 
 # endregion[Main_Exec]

@@ -185,7 +185,7 @@ class AioGeneralStorageSQLite:
                 if attr_name == 'gif' and attr_value is not None:
                     attr_value = await antipetros_repo_rel_path(attr_value)
             params.append(attr_value)
-        await self.insert_image(name, await command.get_source_code_image())
+        # await self.insert_image(name, await command.get_source_code_image())
         params.append(name)
         params = tuple(params)
         await self.db.aio_write('insert_command', params)

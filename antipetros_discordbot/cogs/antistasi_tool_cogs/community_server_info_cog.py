@@ -143,13 +143,12 @@ class CommunityServerInfoCog(AntiPetrosBaseCog):
     @universal_log_profiler
     async def on_ready_setup(self):
         self.notification_channel = await self.bot.channel_from_name('bot-testing')
-        await self._initialise_server_holder()
         self.log_watcher_cog = await self.bot.cog_by_name("AntistasiLogWatcherCog")
+        asyncio.create_task(self._initialise_server_holder())
 
-        # await self._try_to_get_starter_info_message(self)
         self.check_server_status_loop.start()
-        await asyncio.sleep(5)
-        self.ready = True
+
+        self.ready = await asyncio.sleep(5, True)
         log.debug('setup for cog "%s" finished', str(self))
 
     @universal_log_profiler
@@ -397,7 +396,7 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(CommunityServerInfoCog(bot)))
+    bot.add_cog(CommunityServerInfoCog(bot))
 
 
 # region [Main_Exec]

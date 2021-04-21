@@ -19,7 +19,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name
-from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, CommandCategory
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, allowed_requester, command_enabled_checker, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -62,7 +62,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True}):
+class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories': CommandCategory.ADMINTOOLS | CommandCategory.TEAMTOOLS}):
     """
     Soon
     """
@@ -374,4 +374,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(GiveAwayCog(bot)))
+    bot.add_cog(GiveAwayCog(bot))

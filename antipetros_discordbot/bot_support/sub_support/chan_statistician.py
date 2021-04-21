@@ -9,7 +9,7 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from datetime import datetime, timedelta, timezone
-
+import asyncio
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 
@@ -128,7 +128,7 @@ class ChannelStatistician(SubSupportBase):
                 await self.general_db.update_text_channel_deleted(text_channel_id)
 
     async def if_ready(self):
-        await self.insert_channels_into_db()
+        asyncio.create_task(self.insert_channels_into_db())
         self.ready = True
         log.debug("'%s' sub_support is READY", str(self))
 

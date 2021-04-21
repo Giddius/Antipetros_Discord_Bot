@@ -7,10 +7,25 @@ import os
 from importlib.metadata import metadata
 from dotenv import load_dotenv
 from psutil import virtual_memory
+import logging
 MAIN_DIR = os.path.abspath(os.path.dirname(__file__))
 if os.path.islink(MAIN_DIR) is True:
 
     MAIN_DIR = os.readlink(MAIN_DIR).replace('\\\\?\\', '')
+
+
+def add_profiling_log_level():
+    PROFILING_INTEGER = 7
+
+    def profile(self, msg, *args, **kwargs):
+        """
+        added log level for profiling messages
+        """
+        if self.isEnabledFor(PROFILING_INTEGER):
+            self._log(PROFILING_INTEGER, msg, args, **kwargs)
+
+    logging.addLevelName(PROFILING_INTEGER, "PROFILE")
+    logging.Logger.profile = profile
 
 
 def set_env():
@@ -47,4 +62,5 @@ def set_env():
     os.environ['BOT_CREATOR_ID'] = "576522029470056450"
 
 
+add_profiling_log_level()
 set_env()

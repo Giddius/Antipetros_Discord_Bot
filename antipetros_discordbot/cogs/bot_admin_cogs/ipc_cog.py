@@ -60,12 +60,13 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
+
 
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
 from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 
@@ -103,7 +104,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
+class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': CommandCategory.META}):
     """
     WiP
     """
@@ -135,6 +136,7 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
 # region [Setup]
 
+
     @universal_log_profiler
     async def on_ready_setup(self):
         self.ready = True
@@ -158,6 +160,7 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 # endregion [Listener]
 
 # region [Commands]
+
 
     @ipc.server.route()
     @universal_log_profiler
@@ -186,7 +189,6 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
 # region [HelperMethods]
 
-
     async def execute_shutdown(self):
         await asyncio.sleep(5)
         await self.bot.shutdown_mechanic()
@@ -195,7 +197,6 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True
@@ -226,7 +227,7 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(IpcCog(bot)))
+    bot.add_cog(IpcCog(bot))
 
 
 # region [Main_Exec]

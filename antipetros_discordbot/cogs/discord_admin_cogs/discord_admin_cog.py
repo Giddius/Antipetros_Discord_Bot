@@ -9,6 +9,7 @@ import asyncio
 from tempfile import TemporaryDirectory
 import lzma
 from zipfile import ZipFile, ZIP_LZMA
+from typing import TYPE_CHECKING
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, flags, tasks
 import discord
@@ -22,19 +23,20 @@ from async_property import async_property
 from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin, has_attachments
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, CommandCategory
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.converters import DateTimeFullConverter, date_time_full_converter_flags
-from antipetros_discordbot.engine.replacements import AntiPetrosFlagCommand, AntiPetrosBaseCommand, auto_meta_info_command
+
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
 
 # region [TODO]
-
-
-# TODO: get_logs command
-# TODO: get_appdata_location command
 
 
 # endregion [TODO]
@@ -57,122 +59,67 @@ APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-COG_NAME = "AdministrationCog"
-CONFIG_NAME = make_config_name(COG_NAME)
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
 
 # endregion[Constants]
 
 
-class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG_NAME}):
+class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': CommandCategory.ADMINTOOLS | CommandCategory.META}):
     """
     Commands and methods that help in Administrate the Discord Server.
     """
     # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
-    announcements_channel_id = 645930607683174401
-    community_subscriber_role_id = 827937724341944360
+    public = False
+    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {}}
+    required_folder = []
+    required_files = []
 
-    docattrs = {'show_in_readme': False,
-                'is_ready': CogMetaStatus.OPEN_TODOS | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.OUTDATED | CogMetaStatus.DOCUMENTATION_MISSING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
-
-    required_config_data = dedent("""
-                                  """)
-    # endregion[ClassAttributes]
+# endregion[ClassAttributes]
 
 # region [Init]
 
-    def __init__(self, bot):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
-        self.meeting_message_times = {self.send_first_meeting_message: datetime(year=2021, month=1, day=1, hour=17, minute=5, second=0, tzinfo=timezone.utc),
-                                      self.send_second_meeting_message: datetime(year=2021, month=1, day=1, hour=17, minute=10, second=0, tzinfo=timezone.utc),
-                                      self.send_third_meeting_message: datetime(year=2021, month=1, day=1, hour=17, minute=15, second=0, tzinfo=timezone.utc)}
+    @universal_log_profiler
+    def __init__(self, bot: "AntiPetrosBot"):
+        super().__init__(bot)
+
+        self.ready = False
         glog.class_init_notification(log, self)
 
 
 # endregion[Init]
 
-# region [Properties]
-
-    @property
-    def announcements_channel(self):
-        return self.bot.sync_channel_from_id(self.announcements_channel_id)
-
-    @property
-    def community_subscriber_role(self):
-        return self.bot.sync_retrieve_antistasi_role(self.community_subscriber_role_id)
-
-# endregion[Properties]
-
 # region [Setup]
 
+
+    @universal_log_profiler
     async def on_ready_setup(self):
-        self.community_meeting_messages.start()
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
 
+# region [Properties]
+
+
+# endregion[Properties]
+
 # region [Loops]
 
-    async def send_first_meeting_message(self):
-        start_time = datetime.now(tz=timezone.utc).replace(hour=19, minute=0, second=0)
-
-        embed_data = await self.bot.make_generic_embed(title="Community Meeting Reminder",
-                                                       description="Community Meeting in 30 minutes!",
-                                                       fields=[self.bot.field_item(name="Meeting time as your local time", value="⇩")],
-                                                       timestamp=start_time,
-                                                       color="green")
-        await self.announcements_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-
-    async def send_second_meeting_message(self):
-        start_time = datetime.now(tz=timezone.utc).replace(hour=19, minute=0, second=0)
-        embed_data = await self.bot.make_generic_embed(title="Community Meeting Reminder",
-                                                       description=f"`{self.community_subscriber_role.mention}` Community Meeting in 15 minutes!",
-                                                       fields=[self.bot.field_item(name="Meeting time as your local time", value="⇩")],
-                                                       timestamp=start_time,
-                                                       color="green")
-        await self.announcements_channel.send(**embed_data)
-
-    async def send_third_meeting_message(self):
-        start_time = datetime.now(tz=timezone.utc).replace(hour=19, minute=0, second=0)
-        embed_data = await self.bot.make_generic_embed(title="Community Meeting Starting",
-                                                       description="Community meeting starting now!",
-                                                       timestamp=start_time,
-                                                       color="green")
-        await self.announcements_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-
-    async def check_timespan(self, target_time: datetime, time_span_minutes: int = 1, on_days: Iterable = None):
-        on_days = {0, 1, 2, 3, 4, 5, 6} if on_days is None else set(on_days)
-        check_delta = timedelta(minutes=time_span_minutes)
-        lower_time = target_time - check_delta
-        upper_time = target_time + check_delta
-        now = datetime.now(tz=timezone.utc)
-        if now.weekday() in on_days:
-            return lower_time.time() < now.time() < upper_time.time()
-        return False
-
-    @tasks.loop(minutes=2)
-    async def community_meeting_messages(self):
-        for key, value in self.meeting_message_times.items():
-            if await self.check_timespan(value, time_span_minutes=1, on_days=[6]) is True:
-                await key()
-                break
 
 # endregion[Loops]
 
-    @ auto_meta_info_command(enabled=True)
+# region [Commands]
+
+    @ auto_meta_info_command()
     @owner_or_admin()
     @log_invoker(log, "critical")
     async def delete_msg(self, ctx, *msgs: discord.Message):
@@ -263,7 +210,7 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         await asyncio.sleep(60)
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command(enabled=get_command_enabled('all_guild_emojis'))
+    @auto_meta_info_command()
     async def all_guild_emojis(self, ctx: commands.Context):
         async with ctx.typing():
             start_message = await ctx.send('Please wait this could take a minute or more!')
@@ -279,6 +226,15 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
                 await ctx.send(file=file)
                 if ctx.channel.type is not discord.ChannelType.private:
                     await start_message.delete()
+
+# endregion[Commands]
+
+# region [Helper]
+
+
+# endregion[Helper]
+
+# region [SpecialMethods]
 
     def cog_check(self, ctx):
         return True
@@ -302,9 +258,11 @@ class AdministrationCog(commands.Cog, command_attrs={'hidden': True, "name": COG
         self.community_meeting_messages.stop()
         log.debug("Cog '%s' UNLOADED!", str(self))
 
+# endregion[SpecialMethods]
+
 
 def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(AdministrationCog(bot)))
+    bot.add_cog(AdministrationCog(bot))

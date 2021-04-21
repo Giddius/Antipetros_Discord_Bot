@@ -60,7 +60,7 @@ SIZE_CONV_BY_SHORT_NAME = {'b': 1,
                            'tb': 1099511627776}
 
 STANDARD_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-
+NANOSECONDS_FACTOR = 1 / 1000000000
 SECOND_FACTOR = 1
 MINUTE_FACTOR = SECOND_FACTOR * 60
 HOUR_FACTOR = MINUTE_FACTOR * 60
@@ -405,6 +405,10 @@ def hour_to_second(hours: int):
 
 def day_to_second(days: int):
     return days * 24 * 60 * 60
+
+
+def ns_to_s(ns: int):
+    return ns * NANOSECONDS_FACTOR
 
 
 def datetime_isoformat_to_discord_format(in_data: datetime):

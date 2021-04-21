@@ -9,7 +9,7 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import time
-from time import time
+from time import time, time_ns, monotonic_ns, monotonic
 from functools import wraps
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
@@ -85,10 +85,10 @@ def async_log_profiler(f):
     async def wrapper(*args, **kwargs):
         if os.getenv('ANTIPETROS_PROFILING') == '1':
             logger = glog.aux_logger(__name__)
-            start_time = time()
+            start_time = time_ns()
             _out = await f(*args, **kwargs)
-            time_taken = round(time() - start_time, 4)
-            logger.debug("<PROFILING> module: %s, command: %s, time_taken: %s s</PROFILING>", f.__module__, f.__name__, str(time_taken))
+            time_taken = time_ns() - start_time
+            logger.profile("<PROFILING> module: %s, function: %s, time_taken: %s s </PROFILING>", f.__module__, f.__name__, str(time_taken))
         else:
             _out = await f(*args, **kwargs)
         return _out
@@ -100,10 +100,10 @@ def sync_log_profiler(f):
     def wrapper(*args, **kwargs):
         if os.getenv('ANTIPETROS_PROFILING') == '1':
             logger = glog.aux_logger(__name__)
-            start_time = time()
+            start_time = time_ns()
             _out = f(*args, **kwargs)
-            time_taken = round(time() - start_time, 4)
-            logger.debug("<PROFILING> module: %s, command: %s, time_taken: %s s</PROFILING>", f.__module__, f.__name__, str(time_taken))
+            time_taken = time_ns() - start_time
+            logger.profile("<PROFILING> module: %s, function: %s, time_taken: %s s</PROFILING>", f.__module__, f.__name__, str(time_taken))
         else:
             _out = f(*args, **kwargs)
         return _out
@@ -115,10 +115,10 @@ def universal_log_profiler(f):
     async def async_wrapper(*args, **kwargs):
         if os.getenv('ANTIPETROS_PROFILING') == '1':
             logger = glog.aux_logger(__name__)
-            start_time = time()
+            start_time = time_ns()
             _out = await f(*args, **kwargs)
-            time_taken = round(time() - start_time, 4)
-            logger.debug("<PROFILING> module: %s, command: %s, time_taken: %s s</PROFILING>", f.__module__, f.__name__, str(time_taken))
+            time_taken = time_ns() - start_time
+            logger.profile("<PROFILING> module: %s, function: %s, time_taken: %s s</PROFILING>", f.__module__, f.__name__, str(time_taken))
         else:
             _out = await f(*args, **kwargs)
         return _out
@@ -127,10 +127,10 @@ def universal_log_profiler(f):
     def wrapper(*args, **kwargs):
         if os.getenv('ANTIPETROS_PROFILING') == '1':
             logger = glog.aux_logger(__name__)
-            start_time = time()
+            start_time = time_ns()
             _out = f(*args, **kwargs)
-            time_taken = round(time() - start_time, 4)
-            logger.debug("<PROFILING> module: %s, command: %s, time_taken: %s s</PROFILING>", f.__module__, f.__name__, str(time_taken))
+            time_taken = time_ns() - start_time
+            logger.profile("<PROFILING> module: %s, function: %s, time_taken: %s s</PROFILING>", f.__module__, f.__name__, str(time_taken))
         else:
             _out = f(*args, **kwargs)
         return _out

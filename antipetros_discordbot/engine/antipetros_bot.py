@@ -193,7 +193,9 @@ class AntiPetrosBot(commands.Bot):
         await self.set_delayed_bot_attributes()
         await asyncio.sleep(2)
         await self.support.to_all_subsupports(attribute_name='if_ready')
-        await self.to_all_cogs('on_ready_setup')
+        all_cog_setup_tasks=await self.to_all_cogs('on_ready_setup')
+        if all_cog_setup_tasks:
+            await asyncio.wait(all_cog_setup_tasks, return_when="ALL_COMPLETED")
         if self.is_debug is True:
             await self.debug_function()
         if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
@@ -284,9 +286,12 @@ class AntiPetrosBot(commands.Bot):
             self.used_startup_message = await channel.send(msg, delete_after=delete_time)
 
     async def to_all_cogs(self, command, *args, **kwargs):
+        all_tasks = []
         for cog_name, cog_object in self.cogs.items():
             if hasattr(cog_object, command):
-                await getattr(cog_object, command)(*args, **kwargs)
+                task = asyncio.create_task(getattr(cog_object, command)(*args, **kwargs))
+                all_tasks.append(task)
+        return all_tasks
 
     async def _get_bot_info(self):
         if self.all_bot_roles is None:

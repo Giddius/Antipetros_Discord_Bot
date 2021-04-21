@@ -27,7 +27,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, date_today, make_config_name, delete_message_if_text_channel
-from antipetros_discordbot.utility.enums import DataSize, CogMetaStatus, UpdateTypus
+from antipetros_discordbot.utility.enums import DataSize, CogMetaStatus, UpdateTypus, CommandCategory
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
 from antipetros_discordbot.utility.named_tuples import LatencyMeasurement, MemoryUsageMeasurement
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, make_basic_embed_inline
@@ -79,10 +79,11 @@ DATA_COLLECT_INTERVALL = 120 if os.getenv('IS_DEV').casefold() in ['yes', 'true'
 # endregion[Constants]
 
 
-class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
+class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': CommandCategory.META}):
     """
     Collects Latency data and memory usage every 10min and posts every 24h a report of the last 24h as graphs.
     """
+# region [ClassAttributes]
 
     public = True
     meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
@@ -99,6 +100,10 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     required_folder = [RequiredFolder(save_folder)]
     required_files = []
 
+# endregion[ClassAttributes]
+
+# region [Init]
+
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
@@ -114,6 +119,10 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         self.general_db = general_db
         glog.class_init_notification(log, self)
 
+# endregion[Init]
+
+# region [Setup]
+
     @universal_log_profiler
     async def on_ready_setup(self):
         _ = psutil.cpu_percent(interval=None)
@@ -127,6 +136,10 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
+
+# endregion[Setup]
+
+# region [Loops]
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     @universal_log_profiler
@@ -170,6 +183,10 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         elif memory_in_use > self.memory_thresholds.get("warning"):
             log.warning("Memory usage is high! Memory in use: %s", DataSize.GigaBytes.convert(memory_in_use, annotate=True))
         await self.general_db.insert_memory_perfomance(now, memory_in_use)
+
+# endregion[Loops]
+
+# region [Commands]
 
     @auto_meta_info_command()
     @owner_or_admin()
@@ -233,6 +250,81 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
             _file, _url = await self.make_graph(report_data, 'cpu')
             embed.set_image(url=_url)
         await ctx.send(embed=embed, file=_file)
+
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def get_command_stats(self, ctx):
+        data_dict = {item.name: f"{ZERO_WIDTH}\n{item.data}\n{ZERO_WIDTH}" for item in await self.bot.support.get_todays_invoke_data()}
+        date = date_today()
+
+        embed = await make_basic_embed(title=ctx.command.name, text=f'data of the last 24hrs - {date}', symbol='data', **data_dict)
+
+        await ctx.send(embed=embed)
+
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def report(self, ctx):
+        """
+        Reports both current latency and memory usage as Graph.
+
+        Example:
+            @AntiPetros report
+        """
+        try:
+            await ctx.invoke(self.bot.get_command('report_memory'))
+            await ctx.invoke(self.bot.get_command('report_latency'))
+            await ctx.invoke(self.bot.get_command('report_cpu'))
+        except StatisticsError as error:
+            # TODO: make as error embed
+            await ctx.send('not enough data points collected to report!', delete_after=120)
+            await delete_message_if_text_channel(ctx)
+
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def cpu_info(self, ctx: commands.Context):
+        cpu_percent = psutil.cpu_percent(interval=None)
+        cpu_logical_count = psutil.cpu_count()
+        cpu_strict_count = psutil.cpu_count(logical=False)
+        cpu_load_avg = [x / psutil.cpu_count() * 100 for x in psutil.getloadavg()]
+        fields = [self.bot.field_item(name="CPU Percent", value=f"{cpu_percent} %"),
+                  self.bot.field_item(name="CPU count logical", value=cpu_logical_count),
+                  self.bot.field_item(name="CPU strict count", value=cpu_strict_count),
+                  self.bot.field_item(name="CPU load average", value=f"1 minute: {cpu_load_avg[0]}\n5 minutes: {cpu_load_avg[1]}\n15 minutes: {cpu_load_avg[2]}")]
+        embed_data = await self.bot.make_generic_embed(title="CPU Data", fields=fields)
+        await ctx.send(**embed_data)
+
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def socket_info(self, ctx: commands.Context):
+        out = []
+        net_connections = psutil.net_connections()
+        for item in net_connections:
+            out.append(str(item))
+        await self.bot.split_to_messages(ctx, '\n'.join(out), in_codeblock=True, syntax_highlighting='css')
+
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def speed_test(self, ctx: commands.Context, amount_msgs: Optional[int] = 10, delete_msgs: Optional[bool] = False):
+        delete_after = None if delete_msgs is False else 30
+        start_time = time.monotonic()
+        times = []
+        for i in range(amount_msgs):
+            sub_time_start = time.monotonic()
+            await ctx.send(f"This is message {i+1} of the speed test!", delete_after=delete_after)
+            times.append(time.monotonic() - sub_time_start)
+        time_taken = time.monotonic() - start_time
+        time_taken = round(time_taken, ndigits=3)
+        mean_per_message = mean(times)
+        mean_per_message = round(mean_per_message, 3)
+        await ctx.send(f"__**result:**__ {time_taken} seconds for {amount_msgs} messages. average per message = {mean_per_message} seconds")
+        specific_results = ''
+        for index, the_time in enumerate(times):
+            specific_results += f"__Message {index+1}:__ `{round(the_time, 3)}` seconds\n"
+        await ctx.send(specific_results)
+
+# endregion[Commands]
+
+# region [Helper]
 
     @universal_log_profiler
     async def format_graph(self, amount_data: int):
@@ -328,76 +420,10 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
                     _out = item.date_time
         return _out
 
-    @auto_meta_info_command()
-    @owner_or_admin()
-    async def get_command_stats(self, ctx):
-        data_dict = {item.name: f"{ZERO_WIDTH}\n{item.data}\n{ZERO_WIDTH}" for item in await self.bot.support.get_todays_invoke_data()}
-        date = date_today()
+# endregion[Helper]
 
-        embed = await make_basic_embed(title=ctx.command.name, text=f'data of the last 24hrs - {date}', symbol='data', **data_dict)
 
-        await ctx.send(embed=embed)
-
-    @auto_meta_info_command()
-    @owner_or_admin()
-    async def report(self, ctx):
-        """
-        Reports both current latency and memory usage as Graph.
-
-        Example:
-            @AntiPetros report
-        """
-        try:
-            await ctx.invoke(self.bot.get_command('report_memory'))
-            await ctx.invoke(self.bot.get_command('report_latency'))
-            await ctx.invoke(self.bot.get_command('report_cpu'))
-        except StatisticsError as error:
-            # TODO: make as error embed
-            await ctx.send('not enough data points collected to report!', delete_after=120)
-            await delete_message_if_text_channel(ctx)
-
-    @auto_meta_info_command()
-    @owner_or_admin()
-    async def cpu_info(self, ctx: commands.Context):
-        cpu_percent = psutil.cpu_percent(interval=None)
-        cpu_logical_count = psutil.cpu_count()
-        cpu_strict_count = psutil.cpu_count(logical=False)
-        cpu_load_avg = [x / psutil.cpu_count() * 100 for x in psutil.getloadavg()]
-        fields = [self.bot.field_item(name="CPU Percent", value=f"{cpu_percent} %"),
-                  self.bot.field_item(name="CPU count logical", value=cpu_logical_count),
-                  self.bot.field_item(name="CPU strict count", value=cpu_strict_count),
-                  self.bot.field_item(name="CPU load average", value=f"1 minute: {cpu_load_avg[0]}\n5 minutes: {cpu_load_avg[1]}\n15 minutes: {cpu_load_avg[2]}")]
-        embed_data = await self.bot.make_generic_embed(title="CPU Data", fields=fields)
-        await ctx.send(**embed_data)
-
-    @auto_meta_info_command()
-    @owner_or_admin()
-    async def socket_info(self, ctx: commands.Context):
-        out = []
-        net_connections = psutil.net_connections()
-        for item in net_connections:
-            out.append(str(item))
-        await self.bot.split_to_messages(ctx, '\n'.join(out), in_codeblock=True, syntax_highlighting='css')
-
-    @auto_meta_info_command()
-    @owner_or_admin()
-    async def speed_test(self, ctx: commands.Context, amount_msgs: Optional[int] = 10, delete_msgs: Optional[bool] = False):
-        delete_after = None if delete_msgs is False else 30
-        start_time = time.monotonic()
-        times = []
-        for i in range(amount_msgs):
-            sub_time_start = time.monotonic()
-            await ctx.send(f"This is message {i+1} of the speed test!", delete_after=delete_after)
-            times.append(time.monotonic() - sub_time_start)
-        time_taken = time.monotonic() - start_time
-        time_taken = round(time_taken, ndigits=3)
-        mean_per_message = mean(times)
-        mean_per_message = round(mean_per_message, 3)
-        await ctx.send(f"__**result:**__ {time_taken} seconds for {amount_msgs} messages. average per message = {mean_per_message} seconds")
-        specific_results = ''
-        for index, the_time in enumerate(times):
-            specific_results += f"__Message {index+1}:__ `{round(the_time, 3)}` seconds\n"
-        await ctx.send(specific_results)
+# region [SpecialMethods]
 
     def __str__(self) -> str:
         return self.qualified_name
@@ -409,10 +435,12 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         self.report_data_loop.stop()
         log.debug("Cog '%s' UNLOADED!", str(self))
 
+# endregion[SpecialMethods]
+
 
 def setup(bot):
 
-    bot.add_cog(attribute_checker(PerformanceCog(bot)))
+    bot.add_cog(PerformanceCog(bot))
 
 
 # region[Main_Exec]

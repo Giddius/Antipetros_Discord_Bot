@@ -6,6 +6,7 @@ import os
 import random
 from math import ceil
 import secrets
+from typing import TYPE_CHECKING
 import asyncio
 from urllib.parse import quote as urlquote
 from textwrap import dedent
@@ -31,12 +32,20 @@ from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker, Seperators
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import make_box
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, auto_meta_info_group, AntiPetrosBaseGroup, AntiPetrosBaseCommand, AntiPetrosFlagCommand
-from antipetros_discordbot.utility.gidtools_functions import bytes2human, loadjson, writejson
+
+from antipetros_discordbot.utility.gidtools_functions import bytes2human, loadjson, writejson, pathmaker
 from antipetros_discordbot.utility.exceptions import ParseDiceLineError
 from antipetros_discordbot.utility.converters import UrlConverter
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler
+
+
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+
+
 # endregion[Imports]
 
 # region [TODO]
@@ -63,44 +72,34 @@ COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-COG_NAME = "KlimBimCog"
-
-CONFIG_NAME = make_config_name(COG_NAME)
-
-get_command_enabled = command_enabled_checker(CONFIG_NAME)
-
 # endregion[Constants]
 
 
-class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}):
+class KlimBimCog(AntiPetrosBaseCog):
     """
     Collection of small commands that either don't fit anywhere else or are just for fun.
     """
     # region [ClassAttributes]
 
-    config_name = CONFIG_NAME
+    public = True
+    meta_status = CogMetaStatus.WORKING
+    long_description = ""
+    extra_info = ""
+    required_config_data = {'base_config': {},
+                            'cogs_config': {"coin_image_heads": "https://i.postimg.cc/XY4fhCf5/antipetros-coin-head.png",
+                                            "coin_image_tails": "https://i.postimg.cc/HsQ0B2yH/antipetros-coin-tails.png"}}
+    music_data_file = pathmaker(APPDATA["fixed_data"], 'youtube_music_links.json')
+    required_folder = []
+    required_files = [RequiredFile(music_data_file, {}, RequiredFile.FileType.JSON)]
 
-    docattrs = {'show_in_readme': True,
-                'is_ready': CogMetaStatus.WORKING,
-                'extra_description': dedent("""
-                                            """).strip(),
-                'caveat': None}
-
-    required_config_data = dedent("""
-                                        coin_image_heads = https://i.postimg.cc/XY4fhCf5/antipetros-coin-head.png,
-                                        coin_image_tails = https://i.postimg.cc/HsQ0B2yH/antipetros-coin-tails.png""")
     dice_statement_regex = re.compile(r"(?P<amount>\d+)(?P<dice_type>d\d+)", re.IGNORECASE)
-    music_data_file = APPDATA['youtube_music_links.json']
+
     # endregion [ClassAttributes]
 
     # region [Init]
-    @sync_log_profiler
-    def __init__(self, bot):
-        self.bot = bot
-        self.support = self.bot.support
-        self.allowed_channels = allowed_requester(self, 'channels')
-        self.allowed_roles = allowed_requester(self, 'roles')
-        self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+    @universal_log_profiler
+    def __init__(self, bot: "AntiPetrosBot"):
+        super().__init__(bot)
         self.dice_mapping = {
             'd4': {'sides': 4},
             'd6': {'sides': 6},
@@ -110,6 +109,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
             'd20': {'sides': 20},
             'd100': {'sides': 100}
         }
+        self.ready = False
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -117,18 +117,19 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 # region [Properties]
 
     @property
+    @universal_log_profiler
     def youtube_links(self):
         return loadjson(self.music_data_file)
 
 # endregion [Properties]
 
 # region [Setup]
-    @async_log_profiler
+    @universal_log_profiler
     async def on_ready_setup(self):
-
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @async_log_profiler
+    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -151,7 +152,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
     @ auto_meta_info_command()
     @ allowed_channel_and_allowed_role()
     @commands.cooldown(1, 60, commands.BucketType.channel)
-    async def the_dragon(self, ctx):
+    async def the_dragon(self, ctx: commands.Context):
         """
         Posts and awesome ASCII Art Dragon!
 
@@ -167,7 +168,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         else:
             await ctx.send(THE_DRAGON)
 
-    @ auto_meta_info_group(case_insensitive=True, cls=AntiPetrosBaseGroup, invoke_without_command=True, enabled=get_command_enabled('flip_coin'))
+    @ auto_meta_info_group(case_insensitive=True, cls=AntiPetrosBaseGroup, invoke_without_command=True)
     @allowed_channel_and_allowed_role(in_dm_allowed=True)
     @commands.cooldown(1, 15, commands.BucketType.channel)
     async def flip_coin(self, ctx: commands.Context):
@@ -273,6 +274,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         await ctx.message.delete()
 
     @staticmethod
+    @universal_log_profiler
     def paste_together(*images):
         amount = len(images)
         spacing = 25
@@ -293,6 +295,7 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
 
         return b_image
 
+    @universal_log_profiler
     async def parse_dice_line(self, dice_line: str):
         _out = []
         statements = dice_line.split()
@@ -305,22 +308,25 @@ class KlimBimCog(commands.Cog, command_attrs={'hidden': False, "name": COG_NAME}
         return _out
 
     @staticmethod
+    @universal_log_profiler
     async def _roll_the_dice(sides):
         return secrets.randbelow(sides) + 1
 
     @staticmethod
+    @universal_log_profiler
     def _get_dice_images(result_image_file_paths):
         images = [Image.open(dice_image) for dice_image in result_image_file_paths]
         return images
 
     @staticmethod
+    @universal_log_profiler
     def _sum_dice_results(in_result):
         result_dict = {key: sum(value) for key, value in in_result.items()}
         result_combined = sum(value for key, value in result_dict.items())
 
         return result_combined
 
-    @ auto_meta_info_group(case_insensitive=True, cls=AntiPetrosBaseGroup, invoke_without_command=True, enabled=get_command_enabled('roll_dice'))
+    @ auto_meta_info_group(case_insensitive=True, cls=AntiPetrosBaseGroup, invoke_without_command=True)
     @allowed_channel_and_allowed_role(True)
     @commands.cooldown(1, 5, commands.BucketType.member)
     async def roll_dice(self, ctx, *, dice_line: str):  # @AntiPetros roll_dice 14d4 14d6 14d8 14d10 14d12 14d20 14d100
@@ -542,4 +548,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(KlimBimCog(bot)))
+    bot.add_cog(KlimBimCog(bot))

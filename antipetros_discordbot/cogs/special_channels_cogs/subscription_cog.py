@@ -592,6 +592,6 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(SubscriptionCog(bot)))
+    bot.add_cog(SubscriptionCog(bot))
 
 # endregion[Main_Exec]

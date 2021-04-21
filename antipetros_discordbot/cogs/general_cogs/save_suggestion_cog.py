@@ -608,4 +608,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(SaveSuggestionCog(bot)))
+    bot.add_cog(SaveSuggestionCog(bot))

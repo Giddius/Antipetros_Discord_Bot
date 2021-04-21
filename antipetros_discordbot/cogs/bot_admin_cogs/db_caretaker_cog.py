@@ -60,7 +60,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
 
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
@@ -97,9 +97,10 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
+# endregion [Constants]
 
 
-class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
+class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': CommandCategory.META}):
     """
     WiP
     """
@@ -134,10 +135,11 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
 # region [Setup]
 
+
     @universal_log_profiler
     async def on_ready_setup(self):
         self.scheduled_vacuum.start()
-        self.ready = True
+        self.ready = await asyncio.sleep(5, True)
         log.debug('setup for cog "%s" finished', str(self))
 
     @universal_log_profiler
@@ -206,7 +208,6 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
 # region [SpecialMethods]
 
-
     def cog_check(self, ctx):
         return True
 
@@ -237,7 +238,7 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(DbCaretakerCog(bot)))
+    bot.add_cog(DbCaretakerCog(bot))
 
 
 # region [Main_Exec]

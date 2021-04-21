@@ -29,7 +29,7 @@ from antipetros_discordbot.utility.checks import allowed_requester, command_enab
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writejson, bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, CommandCategory
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_config_cog import AddedAliasChangeEvent
@@ -81,7 +81,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion [Helper]
 
 
-class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
+class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': CommandCategory.META}):
     """
     Cog with commands to access and manipulate config files, also for changing command aliases.
     Almost all are only available in DM's
@@ -381,4 +381,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(ConfigCog(bot)))
+    bot.add_cog(ConfigCog(bot))

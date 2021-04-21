@@ -167,7 +167,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
 # region [Setup]
 
     async def on_ready_setup(self):
-        await self.get_rules_messages()
+        asyncio.create_task(self.get_rules_messages())
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
@@ -188,7 +188,7 @@ class RulesCog(commands.Cog, command_attrs={'name': COG_NAME}):
     async def update_rules(self, payload: discord.RawMessageUpdateEvent):
         if payload.channel_id != self.rules_channel_id:
             return
-        await self.get_rules_messages()
+        asyncio.create_task(self.get_rules_messages())
 
 # endregion [Listener]
 
@@ -351,7 +351,7 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(RulesCog(bot)))
+    bot.add_cog(RulesCog(bot))
 
 
 # region [Main_Exec]

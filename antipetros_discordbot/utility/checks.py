@@ -162,10 +162,9 @@ class HasAttachmentCheck(BaseAntiPetrosCheck):
         super().__init__(checked_types=['attachment'])
 
     async def __call__(self, ctx: commands.Context):
-        if super().__call__(ctx) is True:
-            if len(ctx.message.attachments) < self.min_amount_attachments:
-                raise MissingAttachmentError(ctx, self.min_amount_attachments)
-            return True
+        if len(ctx.message.attachments) < self.min_amount_attachments:
+            raise MissingAttachmentError(ctx, self.min_amount_attachments)
+        return True
 
 
 def in_allowed_channels():
@@ -183,7 +182,7 @@ def in_allowed_channels():
         if allowed_channel_names != ['all'] and channel.name.casefold() not in allowed_channel_names + ['bot-testing']:
             raise NotAllowedChannelError(ctx, allowed_channel_names)
         return True
-    predicate.check_name = sys._getframe().f_code.co_name
+
     return commands.check(predicate)
 
 
@@ -195,7 +194,7 @@ def log_invoker(logger, level: str = 'info'):
                                ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, channel_name, ctx.message.content)
 
         return True
-    predicate.check_name = sys._getframe().f_code.co_name
+
     return commands.check(predicate)
 
 

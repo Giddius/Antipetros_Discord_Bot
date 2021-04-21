@@ -11,7 +11,7 @@ import os
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+import asyncio
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import date_today, async_date_today
 from antipetros_discordbot.utility.named_tuples import InvokedCommandsDataItem
@@ -62,9 +62,9 @@ class CommandStatistician(SubSupportBase):
         self.after_action()
 
     async def if_ready(self):
-        await self.insert_command_data()
+        asyncio.create_task(self.insert_command_data())
 
-        log.debug("'%s' command staff soldier was READY", str(self))
+        log.debug("'%s' command staff soldier is READY", str(self))
 
     async def insert_command_data(self):
         for cog_name, cog_object in self.bot.cogs.items():
@@ -95,7 +95,7 @@ class CommandStatistician(SubSupportBase):
             if _command in ['shutdown', "get_command_stats", None, '']:
                 return
             if str(_command.cog) not in ['GeneralDebugCog'] and ctx.channel.name.casefold() not in ['bot-testing']:
-                await self.general_db.insert_command_usage(_command)
+                asyncio.create_task(self.general_db.insert_command_usage(_command))
 
             log.debug("command invocations was recorded")
 

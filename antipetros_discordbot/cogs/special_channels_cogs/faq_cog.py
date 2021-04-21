@@ -128,7 +128,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
         FaqItem.question_parse_emoji = self.q_emoji
         FaqItem.answer_parse_emoji = self.a_emoji
         FaqItem.config_name = self.config_name
-        await self.collect_raw_faq_data()
+        asyncio.create_task(self.collect_raw_faq_data())
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -153,7 +153,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
             return
         channel = message.channel
         if channel is self.faq_channel:
-            await self.collect_raw_faq_data()
+            asyncio.create_task(self.collect_raw_faq_data())
 
     @commands.Cog.listener(name='on_raw_message_delete')
     async def faq_message_deleted_listener(self, payload):
@@ -161,7 +161,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
             return
         channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
-            await self.collect_raw_faq_data()
+            asyncio.create_task(self.collect_raw_faq_data())
 
     @commands.Cog.listener(name='on_raw_message_edit')
     async def faq_message_edited_listener(self, payload):
@@ -169,7 +169,7 @@ class FaqCog(commands.Cog, command_attrs={'name': COG_NAME, "description": ""}):
             return
         channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
-            await self.collect_raw_faq_data()
+            asyncio.create_task(self.collect_raw_faq_data())
 
 
 # endregion [Listener]
@@ -274,4 +274,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(FaqCog(bot)))
+    bot.add_cog(FaqCog(bot))

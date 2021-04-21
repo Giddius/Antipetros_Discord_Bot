@@ -88,8 +88,8 @@ class ErrorHandler(SubSupportBase):
                                    commands.errors.CommandNotFound: self._handle_command_not_found,
                                    ParseDiceLineError: self._handle_dice_line_error,
                                    NameInUseError: self._handle_name_in_use_error,
-                                   CustomEmojiError: self._handle_custom_emoji_error
-                                   }
+                                   CustomEmojiError: self._handle_custom_emoji_error}
+
         self.cooldown_data = CoolDownDict()
 
         glog.class_init_notification(log, self)
@@ -131,7 +131,8 @@ class ErrorHandler(SubSupportBase):
     async def handle_errors(self, ctx, error):
         error_traceback = '\n'.join(traceback.format_exception(error, value=error, tb=None))
 
-        log.error(error)
+        log.error(error, exc_info=True)
+        log.critical(error_traceback)
 
         await self.error_handle_table.get(type(error), self._default_handle_error)(ctx, error, error_traceback)
         if ctx.channel.type is ChannelType.text and ctx.command is not None:

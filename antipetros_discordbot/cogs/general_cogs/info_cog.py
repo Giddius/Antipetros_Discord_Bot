@@ -376,20 +376,22 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
     @auto_meta_info_command(hidden=True)
     @has_attachments(1)
     async def code_file_to_image(self, ctx: commands.Context, as_codeblock: str = None):
-        file = ctx.message.attachments[0]
-        file_name = file.filename
+        async with ctx.typing():
+            file = ctx.message.attachments[0]
+            file_name = file.filename
 
-        with TemporaryDirectory() as tempdir:
-            path = pathmaker(tempdir, file_name)
-            await file.save(path)
-            content = readit(path)
-        if as_codeblock is not None and as_codeblock.casefold() == 'codeblock':
-            await self.bot.split_to_messages(ctx, content, in_codeblock=True, syntax_highlighting=file_name.split('.')[-1])
-        else:
-            async with self._make_other_source_code_images(content) as source_image_binary:
+            with TemporaryDirectory() as tempdir:
+                path = pathmaker(tempdir, file_name)
+                await file.save(path)
+                content = readit(path)
+            if as_codeblock is not None and as_codeblock.casefold() == 'codeblock':
+                await self.bot.split_to_messages(ctx, content, in_codeblock=True, syntax_highlighting=file_name.split('.')[-1])
+            else:
+                image, lexer = await self._make_other_source_code_images(content)
                 embed_data = await self.bot.make_generic_embed(title=file_name.title(),
+                                                               description=f"Lexer name: `{lexer.name}`",
                                                                thumbnail=None,
-                                                               image=discord.File(source_image_binary, filename=file_name.split(".")[0] + '.png'))
+                                                               image=image)
                 await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
 
@@ -410,7 +412,6 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                 return file.path
         return None
 
-    @ asynccontextmanager
     async def _make_other_source_code_images(self, scode: str):
 
         lexer = guess_lexer(scode)
@@ -423,10 +424,8 @@ class InfoCog(commands.Cog, command_attrs={'name': COG_NAME}):
                                                        line_pad=5,
                                                        font_size=20,
                                                        line_number_bold=True))
-        with BytesIO() as image_binary:
-            image_binary.write(image)
-            image_binary.seek(0)
-            yield image_binary
+
+        return image, lexer
 
     @ asynccontextmanager
     async def _make_source_code_image(self, command: commands.Command, start_line_number: int):
@@ -526,7 +525,7 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(attribute_checker(InfoCog(bot)))
+    bot.add_cog(InfoCog(bot))
 
 
 # region [Main_Exec]
