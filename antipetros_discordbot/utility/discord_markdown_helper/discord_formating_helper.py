@@ -1,4 +1,5 @@
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE, Seperators
+import re
 
 
 def discord_key_value_text(key: str, value: str, width: int = 25, specifier: str = '=', seperator: str = f"{ZERO_WIDTH} "):
@@ -7,12 +8,18 @@ def discord_key_value_text(key: str, value: str, width: int = 25, specifier: str
 
 
 def embed_hyperlink(name, url):
-    return f"[{name}]({url})🔗"
+    return f"[{name}]({url})"
 
 
 def make_box(in_text: str):
+    hyperlink_regex = re.compile(r"\[(?P<name>.*?)\]\((?P<url>[^\s]+)\)")
+    hyperlink_replace_string = r"\g<name>"
     lines = in_text.splitlines()
-    max_length = max([len(line) + 10 for line in lines]) - 2
+    mod_lines = []
+    for line in lines:
+        mod_lines.append(hyperlink_regex.sub(hyperlink_replace_string, line))
+
+    max_length = max([len(line) + 10 for line in mod_lines])
     pre_spacing = SPECIAL_SPACE * 8
 
     mod_lines = map(lambda x: f"{SPECIAL_SPACE*8}{x}", lines)

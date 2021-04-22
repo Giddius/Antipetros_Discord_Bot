@@ -246,8 +246,7 @@ class EmbedBuilder(SubSupportBase):
         files = []
         title = kwargs.get('title', self.default_title)
         url = kwargs.get('url', discord.Embed.Empty)
-        if url is not discord.Embed.Empty:
-            title += ' 🔗'
+
         generic_embed = Embed(title=title,
                               description=str(kwargs.get('description', self.default_description)),
                               color=self._validate_color(kwargs.get('color', self.default_color)),

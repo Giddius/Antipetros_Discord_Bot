@@ -115,6 +115,8 @@ class CogMetaStatus(Flag):
 @unique
 class UpdateTypus(Flag):
     CONFIG = auto()
+    COMMANDS = auto()
+    COGS = auto()
     ALIAS = auto()
     DATE = auto()
     TIME = auto()

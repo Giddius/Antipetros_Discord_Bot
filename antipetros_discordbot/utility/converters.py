@@ -21,7 +21,7 @@ from validator_collection import validators
 import validator_collection
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-from antipetros_discordbot.utility.exceptions import ParameterError
+from antipetros_discordbot.utility.exceptions import ParameterError, ParameterErrorWithPossibleParameter
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup
 from antipetros_discordbot.utility.enums import CommandCategory
 from antipetros_discordbot.utility.checks import (OnlyGiddiCheck, OnlyBobMurphyCheck, BaseAntiPetrosCheck, AdminOrAdminLeadCheck, AllowedChannelAndAllowedRoleCheck,
@@ -183,6 +183,17 @@ class UrlConverter(Converter):
             raise ParameterError("url", argument)
 
         return fix_url_prefix(argument)
+
+
+class HelpCategoryConverter(Converter):
+    help_categories = {}
+
+    async def convert(self, ctx: commands.Context, argument):
+        _out = self.help_categories.get(argument.casefold(), None)
+        if _out is None:
+            raise ParameterErrorWithPossibleParameter('help_category', argument, list(self.help_categories.keys()))
+        return _out
+
 
         # region[Main_Exec]
 if __name__ == '__main__':

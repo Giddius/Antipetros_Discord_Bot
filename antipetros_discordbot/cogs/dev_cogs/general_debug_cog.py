@@ -797,8 +797,8 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
         async with ctx.typing():
             _out = []
             for cog_name, cog_object in self.bot.cogs.items():
-                if isinstance(cog_object, AntiPetrosBaseCog):
-                    _out.append(cog_object.dump())
+                log.info("Dumped %s to Json", cog_name)
+                _out.append(cog_object.dump())
             writejson(_out, 'cog_dump.json')
         await ctx.send('done')
 

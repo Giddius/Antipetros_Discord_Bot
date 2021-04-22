@@ -69,7 +69,7 @@ class AntistasiInformer(SubSupportBase):
 
     @property
     def antistasi_invite_url(self):
-        return BASE_CONFIG.retrieve('antistasi_info', 'invite_url', typus=str, direct_fallback='')
+        return BASE_CONFIG.retrieve('links', 'antistasi_discord_invite', typus=str, direct_fallback='')
 
     @property
     def armahosts_url(self):
@@ -111,7 +111,10 @@ class AntistasiInformer(SubSupportBase):
 
     @ property
     def antistasi_guild(self):
-        return self.bot.get_guild(self.general_data.get('antistasi_guild_id'))
+        guild_id = self.bot.get_guild(BASE_CONFIG.retrieve('general_settings', 'guild_id', typus=int, direct_fallback=None))
+        if guild_id is None:
+            raise ValueError('You need to set "guild_id" under the section "general_settings" in the config file "base_config.ini"')
+        return guild_id
 
     @ property
     def blacklisted_users(self):

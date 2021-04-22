@@ -8,7 +8,7 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-
+from datetime import datetime
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import asyncio
@@ -73,6 +73,9 @@ class CommandStatistician(SubSupportBase):
             if str(command.cog) not in ['GeneralDebugCog']:
                 await self.general_db.insert_command(command)
 
+    async def get_command_frequency(self, from_datetime: datetime = None, to_datetime: datetime = None, as_counter: bool = True):
+        return await self.general_db.get_command_usage(from_datetime=from_datetime, to_datetime=to_datetime, as_counter=as_counter)
+
     async def get_amount_invoked_overall(self):
         pass
 
@@ -94,7 +97,9 @@ class CommandStatistician(SubSupportBase):
             _command = ctx.command
             if _command in ['shutdown', "get_command_stats", None, '']:
                 return
-            if str(_command.cog) not in ['GeneralDebugCog'] and ctx.channel.name.casefold() not in ['bot-testing']:
+            if self.is_debug is False and str(_command.cog) not in ['GeneralDebugCog'] and ctx.channel.name.casefold() not in ['bot-testing']:
+                asyncio.create_task(self.general_db.insert_command_usage(_command))
+            elif self.is_debug is True:
                 asyncio.create_task(self.general_db.insert_command_usage(_command))
 
             log.debug("command invocations was recorded")
