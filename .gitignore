@@ -635,3 +635,5 @@ art/WiP
 /.unotes
 antipetros_discordbot/init_userdata/data_pack/fonts
 antipetros_discordbot/init_userdata/data_pack/image_files
+/antipetros_discordbot/init_userdata/data_pack/image_files/gifs
+misc/cog_dump.svg

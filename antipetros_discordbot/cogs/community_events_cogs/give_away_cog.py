@@ -100,7 +100,6 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 # region [Properties]
 
     @async_property
-    @universal_log_profiler
     async def give_aways(self):
         _out = []
         data = loadjson(self.give_away_data_file)
@@ -132,8 +131,9 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 
 
     @tasks.loop(seconds=30, reconnect=True)
-    @universal_log_profiler
     async def check_give_away_ended_loop(self):
+        if not await self.give_aways:
+            return
         if self.ready is False:
             return
         for give_away_event in await self.give_aways:
@@ -141,8 +141,9 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
                 await self.give_away_finished(give_away_event)
 
     @tasks.loop(seconds=5, reconnect=True)
-    @universal_log_profiler
     async def clean_emojis_from_reaction(self):
+        if not await self.give_aways:
+            return
         if self.ready is False:
             return
         try:
@@ -294,7 +295,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
                                                          channel=ctx.channel,
                                                          message=give_away_message))
 
-    @ auto_meta_info_command()
+    @ auto_meta_info_command(categories=[CommandCategory.NOTIMPLEMENTED])
     @ allowed_channel_and_allowed_role(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def abort_give_away(self, ctx):
@@ -304,7 +305,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
         await self.bot.not_implemented(ctx)
         return
 
-    @ auto_meta_info_command()
+    @ auto_meta_info_command(categories=[CommandCategory.NOTIMPLEMENTED])
     @ allowed_channel_and_allowed_role(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def finish_give_away(self, ctx):

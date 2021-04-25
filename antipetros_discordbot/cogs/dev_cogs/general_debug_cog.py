@@ -795,12 +795,14 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
         check if dostring survives. here also
         """
         async with ctx.typing():
-            _out = []
+            _out = {self.bot.display_name: {}}
             for cog_name, cog_object in self.bot.cogs.items():
                 log.info("Dumped %s to Json", cog_name)
-                _out.append(cog_object.dump())
+                _out[self.bot.display_name][cog_name] = cog_object.dump()
             writejson(_out, 'cog_dump.json')
-        await ctx.send('done')
+        embed = discord.Embed(title='something', description="something")
+        embed.add_field(name='test', value=embed_hyperlink('test', self.bot.github_url))
+        await ctx.send(embed=embed)
 
     @auto_meta_info_command()
     async def query_rate_limited(self, ctx: commands.Context):

@@ -136,6 +136,7 @@ class CommandCategory(Flag):
     DEVTOOLS = auto()
     TEAMTOOLS = auto()
     META = auto()
+    NOTIMPLEMENTED = auto()
 
     @classmethod
     def _by_name(cls, in_value: str):
@@ -160,7 +161,17 @@ class CommandCategory(Flag):
         return _out
 
     @property
-    def _flags(self):
+    def description(self):
+        description_map = {CommandCategory.GENERAL: "Default Category for Commands.",
+                           CommandCategory.ADMINTOOLS: "Commands that are intended to help admins with their daily tasks.",
+                           CommandCategory.DEVTOOLS: "Commands inteded as helpers for the Dev Team",
+                           CommandCategory.TEAMTOOLS: "A variety of commands, each of which should be helpful to at least one of the Teams",
+                           CommandCategory.META: "Commands that deal with the configuration or maintanance of the Bot itself",
+                           CommandCategory.NOTIMPLEMENTED: "NOT YET IMPLEMENTED!"}
+        return description_map.get(self, 'NA')
+
+    @property
+    def flags(self):
         _out = []
         for member in self.__class__.__members__.values():
             if member in self:
@@ -168,9 +179,11 @@ class CommandCategory(Flag):
         return _out
 
     def serialize(self):
-        return [flag.name for flag in self._flags]
+        return [flag.name for flag in self.flags]
 
     def visibility_check(self, in_roles):
+        if self is CommandCategory.NOTIMPLEMENTED:
+            return False
         visibility_map = {CommandCategory.GENERAL: ['all'],
                           CommandCategory.ADMINTOOLS: ['admin', 'admin lead'],
                           CommandCategory.DEVTOOLS: ['admin', 'admin lead', 'dev helper', 'template helper', 'dev team', 'dev team lead'],

@@ -456,6 +456,15 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     @auto_meta_info_command()
     @commands.is_owner()
     async def create_subscription_channel_header(self, ctx: commands.Context):
+        """
+        Creates the Header on top of the subscription channel.
+
+        This will only be called once in normal circumstances, use "update_subscription_channel_header" to update the header afterwards.
+        Takes the actual text and images from the Config.
+
+        Example:
+            @AntiPetros create_subscription_channel_header
+        """
         embed_data = await self._create_topic_subscription_header_embed()
         header_message = await self.subscription_channel.send(**embed_data)
         COGS_CONFIG.set(self.config_name, 'header_message_id', str(header_message.id))
@@ -464,6 +473,14 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     @auto_meta_info_command()
     @commands.is_owner()
     async def update_subscription_channel_header(self, ctx: commands.Context):
+        """
+        Updates the Header on top of the subscription channel.
+
+        Takes the text and image data from the Config (Cogs_Config.ini) and updates the Header message in-place.
+
+        Example:
+            @AntiPetros update_subscription_channel_header
+        """
         embed_data = await self._create_topic_subscription_header_embed()
         header_message = await self._get_header_message()
         await header_message.edit(**embed_data)
@@ -472,6 +489,18 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     @auto_meta_info_command()
     @commands.is_owner()
     async def remove_topic(self, ctx: commands.context, topic_name: str):
+        """
+        Removes an existing Topic from the subscription channel and deletes the associated role.
+
+        All user that are subscribed to the Topic will be automatically informed of its removal.
+        This command will ask for conformation, before deleting the topic.
+
+        Args:
+            topic_name (str): Name of the topic, case-insensitive. Need to be inside quotes (`"`) if the name contains spaces.
+
+        Example:
+            @AntiPetros remove_topic Antistasi_Fake_Topic
+        """
         topic_item = {item.name.casefold(): item for item in self.topics}.get(topic_name.casefold(), None)
         if await self._confirm_topic_creation_deletion(ctx, topic_item, 'removal') is False:
             return
@@ -486,6 +515,18 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     @commands.is_owner()
     @has_attachments(1)
     async def new_topic(self, ctx: commands.Context, topic_creator_id: int = None):
+        """
+        Creates a new Topic from an File.
+
+        The new topic data gets parsed out of the input file, if no topic_creator_id is specified, it defaults to the person invoking the command.
+        The file needs to be send as attachment to the invoking message.
+
+        Args:
+            topic_creator_id (int, optional): User id of the person that should be put as the creator of the topic, defaults to invoker.
+
+        Example:
+            @AntiPetros new_topic 576522029470056450
+        """
         if self.subscription_channel is None:
             await ctx.send('No subscription Channel set in Config!')
             return
@@ -535,6 +576,18 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     @commands.is_owner()
     @has_attachments(1)
     async def modify_topic_embed(self, ctx: commands.Context, topic_name: str, setting: str, value: str):
+        """
+        **UNTESTED** - Modifies an attribute of an topic in place - **UNTESTED**
+
+
+        Args:
+            topic_name (str): Name of the existing Topic, case-insensitive.
+            setting (str): The name of the attribute to modify
+            value (str): the new value, needs to be put in quotes (`"`) if it contains spaces
+
+        Example:
+            @AntiPetros modify_topic_embed Antistasi_Fake_Topic description "This is the new description"
+        """
         allowed_setting_names = ['color', 'image', 'description']
         if setting.casefold() not in allowed_setting_names:
             await ctx.send(f'Setting {setting} is not a valid setting to modify, aborting!')
@@ -545,9 +598,20 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         await self._update_topic_embed(topic_item)
         await self._save_topic_data()
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(hidden=False, categories=CommandCategory.GENERAL)
     @commands.dm_only()
     async def unsubscribe(self, ctx: commands.Context, topic_name: str):
+        """
+        Unsubscribes a user from a topic via command.
+
+        This is an alternative to just removing the emoji on the topic embed.
+
+        Args:
+            topic_name (str): Name of the topic to unsubscribe, case-insensitive, needs to be put in quotes (`"`) if it contains spaces.
+
+        Example:
+            @AntiPetros unsubscribe Antistasi_Fake_Topic
+        """
         topic_item = {item.name.casefold(): item for item in self.topics}.get(topic_name.casefold(), None)
         if topic_item is None:
             # TODO: Custom Error and handling
@@ -562,9 +626,20 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         await self._remove_topic_role(member, topic_item)
         await self.sucess_unsubscribed_embed(member, topic_item)
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @owner_or_admin()
     async def topic_template(self, ctx: commands.Context, with_example: str = None):
+        """
+        Provides an template file and instructions for topic creation.
+
+        File contains all possible topic attributes that can be set. Optionaly includes a second, filled out file as an example.
+
+        Args:
+            with_example (str, optional): if this parameter is "example", a second filled out filled is also send.
+
+        Example:
+            @AntiPetros topic_template example
+        """
         embed_data = await self.bot.make_generic_embed(title="Topic Template File",
                                                        description='Please use this file to create a topic. You can then use the filled File as an attachment for the command `@AntiPetros new_topic`.\nPlease obey the following rules!',
                                                        fields=[self.bot.field_item(name='Field -> **Name**',

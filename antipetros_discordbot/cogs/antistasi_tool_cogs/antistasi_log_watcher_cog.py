@@ -183,6 +183,14 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog):
         await self.update_log_file_data()
         asyncio.create_task(self.check_oversized_logs())
 
+    @update_log_file_data_loop.error
+    async def update_log_file_data_loop_error_handler(self, error):
+        log.error(error, exc_info=True)
+        await self.bot.message_creator(error)
+        if self.update_log_file_data_loop.is_running() is False:
+            await self.get_base_structure()
+            self.update_log_file_data_loop.restart()
+
     @universal_log_profiler
     async def update_log_file_data(self):
         async for folder_name, folder_item in async_dict_items_iterator(self.server):

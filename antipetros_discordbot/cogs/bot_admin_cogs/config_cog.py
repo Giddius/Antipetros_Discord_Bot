@@ -242,7 +242,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         else:
             await self.send_config_file(ctx, config_name)
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(categories=[CommandCategory.NOTIMPLEMENTED])
     @ owner_or_admin()
     @ log_invoker(log, 'critical')
     async def overwrite_config_from_file(self, ctx):
@@ -251,7 +251,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         """
         await self.bot.not_implemented(ctx)
 
-    @ auto_meta_info_command()
+    @ auto_meta_info_command(categories=[CommandCategory.NOTIMPLEMENTED])
     @ owner_or_admin()
     async def change_setting_to(self, ctx, config, section, option, value):
         """
@@ -259,7 +259,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         """
         await self.bot.not_implemented(ctx)
 
-    @ auto_meta_info_command()
+    @ auto_meta_info_command(categories=[CommandCategory.NOTIMPLEMENTED])
     @ owner_or_admin()
     async def show_config_content(self, ctx: commands.Context, config_name: str = "all"):
         """
@@ -267,7 +267,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         """
         await self.bot.not_implemented(ctx)
 
-    @ auto_meta_info_command()
+    @ auto_meta_info_command(categories=[CommandCategory.NOTIMPLEMENTED])
     @ owner_or_admin()
     async def show_config_content_raw(self, ctx: commands.Context, config_name: str = "all"):
         """

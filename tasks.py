@@ -970,7 +970,7 @@ def get_branch_names(c, branch_type: str = 'local'):
     return parse_git_branches(result.stdout)
 
 
-@task
+@task(name='git-bundle')
 def create_git_bundle(c, target_folder=None, target_name=None):
     target_folder = pathmaker(os.getenv('BACKUP_FOLDER')) if target_folder is None else pathmaker(target_folder)
     target_name = os.getenv('PROJECT_NAME') if target_name is None else target_name

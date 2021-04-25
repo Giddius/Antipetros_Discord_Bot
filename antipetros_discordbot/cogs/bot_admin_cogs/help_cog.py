@@ -50,6 +50,7 @@ from discord.ext import tasks, commands, flags
 from async_property import async_property
 from dateparser import parse as date_parse
 from copy import deepcopy, copy
+
 # * Gid Imports -->
 import gidlogger as glog
 
@@ -70,11 +71,13 @@ from antipetros_discordbot.utility.converters import FlagArg, HelpCategoryConver
 from antipetros_discordbot.utility.exceptions import ParameterError
 
 from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup, AntiPetrosBaseContext
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler, is_refresh_task
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
+if os.getenv('IS_DEV', 'false').casefold() == 'true':
+    from antipetros_discordbot.utility.debug_helper import show_toast
 
 # endregion[Imports]
 
@@ -127,6 +130,8 @@ def filter_with_user_role(owner_ids: List[int], in_member: discord.Member, only_
         if in_member.id in owner_ids:
             is_owner = True
         if isinstance(in_object, (AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand)):
+            if CommandCategory.NOTIMPLEMENTED in in_object.categories:
+                return False
             if str(in_object.cog) in excluded_cogs:
                 return False
             if only_enabled is True and in_object.enabled is False:
@@ -138,6 +143,7 @@ def filter_with_user_role(owner_ids: List[int], in_member: discord.Member, only_
             allowed_roles = [c_role.casefold() for c_role in in_object.allowed_roles]
             return any(role in allowed_roles for role in role_names)
         elif isinstance(in_object, commands.Cog):
+
             if str(in_object) in excluded_cogs:
                 return False
             if only_working is True and CogMetaStatus.WORKING not in in_object.meta_status:
@@ -212,7 +218,10 @@ class HelpCog(AntiPetrosBaseCog):
                                                  'command-sets': HelpCategory.COMMAND_SET}
         self._current_cogs = None
         self._current_commands = None
+        self._current_category_commands = None
+
         self.ready = False
+        self.refresh_tasks = self.get_refresh_tasks()
         glog.class_init_notification(log, self)
 
 
@@ -224,16 +233,36 @@ class HelpCog(AntiPetrosBaseCog):
     @property
     @universal_log_profiler
     def current_cogs(self):
+        if self.ready is False:
+            return None
         if self._current_cogs is None:
-            self._current_cogs = self.bot.cogs.copy()
+
+            self._current_cogs = dict(self.bot.cogs).copy()
+
         return self._current_cogs
 
     @property
     @universal_log_profiler
     def current_commands(self):
+        if self.ready is False:
+            return None
         if self._current_commands is None:
             self._current_commands = {command.name: command for command in self.bot.commands}
         return self._current_commands
+
+    @property
+    @universal_log_profiler
+    def category_commands(self):
+        if self.ready is False:
+            return None
+        if self._current_category_commands is None:
+            self._current_category_commands = {}
+            for command in self.bot.commands:
+                for category_flag in command.categories.flags:
+                    if category_flag not in self._current_category_commands:
+                        self._current_category_commands[category_flag] = []
+                    self._current_category_commands[category_flag].append(command)
+        return self._current_category_commands
 
     @property
     @universal_log_profiler
@@ -268,25 +297,38 @@ class HelpCog(AntiPetrosBaseCog):
 
     @universal_log_profiler
     async def on_ready_setup(self):
-        self.ready = True
+        self.update_current_cogs_and_commands_loop.start()
+        self.ready = await asyncio.sleep(5, True)
+        for refresh_task in self.refresh_tasks:
+            asyncio.create_task(refresh_task())
         log.debug('setup for cog "%s" finished', str(self))
 
     @universal_log_profiler
     async def update(self, typus: UpdateTypus):
+        if self.ready is False:
+            return
         if any(_type in typus for _type in [UpdateTypus.CONFIG, UpdateTypus.COMMANDS, UpdateTypus.COGS]):
-            self._current_cogs = None
-            self._current_commands = None
+            for refresh_task in self.refresh_tasks:
+                await refresh_task()
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
 
 # region [Loops]
 
+    @tasks.loop(minutes=15, reconnect=True)
+    async def update_current_cogs_and_commands_loop(self):
+        if self.ready is False:
+            await asyncio.sleep(15)
+            return
+
+        for refresh_task in self.refresh_tasks:
+
+            asyncio.create_task(refresh_task())
 
 # endregion [Loops]
 
 # region [Listener]
-
 
 # endregion [Listener]
 
@@ -314,7 +356,6 @@ class HelpCog(AntiPetrosBaseCog):
 
 # region [Embeds]
 
-
     @universal_log_profiler
     async def help_overview_embed(self, author: Union[discord.Member, discord.User]):
 
@@ -329,7 +370,7 @@ class HelpCog(AntiPetrosBaseCog):
             comma_value = await self._make_comma_value(names)
 
             fields.append(self.bot.field_item(name=f'**Possible *__`{key.title()}`__* values**',
-                                              value=f"{ZERO_WIDTH}\n> Use `{key.lower()}s` to get a detailed list of all possible {key.lower()} values.\n{ZERO_WIDTH}\n" + comma_value + f"\n{ZERO_WIDTH}",
+                                              value=f"{ZERO_WIDTH}\n> Use `help {key.lower()}s` to get a detailed list of all possible {key.lower()} values.\n{ZERO_WIDTH}\n" + comma_value + f"\n{ZERO_WIDTH}",
                                               inline=False))
         # fields.append(self.bot.field_item(name='Possible Source-Code-Items values',
         #                                   value="Use `source-code-items` to get the list of possible source-code-item values",
@@ -345,33 +386,128 @@ class HelpCog(AntiPetrosBaseCog):
                                                                             author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url}):
             yield embed_data
 
+    @universal_log_profiler
+    async def help_cogs_embed(self, author: Union[discord.Member, discord.User]):
+        member_filter = filter_with_user_role(self.bot.owner_ids, await self.bot.retrieve_antistasi_member(author.id), False)
+        fields = []
+        cog_data = await self.get_cog_data(cog_filter=member_filter, cog_name_modifier=self.remove_cog_suffix_cog_name_modifier)
+        for cog_name, cog in cog_data.items():
+            fields.append(self.bot.field_item(name=cog_name, value='\n'.join(f"> {line}"for line in cog.description.splitlines()) + f"\n{ZERO_WIDTH}", inline=False))
 
+        # TODO: change links to link to the cogs folder and to the cogs wiki title page
+        links = f"{embed_hyperlink('GITHUB REPO', self.bot.github_url)}\n{embed_hyperlink('GIHUB WIKI',self.bot.github_wiki_url)}"
+        # TODO: create cogs thumbnail
+        async for embed_data in self.bot.make_paginatedfields_generic_embed(title="Cogs Help",
+                                                                            description=make_box(links) + f"\n{ZERO_WIDTH}",
+                                                                            thumbnail="help",
+                                                                            color="GIDDIS_FAVOURITE",
+                                                                            timestamp=None,
+                                                                            fields=fields,
+                                                                            author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url}):
+            yield embed_data
+
+    @universal_log_profiler
+    async def help_commands_embed(self, author: Union[discord.Member, discord.User]):
+        member_filter = filter_with_user_role(self.bot.owner_ids, await self.bot.retrieve_antistasi_member(author.id), True)
+        fields = []
+        command_data = await self.get_command_data(command_filter=member_filter)
+        frequency_dict = await self.bot.get_command_frequency(from_datetime=None, to_datetime=None, as_counter=True)
+        command_data = {key: value for key, value in sorted(command_data.items(), key=lambda x: (frequency_dict.get(x[0], 0), x[0]), reverse=True)}
+        for command_name, command in command_data.items():
+            fields.append(self.bot.field_item(name=command_name, value='\n'.join(f"> {line}"for line in command.brief.splitlines()) + f"\n{ZERO_WIDTH}", inline=False))
+
+        # TODO: change links to link to the cogs folder and to the cogs wiki title page
+        links = f"{embed_hyperlink('GITHUB REPO', self.bot.github_url)}\n{embed_hyperlink('GIHUB WIKI',self.bot.github_wiki_url)}"
+        # TODO: create cogs thumbnail
+        async for embed_data in self.bot.make_paginatedfields_generic_embed(title="Commands Help",
+                                                                            description=make_box(links) + f"\n{ZERO_WIDTH}",
+                                                                            thumbnail="help",
+                                                                            color="GIDDIS_FAVOURITE",
+                                                                            timestamp=None,
+                                                                            fields=fields,
+                                                                            author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url}):
+            yield embed_data
+
+    @universal_log_profiler
+    async def help_categories_embed(self, author: Union[discord.Member, discord.User]):
+        member_filter = filter_with_user_role(self.bot.owner_ids, await self.bot.retrieve_antistasi_member(author.id), True)
+        fields = []
+        categories_data = await self.get_category_data(category_filter=member_filter)
+
+        for category_name, category in categories_data.items():
+            fields.append(self.bot.field_item(name=category_name, value='\n'.join(f"> {line}"for line in category.description.splitlines()) + f"\n{ZERO_WIDTH}", inline=False))
+
+        # TODO: change links to link to the cogs folder and to the cogs wiki title page
+        links = f"{embed_hyperlink('GITHUB REPO', self.bot.github_url)}\n{embed_hyperlink('GIHUB WIKI',self.bot.github_wiki_url)}"
+        # TODO: create cogs thumbnail
+        async for embed_data in self.bot.make_paginatedfields_generic_embed(title="Command-Sets Help",
+                                                                            description=make_box(links) + f"\n{ZERO_WIDTH}",
+                                                                            thumbnail="help",
+                                                                            color="GIDDIS_FAVOURITE",
+                                                                            timestamp=None,
+                                                                            fields=fields,
+                                                                            author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url}):
+            yield embed_data
+
+    @universal_log_profiler
+    async def help_specific_command_embed(self, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
+        field_attr = ['signature', 'allowed_in_dms', 'enabled']
+        field_lists = ['allowed_channels', 'allowed_roles']
+        fields = []
+        for attr in field_attr:
+            fields.append(self.bot.field_item(name=attr, value=getattr(command, attr)))
+
+        fields.append(self.bot.field_item(name='aliases', value='\n'.join(f"`{item}`" for item in command.aliases) if command.aliases else "`None`"))
+        for list_attr in field_lists:
+            fields.append(self.bot.field_item(name=list_attr, value='\n'.join(f"`{item}`" for item in getattr(command, list_attr))))
+
+        fields.append(self.bot.field_item(name='example', value=f"```css\n{command.example}\n```"))
+        embed_data = await self.bot.make_generic_embed(title=command.name + ' HELP',
+                                                       description='\n'.join(f"> {line}" for line in command.description.splitlines()),
+                                                       thumbnail=await command.get_source_code_image(),
+                                                       image=command.gif,
+                                                       url=command.github_link,
+                                                       fields=fields,
+                                                       author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url})
+        return embed_data
 # endregion[Embeds]
 
 # region [HelperMethods]
 
+    @ universal_log_profiler
+    def get_refresh_tasks(self):
+        _out = []
+        from inspect import getmembers, isfunction, ismethod, isclass
+        for meth_name, meth in getmembers(self):
+            if hasattr(meth, 'is_refresh_task') and meth.is_refresh_task is True:
+                _out.append(meth)
+                log.debug('refresh task found: %s | %s', meth_name, str(meth))
+        return _out
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def _general_cog_help(self, ctx: commands.Context, in_object):
-        await ctx.send('general_cog_help')
+        async for embed_data in self.help_cogs_embed(ctx.author):
+            await self._send_help(ctx, embed_data)
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def _general_command_help(self, ctx: commands.Context, in_object):
-        await ctx.send('general_command_help')
+        async for embed_data in self.help_commands_embed(ctx.author):
+            await self._send_help(ctx, embed_data)
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def _general_category_help(self, ctx: commands.Context, in_object):
-        await ctx.send('general_category_help')
+        async for embed_data in self.help_categories_embed(ctx.author):
+            await self._send_help(ctx, embed_data)
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def _sort_names(self, names: list, key: str):
-        if key == "commands":
+        if key == "command":
             frequency_dict = await self.bot.get_command_frequency(from_datetime=None, to_datetime=None, as_counter=True)
             return sorted(names, key=lambda x: (frequency_dict.get(x, 0), x), reverse=True)
         else:
             return names
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def _make_comma_value(self, in_data: list):
         mod_in_data = in_data[:self.amount_preview_items]
         comma_value = ', '.join(f"`{item}`" for item in mod_in_data)
@@ -411,23 +547,24 @@ class HelpCog(AntiPetrosBaseCog):
     #                                                                         timestamp=None):
     #         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def _send_cog_help(self, ctx: commands.Context, cog: commands.Cog):
         await ctx.send('cog')
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def _send_command_help(self, ctx: commands.Context, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
-        await ctx.send('command')
+        embed_data = await self.help_specific_command_embed(command)
+        await ctx.send(**embed_data)
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def _send_toolbox_help(self, ctx: commands.Context, toolbox_category: CommandCategory):
         await ctx.send('toolbox')
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def _send_check_help(self, ctx: commands.Context, check: BaseAntiPetrosCheck):
         await ctx.send('check')
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def get_command_data(self, command_filter: Callable = no_filter, command_name_modifier: Callable = no_name_modifier):
         _out = {}
         for command_name, command in self.current_commands.items():
@@ -435,15 +572,17 @@ class HelpCog(AntiPetrosBaseCog):
                 _out[command_name_modifier(command_name)] = command
         return _out
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def get_cog_data(self, cog_filter: Callable = no_filter, cog_name_modifier: Callable = no_name_modifier):
         _out = {}
+        if self._current_cogs is None:
+            await self.refresh_current_cogs()
         for cog_name, cog in self.current_cogs.items():
             if cog_filter(cog) is True:
                 _out[cog_name_modifier(cog_name)] = cog
         return _out
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def get_category_data(self, category_filter: Callable = no_filter, category_name_modifier: Callable = no_name_modifier):
         _out = {}
         for category_name, category_member in CommandCategory.__members__.items():
@@ -451,8 +590,8 @@ class HelpCog(AntiPetrosBaseCog):
                 _out[category_name_modifier(category_name)] = category_member
         return _out
 
-    @staticmethod
-    @universal_log_profiler
+    @ staticmethod
+    @ universal_log_profiler
     def not_hidden_working_cog_filter(cog: commands.Cog):
         if cog.docattrs.get('show_in_readme') is False:
             return False
@@ -460,24 +599,24 @@ class HelpCog(AntiPetrosBaseCog):
             return False
         return True
 
-    @staticmethod
-    @universal_log_profiler
+    @ staticmethod
+    @ universal_log_profiler
     def remove_cog_suffix_cog_name_modifier(cog_name: str):
         return cog_name.removesuffix('Cog')
 
-    @universal_log_profiler
+    @ universal_log_profiler
     def _get_dispatcher(self, in_object):
         for key, value in self.help_dispatch_map.items():
             if isclass(in_object):
                 if issubclass(in_object, key):
                     return value
-            if isinstance(in_object, key):
+            if isinstance(key, type) and isinstance(in_object, key):
                 return value
             if in_object is key:
                 return value
         raise ParameterError('in_object', in_object)
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def _send_help(self, ctx: commands.Context, help_msg: Union[str, dict, discord.Embed]):
         target = ctx
         delete_after = self.help_delete_after
@@ -494,9 +633,34 @@ class HelpCog(AntiPetrosBaseCog):
         if self.delete_invoking_message is True:
             await delete_message_if_text_channel(ctx)
 
+    @ universal_log_profiler
+    @ is_refresh_task
+    async def refresh_current_cogs(self):
+        log.debug("refreshing '_current_cogs' for 'HelpCog'")
+        self._current_cogs = dict(self.bot.cogs).copy()
+
+    @ universal_log_profiler
+    @ is_refresh_task
+    async def refresh_current_commands(self):
+        log.debug("refreshing '_current_commands' for 'HelpCog'")
+        self._current_commands = {command.name: command for command in self.bot.commands}
+
+    @ universal_log_profiler
+    @ is_refresh_task
+    async def refresh_current_category_commands(self):
+        log.debug("refreshing '_current_category_commands' for 'HelpCog'")
+        self._current_category_commands = {}
+        for command in self.bot.commands:
+            for category_flag in command.categories.flags:
+                if category_flag not in self._category_commands:
+                    self._current_category_commands[category_flag] = []
+                self._current_category_commands[category_flag].append(await asyncio.sleep(0, command))
+
+
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx: commands.Context):
         return True
@@ -511,6 +675,7 @@ class HelpCog(AntiPetrosBaseCog):
         pass
 
     def cog_unload(self):
+        self.update_current_cogs_and_commands_loop.stop()
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):

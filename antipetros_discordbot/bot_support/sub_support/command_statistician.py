@@ -21,6 +21,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.bot_support.sub_support.sub_support_helper.command_stats_dict import CommandStatDict
 from antipetros_discordbot.utility.enums import UpdateTypus
 from antipetros_discordbot.utility.sqldata_storager import general_db
+from antipetros_discordbot.engine.replacements.command_replacements.helper import JsonMetaDataProvider
 # endregion[Imports]
 
 # region [TODO]
@@ -67,11 +68,16 @@ class CommandStatistician(SubSupportBase):
         log.debug("'%s' command staff soldier is READY", str(self))
 
     async def insert_command_data(self):
+
+        cog_objects = []
+        command_objects = []
         for cog_name, cog_object in self.bot.cogs.items():
-            await self.general_db.insert_cog(cog_object)
+            cog_objects.append(cog_object)
         for command in self.bot.commands:
             if str(command.cog) not in ['GeneralDebugCog']:
-                await self.general_db.insert_command(command)
+                command_objects.append(command)
+        await self.general_db.insert_cogs_many(cog_objects)
+        await self.general_db.insert_commands_many(command_objects)
 
     async def get_command_frequency(self, from_datetime: datetime = None, to_datetime: datetime = None, as_counter: bool = True):
         return await self.general_db.get_command_usage(from_datetime=from_datetime, to_datetime=to_datetime, as_counter=as_counter)

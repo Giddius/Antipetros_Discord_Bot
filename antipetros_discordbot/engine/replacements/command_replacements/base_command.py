@@ -131,8 +131,7 @@ class AntiPetrosBaseCommand(commands.Command):
     source_code_data_provider = SourceCodeProvider()
     category_provider = JsonCategoryProvider()
     bot_mention_placeholder = '@BOTMENTION'
-    gif_folder = APPDATA['gifs']
-    example_split_regex = re.compile(r"example\:\n", re.IGNORECASE)
+
     schema = AntiPetrosBaseCommandSchema()
 
     def __init__(self, func, **kwargs):
@@ -181,13 +180,9 @@ class AntiPetrosBaseCommand(commands.Command):
     def enabled(self, value):
         pass
 
-    # @property
-    # def hidden(self):
-    #     return self.get_meta_data('hidden', False)
-
-    # @hidden.setter
-    # def hidden(self, value):
-    #     pass
+    @property
+    def docstring(self):
+        return getdoc(self.callback)
 
     @property
     def aliases(self):
@@ -205,15 +200,8 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def help(self):
-        _help = self.data_getters['meta_data']('help', None)
-        if _help in [None, ""]:
-            _help = self._old_data.get('help')
-            if _help is not None and 'example:' in _help.casefold() and self.example == 'NA':
-                _help, example = self.example_split_regex.split(_help, maxsplit=1)
-                self.data_setters['meta_data']('help', _help.strip())
-                self.example = example.strip()
-        if _help in [None, ""]:
-            _help = 'NA'
+        _help = self.data_getters['meta_data']('help', 'NA')
+
         return inspect.cleandoc(_help)
 
     @help.setter
@@ -222,79 +210,54 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def brief(self):
-        brief = self.data_getters['meta_data']('brief', None)
-        if brief in [None, ""]:
-            brief = self._old_data.get('brief')
-        if brief in [None, ""]:
-            brief = 'NA'
+        brief = self.data_getters['meta_data']('brief', 'NA')
         return brief
 
     @brief.setter
     def brief(self, value):
         self._old_data['brief'] = value
-        if self.brief == 'NA' and value not in [None, '']:
-            self.data_setters['meta_data']('brief', value)
 
     @property
     def description(self):
-        description = self.data_getters['meta_data']('description', None)
-        if description in [None, ""]:
-            description = self._old_data.get('description')
-        if description in [None, ""]:
-            description = 'NA'
+        description = self.data_getters['meta_data']('description', 'NA')
         return inspect.cleandoc(description)
 
     @description.setter
     def description(self, value):
         self._old_data['description'] = value
-        if self.description == 'NA' and value not in [None, '']:
-            self.data_setters['meta_data']('description', value)
 
     @property
     def short_doc(self):
-        short_doc = self.data_getters['meta_data']('short_doc', None)
-        if short_doc in [None, ""]:
-            short_doc = self._old_data.get('short_doc')
-        if short_doc in [None, ""]:
-            short_doc = 'NA'
+        short_doc = self.data_getters['meta_data']('short_doc', 'NA')
         return short_doc
 
     @short_doc.setter
     def short_doc(self, value):
         self._old_data['short_doc'] = value
-        if self.short_doc == 'NA' and value not in [None, '']:
-            self.data_setters['meta_data']('short_doc', value)
 
     @property
     def usage(self):
-        usage = self.data_getters['meta_data']('usage', None)
-        if usage in [None, ""]:
-            usage = self._old_data.get('usage')
-        if usage in [None, ""]:
-            usage = 'NA'
+        usage = self.data_getters['meta_data']('usage', 'NA')
+
         return usage
 
     @usage.setter
     def usage(self, value):
         self._old_data['usage'] = value
-        if self.usage == 'NA' and value not in [None, '']:
-            self.data_setters['meta_data']('usage', value)
 
     @property
     def signature(self):
-        return self._old_data.get("signature")
+        signature = self.data_getters['meta_data']('signature', 'NA')
+        return signature
 
     @signature.setter
     def signature(self, value):
         self._old_data["signature"] = value
-        if self.signature == 'NA' and value not in [None, '']:
-            self.data_setters['meta_data']('signature', value)
 
     @property
     def example(self):
-        example = self.data_getters['meta_data']('example', None)
-        if example in [None, ""]:
-            example = 'NA'
+        example = self.data_getters['meta_data']('example', 'NA')
+
         if self.cog.bot.bot_member is not None:
             return example.replace(self.bot_mention_placeholder, self.cog.bot.bot_member.mention)
         else:

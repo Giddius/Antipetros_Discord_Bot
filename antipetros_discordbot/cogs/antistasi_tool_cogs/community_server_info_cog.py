@@ -126,14 +126,12 @@ class CommunityServerInfoCog(AntiPetrosBaseCog):
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def server_status_change_exclusions(self):
         if os.path.isfile(self.server_status_change_exclusions_file) is False:
             writejson([], self.server_status_change_exclusions_file)
         return loadjson(self.server_status_change_exclusions_file)
 
     @property
-    @universal_log_profiler
     def server_message_remove_time(self):
         return COGS_CONFIG.retrieve(self.config_name, 'server_message_delete_after_seconds', typus=int, direct_fallback=300)
 
@@ -180,6 +178,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog):
 
                 elif server_holder.is_online is False and prev_is_online is True:
                     await self.server_status_notification(server_holder, 'off')
+
 
 # endregion [Loops]
 

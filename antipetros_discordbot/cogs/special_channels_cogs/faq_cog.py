@@ -185,6 +185,9 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
         Args:
             faq_numbers (commands.Greedy[int]): minimum one faq number to request, maximum as many as you want seperated by one space (i.e. 14 12 3)
+
+        Example:
+            @AntiPetros post_faq_by_number 4 8 12
         """
 
         for faq_number in faq_numbers:

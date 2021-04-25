@@ -224,7 +224,7 @@ class EmbedBuilder(SubSupportBase):
         while len(fields) > 0:
             if is_first is False:
                 kwargs['title'] = 'CONTINUED'
-                kwargs['description'] = discord.Embed.Empty
+                kwargs['description'] = ZERO_WIDTH
             _embed_data = await self.make_generic_embed(**kwargs)
             _actual_embed = _embed_data.get('embed')
             if len(_actual_embed) > self.max_embed_size:

@@ -14,6 +14,7 @@ import psutil
 import discord
 from discord.ext import commands, flags, tasks, ipc
 from textwrap import dedent
+import asyncio
 from functools import cached_property
 from antipetros_discordbot.utility.gidsql.facade import AioGidSqliteDatabase
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, timenamemaker, limit_amount_files_absolute, bytes2human
@@ -159,6 +160,21 @@ class AioGeneralStorageSQLite:
         await self.db.aio_write('insert_command_usage', (timestamp, command_name))
 
     @universal_log_profiler
+    async def insert_cogs_many(self, cogs: List[commands.Cog]):
+        categories_data = []
+        cogs_data = []
+        for cog in cogs:
+            abs_path = getsourcefile(cog.__class__)
+            rel_path = await antipetros_repo_rel_path(abs_path)
+            category = os.path.basename(os.path.dirname(rel_path))
+            if category not in ['dev_cogs']:
+                categories_data.append((category, category))
+                cogs_data.append((str(cog), str(cog), cog.config_name, cog.description, category, rel_path))
+                await asyncio.sleep(0)
+        await self.db.aio_write('insert_cog_category', categories_data)
+        await self.db.aio_write('insert_cog', cogs_data)
+
+    @universal_log_profiler
     async def insert_cog(self, cog: commands.Cog):
         abs_path = getsourcefile(cog.__class__)
         rel_path = await antipetros_repo_rel_path(abs_path)
@@ -171,6 +187,27 @@ class AioGeneralStorageSQLite:
     @universal_log_profiler
     async def insert_image(self, name: str, image_bytes: bytes):
         await self.db.aio_write('insert_image', (name, image_bytes))
+
+    @universal_log_profiler
+    async def insert_commands_many(self, commands: List[commands.Command]):
+        commands_data = []
+        for command in commands:
+            name = command.name
+            cog_name = str(command.cog)
+            is_group = 1 if isinstance(command, AntiPetrosBaseGroup) else 0
+            params = [name, name, cog_name, is_group]
+            for attr_name in self.command_attr_names:
+                attr_value = None
+                if hasattr(command, attr_name) and getattr(command, attr_name) != 'NA':
+                    attr_value = getattr(command, attr_name)
+                    if attr_name == 'gif' and attr_value is not None:
+                        attr_value = await antipetros_repo_rel_path(attr_value)
+                params.append(attr_value)
+            # await self.insert_image(name, await command.get_source_code_image())
+            params.append(name)
+            commands_data.append(tuple(params))
+            await asyncio.sleep(0)
+        await self.db.aio_write('insert_command', commands_data)
 
     @universal_log_profiler
     async def insert_command(self, command: Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
@@ -197,22 +234,30 @@ class AioGeneralStorageSQLite:
         await self.db.aio_write('insert_channel_use', (timestamp, channel_id))
 
     @universal_log_profiler
-    async def insert_text_channel(self, text_channel: discord.TextChannel):
-        _id = text_channel.id
-        name = text_channel.name
-        position = text_channel.position
-        created_at = text_channel.created_at
-        category_id = text_channel.category.id
-        topic = text_channel.topic
-        await self.db.aio_write("insert_text_channel", (_id, name, position, created_at, category_id, topic, False))
+    async def insert_text_channels(self, text_channels: List[discord.TextChannel]):
+        text_channels_data = []
+        for text_channel in text_channels:
+            _id = text_channel.id
+            name = text_channel.name
+            position = text_channel.position
+            created_at = text_channel.created_at
+            category_id = text_channel.category.id
+            topic = text_channel.topic
+            text_channels_data.append((_id, name, position, created_at, category_id, topic, False))
+            await asyncio.sleep(0)
+        await self.db.aio_write("insert_text_channel", text_channels_data)
 
     @universal_log_profiler
-    async def insert_category_channel(self, category_channel: discord.CategoryChannel):
-        _id = category_channel.id
-        name = category_channel.name
-        position = category_channel.position
-        created_at = category_channel.created_at
-        await self.db.aio_write("insert_category_channel", (_id, name, position, created_at, False))
+    async def insert_category_channels(self, category_channels: List[discord.CategoryChannel]):
+        category_channels_data = []
+        for category_channel in category_channels:
+            _id = category_channel.id
+            name = category_channel.name
+            position = category_channel.position
+            created_at = category_channel.created_at
+            category_channels_data.append((_id, name, position, created_at, False))
+            await asyncio.sleep(0)
+        await self.db.aio_write("insert_category_channel", category_channels_data)
 
     @universal_log_profiler
     async def update_text_channel_deleted(self, text_channel_id: int):
@@ -301,6 +346,9 @@ class AioGeneralStorageSQLite:
             return Counter(row['name'] for row in result)
         else:
             return [row['name'] for row in result]
+
+    async def insert_profile_data(self, data: List[Tuple[datetime, str, str, int]]):
+        await self.db.aio_write('insert_profiling_data', data)
 
     @universal_log_profiler
     async def insert_cpu_performance(self, timestamp: datetime, usage_percent: int, load_avg_1: int, load_avg_5: int, load_avg_15: int):

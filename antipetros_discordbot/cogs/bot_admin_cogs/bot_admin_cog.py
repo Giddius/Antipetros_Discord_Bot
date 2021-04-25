@@ -96,8 +96,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         self.latest_who_is_triggered_time = datetime.utcnow()
         self.reaction_remove_ids = []
         self.ready = False
-        self.listeners_enabled = {'stop_the_reaction_petros_listener': False,
-                                  'who_is_this_bot_listener': False}
+        self.listeners_enabled = {'stop_the_reaction_petros_listener': False}
         glog.class_init_notification(log, self)
 # endregion[Init]
 
@@ -125,7 +124,8 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
     @tasks.loop(hours=1)
     @universal_log_profiler
     async def garbage_clean_loop(self):
-        await self.bot.wait_until_ready()
+        if self.ready is False:
+            return
         log.info('running garbage clean')
         x = gc.collect()
         log.info('Garbage Clean collected "%s"', x)
@@ -141,18 +141,12 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
             writejson(['I am alive!'], self.alive_phrases_file)
         return loadjson(self.alive_phrases_file)
 
-    @property
-    @universal_log_profiler
-    def who_is_trigger_phrases(self):
-        std_phrases = ['who is %BOT_NAME%',
-                       'what is %BOT_NAME%',
-                       'who the fuck is %BOT_NAME%']
-        if os.path.isfile(self.who_is_trigger_phrases_file) is False:
-            writejson(std_phrases, self.who_is_trigger_phrases_file)
-        return loadjson(self.who_is_trigger_phrases_file)
+
 # endregion[Properties]
 
 # region [Listener]
+
+
     @commands.Cog.listener(name='on_reaction_add')
     @universal_log_profiler
     async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):
@@ -165,32 +159,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         if user.id == 155149108183695360 and author.id in self.reaction_remove_ids:
             asyncio.create_task(reaction.remove(user))
 
-    @commands.Cog.listener(name='on_message')
-    @universal_log_profiler
-    async def who_is_this_bot_listener(self, msg: discord.Message):
-        if self.ready is False:
-            return
-        if self.listeners_enabled.get("who_is_this_bot_listener", False) is False:
-            return
 
-        channel = msg.channel
-        if channel.type is not discord.ChannelType.text:
-            return False
-
-        if channel.name.casefold() not in self.allowed_channels("who_is_this_bot_listener"):
-            return False
-        if any(trigger_phrase.replace('%BOT_NAME%', self.bot.display_name).casefold() in msg.content.casefold() for trigger_phrase in self.who_is_trigger_phrases):
-            log.debug('who_is_this_bot_listener triggered')
-            if datetime.utcnow() > self.latest_who_is_triggered_time + timedelta(minutes=1):
-                image = self.bot.portrait_url
-                embed_data = await self.bot.make_generic_embed(title=f'WHO IS {self.bot.display_name.upper()}', description='I am an custom made Bot for this community!',
-                                                               fields=[self.bot.field_item(name='What I can do', value=f'Get a description of my features by using `@{self.bot.display_name} help`', inline=False),
-                                                                       self.bot.field_item(name='Who created me', value=f'I was created by {self.bot.creator.member_object.mention}, for the Antistasi Community')],
-                                                               image=image,
-                                                               thumbnail=None)
-                await msg.reply(**embed_data, delete_after=60)
-                log.info("'%s' was triggered by '%s' in '%s'", "who_is_this_bot_listener", msg.author.name, msg.channel.name)
-                self.latest_who_is_triggered_time = datetime.utcnow()
 # endregion[Listener]
 
     @auto_meta_info_command(aliases=['reload', 'refresh'])
@@ -231,26 +200,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         await ctx.message.delete()
         await self.bot.shutdown_mechanic()
 
-    @auto_meta_info_command()
-    @owner_or_admin()
-    async def tell_version(self, ctx: commands.Context):
-        embed_data = await self.bot.make_generic_embed(title=self.bot.display_name.title(), description='**Version**  ' + str(os.getenv('ANTIPETROS_VERSION')),
-                                                       thumbnail=self.bot.portrait_url)
-        await ctx.send(**embed_data)
-
-    @auto_meta_info_command()
-    @owner_or_admin()
-    @log_invoker(log, "warning")
-    async def add_who_is_phrase(self, ctx, *, phrase: str):
-        current_phrases = self.who_is_trigger_phrases
-
-        if phrase.casefold() in map(lambda x: x.casefold(), current_phrases):
-            await ctx.send(f'phrase `{phrase}` already in `who_is_trigger_phrases`')
-            return
-        current_phrases.append(phrase)
-        writejson(current_phrases, self.who_is_trigger_phrases_file)
-        await ctx.send(f"Added phrase `{phrase}` to `who_is_trigger_phrases`")
-
     @ auto_meta_info_command(aliases=['you_dead?', 'are-you-there', 'poke-with-stick'])
     async def life_check(self, ctx: commands.Context):
         if random.randint(0, len(self.alive_phrases)) == 0:
@@ -281,15 +230,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
         await self.bot.unblacklist_user(user)
         await ctx.send(f"I have unblacklisted user {user.name}")
-
-    @ auto_meta_info_command()
-    async def tell_uptime(self, ctx):
-
-        now_time = datetime.utcnow()
-        delta_time = now_time - self.bot.start_time
-        seconds = round(delta_time.total_seconds())
-        # TODO: make as embed
-        await ctx.send(f"__Uptime__ -->\n| {str(seconds_to_pretty(seconds))}")
 
     @auto_meta_info_command()
     @commands.is_owner()
@@ -324,38 +264,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
                     discord_file = discord.File(old_file.path)
                     await ctx.send(file=discord_file)
         log.warning("%s log file%s was requested by '%s'", which_logs, 's' if which_logs == 'all' else '', ctx.author.name)
-
-    @auto_meta_info_command()
-    @commands.is_owner()
-    async def invocation_prefixes(self, ctx: commands.Context):
-        prefixes = self.bot.command_prefix(self.bot, ctx.message)
-        prefixes = sorted(prefixes, key=lambda x: '@' in x, reverse=True)
-        mod_prefixes = []
-        for prefix in prefixes:
-            if not prefix.startswith('<@'):
-                prefix = f'{prefix}'
-            if '@' in prefix and prefix.replace('!', '') in [prfx.replace('!', '') for prfx in mod_prefixes]:
-                pass
-            else:
-                mod_prefixes.append(prefix)
-        embed_data = await self.bot.make_generic_embed(title='Invocation Prefixes', description=make_message_list(mod_prefixes),
-                                                       thumbnail=None,
-                                                       timestamp=None,
-                                                       author='bot_author')
-        cmsg = await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-        await asyncio.sleep(60)
-        await cmsg.delete()
-        await ctx.message.delete()
-
-    @auto_meta_info_command()
-    @commands.is_owner()
-    async def all_aliases(self, ctx: commands.Context):
-        all_aliases = []
-        for command in self.bot.walk_commands():
-            if command.aliases:
-                all_aliases.append(f"`{command.name}`\n```python\n" + '\n'.join(command.aliases) + "\n```")
-
-        await self.bot.split_to_messages(ctx, '\n\n'.join(all_aliases), split_on='\n\n')
 
     @auto_meta_info_command()
     @only_giddi()

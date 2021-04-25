@@ -53,3 +53,20 @@ MOD_TABLE_LINE_REGEX = re.compile(r"""^[\d\s]\d.[0123456]\d.[0123456]\d\s*?
 
 
 COMMAND_TEXT_FILE_REGEX = re.compile(r"\n?(?P<key_words>[\w\s]+).*?\=.*?(?P<value_words>.*?(?=(?:\n[^\n]*?\=)|$))", re.DOTALL)
+
+
+LOG_SCRAPE_REGEX = re.compile(r"""(?P<year>\d\d\d\d).?(?P<month>[01]\d).?(?P<day>[0123]\d).*?(?P<hour>[012]\d).?(?P<minute>[0123456]\d).?(?P<second>[0123456]\d).*(?P<microsecond>\d+)
+                              .*?\s*?\|\s*?
+                              (?P<level>PROFILE|DEBUG|INFO|WARNING|ERROR|CRITICAL)
+                              \s*?\|\s*?
+                              (?P<thread>[^\s\|]+)
+                              \s*?\|\s*?
+                              (?P<line_number>\d+)
+                              \s*?\|\s*?
+                              (?P<module>[^\-\s\|]+)
+                              \s*?\|\s*?
+                              (?P<function_name>[^\-\s\|]+)
+                              \s*?\|\|\-\-\>\s*?
+                              (?P<message>[^\s].*)""", re.VERBOSE)
+
+PROFILING_REGEX = re.compile(r"\<PROFILING\>\smodule\:\s*?(?P<module>.*?)\,\s*?function\:\s(?P<function>.*?)\,\s*?time_taken\:\s*?(?P<time_taken>[\d\.]+).*?\</PROFILING\>", re.IGNORECASE)

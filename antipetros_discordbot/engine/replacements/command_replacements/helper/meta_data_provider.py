@@ -121,6 +121,16 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 class JsonMetaDataProvider:
     gif_folder = APPDATA['gifs']
     data_file = pathmaker(APPDATA['documentation'], 'command_meta_data.json')
+    stored_attributes_names = ['help',
+                               'example',
+                               'brief',
+                               'description',
+                               'short_doc',
+                               'usage',
+                               'signature',
+                               'gif']
+    description_split_regex = re.compile(r"args:\n", re.IGNORECASE)
+    example_split_regex = re.compile(r"example\:\n", re.IGNORECASE)
 
     def __init__(self) -> None:
         if os.path.isfile(self.data_file) is False:
@@ -147,6 +157,7 @@ class JsonMetaDataProvider:
     def get(self, command: Union[str, commands.Command], typus: str, fallback=None):
         if isinstance(command, commands.Command):
             command = command.name
+
         typus = typus.casefold()
         if typus == 'gif':
             return self.all_gifs.get(command.casefold())

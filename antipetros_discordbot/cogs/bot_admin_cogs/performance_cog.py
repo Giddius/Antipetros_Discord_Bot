@@ -11,6 +11,7 @@ from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timedelta, timezone
 from statistics import mean, stdev, median, StatisticsError
 from collections import deque
+import json
 from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
@@ -34,7 +35,7 @@ from antipetros_discordbot.utility.embed_helpers import make_basic_embed, make_b
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, bytes2human, create_folder
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-
+from antipetros_discordbot.utility.regexes import LOG_SCRAPE_REGEX, PROFILING_REGEX
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.sqldata_storager import general_db
 
@@ -129,6 +130,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         self.latency_measure_loop.start()
         self.memory_measure_loop.start()
         self.cpu_measure_loop.start()
+        self.profile_info_from_logs.start()
         await asyncio.sleep(5)
         self.ready = True
 
@@ -140,6 +142,14 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 # endregion[Setup]
 
 # region [Loops]
+
+    @tasks.loop(minutes=2, reconnect=True)
+    async def profile_info_from_logs(self):
+        if self.ready is False:
+            return
+        if os.getenv("ANTIPETROS_PROFILING") == "1":
+            asyncio.create_task(self.general_db.insert_profile_data(await self.parse_logs_for_profile()))
+            log.info("Inserted Profile Data into Database")
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     @universal_log_profiler
@@ -190,12 +200,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     @auto_meta_info_command()
     @owner_or_admin()
-    async def initial_memory_use(self, ctx):
-        initial_memory = os.getenv('INITIAL_MEMORY_USAGE')
-        await ctx.send(bytes2human(int(initial_memory), annotate=True))
-
-    @auto_meta_info_command()
-    @owner_or_admin()
     async def report_latency(self, ctx, with_graph: bool = True):
         report_data = await self.general_db.get_latency_data_last_24_hours()
 
@@ -214,10 +218,12 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
     @auto_meta_info_command()
     @owner_or_admin()
     async def report_memory(self, ctx, with_graph: bool = True, since_last_hours: int = 24):
+        initial_memory = os.getenv('INITIAL_MEMORY_USAGE')
+        initial_memory_annotated = bytes2human(int(initial_memory), annotate=True)
         report_data = await self.general_db.get_memory_data_last_24_hours()
 
         stat_data = [item.memory_in_use for item in report_data]
-        embed_data = {'Mean': bytes2human(round(mean(stat_data), 2), True), 'Median': bytes2human(round(median(stat_data), 2), True), "Std-dev": bytes2human(round(stdev(stat_data)), True)}
+        embed_data = {'Initial': initial_memory_annotated, 'Mean': bytes2human(round(mean(stat_data), 2), True), 'Median': bytes2human(round(median(stat_data), 2), True), "Std-dev": bytes2human(round(stdev(stat_data)), True)}
 
         _file = None
         if len(report_data) < 11:
@@ -253,16 +259,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     @auto_meta_info_command()
     @owner_or_admin()
-    async def get_command_stats(self, ctx):
-        data_dict = {item.name: f"{ZERO_WIDTH}\n{item.data}\n{ZERO_WIDTH}" for item in await self.bot.support.get_todays_invoke_data()}
-        date = date_today()
-
-        embed = await make_basic_embed(title=ctx.command.name, text=f'data of the last 24hrs - {date}', symbol='data', **data_dict)
-
-        await ctx.send(embed=embed)
-
-    @auto_meta_info_command()
-    @owner_or_admin()
     async def report(self, ctx):
         """
         Reports both current latency and memory usage as Graph.
@@ -293,38 +289,38 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         embed_data = await self.bot.make_generic_embed(title="CPU Data", fields=fields)
         await ctx.send(**embed_data)
 
-    @auto_meta_info_command()
-    @owner_or_admin()
-    async def socket_info(self, ctx: commands.Context):
-        out = []
-        net_connections = psutil.net_connections()
-        for item in net_connections:
-            out.append(str(item))
-        await self.bot.split_to_messages(ctx, '\n'.join(out), in_codeblock=True, syntax_highlighting='css')
-
-    @auto_meta_info_command()
-    @owner_or_admin()
-    async def speed_test(self, ctx: commands.Context, amount_msgs: Optional[int] = 10, delete_msgs: Optional[bool] = False):
-        delete_after = None if delete_msgs is False else 30
-        start_time = time.monotonic()
-        times = []
-        for i in range(amount_msgs):
-            sub_time_start = time.monotonic()
-            await ctx.send(f"This is message {i+1} of the speed test!", delete_after=delete_after)
-            times.append(time.monotonic() - sub_time_start)
-        time_taken = time.monotonic() - start_time
-        time_taken = round(time_taken, ndigits=3)
-        mean_per_message = mean(times)
-        mean_per_message = round(mean_per_message, 3)
-        await ctx.send(f"__**result:**__ {time_taken} seconds for {amount_msgs} messages. average per message = {mean_per_message} seconds")
-        specific_results = ''
-        for index, the_time in enumerate(times):
-            specific_results += f"__Message {index+1}:__ `{round(the_time, 3)}` seconds\n"
-        await ctx.send(specific_results)
 
 # endregion[Commands]
 
 # region [Helper]
+
+
+    async def parse_logs_for_profile(self):
+        log_folder = APPDATA.log_folder
+        old_logs_folder = pathmaker(log_folder, 'old_logs')
+        logs = [pathmaker(file.path) for file in os.scandir(log_folder) if file.is_file() and file.name.endswith('.log')] + [pathmaker(file.path) for file in os.scandir(old_logs_folder) if file.is_file() and file.name.endswith('.log')]
+        data = []
+        for file in logs:
+            data += await self.parse_profile_info_from_log_file(file)
+        return data
+
+    async def parse_profile_info_from_log_file(self, log_file):
+        DATE_TIME_GROUP_NAMES = ["year", "month", "day", "hour", "minute", "second"]
+        _out = []
+        with open(log_file, 'r') as f:
+            for line in f:
+                line = line.strip('\n')
+                log_match = LOG_SCRAPE_REGEX.search(line)
+                if log_match and log_match.group('level') == 'PROFILE':
+                    profiling_match = PROFILING_REGEX.search(log_match.group('message'))
+                    if profiling_match:
+                        date_time = datetime(**{key: int(value) for key, value in log_match.groupdict().items() if key in DATE_TIME_GROUP_NAMES}, microsecond=int(log_match.group('microsecond') + '000'), tzinfo=timezone.utc)
+                        module = profiling_match.group('module').strip()
+                        function = profiling_match.group('function').strip()
+                        time_taken = int(profiling_match.group('time_taken'))
+                        _out.append((date_time, module, function, time_taken))
+
+        return _out
 
     @universal_log_profiler
     async def format_graph(self, amount_data: int):
@@ -425,6 +421,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [SpecialMethods]
 
+
     def __str__(self) -> str:
         return self.qualified_name
 
@@ -433,6 +430,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         self.latency_measure_loop.stop()
         self.memory_measure_loop.stop()
         self.report_data_loop.stop()
+        self.profile_info_from_logs.stop()
         log.debug("Cog '%s' UNLOADED!", str(self))
 
 # endregion[SpecialMethods]

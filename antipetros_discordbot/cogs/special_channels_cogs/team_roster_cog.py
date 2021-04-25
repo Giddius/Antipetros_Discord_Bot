@@ -291,7 +291,7 @@ class TeamItem:
 
 class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADMINTOOLS, "hidden": True}):
     """
-    WiP
+    Keeps a team roster up to date, updates it everytime a role on the Discord Guild changes or gets added or is removed.
     """
 # region [ClassAttributes]
 
@@ -393,6 +393,19 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
     @commands.is_owner()
     @log_invoker(log, 'critical')
     async def initialize_team_roster(self, ctx: commands.Context, channel: discord.TextChannel):
+        """
+        Creates the Team roster messages.
+
+        This should not have to be called more than once.
+
+        **WARNING** When this command is used, it logs the user! **WARNING**
+
+        Args:
+            channel (discord.TextChannel): Id of channel to build the Team roster (can also use name, but id is safer)
+
+        Example:
+            @AntiPetros initialize_team_roster 712054600278081600
+        """
         async with ctx.typing():
             teams = COGS_CONFIG.retrieve(self.config_name, 'team_names', typus=List[str], direct_fallback=[])
             if teams == []:
@@ -423,6 +436,17 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
     @commands.is_owner()
     @log_invoker(log, 'critical')
     async def force_update_team_roster(self, ctx: commands.Context):
+        """
+        Forces the Team Roster to update.
+
+        Can be used often, as there is no negative consequence to it.
+        It is provided as a fallback if the automation does not trigger.
+
+        **WARNING** When this command is used, it logs the user! **WARNING**
+
+        Example:
+            @AntiPetros force_update_team_roster
+        """
         for team_item in self.team_items:
             try:
                 await team_item.update()
@@ -438,6 +462,20 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
     @commands.is_owner()
     @log_invoker(log, 'critical')
     async def delete_and_redo_team_roster(self, ctx: commands.Context, channel: discord.TextChannel):
+        """
+        Deletes the Team roster messages and completely redoes them.
+
+        Ultima Ratio version of "force_update_team_roster".
+        The Channel has to be entered, as this provides is also an option to change the Team roster channel.
+
+        **WARNING** When this command is used, it logs the user! **WARNING**
+
+        Args:
+            channel (discord.TextChannel): Id of channel to build the Team roster (can also use name, but id is safer)
+
+        Example:
+            @AntiPetros delete_and_redo_team_roster 712054600278081600
+        """
         for item in self.team_items:
             await item.delete_messages()
         await self.last_changed_message.delete()

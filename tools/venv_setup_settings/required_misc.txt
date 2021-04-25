@@ -42,3 +42,4 @@ validator-collection
 watchgod
 webdavclient3
 sortedcontainers
+sqflint

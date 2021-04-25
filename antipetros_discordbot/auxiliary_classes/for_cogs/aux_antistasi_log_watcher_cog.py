@@ -179,9 +179,9 @@ class LogFile:
         client = Client(get_nextcloud_options())
         with TemporaryDirectory() as tempdir:
             new_path = pathmaker(tempdir, os.path.basename(self.path))
-            await self.loop.run_in_executor(None, client.download_sync, self.path, new_path)
+            await asyncio.to_thread(client.download_sync, self.path, new_path)
 
-            content = await self.loop.run_in_executor(None, readit, new_path)
+            content = await asyncio.to_thread(readit, new_path)
 
             return content
 
@@ -189,7 +189,7 @@ class LogFile:
         client = Client(get_nextcloud_options())
         new_path = pathmaker(save_dir, os.path.basename(self.path))
 
-        await self.loop.run_in_executor(None, client.download_sync, self.path, new_path)
+        await asyncio.to_thread(client.download_sync, self.path, new_path)
 
         return new_path
 
@@ -234,7 +234,6 @@ class LogFile:
 
 class LogServer:
     log_item = LogFile
-    loop = asyncio.get_event_loop()
 
     def __init__(self, base_folder: str, name: str):
         self.base_folder = base_folder
@@ -246,18 +245,19 @@ class LogServer:
         client = Client(get_nextcloud_options())
         log.debug("collecting initial data for LogServer '%s'", self.name)
         self.sub_folder = {}
-        sub_folder_names = await self.loop.run_in_executor(None, client.list, self.path)
+        sub_folder_names = await asyncio.to_thread(client.list, self.path)
         for sub_folder_name in sub_folder_names:
             sub_folder_name = sub_folder_name.strip('/')
             if sub_folder_name != self.name:
-                self.sub_folder[sub_folder_name] = await self.loop.run_in_executor(None, partial(sorted, await self.get_file_infos(sub_folder_name), key=lambda x: x.modified, reverse=True))
+                file_infos = await self.get_file_infos(sub_folder_name)
+                self.sub_folder[sub_folder_name] = await asyncio.to_thread(sorted, file_infos, key=lambda x: x.modified, reverse=True)
             await asyncio.sleep(0)
         log.info(self.path + ' collected subfolder: ' + ', '.join([key for key in self.sub_folder]))
 
     async def get_file_infos(self, sub_folder_name, raw=False):
         client = Client(get_nextcloud_options())
         _out = []
-        file_data_list = await self.loop.run_in_executor(None, partial(client.list, f"{self.path}/{sub_folder_name}", get_info=True))
+        file_data_list = await asyncio.to_thread(client.list, f"{self.path}/{sub_folder_name}", get_info=True)
         async for file_data in async_list_iterator(file_data_list):
             if not file_data.get('path').endswith('/'):
                 if raw is True:
@@ -273,27 +273,28 @@ class LogServer:
         mod_sub_folder = sub_folder.casefold()
         if mod_sub_folder not in {sub_folder_name.casefold() for sub_folder_name in self.sub_folder}:
             raise KeyError(f'Unable to find a subfolder with the name of "{sub_folder}"')
-        async for sub_folder_name in async_list_iterator(self.sub_folder):
+        for sub_folder_name in self.sub_folder:
             if sub_folder_name.casefold() == mod_sub_folder:
-                async for i in async_list_iterator(range(amount)):
-                    newest_file = self.sub_folder[sub_folder_name][i]
+                file_list = await asyncio.to_thread(sorted, self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True)
+                for i in range(amount):
+                    newest_file = file_list[i]
                     _out.append(newest_file)
         return _out
 
     async def update(self):
         _temp_holder = {}
-        async for sub_folder_name in async_list_iterator(self.sub_folder):
+        for sub_folder_name in self.sub_folder:
             _temp_holder[sub_folder_name] = await self.get_file_infos(sub_folder_name, raw=True)
-            async for new_log_item_data in async_list_iterator(_temp_holder[sub_folder_name]):
+            for new_log_item_data in _temp_holder[sub_folder_name]:
                 await self.update_log_items(sub_folder_name, **new_log_item_data)
 
-            self.sub_folder[sub_folder_name] = await self.loop.run_in_executor(None, partial(sorted, self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True))
+            self.sub_folder[sub_folder_name] = await asyncio.to_thread(sorted, self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True)
 
     async def update_log_items(self, sub_folder_name, ** data_kwargs):
         path = data_kwargs.get('path')
         path = '/'.join(path.split('/')[6:])
         target_log_object = None
-        async for index, log_object in async_list_iterator(enumerate(self.sub_folder.get(sub_folder_name))):
+        for index, log_object in enumerate(self.sub_folder.get(sub_folder_name)):
             if path == log_object.path:
                 target_log_object = log_object
                 target_index = index
@@ -305,24 +306,24 @@ class LogServer:
         else:
             new_log_item = self.log_item(**data_kwargs)
             self.sub_folder[sub_folder_name].append(new_log_item)
-            self.sub_folder[sub_folder_name] = await self.loop.run_in_executor(None, partial(sorted, self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True))
+            self.sub_folder[sub_folder_name] = await asyncio.to_thread(sorted, self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True)
             log.info("!NEW LOG ITEM! added new log_item '%s' to LogServer('%s', '%s')", new_log_item.name, self.name, sub_folder_name)
 
     async def sort(self):
         async for sub_folder_name in async_list_iterator(self.sub_folder):
-            self.sub_folder[sub_folder_name] = await self.loop.run_in_executor(None, partial(sorted, self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True))
+            self.sub_folder[sub_folder_name] = await asyncio.to_thread(sorted, self.sub_folder[sub_folder_name], key=lambda x: x.modified, reverse=True)
 
     async def get_oversized_items(self):
         oversized_items = []
-        async for sub_folder_name, log_items in async_dict_items_iterator(self.sub_folder):
-            async for log_item in async_list_iterator(log_items):
+        for sub_folder_name, log_items in self.sub_folder.items():
+            for log_item in log_items:
                 if log_item.is_over_threshold is True:
                     oversized_items.append(log_item)
         return oversized_items
 
     async def dump(self, file_name):
         _out = {"name": self.name, "path": self.path, "sub_folder": {}}
-        async for sub_folder_name, log_items in async_dict_items_iterator(self.sub_folder):
+        for sub_folder_name, log_items in self.sub_folder.items():
             if sub_folder_name not in _out["sub_folder"]:
                 _out["sub_folder"][sub_folder_name] = []
             for item in log_items:

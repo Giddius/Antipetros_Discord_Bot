@@ -72,7 +72,7 @@ from antipetros_discordbot.utility.event_data import ListenerEvents
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from marshmallow import Schema, fields
-
+from inspect import getdoc
 
 # endregion[Imports]
 
@@ -139,6 +139,10 @@ class AntiPetrosBaseCog(commands.Cog):
     @ property
     def all_commands(self) -> list:
         return self.get_commands()
+
+    @property
+    def description(self):
+        return dedent(str(getdoc(self.__class__)))
 
     def _ensure_files_and_folder(self):
         for item in self.required_folder + self.required_files:

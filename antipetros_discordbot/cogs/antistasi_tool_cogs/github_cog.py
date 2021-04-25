@@ -77,6 +77,11 @@ from antipetros_discordbot.utility.general_decorator import universal_log_profil
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
+from sqf.parser import parse as sqf_parse
+from sqf.interpreter import interpret as sqf_interpret
+from sqf.types import Variable
+from sqf.parser_types import Comment
+from sqf.analyzer import analyze as sqf_analyze
 
 # endregion[Imports]
 
@@ -197,12 +202,33 @@ class GithubCog(AntiPetrosBaseCog):
             if found_file is None:
                 await ctx.send(f"no file named `{file_name}` in branch `{branch}`")
                 return
+            function_calls = await self._find_function_calls(content)
+
+            a3a_function_calls_value = '\n'.join(f"`{item}`" for item in function_calls.get('a3a'))
+            a3a_function_calls_value = a3a_function_calls_value[:950]
+            if not a3a_function_calls_value:
+                a3a_function_calls_value = 'None'
+
+            bis_function_calls_value = '\n'.join(f"`{item}`" for item in function_calls.get('bis'))
+            bis_function_calls_value = bis_function_calls_value[:950]
+            if not bis_function_calls_value:
+                bis_function_calls_value = 'None'
+
+            comments = await self._find_comments(content)
+            comments_value = '\n'.join(f"`{item}`" for item in comments)
+            comments_value = comments_value[:950]
+            if not comments_value:
+                comments_value = 'None'
+
             async with self._make_other_source_code_images(content) as source_image_binary:
 
                 embed_data = await self.bot.make_generic_embed(title=file_name,
                                                                url=found_file.html_url,
                                                                description=embed_hyperlink("link to file", found_file.html_url),
-                                                               image=discord.File(source_image_binary, filename=file_name.split(".")[0] + '.png'))
+                                                               image=discord.File(source_image_binary, filename=file_name.split(".")[0] + '.png'),
+                                                               fields=[self.bot.field_item(name='A3A Function Calls', value=a3a_function_calls_value),
+                                                                       self.bot.field_item(name='BIS Function Calls', value=bis_function_calls_value),
+                                                                       self.bot.field_item(name='Comments', value=comments_value)])
                 with StringIO() as content_file:
                     content_file.write(content)
                     content_file.seek(0)
@@ -240,6 +266,25 @@ class GithubCog(AntiPetrosBaseCog):
 
 # region [HelperMethods]
 
+
+    @universal_log_profiler
+    async def _find_comments(self, file_content: str):
+        parsed_content = sqf_parse(file_content)
+        all_comments = (str(var) for var in parsed_content.get_all_tokens() if isinstance(var, Comment))
+        return all_comments
+
+    @universal_log_profiler
+    async def _find_function_calls(self, file_content: str):
+        parsed_content = sqf_parse(file_content)
+        all_variables = list(set(str(var) for var in parsed_content.get_all_tokens() if isinstance(var, Variable)))
+        _out = {'bis': [],
+                'a3a': []}
+        for variable in all_variables:
+            if variable.startswith('BIS_'):
+                _out['bis'].append(variable)
+            elif variable.startswith('A3A_'):
+                _out['a3a'].append(variable)
+        return _out
 
     @ asynccontextmanager
     async def _make_other_source_code_images(self, scode: str):

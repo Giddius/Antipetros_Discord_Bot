@@ -131,6 +131,9 @@ class AntiPetrosBaseCommandSchema(Schema):
     parent = fields.Nested(lambda: AntiPetrosBaseCommandSchema(), default=None)
     categories = fields.Method('cast_categories')
 
+    class Meta:
+        additional = ('_old_data', 'docstring')
+
     def cast_categories(self, obj):
         return obj.categories.serialize()
 
