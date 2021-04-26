@@ -169,8 +169,8 @@ class AioGeneralStorageSQLite:
             category = os.path.basename(os.path.dirname(rel_path))
             if category not in ['dev_cogs']:
                 categories_data.append((category, category))
-                cogs_data.append((str(cog), str(cog), cog.config_name, cog.description, category, rel_path))
-                await asyncio.sleep(0)
+                cogs_data.append(await asyncio.sleep(0, (str(cog), str(cog), cog.config_name, cog.description, category, rel_path)))
+
         await self.db.aio_write('insert_cog_category', categories_data)
         await self.db.aio_write('insert_cog', cogs_data)
 
@@ -205,8 +205,8 @@ class AioGeneralStorageSQLite:
                 params.append(attr_value)
             # await self.insert_image(name, await command.get_source_code_image())
             params.append(name)
-            commands_data.append(tuple(params))
-            await asyncio.sleep(0)
+            commands_data.append(await asyncio.sleep(0, tuple(params)))
+
         await self.db.aio_write('insert_command', commands_data)
 
     @universal_log_profiler
@@ -243,7 +243,7 @@ class AioGeneralStorageSQLite:
             created_at = text_channel.created_at
             category_id = text_channel.category.id
             topic = text_channel.topic
-            text_channels_data.append((_id, name, position, created_at, category_id, topic, False))
+            text_channels_data.append(await asyncio.sleep(0, (_id, name, position, created_at, category_id, topic, False)))
             await asyncio.sleep(0)
         await self.db.aio_write("insert_text_channel", text_channels_data)
 
@@ -255,8 +255,8 @@ class AioGeneralStorageSQLite:
             name = category_channel.name
             position = category_channel.position
             created_at = category_channel.created_at
-            category_channels_data.append((_id, name, position, created_at, False))
-            await asyncio.sleep(0)
+            category_channels_data.append(await asyncio.sleep(0, (_id, name, position, created_at, False)))
+
         await self.db.aio_write("insert_category_channel", category_channels_data)
 
     @universal_log_profiler

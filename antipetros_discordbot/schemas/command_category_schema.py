@@ -110,32 +110,16 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class AntiPetrosBaseCommandSchema(Schema):
-    name = fields.Str(required=True)
-    aliases = fields.List(fields.Str())
-    enabled = fields.Bool()
-    hidden = fields.Bool()
-    help = fields.Str()
-    brief = fields.Str()
-    description = fields.Str()
-    short_doc = fields.Str()
-    usage = fields.Str()
-    signature = fields.Str()
-    example = fields.Str()
-    gif = fields.Raw()
-    github_link = fields.Str()
-    allowed_channels = fields.List(fields.Str())
-    allowed_roles = fields.List(fields.Str())
-    allowed_in_dms = fields.Bool()
-    allowed_members = fields.List(fields.Str())
-    parent = fields.Nested(lambda: AntiPetrosBaseCommandSchema(), default=None)
-    categories = fields.List(fields.Nested('CommandCategorySchema', exclude=('commands',)))
+class CommandCategorySchema(Schema):
+
+    commands = fields.List(fields.Nested("AntiPetrosBaseCommandSchema", exclude=('categories',)))
 
     class Meta:
-        additional = ('_old_data', 'docstring')
-
+        additional = ('name', 'docstring')
 
 # region[Main_Exec]
+
+
 if __name__ == '__main__':
     pass
 

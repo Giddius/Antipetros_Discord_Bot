@@ -236,7 +236,7 @@ class CommunityServerInfo:
         return await a2s.ainfo(self.query_full_address, encoding=self.encoding)
 
     async def get_rules(self):
-        return await a2s.arules(self.query_full_address, encoding=self.encoding)
+        return await a2s.arules(self.query_full_address)
 
     async def get_players(self):
         return await a2s.aplayers(self.query_full_address, encoding=self.encoding)

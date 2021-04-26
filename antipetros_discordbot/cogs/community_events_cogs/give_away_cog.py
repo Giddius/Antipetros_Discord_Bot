@@ -155,6 +155,15 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
         except discord.errors.NotFound:
             pass
 
+    @check_give_away_ended_loop.error
+    async def check_give_away_ended_loop_error_handler(self, error):
+        log.error(error, exc_info=True)
+
+    @clean_emojis_from_reaction.error
+    async def clean_emojis_from_reaction_error_handler(self, error):
+        log.error(error, exc_info=True)
+
+
 # endregion [Loops]
 
 # region [Listener]

@@ -319,7 +319,6 @@ class HelpCog(AntiPetrosBaseCog):
     @tasks.loop(minutes=15, reconnect=True)
     async def update_current_cogs_and_commands_loop(self):
         if self.ready is False:
-            await asyncio.sleep(15)
             return
 
         for refresh_task in self.refresh_tasks:

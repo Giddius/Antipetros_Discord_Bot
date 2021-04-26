@@ -39,12 +39,12 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, auto_meta_info_group
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, auto_meta_info_group, CommandCategory
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.auxiliary_classes.for_cogs.required_filesystem_item import RequiredFolder, RequiredFile
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
-
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -77,7 +77,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class AntistasiLogWatcherCog(AntiPetrosBaseCog):
+class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.TEAMTOOLS | CommandCategory.ADMINTOOLS}):
     """
     Different interactions with saved Antistasi Community Server Logs. Works by connecting to and interacting with the Online Storage where the logs are saved.
     """

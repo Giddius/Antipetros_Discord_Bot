@@ -75,7 +75,7 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-DATA_COLLECT_INTERVALL = 120 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 600  # seconds
+DATA_COLLECT_INTERVALL = 60 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 600  # seconds
 
 # endregion[Constants]
 
@@ -128,10 +128,15 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
     async def on_ready_setup(self):
         _ = psutil.cpu_percent(interval=None)
         self.latency_measure_loop.start()
+        await asyncio.sleep(2)
         self.memory_measure_loop.start()
+        await asyncio.sleep(2)
         self.cpu_measure_loop.start()
+        await asyncio.sleep(2)
         self.profile_info_from_logs.start()
-        await asyncio.sleep(5)
+        await asyncio.sleep(2)
+        await self.format_graph(10)
+        plt.style.use('dark_background')
         self.ready = True
 
     @universal_log_profiler
@@ -326,18 +331,28 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
     async def format_graph(self, amount_data: int):
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
         if amount_data <= 3600 // DATA_COLLECT_INTERVALL:
-            plt.gca().xaxis.set_major_locator(mdates.MinuteLocator(interval=DATA_COLLECT_INTERVALL // 60))
+            main_interval = DATA_COLLECT_INTERVALL / (60 / amount_data)
+            min_interval = main_interval / 10
+            plt.gca().xaxis.set_major_locator(mdates.MinuteLocator(interval=round(main_interval)))
+            plt.gca().xaxis.set_minor_locator(mdates.MinuteLocator(interval=2))
         else:
             plt.gca().xaxis.set_major_locator(mdates.HourLocator(interval=1))
         plt.rcParams["font.family"] = "Consolas"
-        plt.rc('xtick.major', size=6, pad=10)
-        plt.rc('xtick', labelsize=9)
+        plt.rcParams['savefig.facecolor'] = "#2f3136"
+        plt.rcParams['figure.facecolor'] = "#2f3136"
+        plt.rcParams['axes.facecolor'] = "#2f3136"
+        plt.rcParams['patch.facecolor'] = "#2f3136"
 
-    @universal_log_profiler
+        plt.rc('xtick.major', size=6, pad=10)
+        plt.rc("xtick.minor", width=0.25, size=3)
+        plt.rc('xtick', labelsize=10)
+
+    @ universal_log_profiler
     async def make_graph(self, data, typus: str, save_to=None):
         plt.style.use('dark_background')
 
-        await asyncio.wait_for(self.format_graph(len(data)), timeout=10)
+        await self.format_graph(len(data))
+
         x = [item.date_time for item in data]
 
         if typus == 'latency':
@@ -392,20 +407,20 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
             plt.savefig(save_to, format='png')
 
         with BytesIO() as image_binary:
-            plt.savefig(image_binary, format='png')
+            plt.savefig(image_binary, format='png', dpi=COGS_CONFIG.retrieve(self.config_name, 'report_image_dpi', typus=int, direct_fallback=150))
             plt.close()
             image_binary.seek(0)
 
             return discord.File(image_binary, filename=f'{typus}graph.png'), f"attachment://{typus}graph.png"
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def convert_memory_size(self, in_bytes, new_unit: DataSize, annotate: bool = False, extra_digits=2):
 
         if annotate is False:
             return round(int(in_bytes) / new_unit.value, ndigits=extra_digits)
         return str(round(int(in_bytes) / new_unit.value, ndigits=extra_digits)) + ' ' + new_unit.short_name
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def get_time_from_max_y(self, data, max_y, typus):
         for item in data:
             if typus == 'memory':

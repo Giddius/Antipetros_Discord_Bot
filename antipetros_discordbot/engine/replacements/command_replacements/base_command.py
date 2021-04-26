@@ -37,7 +37,7 @@ from time import time, sleep
 from pprint import pprint, pformat
 from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
 from timeit import Timer
-from typing import Union, Callable, Iterable
+from typing import Union, Callable, Iterable, TYPE_CHECKING, List, Tuple, Set, Dict, Mapping, Any, Awaitable, Optional
 from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
 from zipfile import ZipFile
 from datetime import tzinfo, datetime, timezone, timedelta
@@ -96,6 +96,7 @@ from antipetros_discordbot.utility.data import COG_CHECKER_ATTRIBUTE_NAMES
 from antipetros_discordbot.utility.checks import dynamic_enabled_checker
 from antipetros_discordbot.schemas import AntiPetrosBaseCommandSchema
 from antipetros_discordbot.utility.general_decorator import async_log_profiler
+from antipetros_discordbot.engine.replacements.command_replacements.helper.command_category import CommandCategory
 # endregion[Imports]
 
 # region [TODO]
@@ -129,7 +130,6 @@ class AntiPetrosBaseCommand(commands.Command):
     meta_data_provider = JsonMetaDataProvider()
     alias_data_provider = JsonAliasProvider()
     source_code_data_provider = SourceCodeProvider()
-    category_provider = JsonCategoryProvider()
     bot_mention_placeholder = '@BOTMENTION'
 
     schema = AntiPetrosBaseCommandSchema()
@@ -139,12 +139,10 @@ class AntiPetrosBaseCommand(commands.Command):
         self.extra_aliases = kwargs.pop("aliases", None)
         self.data_getters = {'meta_data': self.meta_data_provider.get_auto_provider(self),
                              'alias': self.alias_data_provider.get_auto_provider(self),
-                             'source_code': self.source_code_data_provider.get_auto_provider(self),
-                             'category': self.category_provider.get_auto_provider(self)}
+                             'source_code': self.source_code_data_provider.get_auto_provider(self)}
 
         self.data_setters = {'meta_data': self.meta_data_provider.set_auto_provider(self),
-                             'alias': self.alias_data_provider.set_auto_provider(self),
-                             'category': self.category_provider.set_auto_provider(self)}
+                             'alias': self.alias_data_provider.set_auto_provider(self)}
 
         self.data_removers = {'alias': self.alias_data_provider.remove_auto_provider(self)}
         self._old_data = {'help': None,
@@ -153,24 +151,20 @@ class AntiPetrosBaseCommand(commands.Command):
                           'short_doc': None,
                           'usage': None,
                           'signature': None}
-        self.categories = kwargs.get('categories')
+        self.categories = []
+        self._handle_category_kwargs(kwargs.get('categories'))
         super().__init__(func, **kwargs)
         self.module_object = sys.modules[func.__module__]
+
+    def _handle_category_kwargs(self, categories: List[CommandCategory]):
+        for category in categories:
+            category.add_command(self)
 
     async def set_alias(self, new_alias: str):
         self.data_setters['alias'](new_alias)
 
     async def get_source_code_image(self):
         return await asyncio.to_thread(self.data_getters['source_code'], typus='image')
-
-    @property
-    def categories(self):
-        return self.data_getters['category']()
-
-    @categories.setter
-    def categories(self, value):
-        if value is not None:
-            self.data_setters['category'](value)
 
     @property
     def enabled(self):

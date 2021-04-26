@@ -142,6 +142,9 @@ class GithubCog(AntiPetrosBaseCog):
         super().__init__(bot)
         self.github_access = Github(os.getenv('GITHUB_TOKEN'))
         self.antistasi_repo = self.github_access.get_repo(self.antistasi_repo_identifier)
+        self._all_repo_files = {}
+        self.last_updated_files = None
+        self.ready = False
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -167,7 +170,9 @@ class GithubCog(AntiPetrosBaseCog):
 # region [Setup]
     @universal_log_profiler
     async def on_ready_setup(self):
-
+        self.check_github_update_loop.start()
+        await self._load_all_repo_files()
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     @universal_log_profiler
@@ -178,6 +183,17 @@ class GithubCog(AntiPetrosBaseCog):
 # endregion [Setup]
 
 # region [Loops]
+
+    @tasks.loop(minutes=10, reconnect=True)
+    async def check_github_update_loop(self):
+        if self.ready is False:
+            return
+        if self.last_updated_files is None:
+            return
+        if self.antistasi_repo.updated_at > self.last_updated_files:
+            log.debug(ic.format(self.antistasi_repo.updated_at))
+            log.debug(ic.format(self.last_updated_files))
+            await self._load_all_repo_files()
 
 
 # endregion [Loops]
@@ -190,42 +206,44 @@ class GithubCog(AntiPetrosBaseCog):
 # region [Commands]
 
     @auto_meta_info_command()
-    async def get_file(self, ctx: commands.Context, file_name: str, branch: str = None):
+    async def get_file(self, ctx: commands.Context, file_name: str):
         async with ctx.typing():
-            found_file = None
-            branch = 'unstable' if branch is None else branch
-            async for file in self.all_repo_files(branch_name=branch):
-                if file.name.casefold() == file_name.casefold():
-                    found_file = file
-                    content = await self.download_to_string(file)
-                    break
+
+            found_file = self._all_repo_files.get(file_name.casefold(), None)
             if found_file is None:
-                await ctx.send(f"no file named `{file_name}` in branch `{branch}`")
+                await ctx.send(f"no file named `{file_name}` in branch `unstable`")
                 return
+            content = await self.download_to_string(found_file)
             function_calls = await self._find_function_calls(content)
 
             a3a_function_calls_value = '\n'.join(f"`{item}`" for item in function_calls.get('a3a'))
-            a3a_function_calls_value = a3a_function_calls_value[:950]
+            if len(a3a_function_calls_value) >= 950:
+                a3a_function_calls_value = a3a_function_calls_value[:950].rstrip('`') + '...`'
             if not a3a_function_calls_value:
                 a3a_function_calls_value = 'None'
 
             bis_function_calls_value = '\n'.join(f"`{item}`" for item in function_calls.get('bis'))
-            bis_function_calls_value = bis_function_calls_value[:950]
+            if len(bis_function_calls_value) >= 95:
+                bis_function_calls_value = bis_function_calls_value[:950].rstrip('`') + '...`'
             if not bis_function_calls_value:
                 bis_function_calls_value = 'None'
 
-            comments = await self._find_comments(content)
-            comments_value = '\n'.join(f"`{item}`" for item in comments)
-            comments_value = comments_value[:950]
+            comments = list(await self._find_comments(content))
+            comments_value = comments[0] if 'params:' in comments[0].casefold() else ''
+            if len(comments_value) >= 950:
+                comments_value = comments_value[:950] + '...'
             if not comments_value:
                 comments_value = 'None'
+            else:
+                comments_value = '\n'.join(line.strip('/*') for line in comments_value.splitlines())
+                comments_value = "```fix\n" + dedent(comments_value) + '\n```'
 
             async with self._make_other_source_code_images(content) as source_image_binary:
 
                 embed_data = await self.bot.make_generic_embed(title=file_name,
                                                                url=found_file.html_url,
                                                                description=embed_hyperlink("link to file", found_file.html_url),
-                                                               image=discord.File(source_image_binary, filename=file_name.split(".")[0] + '.png'),
+                                                               thumbnail=discord.File(source_image_binary, filename=file_name.split(".")[0] + '.png'),
                                                                fields=[self.bot.field_item(name='A3A Function Calls', value=a3a_function_calls_value),
                                                                        self.bot.field_item(name='BIS Function Calls', value=bis_function_calls_value),
                                                                        self.bot.field_item(name='Comments', value=comments_value)])
@@ -310,14 +328,29 @@ class GithubCog(AntiPetrosBaseCog):
 
     @universal_log_profiler
     async def all_repo_files(self, branch_name: str = 'unstable', folder: str = ""):
-        for item in await self.bot.execute_in_thread(self.antistasi_repo.get_contents, folder, branch_name):
+        for item in await asyncio.to_thread(self.antistasi_repo.get_contents, folder, branch_name):
             if 'jeroenarsenal' not in item.path.casefold() and 'upsmon' not in item.path.casefold():
                 if item.type == 'dir':
                     async for file in self.all_repo_files(branch_name=branch_name, folder=item.path):
                         yield file
                 else:
-                    yield item
+                    yield await asyncio.sleep(0, item)
 
+    async def _load_all_files_from_branch(self):
+
+        try:
+            async for file in self.all_repo_files():
+                self._all_repo_files[file.name.casefold()] = file
+        except Exception as error:
+            log.error(error, exc_info=True)
+        log.debug("finished loading github branch  files")
+
+    @universal_log_profiler
+    async def _load_all_repo_files(self):
+        self._all_repo_files = {}
+
+        asyncio.create_task(self._load_all_files_from_branch())
+        self.last_updated_files = datetime.now()
 
 # endregion [HelperMethods]
 
@@ -326,8 +359,8 @@ class GithubCog(AntiPetrosBaseCog):
     def cog_check(self, ctx):
         return True
 
-    async def cog_command_error(self, ctx, error):
-        pass
+    # async def cog_command_error(self, ctx, error):
+    #     pass
 
     async def cog_before_invoke(self, ctx):
         pass
@@ -336,6 +369,7 @@ class GithubCog(AntiPetrosBaseCog):
         pass
 
     def cog_unload(self):
+        self.check_github_update_loop.stop()
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):

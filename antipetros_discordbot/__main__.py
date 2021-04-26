@@ -299,7 +299,7 @@ def run(token, nextcloud_username, nextcloud_password):
     main(token=str(token), nextcloud_username=nextcloud_username, nextcloud_password=nextcloud_password)
 
 
-def main(token: str, nextcloud_username: str = None, nextcloud_password: str = None):
+def main(token: str, nextcloud_username: str = None, nextcloud_password: str = None, ipc_key: str = None):
     """
     Starts the Antistasi Discord Bot 'AntiPetros'.
 
@@ -331,9 +331,11 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
     if nextcloud_password is not None:
         os.environ['NEXTCLOUD_PASSWORD'] = nextcloud_password
     os.environ['INFO_RUN'] = "0"
-    anti_petros_bot = AntiPetrosBot(token=token)
 
-    anti_petros_bot.ipc.start()
+    anti_petros_bot = AntiPetrosBot(token=token, ipc_key=ipc_key)
+
+    if BASE_CONFIG.retrieve('ipc', "use_ipc_server", typus=bool, direct_fallback=False) is True:
+        anti_petros_bot.ipc.start()
     anti_petros_bot.run()
 
     log.info('~+~' * 20 + ' finished shutting down! ' + '~+~' * 20)
@@ -346,8 +348,9 @@ if __name__ == '__main__':
     if os.getenv('IS_DEV') == 'true':
         load_dotenv('token.env')
         load_dotenv("nextcloud.env")
+        load_dotenv('ipc.env')
 
-        main(token=os.getenv('ANTIDEVTROS_TOKEN'), nextcloud_username=os.getenv('NX_USERNAME'), nextcloud_password=os.getenv("NX_PASSWORD"))
+        main(token=os.getenv('ANTIDEVTROS_TOKEN'), nextcloud_username=os.getenv('NX_USERNAME'), nextcloud_password=os.getenv("NX_PASSWORD"), ipc_key=os.getenv('IPC_SECRET_KEY'))
     else:
         main()
 

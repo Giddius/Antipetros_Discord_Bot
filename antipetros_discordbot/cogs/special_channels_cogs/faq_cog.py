@@ -121,7 +121,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         FaqItem.question_parse_emoji = self.q_emoji
         FaqItem.answer_parse_emoji = self.a_emoji
         FaqItem.config_name = self.config_name
-        asyncio.create_task(self.collect_raw_faq_data())
+        await self.collect_raw_faq_data()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 

@@ -147,6 +147,7 @@ class InfoCog(AntiPetrosBaseCog):
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
+        self.time_sorted_guild_member_ids = []
         self.ready = False
         glog.class_init_notification(log, self)
 
@@ -183,6 +184,9 @@ class InfoCog(AntiPetrosBaseCog):
 # region [Setup]
     @universal_log_profiler
     async def on_ready_setup(self):
+        if self.bot.antistasi_guild.chunked is False:
+            await self.bot.antistasi_guild.chunk(cache=True)
+        asyncio.create_task(self.make_time_sorted_guild_member_id_list())
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -201,9 +205,21 @@ class InfoCog(AntiPetrosBaseCog):
 # region [Listener]
 
 
+    @commands.Cog.listener(name='on_member_join')
+    @universal_log_profiler
+    async def update_time_sorted_member_ids_join(self, member):
+        await self.make_time_sorted_guild_member_id_list()
+
+    @commands.Cog.listener(name='on_member_remove')
+    @universal_log_profiler
+    async def update_time_sorted_member_ids_remove(self, member):
+        await self.make_time_sorted_guild_member_id_list()
+
+
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
@@ -220,7 +236,7 @@ class InfoCog(AntiPetrosBaseCog):
                 "Current Latency": (f"{round(self.bot.latency * 1000)} ms", True),
                 "Created By": (self.bot.creator.member_object.mention, True),
                 "Github Link": (embed_hyperlink('Github Repo', self.bot.github_url), True),
-                "Wiki": (embed_hyperlink('Github Wiki', self.bot.wiki_url), True),
+                "Wiki": (embed_hyperlink('Github Wiki', self.bot.github_wiki_url), True),
                 "Invocations since launch": (await self.bot.get_amount_invoked_overall(), True),
                 "Roles": (', '.join(role.mention for role in self.bot.all_bot_roles if "everybody" not in role.name.casefold()), False),
                 }
@@ -392,6 +408,14 @@ class InfoCog(AntiPetrosBaseCog):
 # region [HelperMethods]
 
     @universal_log_profiler
+    async def make_time_sorted_guild_member_id_list(self):
+        if self.bot.antistasi_guild.chunked is False:
+            await self.bot.antistasi_guild.chunk(cache=True)
+        all_member_ids_and_time = [await asyncio.sleep(0, (member.id, member.joined_at)) for member in self.bot.antistasi_guild.members if member is not self.bot.antistasi_guild.owner]
+        sorted_member_ids_and_time = await asyncio.to_thread(sorted, all_member_ids_and_time, key=lambda x: x[1])
+        self.time_sorted_guild_member_ids = sorted_member_ids_and_time
+
+    @universal_log_profiler
     async def _get_command_gif(self, command_name):
         gif_name = f"{command_name}_command.gif"
         for file in os.scandir(APPDATA['gifs']):
@@ -464,13 +488,14 @@ class InfoCog(AntiPetrosBaseCog):
 
     @universal_log_profiler
     async def _oldest_youngest_member(self, get_oldest=True):
-        all_members_and_date = [(member, member.joined_at) for member in self.bot.antistasi_guild.members if member is not self.bot.antistasi_guild.owner]
-        oldest_member_and_date = await self.bot.execute_in_thread(partial(sorted, all_members_and_date, key=lambda x: x[1]))
+
         if get_oldest is True:
-            oldest_member_and_date = oldest_member_and_date[0]
+            oldest_member_and_date = self.time_sorted_guild_member_ids[0]
         else:
-            oldest_member_and_date = oldest_member_and_date[-1]
-        return f'{oldest_member_and_date[0].mention} -> {oldest_member_and_date[0].name}, joined at {oldest_member_and_date[1].strftime("%H:%M:%S on %a the %Y.%b.%d")}'
+            oldest_member_and_date = self.time_sorted_guild_member_ids[-1]
+        member = await self.bot.retrieve_antistasi_member(oldest_member_and_date[0])
+        join_time = oldest_member_and_date[1]
+        return f'{member.mention} -> {member.name}, joined at {join_time.strftime("%H:%M:%S on %a the %Y.%b.%d")}'
 
     @universal_log_profiler
     async def most_used_channel(self):

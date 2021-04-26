@@ -146,7 +146,8 @@ FOLDER = {'docs': pathmaker(THIS_FILE_DIR, 'docs'),
           'docs_raw_text': pathmaker(THIS_FILE_DIR, 'docs', 'resources', 'raw_text'),
           'scratches': pathmaker(THIS_FILE_DIR, 'tools', 'scratches'),
           'archived_scratches': pathmaker(THIS_FILE_DIR, 'misc', 'archive', 'archived_scratches'),
-          'cogs': pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'cogs')}
+          'cogs': pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'cogs'),
+          'venv_setup_settings': pathmaker(THIS_FILE_DIR, 'tools', 'venv_setup_settings')}
 
 FILES = {'bot_info.json': pathmaker(FOLDER.get('docs_data'), 'bot_info.json'),
          'links_data.json': pathmaker(FOLDER.get('docs_data'), 'links_data.json'),
@@ -917,15 +918,17 @@ def process_pip_freeze_data(in_data: str):
     return _out
 
 
-@task
+@task()
 def pin_reqs(c):
     req_line_regex = re.compile(r"\=\=|\>\=|\<\=|\~\=|\!\=", re.IGNORECASE)
     req_files = []
     for file in os.scandir(FOLDER.get('venv_setup_settings')):
         if file.is_file() and file.name.startswith('required_') and 'personal_packages' not in file.name.casefold() and not 'from_github' in file.name.casefold():
             req_files.append(pathmaker(file.path))
+    pprint(req_files)
     pip_freeze_data = process_pip_freeze_data(activator_run(c, 'pip freeze').stdout)
     for req_file in req_files:
+        print(req_file)
         new_req_file_content = []
         for line in readit(req_file).splitlines():
             line = line.casefold()

@@ -71,7 +71,6 @@ class AntiPetrosBot(commands.Bot):
     # region [ClassAttributes]
 
     creator = CreatorMember('Giddi', 576522029470056450, None, None)
-    executor = ThreadPoolExecutor(os.cpu_count(), thread_name_prefix='Bot_Thread')
 
     discord_admin_cog_import_path = "antipetros_discordbot.cogs.discord_admin_cogs.discord_admin_cog"
     bot_feature_suggestion_folder = APPDATA["bot_feature_suggestion_data"]
@@ -83,7 +82,7 @@ class AntiPetrosBot(commands.Bot):
 
 # endregion[ClassAttributes]
 
-    def __init__(self, token=None, is_test=False, ** kwargs):
+    def __init__(self, token: str = None, is_test: bool = False, ipc_key: str = None, ** kwargs):
 
         # region [Init]
 
@@ -94,6 +93,7 @@ class AntiPetrosBot(commands.Bot):
                          activity=self.activity_from_config(),
                          intents=self.get_intents(),
                          fetch_offline_members=True,
+                         member_cache_flags=discord.MemberCacheFlags.all(),
                          help_command=None,
                          strip_after_prefix=True,
                          ** kwargs)
@@ -109,7 +109,11 @@ class AntiPetrosBot(commands.Bot):
         self.current_day = datetime.utcnow().day
         self.clients_to_close = []
         self.used_startup_message = None
-        self.ipc = ipc.Server(self, secret_key=os.getenv('IPC_SECRET_KEY'), host=BASE_CONFIG.retrieve('ipc', 'host', typus=str), port=BASE_CONFIG.retrieve('ipc', 'port', typus=int))
+        self.ipc_key = ipc_key
+        if BASE_CONFIG.retrieve('ipc', "use_ipc_server", typus=bool, direct_fallback=False) is True:
+            if self.ipc_key is None:
+                raise AttributeError("ipc_key is missing")
+            self.ipc = ipc.Server(self, secret_key=self.ipc_key, host=BASE_CONFIG.retrieve('ipc', 'host', typus=str), port=BASE_CONFIG.retrieve('ipc', 'port', typus=int))
 
         user_not_blacklisted(self, log)
         if is_test is False:
@@ -367,9 +371,6 @@ class AntiPetrosBot(commands.Bot):
             log.info("retiring troops")
             self.support.retire_subsupport()
 
-            log.info("shutting down executor")
-            self.executor.shutdown()
-
             for session in self.clients_to_close:
                 await session.close()
                 log.info("'%s' was shut down", str(session))
@@ -502,7 +503,7 @@ class AntiPetrosBot(commands.Bot):
         await ctx.send(_out)
 
     async def execute_in_thread(self, func, *args, **kwargs):
-        return await self.loop.run_in_executor(self.executor, func, *args, **kwargs)
+        return await asyncio.to_thread(func, *args, **kwargs)
 
     async def save_feature_suggestion_extra_data(self, data_name, data_content):
         path = pathmaker(self.bot_feature_suggestion_folder, data_name)
