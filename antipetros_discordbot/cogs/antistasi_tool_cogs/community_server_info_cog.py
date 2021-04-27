@@ -42,7 +42,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
@@ -150,7 +150,7 @@ class StructReader(object):
         self.offset += n
 
 
-class CommunityServerInfoCog(AntiPetrosBaseCog):
+class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.DEVTOOLS}):
     """
     soon
     """
@@ -253,7 +253,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog):
 
 # region [Commands]
 
-    @auto_meta_info_command(aliases=['server', 'servers'])
+
+    @auto_meta_info_command(aliases=['server', 'servers', 'server?', 'servers?'], categories=CommandCategory.GENERAL)
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 60, commands.BucketType.channel)
     async def current_online_server(self, ctx: commands.Context):
@@ -320,7 +321,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog):
     #     rules = await server_holder.get_rules()
     #     await ctx.send("```json\n" + str(rules) + "\n```")
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(aliases=['players', 'players?'], categories=CommandCategory.GENERAL)
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 120, commands.BucketType.member)
     async def current_players(self, ctx: commands.Context, *, server: str = "mainserver_1"):
@@ -364,7 +365,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog):
         await asyncio.sleep(120)
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(categories=CommandCategory.ADMINTOOLS)
     @allowed_channel_and_allowed_role()
     @log_invoker(log, 'critical')
     async def exclude_from_server_status_notification(self, ctx: commands.Context, server_name: str):
@@ -377,7 +378,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog):
         await self._add_to_server_status_change_exclusions(server_name)
         await ctx.send(f'Excluded {server_name} from status change notifications')
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(categories=CommandCategory.ADMINTOOLS)
     @allowed_channel_and_allowed_role()
     @log_invoker(log, 'critical')
     async def undo_exclude_from_server_status_notification(self, ctx: commands.Context, server_name: str):
@@ -434,6 +435,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

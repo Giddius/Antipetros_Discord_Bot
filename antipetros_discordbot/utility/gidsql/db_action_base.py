@@ -104,9 +104,9 @@ class AioGidSqliteActionBase:
 
         raise sqlite.Error(error)
 
-    async def _execute_pragmas(self, in_cursor):
+    async def _execute_pragmas(self, in_connection):
         if self.pragmas not in [None, '', []]:
-            await in_cursor.executescript(self.pragmas)
+            await in_connection.executescript(self.pragmas)
             log.debug("Executed pragmas '%s' successfully", self.pragmas)
 
     def __repr__(self):

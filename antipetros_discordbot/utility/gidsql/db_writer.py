@@ -92,42 +92,40 @@ class AioGidSQLiteWriter(AioGidSqliteActionBase):
         glog.class_init_notification(log, self)
 
     async def write(self, sql_phrase: str, variables: Union[str, tuple, list] = None):
-        conn = await aiosqlite.connect(self.db_loc, isolation_level=None, detect_types=sqlite.PARSE_DECLTYPES)
-        cursor = await conn.cursor()
-        try:
-            await self._execute_pragmas(cursor)
-            if variables is not None:
-                if isinstance(variables, str):
-                    await cursor.execute(sql_phrase, (variables,))
+        # isolation_level=None
+        async with aiosqlite.connect(self.db_loc, detect_types=sqlite.PARSE_DECLTYPES) as conn:
+
+            try:
+                await self._execute_pragmas(conn)
+                if variables is not None:
+                    if isinstance(variables, str):
+                        await conn.execute(sql_phrase, (variables,))
+                        if self.log_execution is True:
+                            _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
+                            _log_args = textwrap.shorten(str(variables), width=200, placeholder='...')
+                            log.debug("Executed sql phrase '%s' with args %s successfully", _log_sql_phrase, _log_args)
+                    elif isinstance(variables, tuple):
+                        await conn.execute(sql_phrase, variables)
+                        if self.log_execution is True:
+                            _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
+                            _log_args = textwrap.shorten(str(variables), width=200, placeholder='...')
+                            log.debug("Executed sql phrase '%s' with args %s successfully", _log_sql_phrase, _log_args)
+                    elif isinstance(variables, list):
+                        await conn.executemany(sql_phrase, variables)
+                        if self.log_execution is True:
+                            _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
+                            _log_args = textwrap.shorten(str(variables), width=200, placeholder='...')
+                            log.debug("ExecutedMany sql phrase from '%s' with arg-iterable %s successfully", _log_sql_phrase, _log_args)
+                else:
+                    await conn.executescript(sql_phrase)
                     if self.log_execution is True:
                         _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
-                        _log_args = textwrap.shorten(str(variables), width=200, placeholder='...')
-                        log.debug("Executed sql phrase '%s' with args %s successfully", _log_sql_phrase, _log_args)
-                elif isinstance(variables, tuple):
-                    await cursor.execute(sql_phrase, variables)
-                    if self.log_execution is True:
-                        _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
-                        _log_args = textwrap.shorten(str(variables), width=200, placeholder='...')
-                        log.debug("Executed sql phrase '%s' with args %s successfully", _log_sql_phrase, _log_args)
-                elif isinstance(variables, list):
-                    await cursor.executemany(sql_phrase, variables)
-                    if self.log_execution is True:
-                        _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
-                        _log_args = textwrap.shorten(str(variables), width=200, placeholder='...')
-                        log.debug("ExecutedMany sql phrase from '%s' with arg-iterable %s successfully", _log_sql_phrase, _log_args)
-            else:
-                await cursor.executescript(sql_phrase)
-                if self.log_execution is True:
-                    _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
-                    log.debug("ExecutedScript sql phrase '%s' successfully", _log_sql_phrase)
-            await conn.commit()
-        except sqlite.Error as error:
-            _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
-            _log_args = textwrap.shorten(str(variables), width=200, placeholder='...')
-            await self._handle_error(error, _log_sql_phrase, _log_args)
-        finally:
-            await cursor.close()
-            await conn.close()
+                        log.debug("ExecutedScript sql phrase '%s' successfully", _log_sql_phrase)
+                await conn.commit()
+            except sqlite.Error as error:
+                _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
+                _log_args = textwrap.shorten(str(variables), width=200, placeholder='...')
+                await self._handle_error(error, _log_sql_phrase, _log_args)
 
     async def create_aggregate(self, aggregate_name: str, num_params: int, aggregate_class):
         con = await aiosqlite.connect(self.db_loc, isolation_level=None, detect_types=sqlite.PARSE_DECLTYPES)

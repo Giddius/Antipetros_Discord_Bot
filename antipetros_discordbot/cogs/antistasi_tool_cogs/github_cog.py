@@ -66,7 +66,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
@@ -114,7 +114,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class GithubCog(AntiPetrosBaseCog):
+class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.DEVTOOLS}):
     """
     WiP
     """
@@ -205,6 +205,7 @@ class GithubCog(AntiPetrosBaseCog):
 
 # region [Commands]
 
+
     @auto_meta_info_command()
     async def get_file(self, ctx: commands.Context, file_name: str):
         async with ctx.typing():
@@ -283,7 +284,6 @@ class GithubCog(AntiPetrosBaseCog):
 # endregion [DataStorage]
 
 # region [HelperMethods]
-
 
     @universal_log_profiler
     async def _find_comments(self, file_content: str):

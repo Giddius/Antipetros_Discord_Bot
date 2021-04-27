@@ -19,7 +19,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import make_config_name
-from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, allowed_requester, command_enabled_checker, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -28,7 +28,7 @@ from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_give_away_cog import GiveAwayEvent
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 
 if TYPE_CHECKING:
@@ -86,7 +86,6 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 
 # region [Init]
 
-
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
@@ -129,7 +128,6 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 
 # region [Loops]
 
-
     @tasks.loop(seconds=30, reconnect=True)
     async def check_give_away_ended_loop(self):
         if not await self.give_aways:
@@ -167,6 +165,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 # endregion [Loops]
 
 # region [Listener]
+
 
     @commands.Cog.listener()
     @universal_log_profiler
@@ -304,7 +303,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
                                                          channel=ctx.channel,
                                                          message=give_away_message))
 
-    @ auto_meta_info_command(categories=[CommandCategory.NOTIMPLEMENTED])
+    @ auto_meta_info_command(hidden=True, enabled=False)
     @ allowed_channel_and_allowed_role(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def abort_give_away(self, ctx):
@@ -314,7 +313,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
         await self.bot.not_implemented(ctx)
         return
 
-    @ auto_meta_info_command(categories=[CommandCategory.NOTIMPLEMENTED])
+    @ auto_meta_info_command(hidden=True, enabled=False)
     @ allowed_channel_and_allowed_role(in_dm_allowed=False)
     @ log_invoker(logger=log, level="info")
     async def finish_give_away(self, ctx):
@@ -338,6 +337,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 # endregion [Embeds]
 
 # region [HelperMethods]
+
 
     @universal_log_profiler
     async def add_give_away(self, give_away_event):

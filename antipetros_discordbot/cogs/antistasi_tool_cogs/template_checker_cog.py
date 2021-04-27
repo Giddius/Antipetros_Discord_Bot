@@ -38,7 +38,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
@@ -77,7 +77,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class TemplateCheckerCog(AntiPetrosBaseCog):
+class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.DEVTOOLS}):
     """
     soon
     """
@@ -103,6 +103,7 @@ class TemplateCheckerCog(AntiPetrosBaseCog):
 
 # region [Setup]
 
+
     @universal_log_profiler
     async def on_ready_setup(self):
 
@@ -126,6 +127,7 @@ class TemplateCheckerCog(AntiPetrosBaseCog):
 # endregion [Listener]
 
 # region [Commands]
+
 
     @universal_log_profiler
     async def correct_template(self, template_content, item_data):

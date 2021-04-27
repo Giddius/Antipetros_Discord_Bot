@@ -62,7 +62,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker, Seperators, SPECIAL_SPACE
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink, make_box
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
@@ -70,7 +70,7 @@ from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.converters import FlagArg, HelpCategoryConverter, CogConverter, CheckConverter, CommandConverter, DateOnlyConverter, LanguageConverter, DateTimeFullConverter, date_time_full_converter_flags, CategoryConverter
 from antipetros_discordbot.utility.exceptions import ParameterError
 
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup, AntiPetrosBaseContext
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler, is_refresh_task
 
 if TYPE_CHECKING:
@@ -130,8 +130,6 @@ def filter_with_user_role(owner_ids: List[int], in_member: discord.Member, only_
         if in_member.id in owner_ids:
             is_owner = True
         if isinstance(in_object, (AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand)):
-            if CommandCategory.NOTIMPLEMENTED in in_object.categories:
-                return False
             if str(in_object.cog) in excluded_cogs:
                 return False
             if only_enabled is True and in_object.enabled is False:
@@ -156,9 +154,7 @@ def filter_with_user_role(owner_ids: List[int], in_member: discord.Member, only_
             else:
                 return True
         elif isinstance(in_object, CommandCategory):
-            if is_owner is True:
-                return True
-            return in_object.visibility_check(role_names)
+            return in_object.visibility_check(in_member)
     return actual_filter
 
 # endregion [Helper]
@@ -228,7 +224,6 @@ class HelpCog(AntiPetrosBaseCog):
 # endregion [Init]
 
 # region [Properties]
-
 
     @property
     @universal_log_profiler
@@ -354,6 +349,7 @@ class HelpCog(AntiPetrosBaseCog):
 # endregion [DataStorage]
 
 # region [Embeds]
+
 
     @universal_log_profiler
     async def help_overview_embed(self, author: Union[discord.Member, discord.User]):
@@ -659,7 +655,6 @@ class HelpCog(AntiPetrosBaseCog):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx: commands.Context):
         return True

@@ -110,7 +110,7 @@ class AntistasiInformer(SubSupportBase):
         return loadjson(self.general_data_file)
 
     @ property
-    def antistasi_guild(self):
+    def antistasi_guild(self) -> discord.Guild:
         guild_id = self.bot.get_guild(BASE_CONFIG.retrieve('general_settings', 'guild_id', typus=int, direct_fallback=None))
         if guild_id is None:
             raise ValueError('You need to set "guild_id" under the section "general_settings" in the config file "base_config.ini"')
@@ -156,7 +156,7 @@ class AntistasiInformer(SubSupportBase):
         return {role.name.casefold(): role for role in self.antistasi_guild.roles}.get(role_name.casefold())
 
     async def retrieve_antistasi_role(self, role_id: int):
-        return {role.id: role for role in self.antistasi_guild.roles}.get(role_id)
+        return {role.id: role for role in await self.antistasi_guild.fetch_roles()}.get(role_id)
 
     def sync_retrieve_antistasi_role(self, role_id: int):
         return {role.id: role for role in self.antistasi_guild.roles}.get(role_id)
@@ -170,6 +170,7 @@ class AntistasiInformer(SubSupportBase):
         return list(set(_out))
 
     async def if_ready(self):
+        await self.antistasi_guild.chunk(cache=True)
         log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self, typus: UpdateTypus):

@@ -61,14 +61,14 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 
 from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 
 if TYPE_CHECKING:
@@ -127,6 +127,7 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 
 # region [Init]
 
+
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
@@ -148,6 +149,7 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 # endregion [Properties]
 
 # region [Setup]
+
 
     @universal_log_profiler
     async def on_ready_setup(self):
@@ -172,6 +174,7 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command(aliases=['eta', "update"])
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
@@ -217,6 +220,7 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 
 # region [HelperMethods]
 
+
     @universal_log_profiler
     async def _spread_out_text(self, text: str):
         return f"\n{ZERO_WIDTH}\n".join(line for line in text.splitlines() if line != '')
@@ -225,7 +229,6 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

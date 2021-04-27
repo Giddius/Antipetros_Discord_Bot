@@ -29,14 +29,14 @@ from antipetros_discordbot.utility.checks import allowed_requester, command_enab
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writejson, bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_config_cog import AddedAliasChangeEvent
 from antipetros_discordbot.utility.converters import CommandConverter
 from antipetros_discordbot.utility.exceptions import ParameterErrorWithPossibleParameter
 
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 
 if TYPE_CHECKING:
@@ -121,6 +121,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
 # region [Setup]
 
+
     @universal_log_profiler
     async def on_ready_setup(self):
         """
@@ -140,7 +141,6 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 # endregion [Setup]
 
 # region [Properties]
-
 
     @property
     @universal_log_profiler
@@ -202,7 +202,6 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
 # region [Commands]
 
-
     @auto_meta_info_command(enabled=True)
     @ owner_or_admin()
     @log_invoker(log, 'info')
@@ -242,7 +241,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         else:
             await self.send_config_file(ctx, config_name)
 
-    @auto_meta_info_command(categories=[CommandCategory.NOTIMPLEMENTED])
+    @auto_meta_info_command()
     @ owner_or_admin()
     @ log_invoker(log, 'critical')
     async def overwrite_config_from_file(self, ctx):
@@ -251,7 +250,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         """
         await self.bot.not_implemented(ctx)
 
-    @ auto_meta_info_command(categories=[CommandCategory.NOTIMPLEMENTED])
+    @ auto_meta_info_command()
     @ owner_or_admin()
     async def change_setting_to(self, ctx, config, section, option, value):
         """
@@ -259,7 +258,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         """
         await self.bot.not_implemented(ctx)
 
-    @ auto_meta_info_command(categories=[CommandCategory.NOTIMPLEMENTED])
+    @ auto_meta_info_command()
     @ owner_or_admin()
     async def show_config_content(self, ctx: commands.Context, config_name: str = "all"):
         """
@@ -267,7 +266,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         """
         await self.bot.not_implemented(ctx)
 
-    @ auto_meta_info_command(categories=[CommandCategory.NOTIMPLEMENTED])
+    @ auto_meta_info_command()
     @ owner_or_admin()
     async def show_config_content_raw(self, ctx: commands.Context, config_name: str = "all"):
         """
@@ -365,6 +364,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 # endregion[Helper]
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

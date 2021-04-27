@@ -88,8 +88,10 @@ from inspect import isabstract, getdoc
 from icecream import ic
 from marshmallow import Schema, fields
 from antipetros_discordbot.schemas import CommandCategorySchema
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.utility.misc import make_config_name
 if TYPE_CHECKING:
-    from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup
+    from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
 # endregion[Imports]
 
 # region [TODO]
@@ -110,22 +112,36 @@ log.info(glog.imported(__name__))
 # endregion[Logging]
 
 # region [Constants]
-
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
 
 
 def subclass_attribute_checker(subclass):
+    def is_new_defined(clazz, method):
+        """
+        https://stackoverflow.com/a/7752095/13989012
+        """
+        if method not in clazz.__dict__:  # Not defined in clazz : inherited
+            return False
+        elif hasattr(super(clazz), method):  # Present in parent : overloaded
+            return True
+        else:  # Not present in parent : newly defined
+            return True
+
     for attr in subclass.needed_attributes:
-        if not hasattr(subclass, attr):
-            raise AttributeError(f"'{subclass}' is missing the necessary attribute '{attr}'!")
+        if not is_new_defined(subclass, attr):
+            raise AttributeError(f"'{subclass}' is missing the necessary new defined attribute '{attr}'!")
     if subclass.docstring == subclass.base_command_category.docstring:
         raise AttributeError(f"'{subclass}' is missing a unique docstring!")
 
 
 class CommandCategoryMeta(type):
     base_command_category = None
+    config_name = None
 
     def __new__(cls, name, bases, dct):
         x = super().__new__(cls, name, bases, dct)
@@ -137,6 +153,7 @@ class CommandCategoryMeta(type):
             x.all_command_categories[x.name.removesuffix('CommandCategory').upper()] = x
 
         else:
+            cls.config_name = make_config_name(x.name)
             cls.base_command_category = x
 
         return x
@@ -159,6 +176,8 @@ class CommandCategoryMeta(type):
         raise NotImplementedError
 
     def __or__(cls, other):
+        if cls is other:
+            return [cls]
         if issubclass(other, cls.base_command_category):
             return [cls, other]
         raise NotImplementedError
@@ -174,12 +193,15 @@ class CommandCategory(metaclass=CommandCategoryMeta):
     Keeps all commands that were added in a subclass in its own 'commands' attribute.
 
     """
+    bot = None
     schema = CommandCategorySchema()
     all_command_categories = {}
     commands = []
     is_abstract = True
     base_command_category = None
-    needed_attributes = ['commands']
+    needed_attributes = ['commands', 'allowed_roles']
+
+    always_exclude_role_ids = frozenset({'449481990513754112', '513318914516844559'})  # ["@everyone", "@admin the stupid old one"]
 
     @classmethod
     @property
@@ -203,6 +225,28 @@ class CommandCategory(metaclass=CommandCategoryMeta):
     def dump(cls):
         return cls.schema.dump(cls)
 
+    @classmethod
+    @property
+    def allowed_roles(cls) -> Set[int]:
+        return set()
+
+    @classmethod
+    @property
+    def extra_roles(cls) -> List[int]:
+        return BASE_CONFIG.retrieve(cls.config_name, f"{cls.name.casefold()}_extra_role_ids", typus=List[int], direct_fallback=[])
+
+    @classmethod
+    def visibility_check(cls, in_member: discord.Member):
+        if cls.is_abstract is True or in_member.bot is True:
+            return False
+        if len(cls.allowed_roles) == 1 and cls.allowed_roles[0] == 'all':
+            return True
+        if in_member.id in cls.bot.owner_ids:
+            return True
+        if any(role.id in cls.allowed_roles for role in in_member.roles):
+            return True
+        return False
+
 
 class GeneralCommandCategory(CommandCategory):
     """
@@ -211,6 +255,11 @@ class GeneralCommandCategory(CommandCategory):
     """
     commands = []
 
+    @classmethod
+    @property
+    def allowed_roles(cls) -> Set[str]:
+        return {'all'}
+
 
 class AdminToolsCommandCategory(CommandCategory):
     """
@@ -218,12 +267,33 @@ class AdminToolsCommandCategory(CommandCategory):
     """
     commands = []
 
+    @classmethod
+    @property
+    def allowed_roles(cls) -> Set[str]:
+        _out = cls.extra_roles
+        for role in cls.bot.antistasi_guild.roles:
+            if role.id not in cls.always_exclude_role_ids and not role.name.casefold().endswith("_subscriber"):
+                if role.permissions.administrator is True and role.is_bot_managed() is False:
+                    _out.append(role.id)
+        return set(_out)
+
 
 class DevToolsCommandCategory(CommandCategory):
     """
     Commands inteded as helpers for the Dev Team
     """
     commands = []
+    dev_regex = re.compile(r"(?:\s|^)dev(?:\s|$)", re.IGNORECASE)
+
+    @classmethod
+    @property
+    def allowed_roles(cls) -> Set[str]:
+        _out = cls.extra_roles
+        for role in cls.bot.antistasi_guild.roles:
+            if role.id not in cls.always_exclude_role_ids and not role.name.casefold().endswith("_subscriber") and role.is_bot_managed() is False:
+                if cls.dev_regex.search(role.name):
+                    _out.append(role.id)
+        return set(_out)
 
 
 class TeamToolsCommandCategory(CommandCategory):
@@ -231,6 +301,17 @@ class TeamToolsCommandCategory(CommandCategory):
     A variety of commands, each of which should be helpful to at least one of the Teams
     """
     commands = []
+    team_regex = re.compile(r"(?:\s|^)team(?:\s|$)", re.IGNORECASE)
+
+    @classmethod
+    @property
+    def allowed_roles(cls) -> Set[str]:
+        _out = cls.extra_roles
+        for role in cls.bot.antistasi_guild.roles:
+            if role.id not in cls.always_exclude_role_ids and not role.name.casefold().endswith("_subscriber") and role.is_bot_managed() is False:
+                if cls.team_regex.search(role.name):
+                    _out.append(role.id)
+        return set(_out)
 
 
 class MetaCommandCategory(CommandCategory):
@@ -239,17 +320,33 @@ class MetaCommandCategory(CommandCategory):
     """
     commands = []
 
+    @classmethod
+    @property
+    def allowed_roles(cls) -> Set[str]:
+        _out = cls.extra_roles
+        _out += list(cls.bot.owner_ids)
+        return set(_out)
 
-class NotImplementedCommandCategory(CommandCategory):
-    """
-    NOT YET IMPLEMENTED!
-    """
-    commands = []
+
+# class NotImplementedCommandCategory(CommandCategory):
+#     """
+#     NOT YET IMPLEMENTED!
+#     """
+#     commands = []
+
+#     @classmethod
+#     @property
+#     def allowed_roles(cls) -> Set[str]:
+#         return set()
+
+#     @classmethod
+#     def visibility_check(cls, in_member: discord.Member):
+#         return False
+
+
 # region[Main_Exec]
-
-
 if __name__ == '__main__':
-    ic(issubclass(GeneralCommandCategory, GeneralCommandCategory.base_command_category))
+    pass
 
 
 # endregion[Main_Exec]

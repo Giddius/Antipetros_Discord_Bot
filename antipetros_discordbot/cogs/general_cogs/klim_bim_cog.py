@@ -38,8 +38,8 @@ from antipetros_discordbot.utility.exceptions import ParseDiceLineError
 from antipetros_discordbot.utility.converters import UrlConverter
 
 
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 
 if TYPE_CHECKING:
@@ -75,7 +75,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class KlimBimCog(AntiPetrosBaseCog):
+class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.GENERAL}):
     """
     Collection of small commands that either don't fit anywhere else or are just for fun.
     """

@@ -72,8 +72,8 @@ from antipetros_discordbot.utility.converters import CommandConverter
 from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle
 
 from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 
 if TYPE_CHECKING:
@@ -118,7 +118,7 @@ class CodeHighlighStyle(Enum):
     TOMORROWNIGHTEIGHTIES = TomorrownighteightiesStyle
 
 
-class InfoCog(AntiPetrosBaseCog):
+class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.GENERAL}):
     """
     WiP
     """
@@ -204,7 +204,6 @@ class InfoCog(AntiPetrosBaseCog):
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_member_join')
     @universal_log_profiler
     async def update_time_sorted_member_ids_join(self, member):
@@ -219,7 +218,6 @@ class InfoCog(AntiPetrosBaseCog):
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
@@ -406,6 +404,7 @@ class InfoCog(AntiPetrosBaseCog):
 # endregion [Commands]
 
 # region [HelperMethods]
+
 
     @universal_log_profiler
     async def make_time_sorted_guild_member_id_list(self):

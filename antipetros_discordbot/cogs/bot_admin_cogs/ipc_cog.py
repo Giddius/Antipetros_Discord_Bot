@@ -66,8 +66,8 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 
 if TYPE_CHECKING:
@@ -136,7 +136,6 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 
 # region [Setup]
 
-
     @universal_log_profiler
     async def on_ready_setup(self):
         self.ready = True
@@ -160,7 +159,6 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 # endregion [Listener]
 
 # region [Commands]
-
 
     @ipc.server.route()
     @universal_log_profiler
@@ -189,6 +187,7 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 
 # region [HelperMethods]
 
+
     async def execute_shutdown(self):
         await asyncio.sleep(5)
         await self.bot.shutdown_mechanic()
@@ -197,6 +196,7 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

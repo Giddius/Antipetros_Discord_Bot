@@ -31,8 +31,8 @@ from antipetros_discordbot.utility.exceptions import ParameterError
 from antipetros_discordbot.utility.image_manipulation import make_perfect_fontsize, find_min_fontsize, get_text_dimensions
 
 from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, CommandCategory, WatermarkPosition
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, WatermarkPosition
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 
 if TYPE_CHECKING:
@@ -64,7 +64,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))  # location of this f
 # endregion [Constants]
 
 
-class ImageManipulatorCog(AntiPetrosBaseCog):
+class ImageManipulatorCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.GENERAL}):
     """
     Commands that manipulate or generate images.
     """
@@ -89,6 +89,7 @@ class ImageManipulatorCog(AntiPetrosBaseCog):
 # endregion[ClassAttributes]
 
 # region [Init]
+
 
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
@@ -132,6 +133,7 @@ class ImageManipulatorCog(AntiPetrosBaseCog):
 # endregion[Init]
 
 # region [Setup]
+
 
     @universal_log_profiler
     async def on_ready_setup(self):
@@ -189,7 +191,6 @@ class ImageManipulatorCog(AntiPetrosBaseCog):
 
 
 # region [Commands]
-
 
     @flags.add_flag("--stamp-image", "-si", type=str, default='ASLOGO')
     @flags.add_flag("--first-pos", '-fp', type=str, default="bottom")
@@ -437,7 +438,6 @@ class ImageManipulatorCog(AntiPetrosBaseCog):
 
 # region [HelperMethods]
 
-
     @universal_log_profiler
     def _get_nato_symbol_parts(self):
         self.nato_symbol_parts_images = {}
@@ -635,7 +635,6 @@ class ImageManipulatorCog(AntiPetrosBaseCog):
 
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

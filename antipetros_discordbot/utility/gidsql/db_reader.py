@@ -101,30 +101,32 @@ class AioGidSqliteReader(AioGidSqliteActionBase):
         self.row_factory = None
 
     async def query(self, sql_phrase, variables: tuple = None, fetch: Fetch = Fetch.All):
-        conn = await aiosqlite.connect(self.db_loc, isolation_level=None, detect_types=sqlite.PARSE_DECLTYPES)
-        if self.row_factory is not None:
-            conn.row_factory = self.row_factory
-        cursor = await conn.cursor()
-        try:
-            await self._execute_pragmas(cursor)
-            if variables is not None:
-                await cursor.execute(sql_phrase, variables)
-                if self.log_execution is True:
-                    _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
-                    _log_args = textwrap.shorten(str(variables), width=200, placeholder='...')
-                    log.debug("Queried sql phrase '%s' with args %s successfully", _log_sql_phrase, _log_args)
-            else:
-                await cursor.execute(sql_phrase)
-                if self.log_execution is True:
-                    _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
-                    log.debug("Queried Script sql phrase '%s' successfully", _log_sql_phrase)
-            _out = await cursor.fetchone() if fetch is Fetch.One else await cursor.fetchall()
-        except sqlite.Error as error:
-            _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
-            _log_args = textwrap.shorten(str(variables), width=200, placeholder='...')
-            await self._handle_error(error, _log_sql_phrase, _log_args)
-            raise error
-        finally:
-            await cursor.close()
-            await conn.close()
-        return _out
+        # isolation_level=None
+        async with aiosqlite.connect(self.db_loc, detect_types=sqlite.PARSE_DECLTYPES) as conn:
+            if self.row_factory is not None:
+                conn.row_factory = self.row_factory
+
+            try:
+                await self._execute_pragmas(conn)
+
+                if variables is not None:
+                    cursor = await conn.execute(sql_phrase, variables)
+                    if self.log_execution is True:
+                        _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
+                        _log_args = textwrap.shorten(str(variables), width=200, placeholder='...')
+                        log.debug("Queried sql phrase '%s' with args %s successfully", _log_sql_phrase, _log_args)
+                else:
+                    cursor = await conn.execute(sql_phrase)
+                    if self.log_execution is True:
+                        _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
+                        log.debug("Queried Script sql phrase '%s' successfully", _log_sql_phrase)
+                _out = await cursor.fetchone() if fetch is Fetch.One else await cursor.fetchall()
+            except sqlite.Error as error:
+                _log_sql_phrase = ' '.join(sql_phrase.replace('\n', ' ').split())
+                _log_args = textwrap.shorten(str(variables), width=200, placeholder='...')
+                await self._handle_error(error, _log_sql_phrase, _log_args)
+                raise error
+            finally:
+                await cursor.close()
+
+            return _out

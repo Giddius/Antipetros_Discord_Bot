@@ -34,8 +34,8 @@ from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, CommandCategory
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup, AntiPetrosBaseCog
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name, normalize_emoji
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
@@ -47,7 +47,7 @@ from pyyoutube import Api
 from inspect import getmembers, getsourcefile, getsource, getsourcelines, getfullargspec, getmodule, getcallargs, getabsfile, getmodulename, getdoc, getfile, cleandoc, classify_class_attrs
 from antipetros_discordbot.utility.general_decorator import async_log_profiler
 from antipetros_discordbot.utility.sqldata_storager import general_db
-
+from marshmallow import Schema, fields
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion [Imports]
@@ -76,6 +76,17 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 # endregion [TODO]
+
+class RoleSchema(Schema):
+    color = fields.Function(lambda obj: (obj.color.r, obj.color.g, obj.color.b))
+    created_at = fields.Function(lambda obj: obj.created_at.isoformat(timespec='seconds'))
+    tags = fields.Function(lambda obj: {'is_bot_managed': obj.tags.is_bot_managed(), 'is_integration': obj.tags.is_integration(), 'is_premium_subscriber': obj.tags.is_premium_subscriber()} if obj.tags is not None else {})
+    permissions = fields.Function(lambda obj: dict(obj.permissions))
+    guild = fields.Function(lambda obj: obj.guild.name)
+    members = fields.Function(lambda obj: [member.name + '_' + str(member.id) for member in obj.members])
+
+    class Meta:
+        additional = ('mention', 'mentionable', 'managed', 'id', 'hoist', 'name', 'position')
 
 
 class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': CommandCategory.META}):
@@ -125,7 +136,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
         return
         log.debug('cog "%s" was updated', str(self))
 
-    @commands.Cog.listener(name="on_raw_reaction_add")
+    @ commands.Cog.listener(name="on_raw_reaction_add")
     async def emoji_tester(self, payload):
         disable = True
 
@@ -149,7 +160,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
             log.debug("unicode emoji customized name: '%s'", create_emoji_custom_name(str(emoji)))
             log.debug("unicode emoji normalized: '%s'", normalize_emoji(emoji.name))
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def roll_blocking(self, ctx, target_time: int = 1):
         start_time = time()
         time_multiplier = 151267
@@ -174,7 +185,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
         time_taken = await async_seconds_to_pretty_normal(time_taken_seconds) if time_taken_seconds != 0 else "less than 1 second"
         await ctx.send(embed=await make_basic_embed(title='Roll Result', text='this is a long blocking command for debug purposes', symbol='debug_2', duration=time_taken, ** stats_data))
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def request_server_restart(self, ctx):
 
         if ctx.prefix != "<@&800769712879042612> ":
@@ -219,7 +230,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
             await ctx.send('No answer received, aborting request, you can always try again')
             return
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def save_embed(self, ctx, message: discord.Message):
         if len(message.embeds) == 0:
             await ctx.send("the message has no embed, aborting")
@@ -240,7 +251,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
             return await self._get_unique_save_message_path(name=name, in_format=in_format, in_round=in_round + 1)
         return path
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def save_message(self, ctx: commands.context, channel_id: int, message_id: int, file_format: str = 'md'):
         channel = await self.bot.channel_from_id(channel_id)
         message = await channel.fetch_message(message_id)
@@ -249,7 +260,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
         writeit(path, content)
         await ctx.send(f'message saved as `{os.path.basename(path)}`', delete_after=60)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def quick_latency(self, ctx):
         await ctx.send(f"{round(self.bot.latency * 1000)} ms")
 
@@ -259,7 +270,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
     def __str__(self):
         return self.qualified_name
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def pin_multiple_messages(self, ctx: commands.Context, reason: str, *messages: discord.Message):
         if ctx.channel.name.casefold() not in ['bot-testing', 'bot-development']:
             await ctx.reply(f"Command only usable in {', '.join(['bot-testing', 'bot-development'])}", delete_after=30)
@@ -271,7 +282,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
             await message.pin(reason=reason)
         await ctx.message.delete()
 
-    @auto_meta_info_command(aliases=['pin'])
+    @ auto_meta_info_command(aliases=['pin'])
     async def pin_message(self, ctx: commands.Context, *, reason: str):
         if ctx.channel.name.casefold() not in ['bot-testing', 'bot-development']:
             await ctx.reply(f"Command only usable in {', '.join(['bot-testing', 'bot-development'])}", delete_after=30)
@@ -286,7 +297,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
         await message.pin(reason=reason)
         await ctx.message.delete()
 
-    @auto_meta_info_command(aliases=['unpin'])
+    @ auto_meta_info_command(aliases=['unpin'])
     async def unpin_message(self, ctx: commands.Context, *, reason: str):
         if ctx.channel.name.casefold() not in ['bot-testing', 'bot-development']:
             return
@@ -305,7 +316,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
                 permissions[name] = value
         return permissions
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def all_channel_permissions(self, ctx: commands.Context, member: discord.Member = None, display_mode: str = 'only_true', filter_category: str = None):
         json_path = f"{member.display_name}_permissions.json"
         writejson({}, json_path)
@@ -319,7 +330,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
                     await self.check_bot_channel_permissions(ctx, channel, member, display_mode)
                     await asyncio.sleep(5)
 
-    @auto_meta_info_command(aliases=['channel_permissions'])
+    @ auto_meta_info_command(aliases=['channel_permissions'])
     async def check_bot_channel_permissions(self, ctx: commands.Context, channel: discord.TextChannel = None, member: discord.Member = None, display_mode: str = 'only_true', json_file=None):
         channel = ctx.channel if channel is None else channel
         member = self.bot.bot_member if member is None else member
@@ -350,12 +361,12 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
         embed_data = await self.bot.make_generic_embed(title=f'Permissions for **__{member.name}__** in **__{channel.name.upper()}__**', description=description, thumbnail=None, footer='not_set')
         await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none(), delete_after=300)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_embed_gif(self, ctx: commands.Context):
         embed_data = await self.bot.make_generic_embed(title="check embed gif", image=APPDATA['COMMAND_the_dragon.gif'])
         await ctx.send(**embed_data)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def get_prefixes(self, ctx: commands.Context):
         prefixes = await self.bot.get_prefix(ctx.message)
         prefixes = list(set([prefix.strip() for prefix in prefixes]))
@@ -453,7 +464,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
     async def check_reload_mech(self, ctx):
         await self.bot.reload_cog_from_command_name("flip_coin")
 
-    @auto_meta_info_command(enabled=True)
+    @ auto_meta_info_command(enabled=True)
     async def create_role_by_name_and_assign_to_all(self, ctx: commands.context, role_name: str, *, reason: str):
         role = await self.bot.antistasi_guild.create_role(name=role_name, permissions=discord.Permissions.none(), color=self.bot.get_discord_color('pink'), hoist=False, mentionable=False, reason=reason)
         await ctx.send(f"Created role {role.mention}, now applying to all", allowed_mentions=discord.AllowedMentions.none())
@@ -462,7 +473,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
             await asyncio.sleep(3)
         await ctx.reply('Adding of roles completed!')
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def mock_subscribe_thing(self, ctx: commands.Context, *topics: str):
         emojis = ["1️⃣", "2️⃣", "3️⃣"]
         fields = []
@@ -477,7 +488,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
         for i in range(len(topics)):
             await msg.add_reaction(emojis[i])
 
-    @auto_meta_info_command(enabled=True)
+    @ auto_meta_info_command(enabled=True)
     async def dump_permissions(self, ctx: commands.Context):
         async with ctx.typing():
             for bot_member in [self.antidevtros_member, self.antipetros_member]:
@@ -489,11 +500,11 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
                 await ctx.send(f"dumped permissions for {bot_member.display_name}")
             await ctx.send(f"finished dumping permission for Giddis Bots")
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_not_allowed_channel(self, ctx):
         raise NotAllowedChannelError(ctx, ['dev-thrash'])
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def get_antistasi_youtube_videos(self, ctx):
         base_youtube_watch_url = "https://www.youtube.com/watch?v="
         api = Api(api_key=os.getenv('GOOGLE_API_KEY'))
@@ -522,8 +533,8 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
             embed_data = await self.bot.make_generic_embed(title=item[0], description=item[3] + '\n\n' + item[2], image=str(item[4]), timestamp=item[1])
             await ctx.send(**embed_data)
 
-    @auto_meta_info_command()
-    @only_giddi()
+    @ auto_meta_info_command()
+    @ only_giddi()
     async def get_all_from_embed_user(self, ctx):
         async with ctx.typing():
             names = []
@@ -563,7 +574,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
                 file = discord.File(path)
                 await ctx.send(file=file)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def init_edit_embed_check(self, ctx: commands.Context):
         embed_data = await self.bot.make_generic_embed(title='Testing Embed Editing', description="This is the original",
                                                        fields=[self.bot.field_item(name='embed field', value='this is original'),
@@ -573,7 +584,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
 
         self.edit_embed_message = await ctx.send(**embed_data)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def change_edit_embed_check(self, ctx: commands.Context):
         if self.edit_embed_message is None:
             await ctx.send('edit_embed_message is None')
@@ -586,7 +597,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
         await asyncio.sleep(10)
         await self.edit_embed_message.edit(**embed_data)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def pr_log_entries(self, ctx: commands.Context):
         base_youtube_watch_url = "https://www.youtube.com/watch?v="
         api = Api(api_key=os.getenv('GOOGLE_API_KEY'))
@@ -644,7 +655,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
 
         await pr_lead_member.send(**embed_data)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def post_role_call(self, ctx: commands.Context):
         role_description = """Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."""
 
@@ -674,7 +685,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
 
             await ctx.send(f'{ZERO_WIDTH}\n' + '░' * 20 + f'\n\n{ZERO_WIDTH}')
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def get_roles(self, ctx: commands.Context):
         _out = {}
         for role in self.bot.antistasi_guild.roles:
@@ -682,12 +693,12 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
 
         writejson(_out, 'all_roles.json')
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_message_mention(self, ctx: commands.Context, message: discord.Message):
         embed_data = await self.bot.make_generic_embed(title='This is a test', description=embed_hyperlink('test', message.jump_url))
         await ctx.send(**embed_data)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def get_cog_info(self, ctx: commands.Context, cog_name: str):
         cog = await self.bot.cog_by_name(cog_name)
         await ctx.send('\n'.join(command.name for command in cog.get_commands()))
@@ -698,18 +709,18 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
         await ctx.send("```py\n" + getsource(command.callback) + "\n```")
         await ctx.send(cleandoc(getdoc(cog)))
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def dump_to_general_db(self, ctx: commands.Context):
         await self.general_db.insert_cogs(self.bot)
         await ctx.send('done')
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def color_embed_check(self, ctx: commands.Context, hex_color: str):
         embed_data = await self.bot.make_generic_embed(title="Color check", description="testing hex color conversion", color=hex_color)
         await ctx.send(**embed_data)
 
-    @auto_meta_info_command()
-    @has_attachments(1)
+    @ auto_meta_info_command()
+    @ has_attachments(1)
     async def check_emoji_stuff(self, ctx: commands.Context):
         file = ctx.message.attachments[0]
         with TemporaryDirectory() as tempdir:
@@ -727,7 +738,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
 
         pprint(EMOJI_UNICODE_ENGLISH)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def new_command_info_check(self, ctx: commands.Context, command: CommandConverter, subcommand: str = None):
         # if self.command_pop_list == []:
         #     self.command_pop_list = [_command for _command in self.bot.commands if str(_command.cog).casefold() != "generaldebugcog"]
@@ -762,12 +773,12 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
         if command.gif:
             await ctx.send(file=discord.File(command.gif))
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_cog_commands_dunder(self, ctx: commands.Context, cog: CogConverter):
         content = [str(item) for item in cog.__cog_commands__]
         await self.bot.split_to_messages(ctx, '\n'.join(content), in_codeblock=True)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_performance_data_db(self, ctx: commands.Context):
         items = await self.general_db.get_memory_data_last_24_hours()
         await self.bot.split_to_messages(ctx, '\n'.join(str(item) for item in items), in_codeblock=True, syntax_highlighting='css')
@@ -778,7 +789,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
         items = await self.general_db.get_cpu_data_last_24_hours()
         await self.bot.split_to_messages(ctx, '\n'.join(str(item) for item in items), in_codeblock=True, syntax_highlighting='css')
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def show_self_info(self, ctx: commands.Context):
         text_dict = {'name': self.name,
                      'config_name': self.config_name,
@@ -789,7 +800,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
                      'state': self.is_ready}
         await ctx.send(ic.format(text_dict))
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_self_dump(self, ctx: commands.Context):
         """
         check if dostring survives. here also
@@ -805,6 +816,60 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
         await ctx.send(embed=embed)
 
     @auto_meta_info_command()
+    async def check_categories(self, ctx: commands.Context):
+        for category_name, category in CommandCategory.all_command_categories.items():
+            print(category_name)
+            command_string = ''
+            for command in category.commands:
+                command_string += f'\n`{command.name}`'
+                if len(command_string) >= 950:
+                    command_string += '\n...'
+                    break
+            if not command_string:
+                command_string = '[]'
+            extra_role_string = '\n'.join(f"`{self.bot.sync_retrieve_antistasi_role(_id).name}`" for _id in category.extra_roles)
+            if not extra_role_string:
+                extra_role_string = '[]'
+            allowed_roles_string = ""
+
+            for _id in category.allowed_roles:
+                role = await self.bot.retrieve_antistasi_role(_id)
+                try:
+                    allowed_roles_string += f"\n`{role.name}`"
+                except AttributeError:
+                    log.critical("AttributeError with role-id '%s' and resulting role '%s'", _id, str(role))
+            if not allowed_roles_string:
+                allowed_roles_string = "[]"
+            embed_data = await self.bot.make_generic_embed(title=category.name,
+                                                           description=category.docstring,
+                                                           fields=[self.bot.field_item(name='config_name', value=category.config_name),
+                                                                   self.bot.field_item(name='commands', value=command_string),
+                                                                   self.bot.field_item(name='allowed_roles', value=allowed_roles_string),
+                                                                   self.bot.field_item(name='extra_roles', value=extra_role_string)])
+            await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+    @ auto_meta_info_command()
+    async def dump_roles(self, ctx: commands.Context):
+        async with ctx.typing():
+            schema = RoleSchema()
+            _out = {}
+            for role in self.bot.antistasi_guild.roles:
+                if role is not await self.bot.retrieve_antistasi_role(449481990513754112):
+                    _out[role.name] = schema.dump(role)
+            _out = {key + '_' + str(value.get('id')): value for key, value in sorted(_out.items(), key=lambda x: x[1].get('position'), reverse=True)}
+            writejson(_out, 'role_dump.json', sort_keys=False)
+            await ctx.send('done', delete_after=90, allowed_mentions=discord.AllowedMentions.none())
+            other_admin_role = await self.bot.retrieve_antistasi_role(513318914516844559)
+            await self.bot.split_to_messages(ctx, pformat(schema.dump(other_admin_role)), in_codeblock=True)
+
+    @auto_meta_info_command()
+    async def check_channels_changed_roles(self, ctx: commands.Context):
+        for text_channel in self.bot.antistasi_guild.text_channels:
+            role_string = ', '.join(f'`{role.name}`' for role in text_channel.changed_roles)
+            if role_string:
+                await ctx.send(f"`{text_channel.name}` **__|->|__** {role_string}", delete_after=90, allowed_mentions=discord.AllowedMentions.none())
+
+    @ auto_meta_info_command()
     async def query_rate_limited(self, ctx: commands.Context):
         """
         check if dostring survives.

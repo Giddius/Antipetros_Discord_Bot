@@ -89,7 +89,7 @@ import gidlogger as glog
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CommandCategory
+from .command_category import CommandCategory
 # endregion[Imports]
 
 # region [TODO]

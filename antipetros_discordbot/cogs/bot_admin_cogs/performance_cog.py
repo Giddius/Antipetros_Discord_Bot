@@ -28,7 +28,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, date_today, make_config_name, delete_message_if_text_channel
-from antipetros_discordbot.utility.enums import DataSize, CogMetaStatus, UpdateTypus, CommandCategory
+from antipetros_discordbot.utility.enums import DataSize, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
 from antipetros_discordbot.utility.named_tuples import LatencyMeasurement, MemoryUsageMeasurement
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, make_basic_embed_inline
@@ -39,7 +39,7 @@ from antipetros_discordbot.utility.regexes import LOG_SCRAPE_REGEX, PROFILING_RE
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.sqldata_storager import general_db
 
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 
 if TYPE_CHECKING:
@@ -299,7 +299,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Helper]
 
-
     async def parse_logs_for_profile(self):
         log_folder = APPDATA.log_folder
         old_logs_folder = pathmaker(log_folder, 'old_logs')
@@ -435,7 +434,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 
 # region [SpecialMethods]
-
 
     def __str__(self) -> str:
         return self.qualified_name

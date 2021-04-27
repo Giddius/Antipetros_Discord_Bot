@@ -22,12 +22,13 @@ import validator_collection
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from antipetros_discordbot.utility.exceptions import ParameterError, ParameterErrorWithPossibleParameter
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup
-from antipetros_discordbot.utility.enums import CommandCategory
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
+from antipetros_discordbot.engine.replacements import CommandCategory
 from antipetros_discordbot.utility.checks import (OnlyGiddiCheck, OnlyBobMurphyCheck, BaseAntiPetrosCheck, AdminOrAdminLeadCheck, AllowedChannelAndAllowedRoleCheck,
                                                   only_bob, only_giddi, log_invoker, is_not_giddi, owner_or_admin, has_attachments,
                                                   in_allowed_channels, only_dm_only_allowed_id, allowed_channel_and_allowed_role, HasAttachmentCheck, OnlyGiddiCheck, OnlyBobMurphyCheck)
 from antipetros_discordbot.utility.misc import check_if_url, fix_url_prefix
+from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
@@ -50,7 +51,9 @@ log.info(glog.imported(__name__))
 # endregion[Logging]
 
 # region [Constants]
-
+APPDATA = ParaStorageKeeper.get_appdata()
+BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
+COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
@@ -149,11 +152,17 @@ class CogConverter(Converter):
 
 class CategoryConverter(Converter):
 
-    async def convert(self, ctx: commands.Context, argument):
+    async def convert(self, ctx: commands.Context, argument: str) -> CommandCategory:
         try:
-            return CommandCategory.deserialize(argument)
+            return getattr(CommandCategory, await self._normalize_argument(argument))
         except (TypeError, ValueError) as e:
             raise ParameterError("category", argument) from e
+
+    async def _normalize_argument(self, argument: str):
+        if argument is not None:
+            argument = argument.replace('_', '').replace(' ', '')
+            argument = argument.casefold()
+            return argument.removesuffix('commandcategory').upper()
 
 
 class CheckConverter(Converter):

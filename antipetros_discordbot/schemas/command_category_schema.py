@@ -83,7 +83,7 @@ from discord.ext import commands, tasks
 
 import gidlogger as glog
 from marshmallow import Schema, fields, pre_load
-from antipetros_discordbot.utility.enums import CommandCategory
+
 # endregion[Imports]
 
 # region [TODO]

@@ -39,7 +39,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, auto_meta_info_group, CommandCategory
+from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.auxiliary_classes.for_cogs.required_filesystem_item import RequiredFolder, RequiredFile
@@ -77,7 +77,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.TEAMTOOLS | CommandCategory.ADMINTOOLS}):
+class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.DEVTOOLS | CommandCategory.ADMINTOOLS}):
     """
     Different interactions with saved Antistasi Community Server Logs. Works by connecting to and interacting with the Online Storage where the logs are saved.
     """
@@ -243,7 +243,7 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             html_file = discord.File(html_path)
             yield html_file
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(aliases=['mods', 'mods?', 'mod_list', 'mod_list?'], categories=CommandCategory.GENERAL)
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 120, commands.BucketType.member)
     async def get_newest_mod_data(self, ctx: commands.Context, server: str = 'mainserver_1'):
@@ -277,7 +277,7 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             await ctx.send(**embed_data)
             await ctx.send(file=html_file)
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(aliases=['as_logs', 'server_logs', 'get_logs', 'get_log'], categories=CommandCategory.DEVTOOLS | CommandCategory.ADMINTOOLS)
     @allowed_channel_and_allowed_role()
     async def get_newest_logs(self, ctx, server: str = 'mainserver_1', sub_folder: str = 'server', amount: int = 1):
         """

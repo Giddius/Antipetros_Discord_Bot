@@ -87,7 +87,7 @@ import gidlogger as glog
 
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.enums import CommandCategory
+
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from .helper import JsonMetaDataProvider, JsonAliasProvider, SourceCodeProvider, JsonCategoryProvider
@@ -156,9 +156,11 @@ class AntiPetrosBaseCommand(commands.Command):
         super().__init__(func, **kwargs)
         self.module_object = sys.modules[func.__module__]
 
-    def _handle_category_kwargs(self, categories: List[CommandCategory]):
-        for category in categories:
-            category.add_command(self)
+    def _handle_category_kwargs(self, categories: Union[List[CommandCategory], CommandCategory]):
+        if categories is not None:
+            categories = [categories] if not isinstance(categories, list) else categories
+            for category in categories:
+                category.add_command(self)
 
     async def set_alias(self, new_alias: str):
         self.data_setters['alias'](new_alias)
