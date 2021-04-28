@@ -217,9 +217,15 @@ class CommandCategory(metaclass=CommandCategoryMeta):
     def add_command(cls, command: Union["AntiPetrosBaseCommand", "AntiPetrosFlagCommand", "AntiPetrosBaseGroup"]):
         if cls.is_abstract is True:
             raise TypeError(f"'add_to_commands' can't be called on '{cls}' as this class is abstract")
-        cls.commands.append(command)
-        cls.base_command_category.commands.append(command)
-        command.categories.append(cls)
+        if command.parent is not None:
+            return
+        if command not in cls.commands:
+            cls.commands.append(command)
+        if command not in cls.base_command_category.commands:
+            cls.base_command_category.commands.append(command)
+
+        if cls not in command.categories:
+            command.categories.append(cls)
 
     @classmethod
     def dump(cls):
@@ -239,8 +245,6 @@ class CommandCategory(metaclass=CommandCategoryMeta):
     def visibility_check(cls, in_member: discord.Member):
         if cls.is_abstract is True or in_member.bot is True:
             return False
-        if len(cls.allowed_roles) == 1 and cls.allowed_roles[0] == 'all':
-            return True
         if in_member.id in cls.bot.owner_ids:
             return True
         if any(role.id in cls.allowed_roles for role in in_member.roles):
@@ -258,7 +262,7 @@ class GeneralCommandCategory(CommandCategory):
     @classmethod
     @property
     def allowed_roles(cls) -> Set[str]:
-        return {'all'}
+        return {cls.bot.everyone_role_id}
 
 
 class AdminToolsCommandCategory(CommandCategory):
@@ -324,7 +328,6 @@ class MetaCommandCategory(CommandCategory):
     @property
     def allowed_roles(cls) -> Set[str]:
         _out = cls.extra_roles
-        _out += list(cls.bot.owner_ids)
         return set(_out)
 
 

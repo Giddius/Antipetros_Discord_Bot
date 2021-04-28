@@ -89,7 +89,7 @@ class RoleSchema(Schema):
         additional = ('mention', 'mentionable', 'managed', 'id', 'hoist', 'name', 'position')
 
 
-class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': CommandCategory.META}):
+class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     """
     Cog for debug or test commands, should not be enabled fo normal Bot operations.
     """
@@ -818,9 +818,9 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
     @auto_meta_info_command()
     async def check_categories(self, ctx: commands.Context):
         for category_name, category in CommandCategory.all_command_categories.items():
-            print(category_name)
+
             command_string = ''
-            for command in category.commands:
+            for command in sorted(category.commands, key=lambda x: x.name):
                 command_string += f'\n`{command.name}`'
                 if len(command_string) >= 950:
                     command_string += '\n...'
@@ -832,8 +832,8 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categor
                 extra_role_string = '[]'
             allowed_roles_string = ""
 
-            for _id in category.allowed_roles:
-                role = await self.bot.retrieve_antistasi_role(_id)
+            for role in sorted(map(lambda x: self.bot.sync_retrieve_antistasi_role(x), category.allowed_roles), key=lambda x: x.name):
+
                 try:
                     allowed_roles_string += f"\n`{role.name}`"
                 except AttributeError:

@@ -4,4 +4,6 @@ cluster=True
 verbose = 0
 pylib=False
 keep_target_cluster=True
+noise_level=100
+max-cluster-size=5
 exclude=

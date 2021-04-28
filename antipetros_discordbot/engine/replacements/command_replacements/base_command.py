@@ -37,13 +37,13 @@ from time import time, sleep
 from pprint import pprint, pformat
 from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
 from timeit import Timer
-from typing import Union, Callable, Iterable, TYPE_CHECKING, List, Tuple, Set, Dict, Mapping, Any, Awaitable, Optional
+from typing import Union, Callable, Iterable, TYPE_CHECKING, List, Tuple, Set, Dict, Mapping, Any, Awaitable, Optional, Type, ClassVar
 from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
 from zipfile import ZipFile
 from datetime import tzinfo, datetime, timezone, timedelta
 from tempfile import TemporaryDirectory
 from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
-from functools import wraps, partial, lru_cache, singledispatch, total_ordering
+from functools import wraps, partial, lru_cache, singledispatch, total_ordering, singledispatchmethod
 from importlib import import_module, invalidate_caches
 from contextlib import contextmanager
 from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
@@ -96,7 +96,7 @@ from antipetros_discordbot.utility.data import COG_CHECKER_ATTRIBUTE_NAMES
 from antipetros_discordbot.utility.checks import dynamic_enabled_checker
 from antipetros_discordbot.schemas import AntiPetrosBaseCommandSchema
 from antipetros_discordbot.utility.general_decorator import async_log_profiler
-from antipetros_discordbot.engine.replacements.command_replacements.helper.command_category import CommandCategory
+from antipetros_discordbot.engine.replacements.command_replacements.helper.command_category import CommandCategory, GeneralCommandCategory, DevToolsCommandCategory, AdminToolsCommandCategory, TeamToolsCommandCategory, MetaCommandCategory
 # endregion[Imports]
 
 # region [TODO]
@@ -152,15 +152,22 @@ class AntiPetrosBaseCommand(commands.Command):
                           'usage': None,
                           'signature': None}
         self.categories = []
-        self._handle_category_kwargs(kwargs.get('categories'))
         super().__init__(func, **kwargs)
+        self.handle_category_kwargs(kwargs.get('categories', []))
         self.module_object = sys.modules[func.__module__]
 
-    def _handle_category_kwargs(self, categories: Union[List[CommandCategory], CommandCategory]):
-        if categories is not None:
-            categories = [categories] if not isinstance(categories, list) else categories
-            for category in categories:
-                category.add_command(self)
+    @singledispatchmethod
+    def handle_category_kwargs(self, categories: Any):
+        pass
+
+    @handle_category_kwargs.register
+    def handle_category_kwargs_list(self, categories: list):
+        for category in categories:
+            category.add_command(self)
+
+    @handle_category_kwargs.register(type(CommandCategory))
+    def handle_category_kwargs_single(self, categories):
+        categories.add_command(self)
 
     async def set_alias(self, new_alias: str):
         self.data_setters['alias'](new_alias)
@@ -322,6 +329,14 @@ class AntiPetrosBaseCommand(commands.Command):
 
     def dump(self):
         return self.schema.dump(self)
+
+    def __hash__(self) -> int:
+        return hash((self.name, self.cog_name, self.docstring))
+
+    def __eq__(self, o: object) -> bool:
+        if isinstance(o, self.__class__):
+            return self.__hash__() == o.__hash__()
+        return False
 
 
 # region[Main_Exec]

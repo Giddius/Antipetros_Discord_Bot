@@ -166,7 +166,7 @@ class HelpCategory(Enum):
     COMMAND_SET = 'command_sets'
 
 
-class HelpCog(AntiPetrosBaseCog):
+class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.META}):
     """
     WiP
     """
@@ -224,6 +224,7 @@ class HelpCog(AntiPetrosBaseCog):
 # endregion [Init]
 
 # region [Properties]
+
 
     @property
     @universal_log_profiler
@@ -349,7 +350,6 @@ class HelpCog(AntiPetrosBaseCog):
 # endregion [DataStorage]
 
 # region [Embeds]
-
 
     @universal_log_profiler
     async def help_overview_embed(self, author: Union[discord.Member, discord.User]):
@@ -655,6 +655,7 @@ class HelpCog(AntiPetrosBaseCog):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx: commands.Context):
         return True

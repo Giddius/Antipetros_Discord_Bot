@@ -8,7 +8,7 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-
+from typing import TYPE_CHECKING, Any, Union, Optional, Iterable, Mapping, Callable, Generator, Awaitable, List, Set, Tuple, Dict, FrozenSet
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import discord
@@ -48,6 +48,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class AntistasiInformer(SubSupportBase):
     general_data_file = pathmaker(APPDATA['fixed_data'], 'general_data.json')
+    everyone_role_id = 449481990513754112
 
     def __init__(self, bot, support):
         self.bot = bot
@@ -57,43 +58,47 @@ class AntistasiInformer(SubSupportBase):
 
         glog.class_init_notification(log, self)
 
-    def check_member_has_any_role(self, role_names: list, member):
+    def check_member_has_any_role(self, role_names: List[str], member: discord.Member) -> bool:
         for role_name in role_names:
             if role_name.casefold() in [role.name.casefold() for role in member.roles]:
                 return True
         return False
 
     @property
-    def bertha_emoji(self):
+    def everyone_role(self) -> discord.Role:
+        return self.sync_retrieve_antistasi_role(self.everyone_role_id)
+
+    @property
+    def bertha_emoji(self) -> discord.Emoji:
         return discord.utils.get(self.antistasi_guild.emojis, id=829666475035197470)
 
     @property
-    def antistasi_invite_url(self):
+    def antistasi_invite_url(self) -> str:
         return BASE_CONFIG.retrieve('links', 'antistasi_discord_invite', typus=str, direct_fallback='')
 
     @property
-    def armahosts_url(self):
+    def armahosts_url(self) -> str:
         return BASE_CONFIG.retrieve('antistasi_info', 'armahosts_url', typus=str, direct_fallback='https://www.armahosts.com/')
 
     @property
-    def armahosts_icon(self):
+    def armahosts_icon(self) -> str:
         return BASE_CONFIG.retrieve('antistasi_info', 'armahosts_icon', typus=str, direct_fallback='https://pictures.alignable.com/eyJidWNrZXQiOiJhbGlnbmFibGV3ZWItcHJvZHVjdGlvbiIsImtleSI6ImJ1c2luZXNzZXMvbG9nb3Mvb3JpZ2luYWwvNzEwMzQ1MC9BUk1BSE9TVFMtV29ybGRzLUJsdWVJY29uTGFyZ2UucG5nIiwiZWRpdHMiOnsiZXh0cmFjdCI6eyJsZWZ0IjowLCJ0b3AiOjE0Miwid2lkdGgiOjIwNDgsImhlaWdodCI6MjA0OH0sInJlc2l6ZSI6eyJ3aWR0aCI6MTgyLCJoZWlnaHQiOjE4Mn0sImV4dGVuZCI6eyJ0b3AiOjAsImJvdHRvbSI6MCwibGVmdCI6MCwicmlnaHQiOjAsImJhY2tncm91bmQiOnsiciI6MjU1LCJnIjoyNTUsImIiOjI1NSwiYWxwaGEiOjF9fX19')
 
     @property
-    def armahosts_footer_text(self):
+    def armahosts_footer_text(self) -> str:
         return BASE_CONFIG.retrieve('antistasi_info', 'amahosts_footer_text', typus=str, direct_fallback='We thank ARMAHOSTS for providing the Server')
 
     @property
-    def filesize_limit(self):
+    def filesize_limit(self) -> int:
         return self.antistasi_guild.filesize_limit
 
     @property
-    def dev_members(self):
+    def dev_members(self) -> List[discord.Member]:
 
         return [member for member in self.antistasi_guild.members if self.check_member_has_any_role(["dev helper", "dev team", "dev team lead"], member) is True]
 
     @property
-    def dev_member_by_role(self):
+    def dev_member_by_role(self) -> Dict[str, List[discord.Member]]:
         _out = {"dev team lead": [], "dev team": [], "dev helper": []}
         for member in self.dev_members:
             if member.bot is False:
@@ -117,10 +122,10 @@ class AntistasiInformer(SubSupportBase):
         return guild_id
 
     @ property
-    def blacklisted_users(self):
+    def blacklisted_users(self) -> list:
         return loadjson(APPDATA['blacklist.json'])
 
-    def blacklisted_user_ids(self):
+    def blacklisted_user_ids(self) -> Generator[int, None, None]:
         for user_item in self.blacklisted_users:
             yield user_item.get('id')
 
@@ -128,16 +133,16 @@ class AntistasiInformer(SubSupportBase):
         channel = await self.channel_from_id(channel_id)
         return await channel.fetch_message(message_id)
 
-    async def retrieve_antistasi_member(self, user_id):
+    async def retrieve_antistasi_member(self, user_id: int) -> discord.Member:
         return await self.antistasi_guild.fetch_member(user_id)
 
-    def sync_channel_from_name(self, channel_name):
+    def sync_channel_from_name(self, channel_name: str) -> discord.abc.GuildChannel:
         return {channel.name.casefold(): channel for channel in self.antistasi_guild.channels}.get(channel_name.casefold())
 
-    async def channel_from_name(self, channel_name):
+    async def channel_from_name(self, channel_name: str) -> discord.abc.GuildChannel:
         return {channel.name.casefold(): channel for channel in self.antistasi_guild.channels}.get(channel_name.casefold())
 
-    def sync_channel_from_id(self, channel_id: int):
+    def sync_channel_from_id(self, channel_id: int) -> discord.abc.GuildChannel:
         return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)
 
     async def channel_from_id(self, channel_id: int) -> discord.abc.GuildChannel:
@@ -146,22 +151,22 @@ class AntistasiInformer(SubSupportBase):
     def sync_member_by_id(self, member_id: int) -> discord.Member:
         return {member.id: member for member in self.antistasi_guild.members}.get(member_id, None)
 
-    async def member_by_name(self, member_name):
+    async def member_by_name(self, member_name: str) -> discord.Member:
         return {member.name.casefold(): member for member in self.antistasi_guild.members}.get(member_name.casefold(), None)
 
-    def sync_role_from_string(self, role_name: str):
+    def sync_role_from_string(self, role_name: str) -> discord.Role:
         return {role.name.casefold(): role for role in self.antistasi_guild.roles}.get(role_name.casefold(), None)
 
-    async def role_from_string(self, role_name):
+    async def role_from_string(self, role_name) -> discord.Role:
         return {role.name.casefold(): role for role in self.antistasi_guild.roles}.get(role_name.casefold())
 
-    async def retrieve_antistasi_role(self, role_id: int):
-        return {role.id: role for role in await self.antistasi_guild.fetch_roles()}.get(role_id)
-
-    def sync_retrieve_antistasi_role(self, role_id: int):
+    async def retrieve_antistasi_role(self, role_id: int) -> discord.Role:
         return {role.id: role for role in self.antistasi_guild.roles}.get(role_id)
 
-    async def all_members_with_role(self, role: str):
+    def sync_retrieve_antistasi_role(self, role_id: int) -> discord.Role:
+        return {role.id: role for role in self.antistasi_guild.roles}.get(role_id)
+
+    async def all_members_with_role(self, role: str) -> List[discord.Member]:
         role = await self.role_from_string(role)
         _out = []
         for member in self.antistasi_guild.members:
@@ -169,19 +174,19 @@ class AntistasiInformer(SubSupportBase):
                 _out.append(member)
         return list(set(_out))
 
-    async def if_ready(self):
+    async def if_ready(self) -> None:
         await self.antistasi_guild.chunk(cache=True)
         log.debug("'%s' sub_support is READY", str(self))
 
-    async def update(self, typus: UpdateTypus):
+    async def update(self, typus: UpdateTypus) -> None:
         return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
-    def retire(self):
+    def retire(self) -> None:
         log.debug("'%s' sub_support was RETIRED", str(self))
 
 
-def get_class():
+def get_class() -> SubSupportBase:
     return AntistasiInformer
 
 # region[Main_Exec]
