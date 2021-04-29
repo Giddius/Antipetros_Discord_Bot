@@ -1,11 +1,14 @@
 # region [Imports]
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
-from enum import Enum, Flag, auto, unique, EnumMeta
-from functools import reduce, wraps, partial
+from enum import Enum, Flag, auto, unique
+from functools import reduce
 from operator import or_
+import inflect
 
 # endregion[Imports]
+
+inflect_engine = inflect.engine()
 
 
 class RequestStatus(Enum):
@@ -127,3 +130,23 @@ class UpdateTypus(Flag):
     def ALL(cls):
         all_flags = [member for member in cls.__members__.values()]
         return reduce(or_, all_flags)
+
+
+@unique
+class ExtraHelpParameter(Enum):
+    ALL = auto
+
+
+@unique
+class HelpCategory(Enum):
+    COG = 'cog'
+    COMMAND = 'command'
+    CATEGORY = 'category'
+
+    @classmethod
+    def _missing_(cls, value):
+        mod_value = inflect_engine.singular_noun(value).casefold()
+        try:
+            return cls(mod_value)
+        except ValueError:
+            raise ValueError("%r is not a valid %s" % (value, cls.__name__))

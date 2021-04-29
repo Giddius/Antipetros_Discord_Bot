@@ -5,35 +5,11 @@
 # * Standard Library Imports -->
 import gc
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import logging
-import platform
-import subprocess
-from enum import Enum, Flag, auto, unique
-from time import sleep
-from pprint import pprint, pformat
-from typing import Union, TYPE_CHECKING
-from datetime import tzinfo, datetime, timezone, timedelta
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial
-from contextlib import contextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from tempfile import TemporaryDirectory
-from urllib.parse import urlparse
+from typing import TYPE_CHECKING
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 import unicodedata
-from io import BytesIO
-from textwrap import dedent
 
 # * Third Party Imports -->
-from icecream import ic
 # import requests
 # import pyperclip
 # import matplotlib.pyplot as plt
@@ -47,27 +23,17 @@ import aiohttp
 import discord
 from discord.ext import tasks, commands, flags
 from async_property import async_property
-from dateparser import parse as date_parse
 
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 
-from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
-from antipetros_discordbot.utility.emoji_handling import normalize_emoji
-from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.sqldata_storager import general_db
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 

@@ -6,7 +6,6 @@ import os
 from datetime import datetime, timezone
 import asyncio
 import secrets
-from textwrap import dedent
 from typing import TYPE_CHECKING
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
@@ -18,18 +17,16 @@ from async_property import async_property
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, allowed_requester, command_enabled_checker, log_invoker
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_give_away_cog import GiveAwayEvent
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosFlagCommand, CommandCategory, RequiredFile, auto_meta_info_command
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

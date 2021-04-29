@@ -13,15 +13,10 @@ from datetime import datetime
 import gidlogger as glog
 import asyncio
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import date_today, async_date_today
-from antipetros_discordbot.utility.named_tuples import InvokedCommandsDataItem
-from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.bot_support.sub_support.sub_support_helper.command_stats_dict import CommandStatDict
 from antipetros_discordbot.utility.enums import UpdateTypus
 from antipetros_discordbot.utility.sqldata_storager import general_db
-from antipetros_discordbot.engine.replacements.command_replacements.helper import JsonMetaDataProvider
 # endregion[Imports]
 
 # region [TODO]
@@ -101,7 +96,7 @@ class CommandStatistician(SubSupportBase):
 
         async def record_command_invocation(ctx):
             _command = ctx.command
-            if _command in ['shutdown', "get_command_stats", None, '']:
+            if _command.name in ['shutdown', "get_command_stats", None, '']:
                 return
             if self.is_debug is False and str(_command.cog) not in ['GeneralDebugCog'] and ctx.channel.name.casefold() not in ['bot-testing']:
                 asyncio.create_task(self.general_db.insert_command_usage(_command))

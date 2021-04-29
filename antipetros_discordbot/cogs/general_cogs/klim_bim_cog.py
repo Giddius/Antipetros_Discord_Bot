@@ -6,17 +6,13 @@ import os
 import random
 from math import ceil
 import secrets
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Dict, Tuple, Set
 import asyncio
 from urllib.parse import quote as urlquote
-from textwrap import dedent
-from functools import reduce
-from io import BytesIO
 import re
 from typing import Optional
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands
-from icecream import ic
 from discord import AllowedMentions
 from pyfiglet import Figlet
 from PIL import Image, ImageDraw, ImageFont
@@ -25,22 +21,21 @@ import discord
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import is_even, make_config_name, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, owner_or_admin, log_invoker
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel, is_even
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, log_invoker, owner_or_admin
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.the_dragon import THE_DRAGON
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker, Seperators
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import make_box
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 
-from antipetros_discordbot.utility.gidtools_functions import bytes2human, loadjson, writejson, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.utility.exceptions import ParseDiceLineError
 from antipetros_discordbot.utility.converters import UrlConverter
 
 
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseGroup, CommandCategory, RequiredFile, auto_meta_info_command, auto_meta_info_group
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -85,6 +80,8 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
     meta_status = CogMetaStatus.WORKING
     long_description = ""
     extra_info = ""
+    short_doc = "Mostly unessential fun commands."
+    brief = "Mostly fun stuff"
     required_config_data = {'base_config': {},
                             'cogs_config': {"coin_image_heads": "https://i.postimg.cc/XY4fhCf5/antipetros-coin-head.png",
                                             "coin_image_tails": "https://i.postimg.cc/HsQ0B2yH/antipetros-coin-tails.png"}}
@@ -149,9 +146,10 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
 # region [Commands]
 
+
     @ auto_meta_info_command()
     @ allowed_channel_and_allowed_role()
-    @commands.cooldown(1, 60, commands.BucketType.channel)
+    @commands.cooldown(1, 5, commands.BucketType.channel)
     async def the_dragon(self, ctx: commands.Context):
         """
         Posts and awesome ASCII Art Dragon!
@@ -170,7 +168,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
     @ auto_meta_info_group(case_insensitive=True, cls=AntiPetrosBaseGroup, invoke_without_command=True)
     @allowed_channel_and_allowed_role(in_dm_allowed=True)
-    @commands.cooldown(1, 15, commands.BucketType.channel)
+    @commands.cooldown(1, 5, commands.BucketType.channel)
     async def flip_coin(self, ctx: commands.Context):
         """
         Simulates a coin flip and posts the result as an image of a Petros Dollar.
@@ -198,10 +196,18 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
             await ctx.reply(**embed, allowed_mentions=AllowedMentions.none())
             return coin
 
+    @commands.cooldown(1, 5, commands.BucketType.member)
     @flip_coin.command(name='text')
     async def flip_coin_text(self, ctx: commands.Context):
-        async with ctx.typing():
+        """
+        Renders the `flip_coin` command as text only, without images.
 
+        Subcommand of `flip_coin`
+
+        Example:
+            @AntiPetros flip_coin text
+        """
+        async with ctx.typing():
             result = (secrets.randbelow(2) + 1)
             coin = "heads" if is_even(result) is True else 'tails'
             color = "green" if coin == "heads" else "red"
@@ -217,7 +223,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
     @ auto_meta_info_command()
     @allowed_channel_and_allowed_role()
-    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def urban_dictionary(self, ctx, term: str, entries: int = 1):
         """
         Searches Urbandictionary for the search term and post the answer as embed
@@ -254,7 +260,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
     @ auto_meta_info_command()
     @ allowed_channel_and_allowed_role()
-    @ commands.cooldown(1, 60, commands.BucketType.channel)
+    @ commands.cooldown(1, 5, commands.BucketType.channel)
     async def make_figlet(self, ctx, *, text: str):
         """
         Posts an ASCII Art version of the input text.
@@ -296,7 +302,19 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         return b_image
 
     @universal_log_profiler
-    async def parse_dice_line(self, dice_line: str):
+    async def parse_dice_line(self, dice_line: str) -> List[Tuple[int, str]]:
+        """
+        Parses the input string for the `roll_dice` command into a tuple of "amounts" and "type of dice".
+
+        Args:
+            dice_line (str): input string
+
+        Raises:
+            ParseDiceLineError: If the format is not in the needed format (e.g. "1d6 6d8") or the type of dice does not exist.
+
+        Returns:
+            List[Tuple[int, str]]: list of tuples, that conist of the amount to role and the type of dice.
+        """
         _out = []
         statements = dice_line.split()
         for statement in statements:
@@ -310,17 +328,26 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
     @staticmethod
     @universal_log_profiler
     async def _roll_the_dice(sides):
+        """
+        Roles the die via the `secrets` module.
+        """
         return secrets.randbelow(sides) + 1
 
     @staticmethod
     @universal_log_profiler
     def _get_dice_images(result_image_file_paths):
+        """
+        Retrieves the images of the dice from the filesystem.
+        """
         images = [Image.open(dice_image) for dice_image in result_image_file_paths]
         return images
 
     @staticmethod
     @universal_log_profiler
     def _sum_dice_results(in_result):
+        """
+        Calculates the sum of the dice.
+        """
         result_dict = {key: sum(value) for key, value in in_result.items()}
         result_combined = sum(value for key, value in result_dict.items())
 
@@ -338,6 +365,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         Args:
             dice_line (str): the dice you want to roll in the format `2d6`, first number is amount. Multiple different dice can be rolled, just seperate them by a space `2d6 4d20 1d4`.
         """
+        # TODO: Refractor this ugly mess
         dice_limit = 100
         results = {}
 
@@ -378,8 +406,18 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
                                                        color='random')
         await ctx.send(**embed_data)
 
+    @commands.cooldown(1, 5, commands.BucketType.member)
     @roll_dice.command(name='text')
     async def roll_dice_text(self, ctx, *, dice_line: str):
+        """
+        Renders the `roll_dice` command as text only, without images.
+
+        Subcommand of `roll_dice`
+
+        Example:
+            @AntiPetros roll_dice text
+        """
+        # TODO: Refractor this ugly mess
         dice_limit = 100
         results = {}
         parsed_dice_line = await self.parse_dice_line(dice_line)
@@ -476,7 +514,16 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
     @auto_meta_info_command(aliases=['music', 'good_music'])
     @allowed_channel_and_allowed_role(False)
+    @commands.cooldown(1, 5, commands.BucketType.member)
     async def random_music(self, ctx: commands.Context):
+        """
+        Posts a youtube music video link, select randomly from its internal list of youtube links.
+
+        Highly oppinionated by Giddi ;).
+
+        Example:
+            @AntiPetros random_music
+        """
         data = self.youtube_links
         selection = random.choice(list(data.keys()))
         band, song_title = selection.split('-')
@@ -487,6 +534,21 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
     @owner_or_admin()
     @log_invoker(log, 'warning')
     async def add_music(self, ctx: commands.Context, band: str, title: str, youtube_link: UrlConverter):
+        """
+        Adds a youtube music video link to the bots internal youtube link storage.
+
+        This makes it possible for the youtube link to show up when the `random_music` command is used.
+
+        **WARNING** When this command is used, it logs the user! It also messages Giddi the Link and the Name of the Person that added it**WARNING**
+
+        Args:
+            band (str): The name of the Band or Artist. Needs to be put in quotes(") if it contains spaces
+            title (str): The name of the Tile. Needs to be put in quotes(") if it contains spaces
+            youtube_link (UrlConverter): The actual linkt to the video.
+
+        Example:
+            @AntiPetros add_music "Weird Al Yankovic" "Amish Paradise" https://www.youtube.com/watch?v=lOfZLb33uCg
+        """
         if "youtube" not in youtube_link.casefold():
             await ctx.send('Please only provide links to youtube in the format `https://www.youtube.com/watch?v=XXXXXX`!', delete_after=120)
             await delete_message_if_text_channel(ctx)
@@ -500,6 +562,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         data[key] = youtube_link
         writejson(data, self.music_data_file)
         await ctx.send(f"Added `{key}` <-> `{youtube_link}` to my Database!")
+        await self.bot.message_creator(f"`{key}` <-> `{youtube_link}` was added to my Database!, by {ctx.author.name}")
         await delete_message_if_text_channel(ctx)
 
 # endregion [Commands]
@@ -518,7 +581,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

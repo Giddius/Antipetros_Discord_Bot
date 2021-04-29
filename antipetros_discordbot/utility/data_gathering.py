@@ -7,7 +7,6 @@ import inspect
 from textwrap import dedent
 import subprocess
 import shutil
-import re
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from discord.ext import commands, tasks
@@ -15,7 +14,7 @@ import discord
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseGroup
 
 # endregion[Imports]
 

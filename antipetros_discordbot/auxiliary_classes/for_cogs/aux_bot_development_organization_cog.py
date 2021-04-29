@@ -9,18 +9,7 @@
 # * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
 
 import os
-import re
-import random
-import asyncio
-import asyncio
-import random
-from typing import Union
 from datetime import datetime
-from tempfile import TemporaryDirectory
-from functools import partial
-from concurrent.futures import ThreadPoolExecutor
-from dateparser import parse as date_parse
-from asyncio import get_event_loop
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
 import discord
@@ -71,11 +60,7 @@ import gidlogger as glog
 
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, readit, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.regexes import LOG_NAME_DATE_TIME_REGEX, LOG_SPLIT_REGEX, MOD_TABLE_START_REGEX, MOD_TABLE_END_REGEX, MOD_TABLE_LINE_REGEX
-from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
-from antipetros_discordbot.utility.misc import SIZE_CONV_BY_SHORT_NAME
 # endregion[Imports]
 
 # region [TODO]

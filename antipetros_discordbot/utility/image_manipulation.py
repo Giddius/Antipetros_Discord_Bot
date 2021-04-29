@@ -7,30 +7,10 @@
 # region[Imports]
 
 import os
-import subprocess
-import shutil
-import sys
-import asyncio
 import discord
 from discord.ext import commands, tasks
-from inspect import getmembers, isclass, isfunction
-from pprint import pprint, pformat
-from typing import Union, Dict, Set, List, Tuple
-from datetime import tzinfo, datetime, timezone, timedelta
-from icecream import ic
-import re
 from dotenv import load_dotenv
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-import random
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial, cached_property
-from contextlib import contextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from enum import Enum, unique, Flag, auto
 from rich import print as rprint, inspect as rinspect
-from time import time, sleep
-from timeit import Timer, timeit
-from textwrap import dedent
-from antipetros_discordbot.utility.gidtools_functions import writejson, writeit, readit, pathmaker, loadjson, clearit, pickleit, get_pickled
 from PIL import Image, ImageDraw, ImageFont, ImageChops, ImageFilter, ImageOps, ImageEnhance, ImageFile, ImageColor, ImageStat, ImagePalette, ImageSequence, ImageMath, ImageCms, ImageWin, ImageShow, ImageMode, ImagePath
 import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper

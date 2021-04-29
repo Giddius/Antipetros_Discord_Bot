@@ -5,39 +5,29 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import asyncio
-from configparser import ConfigParser, NoOptionError, NoSectionError
-from collections import namedtuple
 from typing import List
-from datetime import datetime, timedelta, timezone
-from textwrap import dedent
-from pprint import pformat
-from io import BytesIO
+from datetime import datetime, timezone
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
-from fuzzywuzzy import process as fuzzprocess
 from discord.ext import commands
 from typing import TYPE_CHECKING
 from asyncstdlib.builtins import map as amap
-from functools import partial, partialmethod
+from functools import partial
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import make_config_name, make_other_source_code_images, delete_message_if_text_channel, make_other_source_code_images_to_pil
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writejson, bytes2human
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel, make_other_source_code_images
+from antipetros_discordbot.utility.checks import log_invoker, owner_or_admin
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 
-from antipetros_discordbot.auxiliary_classes.for_cogs.aux_config_cog import AddedAliasChangeEvent
 from antipetros_discordbot.utility.converters import CommandConverter
 from antipetros_discordbot.utility.exceptions import ParameterErrorWithPossibleParameter
 
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, RequiredFolder, auto_meta_info_command
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

@@ -5,33 +5,17 @@
 # * Standard Library Imports -->
 import gc
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import logging
-import platform
-import subprocess
-from enum import Enum, Flag, auto, unique
-from time import sleep
-from pprint import pprint, pformat
+from enum import Enum
 
-from datetime import tzinfo, datetime, timezone, timedelta
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial, cached_property
-from contextlib import contextmanager, asynccontextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from multiprocessing import Pool
+from datetime import datetime
+from functools import cached_property
+from contextlib import asynccontextmanager
 from tempfile import TemporaryDirectory
-from urllib.parse import urlparse
 import asyncio
 import unicodedata
 from io import BytesIO
-from textwrap import dedent, indent, TextWrapper
 import imgkit
 # * Third Party Imports -->
-from icecream import ic
 # import requests
 # import pyperclip
 # import matplotlib.pyplot as plt
@@ -40,13 +24,11 @@ from icecream import ic
 # from github import Github, GithubException
 # from jinja2 import BaseLoader, Environment
 # from natsort import natsorted
-from fuzzywuzzy import fuzz, process as fuzzprocess
 import aiohttp
 import discord
 from discord.ext import tasks, commands, flags
 from async_property import async_property
-from dateparser import parse as date_parse
-from inspect import getmembers, getdoc, getsource, getsourcefile, getsourcelines, getframeinfo, getfile
+from inspect import getsource, getsourcefile, getsourcelines
 # * Gid Imports -->
 import gidlogger as glog
 import markdown
@@ -56,25 +38,20 @@ from pygments.formatters import HtmlFormatter, ImageFormatter
 from pygments.styles import get_style_by_name, get_all_styles
 from pygments.filters import get_all_filters
 # * Local Imports -->
-from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, alt_seconds_to_pretty, delete_message_if_text_channel, antipetros_repo_rel_path
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled, bytes2human, readit, writeit
+from antipetros_discordbot.utility.misc import alt_seconds_to_pretty, antipetros_repo_rel_path
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, has_attachments, owner_or_admin
+from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, readit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 
 
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
-from antipetros_discordbot.utility.emoji_handling import normalize_emoji
-from antipetros_discordbot.utility.parsing import parse_command_text_file
-from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock, html_codeblock
 from antipetros_discordbot.utility.converters import CommandConverter
 from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle
 
-from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+from typing import TYPE_CHECKING
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -83,6 +60,8 @@ if TYPE_CHECKING:
 # endregion[Imports]
 
 # region [TODO]
+
+# TODO: Docstring for all non command methods.
 
 
 # endregion [TODO]
@@ -125,9 +104,11 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # region [ClassAttributes]
 
     public = True
-    meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
+    meta_status = CogMetaStatus.WORKING
     long_description = ""
     extra_info = ""
+    short_doc = ""
+    brief = ""
     required_config_data = {'base_config': {},
                             'cogs_config': {}}
     required_folder = []
@@ -204,6 +185,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Listener]
 
+
     @commands.Cog.listener(name='on_member_join')
     @universal_log_profiler
     async def update_time_sorted_member_ids_join(self, member):
@@ -219,15 +201,25 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Commands]
 
+
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def info_bot(self, ctx: commands.Context):
+        """
+        Shows Info about the Bot itself.
+
+        Example:
+            @AntiPetros info_bot
+        """
         name = self.bot.display_name
         cleaned_prefixes = await self._clean_bot_prefixes(ctx)
+        command_usage_counter = await self.bot.get_command_frequency(as_counter=True)
+        most_used_command_name, most_used_command_amount = command_usage_counter.most_common(1)[0]
 
         data = {"Usable Prefixes": ('\n'.join(cleaned_prefixes), False),
-                "Commands are Case-INsensitive?": ('✅' if self.bot.case_insensitive is True else '❎', True),
+                "Commands are Case-INsensitive?": ('✅' if self.bot.case_insensitive is True else '❎', False),
                 "Number of Commands": (await self.amount_commands(), True),
+                "Most used Command": (f"`{most_used_command_name}` used {most_used_command_amount} times", True),
                 "Release Date": (datetime(year=2021, month=3, day=11).strftime("%a the %d. of %b, %Y"), True),
                 "Version": (str(os.getenv('ANTIPETROS_VERSION')), True),
                 "Uptime": (self.uptime, True),
@@ -236,8 +228,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                 "Github Link": (embed_hyperlink('Github Repo', self.bot.github_url), True),
                 "Wiki": (embed_hyperlink('Github Wiki', self.bot.github_wiki_url), True),
                 "Invocations since launch": (await self.bot.get_amount_invoked_overall(), True),
-                "Roles": (', '.join(role.mention for role in self.bot.all_bot_roles if "everybody" not in role.name.casefold()), False),
-                }
+                "Roles": (', '.join(role.mention for role in self.bot.all_bot_roles if "everybody" not in role.name.casefold()), False)}
 
         fields = []
         for key, value in data.items():
@@ -255,7 +246,10 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def info_guild(self, ctx: commands.Context):
         """
-        Shows some attributes of the current Guild.
+        Shows some info of the Antistasi Guild.
+
+        Example:
+            @AntiPetros info_guild
         """
         as_guild = self.bot.antistasi_guild
         # await as_guild.chunk()
@@ -281,7 +275,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                 "Rules Channel": (as_guild.rules_channel.mention, False),
                 "Member for longest time": (await self._oldest_youngest_member(True), False),
                 "Member for shortest time": (await self._oldest_youngest_member(False), False),
-                "Most Used Channel since bot went live": (await self.most_used_channel(), False)}
+                "Most Used Channel": (await self.most_used_channel(), False)}
 
         fields = []
         for key, value in data.items():
@@ -294,6 +288,14 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def info_me(self, ctx: commands.Context):
+        """
+        Shows info about the invoking user.
+
+        Including `join position`.
+
+        Example:
+            @AntiPetros info_me
+        """
         async with ctx.typing():
             member = ctx.author
             all_true_permissions = [str(permission) for permission, value in iter(member.guild_permissions) if value is True]
@@ -326,6 +328,17 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     @auto_meta_info_command(hidden=True, categories=CommandCategory.ADMINTOOLS)
     @owner_or_admin(False)
     async def info_other(self, ctx: commands.Context, member_id: int):
+        """
+        Same as `info_me`, but about other Users.
+
+        This command is limited to Admins, to prevent user stalking.
+
+        Args:
+            member_id (int): id of the user to get info about.
+
+        Example:
+            @AntiPetros info_other 576522029470056450
+        """
         async with ctx.typing():
             member = await self.bot.retrieve_antistasi_member(member_id)
             all_true_permissions = [str(permission) for permission, value in iter(member.guild_permissions) if value is True]
@@ -347,136 +360,20 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
             await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
-    @auto_meta_info_command()
-    @allowed_channel_and_allowed_role()
-    async def info_command(self, ctx: commands.Context, command: CommandConverter, as_codeblock: str = None):
-        name = command.name
-        aliases = command.aliases
-        command_help = command.help
-        cog_file_name = os.path.basename(await antipetros_repo_rel_path(getsourcefile(command.cog.__class__)))
-        github_link, start_line_number = await self._get_github_line_link(command)
-        if as_codeblock is not None and as_codeblock.casefold() == 'codeblock':
-            embed_data = embed_data = await self.bot.make_generic_embed(title=name, url=github_link, description=command_help,
-                                                                        fields=[self.bot.field_item(name="Aliases", value='\n'.join(aliases), inline=False),
-                                                                                self.bot.field_item(name="Link to Source", value=embed_hyperlink(f"{cog_file_name}", github_link), inline=False)],
-                                                                        thumbnail=None)
-            rel_path = await antipetros_repo_rel_path(getsourcefile(command.cog.__class__))
-            raw_source_code = f'\t# {rel_path}\n\n' + getsource(command.callback)
-            await self.bot.split_to_messages(ctx, raw_source_code, in_codeblock=True, syntax_highlighting='py')
-            await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-        else:
-            async with self._make_source_code_image(command, start_line_number) as source_image_binary:
-                embed_data = await self.bot.make_generic_embed(title=name, url=github_link, description=command_help,
-                                                               fields=[self.bot.field_item(name="Aliases", value='\n'.join(aliases)if aliases != [] else 'None', inline=False),
-                                                                       self.bot.field_item(name="Link to Source", value=embed_hyperlink(f"{cog_file_name}", github_link), inline=False)],
-                                                               thumbnail=None,
-                                                               image=discord.File(source_image_binary, filename=command.name + '.png'))
-
-                await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-                gif = await self._get_command_gif(command.name)
-                if gif is not None:
-                    gif_file = discord.File(gif)
-                    await ctx.send(file=gif_file)
-                await asyncio.sleep(2)
-
-    @auto_meta_info_command()
-    @has_attachments(1)
-    async def code_file_to_image(self, ctx: commands.Context, as_codeblock: str = None):
-        async with ctx.typing():
-            file = ctx.message.attachments[0]
-            file_name = file.filename
-
-            with TemporaryDirectory() as tempdir:
-                path = pathmaker(tempdir, file_name)
-                await file.save(path)
-                content = readit(path)
-            if as_codeblock is not None and as_codeblock.casefold() == 'codeblock':
-                await self.bot.split_to_messages(ctx, content, in_codeblock=True, syntax_highlighting=file_name.split('.')[-1])
-            else:
-                image, lexer = await self._make_other_source_code_images(content)
-                embed_data = await self.bot.make_generic_embed(title=file_name.title(),
-                                                               description=f"Lexer name: `{lexer.name}`",
-                                                               thumbnail=None,
-                                                               image=image)
-                await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-
 
 # endregion [Commands]
 
 # region [HelperMethods]
 
-
     @universal_log_profiler
     async def make_time_sorted_guild_member_id_list(self):
+        log.debug("Updating time_sorted_guild_member_id_list.")
         if self.bot.antistasi_guild.chunked is False:
             await self.bot.antistasi_guild.chunk(cache=True)
         all_member_ids_and_time = [await asyncio.sleep(0, (member.id, member.joined_at)) for member in self.bot.antistasi_guild.members if member is not self.bot.antistasi_guild.owner]
         sorted_member_ids_and_time = await asyncio.to_thread(sorted, all_member_ids_and_time, key=lambda x: x[1])
         self.time_sorted_guild_member_ids = sorted_member_ids_and_time
-
-    @universal_log_profiler
-    async def _get_command_gif(self, command_name):
-        gif_name = f"{command_name}_command.gif"
-        for file in os.scandir(APPDATA['gifs']):
-            if file.is_file() and file.name.casefold() == gif_name.casefold():
-                return file.path
-        return None
-
-    @universal_log_profiler
-    async def _make_other_source_code_images(self, scode: str):
-
-        lexer = guess_lexer(scode)
-
-        image = highlight(scode, lexer, ImageFormatter(style=self.code_style,
-                                                       font_name='Fira Code',
-                                                       line_number_bg="#2f3136",
-                                                       line_number_fg="#ffffff",
-                                                       line_number_chars=3,
-                                                       line_pad=5,
-                                                       font_size=20,
-                                                       line_number_bold=True))
-
-        return image, lexer
-
-    @ asynccontextmanager
-    async def _make_source_code_image(self, command: commands.Command, start_line_number: int):
-        rel_path = await antipetros_repo_rel_path(getsourcefile(command.cog.__class__))
-        raw_source_code = f'\t# {rel_path}\n\n' + getsource(command.callback)
-
-        image = await asyncio.to_thread(highlight, raw_source_code, PythonLexer(), ImageFormatter(style=self.code_style,
-                                                                                                  font_name='Fira Code',
-                                                                                                  line_number_start=start_line_number,
-                                                                                                  line_number_bg="#2f3136",
-                                                                                                  line_number_fg="#ffffff",
-                                                                                                  line_number_chars=3,
-                                                                                                  line_pad=5,
-                                                                                                  font_size=20,
-                                                                                                  line_number_bold=True))
-        with BytesIO() as image_binary:
-            image_binary.write(image)
-            image_binary.seek(0)
-            yield image_binary
-
-    @universal_log_profiler
-    async def _get_github_line_link(self, command: commands.Command):
-        base_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/"
-        rel_path = await antipetros_repo_rel_path(getsourcefile(command.cog.__class__))
-        source_lines = getsourcelines(command.callback)
-        start_line_number = source_lines[1]
-        code_length = len(source_lines[0])
-        full_path = base_url + rel_path + f'#L{start_line_number}-L{start_line_number+code_length-1}'
-        return full_path, start_line_number
-
-    @universal_log_profiler
-    async def _get_allowed_channels(self):
-        indicator_permissions = ['read_messages', 'send_messages', 'manage_messages', 'add_reactions']
-        allowed_channels = []
-        for channel in self.bot.antistasi_guild.text_channels:
-            if channel.type is not discord.ChannelType.category:
-                channel_permission = channel.permissions_for(self.bot.bot_member)
-                if all(getattr(channel_permission, permission_name) is True for permission_name in indicator_permissions):
-                    allowed_channels.append(channel)
-        return [channel.mention for channel in sorted(allowed_channels, key=lambda x: x.position, reverse=False)]
+        log.debug("Finished updating time_sorted_guild_member_id_list.")
 
     @universal_log_profiler
     async def _clean_bot_prefixes(self, ctx: commands.Context):
@@ -487,7 +384,8 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
     @universal_log_profiler
     async def _oldest_youngest_member(self, get_oldest=True):
-
+        if not self.time_sorted_guild_member_ids:
+            await self.make_time_sorted_guild_member_id_list()
         if get_oldest is True:
             oldest_member_and_date = self.time_sorted_guild_member_ids[0]
         else:

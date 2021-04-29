@@ -14,7 +14,7 @@ from discord.ext import commands
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.exceptions import NotNecessaryRole, IsNotTextChannelError, MissingAttachmentError, NotAllowedChannelError, IsNotDMChannelError, NotNecessaryDmId, NotAllowedMember
+from antipetros_discordbot.utility.exceptions import IsNotDMChannelError, IsNotTextChannelError, MissingAttachmentError, NotAllowedChannelError, NotAllowedMember, NotNecessaryRole
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_OPTION_NAMES, COG_CHECKER_ATTRIBUTE_NAMES
 

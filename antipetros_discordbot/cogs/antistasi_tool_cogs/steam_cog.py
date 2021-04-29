@@ -4,10 +4,9 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 from datetime import datetime
-from textwrap import dedent
 from collections import namedtuple
 import re
-from typing import Union, List, Set, Tuple, Dict, TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, tasks
 
@@ -15,16 +14,14 @@ from bs4 import BeautifulSoup
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 
 
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

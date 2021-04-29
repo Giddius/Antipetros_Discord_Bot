@@ -3,13 +3,12 @@
 
 
 import os
-from typing import List, Union, Callable, Set, Dict, Mapping, Tuple, Optional, Iterable, TYPE_CHECKING
+from typing import List, Tuple, Union
 import shutil
-from inspect import getmembers, getfile, getsourcefile, getsource, getsourcelines, getdoc
+from inspect import getdoc, getsourcefile
 from datetime import datetime, timezone, timedelta
 import gidlogger as glog
 from collections import Counter
-from icecream import ic
 import psutil
 import discord
 from discord.ext import commands, flags, tasks, ipc
@@ -21,8 +20,8 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker, timename
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.misc import antipetros_repo_rel_path
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, universal_log_profiler
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 # endregion[Imports]
 
 # region [Constants]

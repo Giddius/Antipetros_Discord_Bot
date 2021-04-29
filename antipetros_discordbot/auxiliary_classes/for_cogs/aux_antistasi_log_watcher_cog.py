@@ -10,17 +10,13 @@
 
 import os
 import re
-import random
 import asyncio
 from asyncstdlib import map as async_map
-import random
 from typing import Union
 from datetime import datetime
 from tempfile import TemporaryDirectory
-from functools import partial, cached_property
-from concurrent.futures import ThreadPoolExecutor
+from functools import cached_property
 from dateparser import parse as date_parse
-from asyncio import get_event_loop
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
 # import discord
@@ -76,8 +72,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.regexes import LOG_NAME_DATE_TIME_REGEX, LOG_SPLIT_REGEX, MOD_TABLE_START_REGEX, MOD_TABLE_END_REGEX, MOD_TABLE_LINE_REGEX
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.misc import SIZE_CONV_BY_SHORT_NAME
-from antipetros_discordbot.utility.general_decorator import debug_timing_log
-from antipetros_discordbot.utility.misc import async_list_iterator, async_dict_items_iterator
+from antipetros_discordbot.utility.misc import async_list_iterator
 # endregion[Imports]
 
 # region [TODO]

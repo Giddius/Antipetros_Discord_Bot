@@ -4,11 +4,9 @@
 import os
 import logging
 from enum import Enum, auto
-from typing import Union, List, Set, Dict, Optional, Tuple, Callable, Iterable
-import sqlite3 as sqlite
+from typing import List, Union
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-import aiosqlite
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidsql.phrasers import GidSqliteInserter

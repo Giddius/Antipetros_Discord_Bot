@@ -4,13 +4,8 @@
 # * Standard Library Imports -->
 import os
 from typing import TYPE_CHECKING
-from tempfile import TemporaryDirectory
 import asyncio
-from zipfile import ZipFile, ZIP_LZMA
-from tempfile import TemporaryDirectory
-from textwrap import dedent
-from datetime import datetime, timedelta
-from typing import Iterable, Union, List
+from datetime import datetime
 # * Third Party Imports -->
 # import requests
 # import pyperclip
@@ -20,30 +15,22 @@ from typing import Iterable, Union, List
 # from github import Github, GithubException
 # from jinja2 import BaseLoader, Environment
 # from natsort import natsorted
-from fuzzywuzzy import process as fuzzprocess
 import discord
 from io import StringIO
 from discord.ext import commands, tasks
 from webdav3.client import Client
 from async_property import async_property
-from dateparser import parse as date_parse
 from pytz import timezone
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role, has_attachments
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, has_attachments
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
-from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.auxiliary_classes.for_cogs.required_filesystem_item import RequiredFile, RequiredFolder
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

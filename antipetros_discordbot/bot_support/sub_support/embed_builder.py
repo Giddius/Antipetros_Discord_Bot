@@ -24,7 +24,6 @@ from discord import Color as DiscordColor
 from discord import Embed
 from discord.ext import commands, tasks
 from dateparser import parse as date_parse
-from icecream import ic
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 

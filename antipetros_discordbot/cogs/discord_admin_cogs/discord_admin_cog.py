@@ -4,33 +4,28 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from textwrap import dedent
 import asyncio
 from tempfile import TemporaryDirectory
-import lzma
 from zipfile import ZipFile, ZIP_LZMA
 from typing import TYPE_CHECKING
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, flags, tasks
 import discord
-from datetime import datetime, timedelta, timezone
-from dateparser import parse as date_parse
-from typing import Iterable, List, Dict, Optional, Tuple, Union, Callable, Mapping
+from datetime import datetime
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from async_property import async_property
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin, has_attachments
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel
+from antipetros_discordbot.utility.checks import log_invoker, owner_or_admin
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.converters import DateTimeFullConverter, date_time_full_converter_flags
+from antipetros_discordbot.utility.converters import date_time_full_converter_flags
 
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosFlagCommand, CommandCategory, auto_meta_info_command
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

@@ -1,5 +1,3 @@
-import re
-import os
 from antipetros_discordbot.utility.regexes import COMMAND_TEXT_FILE_REGEX
 from typing import Union
 

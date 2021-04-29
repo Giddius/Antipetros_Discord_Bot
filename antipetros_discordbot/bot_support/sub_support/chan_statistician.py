@@ -17,8 +17,6 @@ import discord
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import async_date_today
-from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus

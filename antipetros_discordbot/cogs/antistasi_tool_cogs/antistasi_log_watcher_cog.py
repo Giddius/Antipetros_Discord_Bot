@@ -9,7 +9,7 @@ import asyncio
 from zipfile import ZipFile, ZIP_LZMA
 from tempfile import TemporaryDirectory
 from textwrap import dedent
-from typing import Iterable, Union, List
+from typing import List, Union
 from contextlib import asynccontextmanager
 # * Third Party Imports -->
 # import requests
@@ -22,7 +22,6 @@ from contextlib import asynccontextmanager
 # from natsort import natsorted
 from fuzzywuzzy import process as fuzzprocess
 import discord
-from icecream import ic
 from discord.ext import commands, tasks
 from webdav3.client import Client
 from async_property import async_property
@@ -33,18 +32,16 @@ from jinja2 import Environment, FileSystemLoader
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, split_camel_case_string, async_dict_items_iterator, async_list_iterator, async_load_json, async_write_it
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role
+from antipetros_discordbot.utility.misc import async_dict_items_iterator, async_list_iterator, async_write_it
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
-from antipetros_discordbot.auxiliary_classes.for_cogs.required_filesystem_item import RequiredFolder, RequiredFile
+
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 

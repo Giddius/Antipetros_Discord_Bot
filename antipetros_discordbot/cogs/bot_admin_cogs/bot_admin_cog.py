@@ -4,8 +4,7 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from datetime import datetime, timedelta
-from textwrap import dedent
+from datetime import datetime
 import random
 import asyncio
 import re
@@ -13,23 +12,19 @@ import re
 import discord
 from discord.ext import commands, tasks
 import gc
-from icecream import ic
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-from typing import TYPE_CHECKING, List, Dict, Optional, Tuple, Any, Union, Callable, Iterable, Set, Mapping
+from typing import List, TYPE_CHECKING
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name, seconds_to_pretty, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, log_invoker, owner_or_admin, only_giddi
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel
+from antipetros_discordbot.utility.checks import log_invoker, only_giddi, owner_or_admin
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, RequiredFolder, auto_meta_info_command
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import make_message_list
-from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.converters import CogConverter
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -90,7 +85,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Init]
 
-
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
@@ -122,7 +116,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Loops]
 
-
     @tasks.loop(hours=1)
     @universal_log_profiler
     async def garbage_clean_loop(self):
@@ -148,6 +141,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Listener]
 
+
     @commands.Cog.listener(name='on_reaction_add')
     @universal_log_profiler
     async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):
@@ -162,7 +156,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 
 # endregion[Listener]
-
 
     @auto_meta_info_command(aliases=['reload', 'refresh'])
     @commands.is_owner()
@@ -301,7 +294,27 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
             text += f"NAME: {cog_name}, CONFIG_NAME: {cog_object.config_name}\n{'-'*10}\n"
         await self.bot.split_to_messages(ctx, text, in_codeblock=True, syntax_highlighting='fix')
 
+    @ auto_meta_info_command()
+    @owner_or_admin()
+    async def query_rate_limited(self, ctx: commands.Context):
+        """
+        Checks if the bot is rate limited currently.
+
+        The bot checks this every 30 min anyways (and logs the result), this command checks it on demand.
+
+        Example:
+            @AntiPetros query_rate_limited
+        """
+        result = self.bot.is_ws_ratelimited()
+        verbose_result = "**IS**" if result is True else "**IS NOT**"
+        color = 'red' if result is True else "green"
+        thumbnail = "cross_mark" if result is True else "check_mark"
+        embed_data = await self.bot.make_generic_embed(title="Rate Limit Check", description=f"The Bot {verbose_result} currently Rate Limited.", color=color, thumbnail=thumbnail)
+        await ctx.send(**embed_data)
+
+
 # region [Helper]
+
     @universal_log_profiler
     async def _update_listener_enabled(self):
         for listener_name in self.listeners_enabled:
@@ -309,7 +322,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 
 # endregion[Helper]
-
 
     def cog_check(self, ctx):
         return True

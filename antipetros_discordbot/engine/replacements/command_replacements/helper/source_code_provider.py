@@ -10,49 +10,12 @@
 
 import gc
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import base64
-import pickle
-import random
-import shelve
-import shutil
-import asyncio
-import logging
-import sqlite3
-import platform
-import importlib
-import subprocess
 import unicodedata
 
-from io import BytesIO
-from abc import ABC, abstractmethod
-from copy import copy, deepcopy
-from enum import Enum, Flag, auto
-from time import time, sleep
-from pprint import pprint, pformat
-from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
-from timeit import Timer
-from typing import Union, Callable, Iterable, List, Dict, Optional, Tuple, Any, Callable, Mapping, TYPE_CHECKING
-from zipfile import ZipFile
-from datetime import tzinfo, datetime, timezone, timedelta
-from tempfile import TemporaryDirectory
-from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
-from functools import wraps, partial, lru_cache, singledispatch, total_ordering, cached_property
-from importlib import import_module, invalidate_caches
-from contextlib import contextmanager
-from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
+from typing import Callable, Callable
+from functools import lru_cache, partial
 import inspect
-
+from pprint import pprint
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
 import discord
@@ -91,9 +54,9 @@ import gidlogger as glog
 
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle
+from antipetros_discordbot.utility.pygment_styles import DraculaStyle
 # endregion[Imports]
 
 # region [TODO]
@@ -123,7 +86,8 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class SourceCodeProvider:
-    base_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/"
+    repo_base_url = os.getenv('REPO_BASE_URL')
+    wiki_base_url = os.getenv('WIKI_BASE_URL')
     base_folder_name = 'antipetros_discordbot'
     code_highlighter_style = DraculaStyle
 
@@ -136,9 +100,10 @@ class SourceCodeProvider:
             return self.source_code_image(command)
         if typus == "link":
             return self.github_line_link(command)
+        if typus == "wiki_link":
+            return self.github_wiki_link(command)
 
     @staticmethod
-    @lru_cache
     def line_numbers(command: commands.Command) -> tuple:
         source_lines = inspect.getsourcelines(command.callback)
         start_line_number = source_lines[1]
@@ -146,12 +111,14 @@ class SourceCodeProvider:
         code_line_numbers = tuple(range(start_line_number, start_line_number + code_length))
         return code_line_numbers
 
-    @lru_cache
     def github_line_link(self, command: commands.Command) -> str:
         rel_path = self.antipetros_repo_rel_path(inspect.getsourcefile(command.cog.__class__))
         code_line_numbers = self.line_numbers(command)
-        full_path = self.base_url + rel_path + f'#L{min(code_line_numbers)}-L{max(code_line_numbers)}'
+        full_path = '/'.join([self.repo_base_url, rel_path, f'#L{min(code_line_numbers)}-L{max(code_line_numbers)}'])
         return full_path
+
+    def github_wiki_link(self, command: commands.Command) -> str:
+        return '/'.join([self.wiki_base_url, command.name])
 
     @lru_cache
     def antipetros_repo_rel_path(self, in_path: str) -> str:

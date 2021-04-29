@@ -4,16 +4,14 @@ import os
 import sys
 import asyncio
 from io import BytesIO
-import inspect
 from asyncio import get_event_loop
 from datetime import datetime
-from textwrap import dedent
 from PIL import Image, ImageFilter, ImageEnhance
 from functools import wraps, partial
 from concurrent.futures import ThreadPoolExecutor
 from inspect import getclosurevars
 import json
-from typing import Iterable, Union, Set, List, Tuple, Dict, Callable, Mapping, Generator, Awaitable, TypeVar
+from typing import Awaitable, Iterable, Mapping, Tuple, TypeVar
 # * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
 from validator_collection import validators
@@ -21,13 +19,12 @@ import validator_collection
 import discord
 from discord.ext import commands
 from aiohttp.client_exceptions import ClientConnectionError
-from colormap.colors import HEX, Color, Colormap, hex2dec, hex2rgb, hex2web, hls2rgb, hsv2rgb, rgb2hex, rgb2hls, rgb2hsv, rgb2yuv, web2hex, yuv2rgb, rgb2yuv_int, yuv2rgb_int, to_intensity
+from colormap.colors import hex2rgb, rgb2hsv
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 # * Gid Imports -->
 import gidlogger as glog
-from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle, GithubStyle
-from inspect import getmembers, getdoc, getsource, getsourcefile, getsourcelines, getframeinfo, getfile
+from antipetros_discordbot.utility.pygment_styles import DraculaStyle, GithubStyle
 from pygments import highlight
 from pygments.lexers import PythonLexer, get_lexer_by_name, get_all_lexers, guess_lexer
 from pygments.formatters import HtmlFormatter, ImageFormatter
@@ -607,3 +604,26 @@ def get_github_line_link(base_url: str, file_path, source_lines):
     code_length = len(source_lines[0])
     full_path = base_url + rel_path + f'#L{start_line_number}-L{start_line_number+code_length-1}'
     return full_path
+
+
+def help_to_file(in_object, out_file=None):
+    """
+    redirects the output of the `help` built-in function to a file.
+
+    https://gist.github.com/abingham/e19cfd042fefcd11ba60
+
+    Args:
+        in_object (`object`): the object to use as argument for `help()`
+        out_file (`str`, optional): filepath where the output should be redirected to. Defaults to `[class_name of the object]_help.txt`.
+    """
+    out_file = f'{in_object.__class__.__name__}_help.txt' if out_file is None else pathmaker(out_file)
+    import sys
+
+    # Temporarily redirect stdout to a StringIO.
+    stdout = sys.stdout
+    with open('helpy.txt', 'w') as f:
+        sys.stdout = f
+        help(in_object)
+
+        # Don't forget to reset stdout!
+        sys.stdout = stdout

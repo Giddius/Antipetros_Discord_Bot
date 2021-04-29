@@ -4,12 +4,9 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from textwrap import dedent
 import asyncio
 from datetime import datetime
-import random
 from tempfile import TemporaryDirectory
-from copy import deepcopy
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands
 import discord
@@ -18,21 +15,20 @@ from emoji import emoji_count
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role, owner_or_admin, log_invoker, has_attachments
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel
+from antipetros_discordbot.utility.checks import has_attachments, owner_or_admin
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson, pathmaker, pickleit, get_pickled, writeit, readit
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, readit, writejson
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
 
-from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+from typing import TYPE_CHECKING
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

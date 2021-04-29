@@ -10,7 +10,7 @@
 import os
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Union, Callable
+from typing import TYPE_CHECKING, Union, Callable, Iterable, List, Tuple, Set
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands import Converter, CommandError
 from googletrans import LANGUAGES
@@ -19,18 +19,19 @@ import discord
 from dateparser import parse as date_parse
 from validator_collection import validators
 import validator_collection
+from enum import Enum, auto, Flag
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from antipetros_discordbot.utility.exceptions import ParameterError, ParameterErrorWithPossibleParameter
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand, CommandCategory
 from antipetros_discordbot.engine.replacements import CommandCategory
 from antipetros_discordbot.utility.checks import (OnlyGiddiCheck, OnlyBobMurphyCheck, BaseAntiPetrosCheck, AdminOrAdminLeadCheck, AllowedChannelAndAllowedRoleCheck,
-                                                  only_bob, only_giddi, log_invoker, is_not_giddi, owner_or_admin, has_attachments,
-                                                  in_allowed_channels, only_dm_only_allowed_id, allowed_channel_and_allowed_role, HasAttachmentCheck, OnlyGiddiCheck, OnlyBobMurphyCheck)
+                                                  HasAttachmentCheck, OnlyGiddiCheck, OnlyBobMurphyCheck)
 from antipetros_discordbot.utility.misc import check_if_url, fix_url_prefix
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.utility.enums import ExtraHelpParameter, HelpCategory
 if TYPE_CHECKING:
-    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+    pass
 # endregion[Imports]
 
 # region [TODO]
@@ -195,17 +196,40 @@ class UrlConverter(Converter):
 
 
 class HelpCategoryConverter(Converter):
-    help_categories = {}
+    possible_parameter_enum = HelpCategory
 
     async def convert(self, ctx: commands.Context, argument):
-        _out = self.help_categories.get(argument.casefold(), None)
-        if _out is None:
-            raise ParameterErrorWithPossibleParameter('help_category', argument, list(self.help_categories.keys()))
+        mod_argument = await self._normalize_argument(argument)
+        try:
+            _out = self.possible_parameter_enum(mod_argument)
+        except ValueError:
+            raise ParameterErrorWithPossibleParameter('help_catgories', argument, list(self.possible_parameter_enum.__members__))
+
         return _out
 
+    async def _normalize_argument(self, argument: str):
+        mod_argument = argument.casefold()
+        return mod_argument.replace(' ', '').replace('-', '')
+
+
+class ExtraHelpParameterConverter(Converter):
+    possible_parameter_enum = ExtraHelpParameter
+
+    async def convert(self, ctx: commands.Context, argument) -> Enum:
+        mod_argument = await self._normalize_argument(argument)
+        try:
+            _out = self.possible_parameter_enum(mod_argument)
+        except ValueError:
+            raise ParameterErrorWithPossibleParameter('extra_help_parameter', argument, list(self.possible_parameter_enum.__members__))
+        return _out
+
+    async def _normalize_argument(self, argument: str):
+        mod_argument = argument.casefold()
+        return mod_argument.replace(' ', '').replace('_', '').replace('-', '')
 
         # region[Main_Exec]
 if __name__ == '__main__':
     pass
+
 
 # endregion[Main_Exec]

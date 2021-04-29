@@ -11,17 +11,13 @@ import sys
 import time
 import asyncio
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
-from typing import Union, Any, Callable, List, Dict, Set, Tuple
+from typing import List, Union
 from discord.ext.commands import MinimalHelpCommand
 from watchgod import Change, awatch
 from discord.ext import tasks, commands, ipc
-from enum import Enum, Flag, auto, unique
-from functools import reduce, partial, wraps, lru_cache, total_ordering, cmp_to_key, singledispatch
-from operator import or_
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -368,7 +364,6 @@ class AntiPetrosBot(commands.Bot):
             except discord.NotFound:
                 log.debug('startup message was already deleted')
             log.info("shutting down bot loops")
-            self.update_check_loop.stop()
 
             log.info("retiring troops")
             self.support.retire_subsupport()

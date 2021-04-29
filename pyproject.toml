@@ -53,6 +53,9 @@ requires = [
     "webdavclient3>=3.14.5",
     "aiohttp>=3.7.3",
 ]
+requires-python = ">=3.9"
+[tools.flit.metadata.requires-extra]
+uvloop = ["uvloop>=0.15.2"]
 
 [tool.flit.scripts]
 antipetrosbot = "antipetros_discordbot.__main__:cli"

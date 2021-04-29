@@ -5,36 +5,13 @@
 # * Standard Library Imports -->
 import gc
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import logging
-import platform
-import subprocess
-from enum import Enum, Flag, auto, unique
-from time import sleep
-from pprint import pprint, pformat
+from enum import Enum
 
-from datetime import tzinfo, datetime, timezone, timedelta
-from functools import wraps, lru_cache, singledispatch, total_ordering, partial
-from contextlib import contextmanager
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from multiprocessing import Pool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from tempfile import TemporaryDirectory
-from urllib.parse import urlparse
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 import unicodedata
-from io import BytesIO
-from textwrap import dedent
-from typing import Optional, Union, Any, TYPE_CHECKING, Callable, Iterable, List, Dict, Set, Tuple, Mapping
+from typing import Callable, List, Optional, TYPE_CHECKING, Union
 from inspect import isclass
 # * Third Party Imports -->
-from icecream import ic
 # import requests
 # import pyperclip
 # import matplotlib.pyplot as plt
@@ -48,36 +25,30 @@ import aiohttp
 import discord
 from discord.ext import tasks, commands, flags
 from async_property import async_property
-from dateparser import parse as date_parse
-from copy import deepcopy, copy
 
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.cogs import get_aliases, get_doc_data
-from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel, async_write_json, async_load_json, split_camel_case_string
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker, AllowedChannelAndAllowedRoleCheck, BaseAntiPetrosCheck
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled, writeit, readit
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel
+from antipetros_discordbot.utility.checks import BaseAntiPetrosCheck
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker, Seperators, SPECIAL_SPACE
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, ExtraHelpParameter, HelpCategory
+from antipetros_discordbot.auxiliary_classes.help_dispatcher_mapping import HelpMethodDispatchMap
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink, make_box
-from antipetros_discordbot.utility.emoji_handling import normalize_emoji
-from antipetros_discordbot.utility.parsing import parse_command_text_file
-from antipetros_discordbot.utility.converters import FlagArg, HelpCategoryConverter, CogConverter, CheckConverter, CommandConverter, DateOnlyConverter, LanguageConverter, DateTimeFullConverter, date_time_full_converter_flags, CategoryConverter
+from antipetros_discordbot.utility.converters import CategoryConverter, CogConverter, CommandConverter, HelpCategoryConverter, ExtraHelpParameterConverter
 from antipetros_discordbot.utility.exceptions import ParameterError
 
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler, is_refresh_task
-
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand, CommandCategory, RequiredFile, RequiredFolder, auto_meta_info_command
+from antipetros_discordbot.utility.general_decorator import is_refresh_task, universal_log_profiler
+import inflect
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
 if os.getenv('IS_DEV', 'false').casefold() == 'true':
-    from antipetros_discordbot.utility.debug_helper import show_toast
+    pass
 
 # endregion[Imports]
 
@@ -104,11 +75,12 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 # location of this file, does not work if app gets compiled to exe with pyinstaller
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
-
+inflect_engine = inflect.engine()
 
 # endregion[Constants]
 
 # region [Helper]
+
 
 @universal_log_profiler
 def no_filter(in_object):
@@ -153,17 +125,11 @@ def filter_with_user_role(owner_ids: List[int], in_member: discord.Member, only_
                 return any(role in ['admin', 'admin lead'] for role in role_names)
             else:
                 return True
-        elif isinstance(in_object, CommandCategory):
+        elif issubclass(in_object, CommandCategory):
             return in_object.visibility_check(in_member)
     return actual_filter
 
 # endregion [Helper]
-
-
-class HelpCategory(Enum):
-    COG = 'cogs'
-    COMMAND = 'commands'
-    COMMAND_SET = 'command_sets'
 
 
 class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.META}):
@@ -190,7 +156,10 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
     required_folder = [RequiredFolder(data_folder)]
     required_files = [RequiredFile(general_help_description_file, "WiP", RequiredFile.FileType.TEXT)]
-
+    base_wiki_link = os.getenv('WIKI_BASE_URL')
+    general_wiki_links = {'cog': '/'.join([base_wiki_link, 'cogs']),
+                          'command': '/'.join([base_wiki_link, 'commands']),
+                          'category': '/'.join([base_wiki_link, 'categories'])}
     max_comma_value = 900
     amount_preview_items = 10
 # endregion [ClassAttributes]
@@ -200,18 +169,15 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-        self.help_dispatch_map = {AntiPetrosBaseCog: self._send_cog_help,
-                                  AntiPetrosBaseCommand: self._send_command_help,
-                                  AntiPetrosBaseGroup: self._send_command_help,
-                                  AntiPetrosFlagCommand: self._send_command_help,
-                                  CommandCategory: self._send_toolbox_help,
-                                  HelpCategory.COG: self._general_cog_help,
-                                  HelpCategory.COMMAND: self._general_command_help,
-                                  HelpCategory.COMMAND_SET: self._general_category_help}
+        self.help_dispatch_map = HelpMethodDispatchMap({AntiPetrosBaseCog: self._send_cog_help,
+                                                        AntiPetrosBaseCommand: self._send_command_help,
+                                                        AntiPetrosFlagCommand: self._send_command_help,
+                                                        AntiPetrosBaseGroup: self._send_command_help,
+                                                        CommandCategory: self._send_category_help,
+                                                        HelpCategory.COG: self._general_cog_help,
+                                                        HelpCategory.COMMAND: self._general_command_help,
+                                                        HelpCategory.CATEGORY: self._general_category_help})
 
-        HelpCategoryConverter.help_categories = {'cogs': HelpCategory.COG,
-                                                 'commands': HelpCategory.COMMAND,
-                                                 'command-sets': HelpCategory.COMMAND_SET}
         self._current_cogs = None
         self._current_commands = None
         self._current_category_commands = None
@@ -330,17 +296,17 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # region [Commands]
 
     @auto_meta_info_command(categories=[CommandCategory.META])
-    async def help(self, ctx: commands.Context, in_object: Optional[Union[HelpCategoryConverter, CommandConverter, CogConverter, CategoryConverter]]):
+    async def help(self, ctx: commands.Context, in_object: Optional[Union[HelpCategoryConverter, CommandConverter, CogConverter, CategoryConverter]], extra_parameter: Optional[ExtraHelpParameterConverter]):
         raw_params = ctx.message.content.split(ctx.invoked_with)[-1].strip()
-
+        print(raw_params)
         if in_object is None and raw_params == '':
-            async for embed_data in self.help_overview_embed(ctx.author):
+            async for embed_data in self.help_overview_embed(ctx.author, extra_parameter):
                 await self._send_help(ctx, embed_data)
 
         elif in_object is None and raw_params != '':
             raise ParameterError('in_object', raw_params)
         else:
-            await self._get_dispatcher(in_object)(ctx, in_object)
+            await self.help_dispatch_map.get(in_object)(ctx, in_object, extra_parameter)
 
 # endregion [Commands]
 
@@ -352,25 +318,26 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # region [Embeds]
 
     @universal_log_profiler
-    async def help_overview_embed(self, author: Union[discord.Member, discord.User]):
+    async def help_overview_embed(self, author: Union[discord.Member, discord.User], extra_parameter: ExtraHelpParameter = None):
 
         member_filter = filter_with_user_role(self.bot.owner_ids, await self.bot.retrieve_antistasi_member(author.id), True)
         data = {'cog': await self.get_cog_data(member_filter, self.remove_cog_suffix_cog_name_modifier),
                 'command': await self.get_command_data(member_filter),
-                'command-set': await self.get_category_data(member_filter)}
+                'category': await self.get_category_data(member_filter)}
         fields = []
         for key, value in data.items():
             names = list(value)
             names = await self._sort_names(names, key)
             comma_value = await self._make_comma_value(names)
-
+            wiki_link = embed_hyperlink(f'{inflect_engine.plural(key)} wiki page'.title(), self.general_wiki_links.get(key))
             fields.append(self.bot.field_item(name=f'**Possible *__`{key.title()}`__* values**',
-                                              value=f"{ZERO_WIDTH}\n> Use `help {key.lower()}s` to get a detailed list of all possible {key.lower()} values.\n{ZERO_WIDTH}\n" + comma_value + f"\n{ZERO_WIDTH}",
+                                              value=f"{ZERO_WIDTH}\n{wiki_link}\n{ZERO_WIDTH}\n> Use `help {inflect_engine.plural(key).lower()}` to get a detailed list of all possible {key.lower()} values.\n{ZERO_WIDTH}\n" +
+                                              comma_value + f"\n{ZERO_WIDTH}",
                                               inline=False))
         # fields.append(self.bot.field_item(name='Possible Source-Code-Items values',
         #                                   value="Use `source-code-items` to get the list of possible source-code-item values",
         #                                   inline=False))
-        links = f"{embed_hyperlink('GITHUB REPO', self.bot.github_url)}\n{embed_hyperlink('GIHUB WIKI',self.bot.github_wiki_url)}"
+        links = f"{embed_hyperlink('GITHUB REPO', self.bot.github_url)}\n{embed_hyperlink('GIHUB WIKI',self.base_wiki_link)}"
         description = f"{make_box(links)}\n{ZERO_WIDTH}\n" + '\n'.join(f"> {line}" for line in self.general_help_description.splitlines()) + f"\n{ZERO_WIDTH}"
         async for embed_data in self.bot.make_paginatedfields_generic_embed(title='GENERAL HELP',
                                                                             description=description,
@@ -385,12 +352,13 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     async def help_cogs_embed(self, author: Union[discord.Member, discord.User]):
         member_filter = filter_with_user_role(self.bot.owner_ids, await self.bot.retrieve_antistasi_member(author.id), False)
         fields = []
-        cog_data = await self.get_cog_data(cog_filter=member_filter, cog_name_modifier=self.remove_cog_suffix_cog_name_modifier)
+        cog_data = await self.get_cog_data(cog_filter=member_filter)
         for cog_name, cog in cog_data.items():
-            fields.append(self.bot.field_item(name=cog_name, value='\n'.join(f"> {line}"for line in cog.description.splitlines()) + f"\n{ZERO_WIDTH}", inline=False))
+            wiki_link = embed_hyperlink(f"{cog_name} {'wiki page'.title()}", cog.github_wiki_link)
+            fields.append(self.bot.field_item(name=cog_name, value=f"{ZERO_WIDTH}\n{wiki_link}\n{ZERO_WIDTH}\n" + '\n'.join(f"> {line}"for line in cog.description.splitlines()) + f"\n{ZERO_WIDTH}", inline=False))
 
         # TODO: change links to link to the cogs folder and to the cogs wiki title page
-        links = f"{embed_hyperlink('GITHUB REPO', self.bot.github_url)}\n{embed_hyperlink('GIHUB WIKI',self.bot.github_wiki_url)}"
+        links = f"{embed_hyperlink('GITHUB REPO', self.bot.github_url)}\n{embed_hyperlink('COGS GITHUB WIKI',self.general_wiki_links.get('cog'))}"
         # TODO: create cogs thumbnail
         async for embed_data in self.bot.make_paginatedfields_generic_embed(title="Cogs Help",
                                                                             description=make_box(links) + f"\n{ZERO_WIDTH}",
@@ -402,17 +370,18 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             yield embed_data
 
     @universal_log_profiler
-    async def help_commands_embed(self, author: Union[discord.Member, discord.User]):
+    async def help_commands_embed(self, author: Union[discord.Member, discord.User], extra_parameter: ExtraHelpParameter = None):
         member_filter = filter_with_user_role(self.bot.owner_ids, await self.bot.retrieve_antistasi_member(author.id), True)
         fields = []
         command_data = await self.get_command_data(command_filter=member_filter)
         frequency_dict = await self.bot.get_command_frequency(from_datetime=None, to_datetime=None, as_counter=True)
         command_data = {key: value for key, value in sorted(command_data.items(), key=lambda x: (frequency_dict.get(x[0], 0), x[0]), reverse=True)}
         for command_name, command in command_data.items():
-            fields.append(self.bot.field_item(name=command_name, value='\n'.join(f"> {line}"for line in command.brief.splitlines()) + f"\n{ZERO_WIDTH}", inline=False))
+            wiki_link = embed_hyperlink(f"{command_name} {'wiki page'.title()}", command.github_wiki_link)
+            fields.append(self.bot.field_item(name=command_name, value=f"{ZERO_WIDTH}\n{wiki_link}\n{ZERO_WIDTH}\n" + '\n'.join(f"> {line}"for line in command.brief.splitlines()) + f"\n{ZERO_WIDTH}", inline=False))
 
         # TODO: change links to link to the cogs folder and to the cogs wiki title page
-        links = f"{embed_hyperlink('GITHUB REPO', self.bot.github_url)}\n{embed_hyperlink('GIHUB WIKI',self.bot.github_wiki_url)}"
+        links = f"{embed_hyperlink('GITHUB REPO', self.bot.github_url)}\n{embed_hyperlink('COMMANDS GITHUB WIKI',self.general_wiki_links.get('command'))}"
         # TODO: create cogs thumbnail
         async for embed_data in self.bot.make_paginatedfields_generic_embed(title="Commands Help",
                                                                             description=make_box(links) + f"\n{ZERO_WIDTH}",
@@ -424,18 +393,19 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             yield embed_data
 
     @universal_log_profiler
-    async def help_categories_embed(self, author: Union[discord.Member, discord.User]):
+    async def help_categories_embed(self, author: Union[discord.Member, discord.User], extra_parameter: ExtraHelpParameter = None):
         member_filter = filter_with_user_role(self.bot.owner_ids, await self.bot.retrieve_antistasi_member(author.id), True)
         fields = []
         categories_data = await self.get_category_data(category_filter=member_filter)
 
         for category_name, category in categories_data.items():
-            fields.append(self.bot.field_item(name=category_name, value='\n'.join(f"> {line}"for line in category.description.splitlines()) + f"\n{ZERO_WIDTH}", inline=False))
+            wiki_link = embed_hyperlink(f'{category_name} {"wiki page.title()"}', category.github_wiki_link)
+            fields.append(self.bot.field_item(name=category_name, value=f"{ZERO_WIDTH}\n{wiki_link}\n{ZERO_WIDTH}\n" + '\n'.join(f" > {line}"for line in category.short_doc.splitlines()) + f"\n{ZERO_WIDTH}", inline=False))
 
         # TODO: change links to link to the cogs folder and to the cogs wiki title page
-        links = f"{embed_hyperlink('GITHUB REPO', self.bot.github_url)}\n{embed_hyperlink('GIHUB WIKI',self.bot.github_wiki_url)}"
+        links = f"{embed_hyperlink('GITHUB REPO', self.bot.github_url)}\n{embed_hyperlink('CATEGORIES GITHUB WIKI',self.general_wiki_links.get('category'))}"
         # TODO: create cogs thumbnail
-        async for embed_data in self.bot.make_paginatedfields_generic_embed(title="Command-Sets Help",
+        async for embed_data in self.bot.make_paginatedfields_generic_embed(title="Categories Help",
                                                                             description=make_box(links) + f"\n{ZERO_WIDTH}",
                                                                             thumbnail="help",
                                                                             color="GIDDIS_FAVOURITE",
@@ -445,7 +415,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             yield embed_data
 
     @universal_log_profiler
-    async def help_specific_command_embed(self, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
+    async def help_specific_command_embed(self, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand], extra_parameter: ExtraHelpParameter = None):
         field_attr = ['signature', 'allowed_in_dms', 'enabled']
         field_lists = ['allowed_channels', 'allowed_roles']
         fields = []
@@ -457,8 +427,9 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             fields.append(self.bot.field_item(name=list_attr, value='\n'.join(f"`{item}`" for item in getattr(command, list_attr))))
 
         fields.append(self.bot.field_item(name='example', value=f"```css\n{command.example}\n```"))
+        links = f"{embed_hyperlink(f'{command.name.upper()} GITHUB REPO', command.github_link)}\n{embed_hyperlink(f'{command.name.upper()} GITHUB WIKI',command.github_wiki_link)}"
         embed_data = await self.bot.make_generic_embed(title=command.name + ' HELP',
-                                                       description='\n'.join(f"> {line}" for line in command.description.splitlines()),
+                                                       description=f"{links}\n{ZERO_WIDTH}\n" + '\n'.join(f"> {line}" for line in command.description.splitlines()),
                                                        thumbnail=await command.get_source_code_image(),
                                                        image=command.gif,
                                                        url=command.github_link,
@@ -472,7 +443,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     @ universal_log_profiler
     def get_refresh_tasks(self):
         _out = []
-        from inspect import getmembers, isfunction, ismethod, isclass
+        from inspect import getmembers
         for meth_name, meth in getmembers(self):
             if hasattr(meth, 'is_refresh_task') and meth.is_refresh_task is True:
                 _out.append(meth)
@@ -480,17 +451,17 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         return _out
 
     @ universal_log_profiler
-    async def _general_cog_help(self, ctx: commands.Context, in_object):
+    async def _general_cog_help(self, ctx: commands.Context, in_object, extra_parameter: ExtraHelpParameter = None):
         async for embed_data in self.help_cogs_embed(ctx.author):
             await self._send_help(ctx, embed_data)
 
     @ universal_log_profiler
-    async def _general_command_help(self, ctx: commands.Context, in_object):
+    async def _general_command_help(self, ctx: commands.Context, in_object, extra_parameter: ExtraHelpParameter = None):
         async for embed_data in self.help_commands_embed(ctx.author):
             await self._send_help(ctx, embed_data)
 
     @ universal_log_profiler
-    async def _general_category_help(self, ctx: commands.Context, in_object):
+    async def _general_category_help(self, ctx: commands.Context, in_object, extra_parameter: ExtraHelpParameter = None):
         async for embed_data in self.help_categories_embed(ctx.author):
             await self._send_help(ctx, embed_data)
 
@@ -543,20 +514,20 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     #         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @ universal_log_profiler
-    async def _send_cog_help(self, ctx: commands.Context, cog: commands.Cog):
+    async def _send_cog_help(self, ctx: commands.Context, cog: commands.Cog, extra_parameter: ExtraHelpParameter = None):
         await ctx.send('cog')
 
     @ universal_log_profiler
-    async def _send_command_help(self, ctx: commands.Context, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
+    async def _send_command_help(self, ctx: commands.Context, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand], extra_parameter: ExtraHelpParameter = None):
         embed_data = await self.help_specific_command_embed(command)
         await ctx.send(**embed_data)
 
     @ universal_log_profiler
-    async def _send_toolbox_help(self, ctx: commands.Context, toolbox_category: CommandCategory):
+    async def _send_category_help(self, ctx: commands.Context, category: CommandCategory, extra_parameter: ExtraHelpParameter = None):
         await ctx.send('toolbox')
 
     @ universal_log_profiler
-    async def _send_check_help(self, ctx: commands.Context, check: BaseAntiPetrosCheck):
+    async def _send_check_help(self, ctx: commands.Context, check: BaseAntiPetrosCheck, extra_parameter: ExtraHelpParameter = None):
         await ctx.send('check')
 
     @ universal_log_profiler
@@ -580,9 +551,9 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     @ universal_log_profiler
     async def get_category_data(self, category_filter: Callable = no_filter, category_name_modifier: Callable = no_name_modifier):
         _out = {}
-        for category_name, category_member in CommandCategory.__members__.items():
+        for category_name, category_member in CommandCategory.all_command_categories.items():
             if category_filter(category_member) is True:
-                _out[category_name_modifier(category_name)] = category_member
+                _out[category_name_modifier(str(category_member))] = category_member
         return _out
 
     @ staticmethod
@@ -599,17 +570,17 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     def remove_cog_suffix_cog_name_modifier(cog_name: str):
         return cog_name.removesuffix('Cog')
 
-    @ universal_log_profiler
-    def _get_dispatcher(self, in_object):
-        for key, value in self.help_dispatch_map.items():
-            if isclass(in_object):
-                if issubclass(in_object, key):
-                    return value
-            if isinstance(key, type) and isinstance(in_object, key):
-                return value
-            if in_object is key:
-                return value
-        raise ParameterError('in_object', in_object)
+    # @ universal_log_profiler
+    # def _get_dispatcher(self, in_object):
+    #     for key, value in self.help_dispatch_map.items():
+    #         if isclass(in_object):
+    #             if issubclass(in_object, key):
+    #                 return value
+    #         if isinstance(key, type) and isinstance(in_object, key):
+    #             return value
+    #         if in_object is key:
+    #             return value
+    #     raise ParameterError('in_object', in_object)
 
     @ universal_log_profiler
     async def _send_help(self, ctx: commands.Context, help_msg: Union[str, dict, discord.Embed]):

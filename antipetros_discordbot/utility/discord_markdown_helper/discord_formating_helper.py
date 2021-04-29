@@ -19,7 +19,7 @@ def make_box(in_text: str):
     for line in lines:
         mod_lines.append(hyperlink_regex.sub(hyperlink_replace_string, line))
 
-    max_length = max([len(line) + 10 for line in mod_lines])
+    max_length = round(max([len(line) * 2 for line in mod_lines]))
     pre_spacing = SPECIAL_SPACE * 8
 
     mod_lines = map(lambda x: f"{SPECIAL_SPACE*8}{x}", lines)

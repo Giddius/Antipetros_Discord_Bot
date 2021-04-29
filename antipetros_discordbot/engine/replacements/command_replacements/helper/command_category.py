@@ -11,47 +11,10 @@
 import gc
 import os
 import re
-import sys
-import json
-import lzma
-import time
-import queue
-import base64
-import pickle
-import random
-import shelve
-import shutil
-import asyncio
-import logging
-import sqlite3
-import platform
-import importlib
-import subprocess
 import unicodedata
 
-from io import BytesIO
-from abc import ABC, abstractmethod, ABCMeta
-from copy import copy, deepcopy
-from enum import Enum, Flag, auto
-from time import time, sleep
-from pprint import pprint, pformat
-from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
-from timeit import Timer
-from typing import Union, Callable, Iterable, TYPE_CHECKING, Optional, List, Set, Tuple, Dict, Mapping, Any, Awaitable
-from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
-from zipfile import ZipFile
-from datetime import tzinfo, datetime, timezone, timedelta
-from tempfile import TemporaryDirectory
-from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
-from functools import wraps, partial, lru_cache, singledispatch, total_ordering
-from importlib import import_module, invalidate_caches
-from contextlib import contextmanager
-from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
+from typing import List, Set, TYPE_CHECKING, Union
+from inspect import getdoc
 
 
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
@@ -84,14 +47,13 @@ from discord.ext import commands, tasks
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 import gidlogger as glog
-from inspect import isabstract, getdoc
-from icecream import ic
-from marshmallow import Schema, fields
+from inspect import getdoc, getfile, getsourcefile, getsource, getsourcelines
 from antipetros_discordbot.schemas import CommandCategorySchema
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.misc import make_config_name
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
+from antipetros_discordbot.utility.misc import make_config_name, sync_antipetros_repo_rel_path
 if TYPE_CHECKING:
-    from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup
+    from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand
 # endregion[Imports]
 
 # region [TODO]
@@ -165,10 +127,14 @@ class CommandCategoryMeta(type):
         return cls.name.removesuffix('CommandCategory')
 
     def __getattr__(cls, name):
-        _out = cls.all_command_categories.get(name, None)
-        if _out is None:
-            raise AttributeError
-        return _out
+        if name in cls.all_command_categories:
+            return cls.all_command_categories.get(name, None)
+        if name in cls.doc_attributes:
+            _out = cls.meta_data.get(name, None)
+            if _out is None:
+                _out = 'NA'
+            return _out
+        raise AttributeError
 
     def __contains__(cls, item):
         if isinstance(item, commands.Command):
@@ -200,7 +166,8 @@ class CommandCategory(metaclass=CommandCategoryMeta):
     is_abstract = True
     base_command_category = None
     needed_attributes = ['commands', 'allowed_roles']
-
+    documentation_data_file = pathmaker(APPDATA['documentation'], 'categories_meta_data.json')
+    doc_attributes = ['description', 'long_description', 'short_doc', 'brief', 'extra_info']
     always_exclude_role_ids = frozenset({'449481990513754112', '513318914516844559'})  # ["@everyone", "@admin the stupid old one"]
 
     @classmethod
@@ -212,6 +179,27 @@ class CommandCategory(metaclass=CommandCategoryMeta):
     @property
     def docstring(cls):
         return getdoc(cls)
+
+    @classmethod
+    @property
+    def meta_data(cls):
+        def sub_data_template(cls):
+            return {'description': None,
+                    'long_description': None,
+                    'help': None,
+                    'short_doc': None,
+                    'brief': None,
+                    'docstring': cls.docstring}
+        if os.path.isfile(cls.documentation_data_file) is False:
+            data = {category.name.casefold(): sub_data_template(category) for category in cls.all_command_categories.values()}
+            writejson(data, cls.documentation_data_file)
+
+        meta_data = loadjson(cls.documentation_data_file)
+
+        if cls.name.casefold() not in meta_data:
+            meta_data[cls.name.casefold()] = sub_data_template.copy
+            writejson(meta_data, cls.documentation_data_file)
+        return meta_data.get(cls.name.casefold(), {})
 
     @classmethod
     def add_command(cls, command: Union["AntiPetrosBaseCommand", "AntiPetrosFlagCommand", "AntiPetrosBaseGroup"]):
@@ -226,6 +214,25 @@ class CommandCategory(metaclass=CommandCategoryMeta):
 
         if cls not in command.categories:
             command.categories.append(cls)
+
+    @classmethod
+    @property
+    def github_link(cls):
+        repo_base_url = os.getenv('REPO_BASE_URL')
+        rel_path = sync_antipetros_repo_rel_path(getsourcefile(cls))
+        source_lines = getsourcelines(cls)
+        start_line_number = source_lines[1]
+        code_length = len(source_lines[0])
+        code_line_numbers = tuple(range(start_line_number, start_line_number + code_length))
+        full_path = '/'.join([repo_base_url, rel_path, f'#L{min(code_line_numbers)}-L{max(code_line_numbers)}'])
+        return full_path
+
+    @classmethod
+    @property
+    def github_wiki_link(cls):
+        wiki_base_url = os.getenv('WIKI_BASE_URL')
+        full_path = '/'.join([wiki_base_url, cls.name])
+        return full_path
 
     @classmethod
     def dump(cls):

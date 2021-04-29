@@ -10,48 +10,11 @@
 
 import gc
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import base64
-import pickle
-import random
-import shelve
-import shutil
-import asyncio
-import logging
-import sqlite3
-import platform
-import importlib
-import subprocess
 import unicodedata
 
-from io import BytesIO
-from abc import ABC, abstractmethod
-from copy import copy, deepcopy
-from enum import Enum, Flag, auto, unique
-from time import time, sleep
-from pprint import pprint, pformat
-from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
-from timeit import Timer
-from typing import Union, Callable, Iterable, TypeVar, TYPE_CHECKING, Any, Optional, List, Dict, Mapping, Set, Tuple, Generator, Awaitable, AsyncGenerator, AsyncContextManager
-from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
-from zipfile import ZipFile
-from datetime import tzinfo, datetime, timezone, timedelta
-from tempfile import TemporaryDirectory
-from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
-from functools import wraps, partial, lru_cache, singledispatch, total_ordering
-from importlib import import_module, invalidate_caches
-from contextlib import contextmanager
-from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
+from typing import TYPE_CHECKING, Union
+from inspect import getdoc
+from textwrap import dedent
 
 
 import discord
@@ -60,19 +23,18 @@ from discord.ext import commands, tasks
 
 
 import gidlogger as glog
-from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson, writeit, readit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker, AllowedChannelAndAllowedRoleCheck, BaseAntiPetrosCheck
-from antipetros_discordbot.utility.misc import pathmaker, STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, alt_seconds_to_pretty, delete_message_if_text_channel, antipetros_repo_rel_path
+from antipetros_discordbot.utility.checks import allowed_requester
+from antipetros_discordbot.utility.misc import make_config_name, sync_antipetros_repo_rel_path
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.schemas import AntiPetrosBaseCogSchema
 from antipetros_discordbot.auxiliary_classes.listener_object import ListenerObject
-from antipetros_discordbot.auxiliary_classes.for_cogs.required_filesystem_item import RequiredFile, RequiredFolder
 from antipetros_discordbot.utility.event_data import ListenerEvents
+from antipetros_discordbot.utility.gidtools_functions import writejson, readit, writeit, pathmaker
+from enum import Enum, unique, auto
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from marshmallow import Schema, fields
-from inspect import getdoc
+from inspect import getdoc, getsource, getsourcefile, getsourcelines, getfile
 
 # endregion[Imports]
 
@@ -102,6 +64,62 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
+class RequiredFile:
+    @unique
+    class FileType(Enum):
+        TEXT = auto()
+        JSON = auto()
+
+        def create(self, path, content):
+            if self is self.TEXT:
+                writeit(path, content)
+            elif self is self.JSON:
+                writejson(content, path)
+
+        def __str__(self):
+            return str(self.name)
+
+    file_type_map = {'txt': FileType.TEXT,
+                     'log': FileType.TEXT,
+                     'md': FileType.TEXT,
+                     'html': FileType.TEXT,
+                     'env': FileType.TEXT,
+                     'jinja': FileType.TEXT,
+                     'json': FileType.JSON}
+
+    def __init__(self, path, default_content, typus: Union[str, FileType] = None):
+        self.path = pathmaker(path)
+        self.name = os.path.basename(self.path)
+        self.dir_path = os.path.dirname(self.path)
+        self.default_content = default_content
+        self.file_type = self.get_file_type(typus) if typus is None or isinstance(typus, str) else typus
+
+    def get_file_type(self, in_typus) -> FileType:
+        extension = self.name.split('.')[-1] if in_typus is None else in_typus.casefold()
+        file_type = self.file_type_map.get(extension.casefold(), None)
+        if file_type is None:
+            raise TypeError(f"Required File '{self.path}' either has no extension or it is a directory and not a file")
+        return file_type
+
+    def ensure(self):
+        if os.path.isdir(self.dir_path) is False:
+            os.makedirs(self.dir_path)
+        if os.path.isfile(self.path) is False:
+            self.file_type.create(self.path, self.default_content)
+
+
+class RequiredFolder:
+    def __init__(self, path):
+        self.path = pathmaker(path)
+        self.name = os.path.basename(self.path)
+        if '.' in self.name[1:]:
+            raise TypeError(f"Required Folder '{self.path}' seems to be a file and not a directory")
+
+    def ensure(self):
+        if os.path.isdir(self.path) is False:
+            os.makedirs(self.path)
+
+
 class AntiPetrosBaseCog(commands.Cog):
     """
     AntiPetros variant of discord.py Cog.
@@ -116,6 +134,9 @@ class AntiPetrosBaseCog(commands.Cog):
     meta_status = CogMetaStatus.EMPTY
     long_description = "Missing"
     extra_info = ""
+    short_doc = ""
+    brief = ""
+
     required_config_data = {'base_config': {},
                             'cogs_config': {}}
     required_folder = []
@@ -133,6 +154,10 @@ class AntiPetrosBaseCog(commands.Cog):
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
 
     @property
+    def docstring(self):
+        return getdoc(self.__class__)
+
+    @property
     def all_listeners(self):
         return [ListenerObject(event=ListenerEvents(event_name), method=listener_method, cog=self) for event_name, listener_method in self.get_listeners()]
 
@@ -143,6 +168,23 @@ class AntiPetrosBaseCog(commands.Cog):
     @property
     def description(self):
         return dedent(str(getdoc(self.__class__)))
+
+    @property
+    def github_link(self):
+        repo_base_url = os.getenv('REPO_BASE_URL')
+        rel_path = sync_antipetros_repo_rel_path(getsourcefile(self.__class__))
+        source_lines = getsourcelines(self.__class__)
+        start_line_number = source_lines[1]
+        code_length = len(source_lines[0])
+        code_line_numbers = tuple(range(start_line_number, start_line_number + code_length))
+        full_path = '/'.join([repo_base_url, rel_path, f'#L{min(code_line_numbers)}-L{max(code_line_numbers)}'])
+        return full_path
+
+    @property
+    def github_wiki_link(self):
+        wiki_base_url = os.getenv('WIKI_BASE_URL')
+        full_path = '/'.join([wiki_base_url, self.name])
+        return full_path
 
     def _ensure_files_and_folder(self):
         for item in self.required_folder + self.required_files:

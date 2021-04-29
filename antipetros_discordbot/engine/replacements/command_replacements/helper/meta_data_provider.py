@@ -11,47 +11,10 @@
 import gc
 import os
 import re
-import sys
-import json
-import lzma
-import time
-import queue
-import base64
-import pickle
-import random
-import shelve
-import shutil
-import asyncio
-import logging
-import sqlite3
-import platform
-import importlib
-import subprocess
 import unicodedata
 
-from io import BytesIO
-from abc import ABC, abstractmethod
-from copy import copy, deepcopy
-from enum import Enum, Flag, auto
-from time import time, sleep
-from pprint import pprint, pformat
-from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
-from timeit import Timer
-from typing import Union, Callable, Iterable, List, Dict, Optional, Tuple, Any, Callable, Mapping, TYPE_CHECKING
-from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
-from zipfile import ZipFile
-from datetime import tzinfo, datetime, timezone, timedelta
-from tempfile import TemporaryDirectory
-from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
-from functools import wraps, partial, lru_cache, singledispatch, total_ordering
-from importlib import import_module, invalidate_caches
-from contextlib import contextmanager
-from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
+from typing import Any, Callable, Callable, Union
+from functools import partial
 
 
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
@@ -89,7 +52,7 @@ import gidlogger as glog
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, readit, writeit, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 # endregion[Imports]
 
 # region [TODO]
@@ -154,27 +117,31 @@ class JsonMetaDataProvider:
     def set_auto_provider(self, command: commands.Command) -> Callable:
         return partial(self.set, command)
 
-    def get(self, command: Union[str, commands.Command], typus: str, fallback=None):
-        if isinstance(command, commands.Command):
-            command = command.name
+    def get(self, command: commands.Command, typus: str, fallback=None):
+
+        command_name = command.name
+        if command.parent is not None:
+            command_name = f"{command.parent.name}.{command.name}"
 
         typus = typus.casefold()
         if typus == 'gif':
-            return self.all_gifs.get(command.casefold())
-        return self.meta_data.get(command.casefold(), {}).get(typus, fallback)
+            return self.all_gifs.get(command_name.casefold())
+        return self.meta_data.get(command_name.casefold(), {}).get(typus, fallback)
 
-    def set(self, command: Union[str, commands.Command], typus: str, value: Any):
-        if isinstance(command, commands.Command):
-            command = command.name
+    def set(self, command: commands.Command, typus: str, value: Any):
+        command_name = command.name
+        if command.parent is not None:
+            command_name = f"{command.parent.name}.{command.name}"
         typus = typus.casefold()
         data = self.meta_data
-        if command.casefold() not in data:
-            data[command.casefold()] = {}
-        data[command.casefold()][typus] = value
+        if command_name.casefold() not in data:
+            data[command_name.casefold()] = {}
+        data[command_name.casefold()][typus] = value
         self.save(data)
 
     def save(self, data: dict) -> None:
         writejson(data, self.data_file)
+
 
         # region[Main_Exec]
 if __name__ == '__main__':

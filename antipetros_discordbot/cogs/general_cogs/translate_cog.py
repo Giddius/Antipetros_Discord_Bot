@@ -16,23 +16,19 @@ import gidlogger as glog
 from emoji import emojize
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.cogs import get_aliases
-from antipetros_discordbot.utility.misc import make_config_name, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, allowed_requester, command_enabled_checker
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.converters import LanguageConverter
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import discord_key_value_text
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command
 from antipetros_discordbot.utility.general_decorator import async_log_profiler
 
-from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+from typing import Optional, TYPE_CHECKING
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command
+from antipetros_discordbot.utility.general_decorator import async_log_profiler, universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

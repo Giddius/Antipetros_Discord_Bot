@@ -4,15 +4,10 @@
 # * Standard Library Imports -->
 import os
 from typing import TYPE_CHECKING
-from tempfile import TemporaryDirectory
 import asyncio
-from zipfile import ZipFile, ZIP_LZMA
-from tempfile import TemporaryDirectory
 from textwrap import dedent
-from datetime import datetime, timedelta
-from typing import Iterable, Union, List
-from pprint import pprint
-import random
+from datetime import datetime
+from typing import List
 # * Third Party Imports -->
 import a2s
 from rich import print as rprint, inspect as rinspect
@@ -24,31 +19,23 @@ from rich import print as rprint, inspect as rinspect
 # from github import Github, GithubException
 # from jinja2 import BaseLoader, Environment
 # from natsort import natsorted
-from fuzzywuzzy import process as fuzzprocess
 import discord
-from io import StringIO
 from discord.ext import commands, tasks
 from webdav3.client import Client
 from async_property import async_property
-from dateparser import parse as date_parse
-from pytz import timezone
 # * Gid Imports -->
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, seconds_to_pretty, alt_seconds_to_pretty, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import allowed_requester, command_enabled_checker, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
-from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker, pickleit, get_pickled
+from antipetros_discordbot.utility.misc import alt_seconds_to_pretty, delete_message_if_text_channel
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, log_invoker
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
-from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
-from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
-from antipetros_discordbot.auxiliary_classes.for_cogs.required_filesystem_item import RequiredFile, RequiredFolder
+
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_community_server_info_cog import CommunityServerInfo, ServerStatusChange
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
@@ -86,68 +73,6 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 from struct import unpack_from as _unpack_from, calcsize as _calcsize
-
-
-class StructReader(object):
-    def __init__(self, data):
-        """Simplifies parsing of struct data from bytes
-        :param data: data bytes
-        :type  data: :class:`bytes`
-        """
-        if not isinstance(data, bytes):
-            raise ValueError("Only works with bytes")
-        self.data = data
-        self.offset = 0
-
-    def __len__(self):
-        return len(self.data)
-
-    def rlen(self):
-        """Number of remaining bytes that can be read
-        :return: number of remaining bytes
-        :rtype: :class:`int`
-        """
-        return max(0, len(self) - self.offset)
-
-    def read(self, n=1):
-        """Return n bytes
-        :param n: number of bytes to return
-        :type  n: :class:`int`
-        :return: bytes
-        :rtype: :class:`bytes`
-        """
-        self.offset += n
-        return self.data[self.offset - n:self.offset]
-
-    def read_cstring(self, terminator=b'\x00'):
-        """Reads a single null termianted string
-        :return: string without bytes
-        :rtype: :class:`bytes`
-        """
-        null_index = self.data.find(terminator, self.offset)
-        if null_index == -1:
-            raise RuntimeError("Reached end of buffer")
-        result = self.data[self.offset:null_index]  # bytes without the terminator
-        self.offset = null_index + len(terminator)  # advance offset past terminator
-        return result
-
-    def unpack(self, format_text):
-        """Unpack bytes using struct modules format
-        :param format_text: struct's module format
-        :type  format_text: :class:`str`
-        :return data: result from :func:`struct.unpack_from`
-        :rtype: :class:`tuple`
-        """
-        data = _unpack_from(format_text, self.data, self.offset)
-        self.offset += _calcsize(format_text)
-        return data
-
-    def skip(self, n):
-        """Skips the next ``n`` bytes
-        :param n: number of bytes to skip
-        :type  n: :class:`int`
-        """
-        self.offset += n
 
 
 class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.DEVTOOLS}):
@@ -252,7 +177,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command(aliases=['server', 'servers', 'server?', 'servers?'], categories=CommandCategory.GENERAL)
     @allowed_channel_and_allowed_role()
@@ -435,7 +359,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

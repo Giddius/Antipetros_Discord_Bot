@@ -10,48 +10,10 @@
 
 import gc
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import base64
-import pickle
-import random
-import shelve
-import shutil
-import asyncio
-import logging
-import sqlite3
-import platform
-import importlib
-import subprocess
 import unicodedata
 
-from io import BytesIO
-from abc import ABC, abstractmethod
-from copy import copy, deepcopy
-from enum import Enum, Flag, auto
-from time import time, sleep
-from pprint import pprint, pformat
-from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
-from timeit import Timer
-from typing import Union, Callable, Iterable, Set, Dict, Mapping, List, Tuple, Generator, Awaitable, Any, TYPE_CHECKING
-from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines, signature, getcomments, getfile, getmodule, getmro, isclass, iscode, iscoroutine
-from zipfile import ZipFile
-from datetime import tzinfo, datetime, timezone, timedelta
-from tempfile import TemporaryDirectory
-from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
-from functools import wraps, partial, lru_cache, singledispatch, total_ordering
-from importlib import import_module, invalidate_caches
-from contextlib import contextmanager
-from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
+from typing import Callable, Union
+from inspect import getdoc, getsource, getsourcefile, getsourcelines
 
 
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
@@ -83,8 +45,7 @@ from discord.ext import commands, tasks, flags, ipc
 
 import gidlogger as glog
 from antipetros_discordbot.utility.event_data import ListenerEvents
-from antipetros_discordbot.utility.misc import sync_antipetros_repo_rel_path, get_github_line_link
-from antipetros_discordbot.schemas.extra_schemas.listener_schema import ListenerSchema
+from antipetros_discordbot.utility.misc import get_github_line_link
 # endregion[Imports]
 
 # region [TODO]

@@ -4,11 +4,7 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import asyncio
-from datetime import datetime
-from typing import List, Optional, Tuple
 
-import random
-from textwrap import dedent
 # * Third Party Imports --------------------------------------------------------------------------------->
 from jinja2 import BaseLoader, Environment
 import discord
@@ -17,21 +13,17 @@ from PIL import Image, ImageDraw, ImageFont
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import CogConfigReadOnly, make_config_name, minute_to_second
-from antipetros_discordbot.utility.checks import log_invoker, allowed_channel_and_allowed_role, command_enabled_checker, allowed_requester, owner_or_admin
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role
 
-from antipetros_discordbot.utility.gidtools_functions import appendwriteit, clearit, loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_faq_cog import FaqItem
 
-from typing import TYPE_CHECKING, Any, Union, Optional, Callable, Iterable, List, Dict, Set, Tuple, Mapping, Coroutine, Awaitable
-from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
+from typing import TYPE_CHECKING
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

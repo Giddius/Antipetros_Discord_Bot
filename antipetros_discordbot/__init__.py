@@ -60,6 +60,8 @@ def set_env():
     os.environ['INITIAL_MEMORY_USAGE'] = str(memory_in_use)
     os.environ['BOT_CREATOR_NAME'] = "Giddi"
     os.environ['BOT_CREATOR_ID'] = "576522029470056450"
+    os.environ['REPO_BASE_URL'] = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development"
+    os.environ['WIKI_BASE_URL'] = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki"
 
 
 add_profiling_log_level()

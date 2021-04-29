@@ -1,7 +1,7 @@
 # * Standard Library Imports -->
 # * Standard Library Imports ---------------------------------------------------------------------------->
 from collections import UserString
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
 
 
 class AntiPetrosMarkdownBase(UserString):

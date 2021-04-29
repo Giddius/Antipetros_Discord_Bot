@@ -1,5 +1,5 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
-from enum import Enum, auto
+from enum import Enum
 
 # EVENT_MAPPING = {"on_connect": (),
 #                  "on_shard_connect": (("shard_id", "int"),),
