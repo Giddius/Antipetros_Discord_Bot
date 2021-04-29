@@ -53,10 +53,11 @@ import gidlogger as glog
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from .helper import JsonMetaDataProvider, JsonAliasProvider, SourceCodeProvider, JsonCategoryProvider
+from antipetros_discordbot.engine.replacements.helper import JsonMetaDataProvider, JsonAliasProvider, SourceCodeProvider
 from antipetros_discordbot.utility.checks import dynamic_enabled_checker
 from antipetros_discordbot.schemas import AntiPetrosBaseCommandSchema
-from antipetros_discordbot.engine.replacements.command_replacements.helper.command_category import CommandCategory
+from antipetros_discordbot.engine.replacements.command_replacements.command_category import CommandCategory
+from antipetros_discordbot.utility.gidtools_functions import pathmaker
 # endregion[Imports]
 
 # region [TODO]
@@ -87,7 +88,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class AntiPetrosBaseCommand(commands.Command):
-    meta_data_provider = JsonMetaDataProvider()
+    meta_data_provider = JsonMetaDataProvider(pathmaker(APPDATA['documentation'], 'command_meta_data.json'))
     alias_data_provider = JsonAliasProvider()
     source_code_data_provider = SourceCodeProvider()
     bot_mention_placeholder = '@BOTMENTION'
@@ -192,8 +193,10 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def description(self):
-        description = self.data_getters['meta_data']('description', 'NA')
-        return inspect.cleandoc(description)
+        description = self.data_getters['meta_data']('description')
+        if description in ['', None, 'NA']:
+            return self.docstring
+        return description
 
     @description.setter
     def description(self, value):

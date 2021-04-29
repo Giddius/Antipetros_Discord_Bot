@@ -184,13 +184,13 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
         self.ready = False
         self.refresh_tasks = self.get_refresh_tasks()
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 
 # endregion [Init]
 
 # region [Properties]
-
 
     @property
     @universal_log_profiler
@@ -299,14 +299,15 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     async def help(self, ctx: commands.Context, in_object: Optional[Union[HelpCategoryConverter, CommandConverter, CogConverter, CategoryConverter]], extra_parameter: Optional[ExtraHelpParameterConverter]):
         raw_params = ctx.message.content.split(ctx.invoked_with)[-1].strip()
         print(raw_params)
+        author = await self.bot.retrieve_antistasi_member(ctx.author.id)
         if in_object is None and raw_params == '':
-            async for embed_data in self.help_overview_embed(ctx.author, extra_parameter):
+            async for embed_data in self.help_overview_embed(author, extra_parameter):
                 await self._send_help(ctx, embed_data)
 
         elif in_object is None and raw_params != '':
             raise ParameterError('in_object', raw_params)
         else:
-            await self.help_dispatch_map.get(in_object)(ctx, in_object, extra_parameter)
+            await self.help_dispatch_map.get(in_object)(ctx, author, in_object, extra_parameter)
 
 # endregion [Commands]
 
@@ -317,10 +318,11 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Embeds]
 
-    @universal_log_profiler
-    async def help_overview_embed(self, author: Union[discord.Member, discord.User], extra_parameter: ExtraHelpParameter = None):
 
-        member_filter = filter_with_user_role(self.bot.owner_ids, await self.bot.retrieve_antistasi_member(author.id), True)
+    @universal_log_profiler
+    async def help_overview_embed(self, author: discord.Member, extra_parameter: ExtraHelpParameter = None):
+
+        member_filter = filter_with_user_role(self.bot.owner_ids, author, True)
         data = {'cog': await self.get_cog_data(member_filter, self.remove_cog_suffix_cog_name_modifier),
                 'command': await self.get_command_data(member_filter),
                 'category': await self.get_category_data(member_filter)}
@@ -349,8 +351,8 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             yield embed_data
 
     @universal_log_profiler
-    async def help_cogs_embed(self, author: Union[discord.Member, discord.User]):
-        member_filter = filter_with_user_role(self.bot.owner_ids, await self.bot.retrieve_antistasi_member(author.id), False)
+    async def help_cogs_embed(self, author: discord.Member, extra_parameter: ExtraHelpParameter = None):
+        member_filter = filter_with_user_role(self.bot.owner_ids, author, False)
         fields = []
         cog_data = await self.get_cog_data(cog_filter=member_filter)
         for cog_name, cog in cog_data.items():
@@ -370,8 +372,8 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             yield embed_data
 
     @universal_log_profiler
-    async def help_commands_embed(self, author: Union[discord.Member, discord.User], extra_parameter: ExtraHelpParameter = None):
-        member_filter = filter_with_user_role(self.bot.owner_ids, await self.bot.retrieve_antistasi_member(author.id), True)
+    async def help_commands_embed(self, author: discord.Member, extra_parameter: ExtraHelpParameter = None):
+        member_filter = filter_with_user_role(self.bot.owner_ids, author, True)
         fields = []
         command_data = await self.get_command_data(command_filter=member_filter)
         frequency_dict = await self.bot.get_command_frequency(from_datetime=None, to_datetime=None, as_counter=True)
@@ -393,8 +395,8 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             yield embed_data
 
     @universal_log_profiler
-    async def help_categories_embed(self, author: Union[discord.Member, discord.User], extra_parameter: ExtraHelpParameter = None):
-        member_filter = filter_with_user_role(self.bot.owner_ids, await self.bot.retrieve_antistasi_member(author.id), True)
+    async def help_categories_embed(self, author: discord.Member, extra_parameter: ExtraHelpParameter = None):
+        member_filter = filter_with_user_role(self.bot.owner_ids, author, True)
         fields = []
         categories_data = await self.get_category_data(category_filter=member_filter)
 
@@ -415,16 +417,17 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             yield embed_data
 
     @universal_log_profiler
-    async def help_specific_command_embed(self, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand], extra_parameter: ExtraHelpParameter = None):
+    async def help_specific_command_embed(self, author: discord.Member, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand], extra_parameter: ExtraHelpParameter = None):
         field_attr = ['signature', 'allowed_in_dms', 'enabled']
-        field_lists = ['allowed_channels', 'allowed_roles']
+
         fields = []
         for attr in field_attr:
             fields.append(self.bot.field_item(name=attr, value=getattr(command, attr)))
 
         fields.append(self.bot.field_item(name='aliases', value='\n'.join(f"`{item}`" for item in command.aliases) if command.aliases else "`None`"))
-        for list_attr in field_lists:
-            fields.append(self.bot.field_item(name=list_attr, value='\n'.join(f"`{item}`" for item in getattr(command, list_attr))))
+
+        fields.append(self.bot.field_item(name='allowed channels'.title(), value='\n'.join([f"`{item}`" for item in command.allowed_channels if await self._check_channel_visibility(author, item) is True])))
+        fields.append(self.bot.field_item(name='allowed roles'.title(), value='\n'.join([f"`{item}`" for item in command.allowed_roles])))
 
         fields.append(self.bot.field_item(name='example', value=f"```css\n{command.example}\n```"))
         links = f"{embed_hyperlink(f'{command.name.upper()} GITHUB REPO', command.github_link)}\n{embed_hyperlink(f'{command.name.upper()} GITHUB WIKI',command.github_wiki_link)}"
@@ -439,6 +442,14 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion[Embeds]
 
 # region [HelperMethods]
+
+    @universal_log_profiler
+    async def _check_channel_visibility(self, author: discord.Member, channel_name: str):
+        channel = await self.bot.channel_from_name(channel_name)
+        channel_member_permissions = channel.permissions_for(author)
+        if channel_member_permissions.administrator is True or channel_member_permissions.read_messages is True:
+            return True
+        return False
 
     @ universal_log_profiler
     def get_refresh_tasks(self):
@@ -514,12 +525,12 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     #         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @ universal_log_profiler
-    async def _send_cog_help(self, ctx: commands.Context, cog: commands.Cog, extra_parameter: ExtraHelpParameter = None):
+    async def _send_cog_help(self, ctx: commands.Context, author: discord.Member, cog: commands.Cog, extra_parameter: ExtraHelpParameter = None):
         await ctx.send('cog')
 
     @ universal_log_profiler
-    async def _send_command_help(self, ctx: commands.Context, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand], extra_parameter: ExtraHelpParameter = None):
-        embed_data = await self.help_specific_command_embed(command)
+    async def _send_command_help(self, ctx: commands.Context, author: discord.Member, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand], extra_parameter: ExtraHelpParameter = None):
+        embed_data = await self.help_specific_command_embed(author, command, extra_parameter)
         await ctx.send(**embed_data)
 
     @ universal_log_profiler
@@ -626,7 +637,6 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx: commands.Context):
         return True

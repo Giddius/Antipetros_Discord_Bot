@@ -52,6 +52,7 @@ from antipetros_discordbot.schemas import CommandCategorySchema
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 from antipetros_discordbot.utility.misc import make_config_name, sync_antipetros_repo_rel_path
+from antipetros_discordbot.engine.replacements.helper import JsonMetaDataProvider
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand
 # endregion[Imports]
@@ -113,6 +114,7 @@ class CommandCategoryMeta(type):
             x.base_command_category = cls.base_command_category
             subclass_attribute_checker(x)
             x.all_command_categories[x.name.removesuffix('CommandCategory').upper()] = x
+            x.meta_data_setter('docstring', x.docstring)
 
         else:
             cls.config_name = make_config_name(x.name)
@@ -130,11 +132,9 @@ class CommandCategoryMeta(type):
         if name in cls.all_command_categories:
             return cls.all_command_categories.get(name, None)
         if name in cls.doc_attributes:
-            _out = cls.meta_data.get(name, None)
-            if _out is None:
-                _out = 'NA'
-            return _out
-        raise AttributeError
+            return cls.meta_data_getter(name, None)
+
+        raise AttributeError(name)
 
     def __contains__(cls, item):
         if isinstance(item, commands.Command):
@@ -166,9 +166,19 @@ class CommandCategory(metaclass=CommandCategoryMeta):
     is_abstract = True
     base_command_category = None
     needed_attributes = ['commands', 'allowed_roles']
-    documentation_data_file = pathmaker(APPDATA['documentation'], 'categories_meta_data.json')
+    meta_data_provider = JsonMetaDataProvider(pathmaker(APPDATA['documentation'], 'categories_meta_data.json'))
     doc_attributes = ['description', 'long_description', 'short_doc', 'brief', 'extra_info']
     always_exclude_role_ids = frozenset({'449481990513754112', '513318914516844559'})  # ["@everyone", "@admin the stupid old one"]
+
+    @classmethod
+    @property
+    def meta_data_getter(cls):
+        return cls.meta_data_provider.get_auto_provider(cls)
+
+    @classmethod
+    @property
+    def meta_data_setter(cls):
+        return cls.meta_data_provider.set_auto_provider(cls)
 
     @classmethod
     @property
@@ -179,27 +189,6 @@ class CommandCategory(metaclass=CommandCategoryMeta):
     @property
     def docstring(cls):
         return getdoc(cls)
-
-    @classmethod
-    @property
-    def meta_data(cls):
-        def sub_data_template(cls):
-            return {'description': None,
-                    'long_description': None,
-                    'help': None,
-                    'short_doc': None,
-                    'brief': None,
-                    'docstring': cls.docstring}
-        if os.path.isfile(cls.documentation_data_file) is False:
-            data = {category.name.casefold(): sub_data_template(category) for category in cls.all_command_categories.values()}
-            writejson(data, cls.documentation_data_file)
-
-        meta_data = loadjson(cls.documentation_data_file)
-
-        if cls.name.casefold() not in meta_data:
-            meta_data[cls.name.casefold()] = sub_data_template.copy
-            writejson(meta_data, cls.documentation_data_file)
-        return meta_data.get(cls.name.casefold(), {})
 
     @classmethod
     def add_command(cls, command: Union["AntiPetrosBaseCommand", "AntiPetrosFlagCommand", "AntiPetrosBaseGroup"]):

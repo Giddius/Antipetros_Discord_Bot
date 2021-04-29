@@ -124,6 +124,7 @@ class TranslateCog(AntiPetrosBaseCog):
         self.translator = Translator()
         self.flag_emoji_regex = re.compile(r'REGIONAL INDICATOR SYMBOL LETTER (?P<letter>\w)')
         self.ready = False
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 # endregion [Init]

@@ -89,6 +89,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
         self.give_away_item.bot = self.bot
 
         self.ready = False
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 # endregion [Init]

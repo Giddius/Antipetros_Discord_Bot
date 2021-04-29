@@ -130,6 +130,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         super().__init__(bot)
         self.time_sorted_guild_member_ids = []
         self.ready = False
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 # endregion [Init]

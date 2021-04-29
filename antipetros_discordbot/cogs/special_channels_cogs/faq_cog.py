@@ -87,6 +87,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         super().__init__(bot)
         self.faq_items = {}
         self.ready = False
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 # endregion [Init]

@@ -197,6 +197,21 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
             other_admin_role = await self.bot.retrieve_antistasi_role(513318914516844559)
             await self.bot.split_to_messages(ctx, pformat(schema.dump(other_admin_role)), in_codeblock=True)
 
+    @auto_meta_info_command()
+    async def check_channel_visibility_checker(self, ctx: commands.Context, member: discord.Member):
+        _out = {}
+        for channel in self.bot.antistasi_guild.text_channels:
+            _out[channel.name] = await self._check_channel_visibility(member, channel.name)
+
+        await ctx.send(pformat(_out), allowed_mentions=discord.AllowedMentions.none(), delete_after=120)
+
+    async def _check_channel_visibility(self, author: discord.Member, channel_name: str):
+        channel = await self.bot.channel_from_name(channel_name)
+        channel_member_permissions = channel.permissions_for(author)
+        if channel_member_permissions.administrator is True or channel_member_permissions.read_messages is True:
+            return True
+        return False
+
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))
 

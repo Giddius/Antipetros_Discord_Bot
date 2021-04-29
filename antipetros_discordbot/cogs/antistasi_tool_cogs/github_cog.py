@@ -117,6 +117,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         self._all_repo_files = {}
         self.last_updated_files = None
         self.ready = False
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 # endregion [Init]

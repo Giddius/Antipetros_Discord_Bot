@@ -251,7 +251,7 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         self.reaction_instructions = None
         BaseReactionInstruction.bot = self.bot
         self.ready = False
-
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 # endregion [Init]

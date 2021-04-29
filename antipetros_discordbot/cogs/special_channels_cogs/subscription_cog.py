@@ -172,7 +172,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         super().__init__(bot)
         self.topics = []
         self.ready = False
-
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 # endregion[Init]

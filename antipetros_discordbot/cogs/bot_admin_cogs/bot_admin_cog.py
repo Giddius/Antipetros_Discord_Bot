@@ -92,6 +92,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         self.reaction_remove_ids = []
         self.ready = False
         self.listeners_enabled = {'stop_the_reaction_petros_listener': False}
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 # endregion[Init]
 

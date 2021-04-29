@@ -6,57 +6,25 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
 import gc
 import os
 import unicodedata
-
 from typing import Callable, Callable
 from functools import lru_cache, partial
 import inspect
 from pprint import pprint
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
 import discord
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-# from discord import Embed, File
-
 from discord.ext import commands, tasks
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
 from pygments import highlight
 from pygments.lexers import PythonLexer, get_lexer_by_name, get_all_lexers, guess_lexer
 from pygments.formatters import HtmlFormatter, ImageFormatter
 from pygments.styles import get_style_by_name, get_all_styles
 from pygments.filters import get_all_filters
-
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
 import gidlogger as glog
-
-
-# * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.pygment_styles import DraculaStyle
+
 # endregion[Imports]
 
 # region [TODO]

@@ -104,6 +104,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
         self.aliases = {}
         self.ready = False
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 

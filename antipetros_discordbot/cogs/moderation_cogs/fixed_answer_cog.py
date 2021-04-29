@@ -102,6 +102,7 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.ready = False
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 # endregion [Init]

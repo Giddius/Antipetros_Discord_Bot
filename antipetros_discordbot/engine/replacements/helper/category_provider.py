@@ -6,52 +6,18 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
 import gc
 import os
 import unicodedata
-
-from typing import Callable, Callable, List, Union
+from typing import Callable, List, Union
 from functools import partial, reduce
 from operator import or_
-
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
-# import discord
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-# from discord import Embed, File
-
 from discord.ext import commands, tasks
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
-
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
 import gidlogger as glog
-
-
-# * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from .command_category import CommandCategory
+from antipetros_discordbot.engine.replacements.command_replacements.command_category import CommandCategory
+
 # endregion[Imports]
 
 # region [TODO]

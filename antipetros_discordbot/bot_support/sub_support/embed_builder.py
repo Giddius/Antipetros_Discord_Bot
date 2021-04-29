@@ -190,10 +190,10 @@ class EmbedBuilder(SubSupportBase):
             raise TypeError(f"'image' has to be of type 'str' or '{type(PIL.Image.Image)}' and not '{type(image)}'")
 
     def _fix_field_item(self, field_item, ):
-        if field_item.name is None:
+        if field_item.name in [None, '']:
             field_item = field_item._replace(name=str(self.default_field_name_num) + '.')
             self.default_field_name_num += 1
-        if field_item.value is None:
+        if field_item.value in [None, '']:
             field_item = field_item._replace(value=ZERO_WIDTH)
         if field_item.inline is None:
             field_item = field_item._replace(inline=self.default_inline_value)
@@ -277,7 +277,7 @@ class EmbedBuilder(SubSupportBase):
         # if self.bot.is_debug:
         #     await self.save_embed_as_json(embed=generic_embed, save_name=kwargs.get('save_name', None))
         if self.is_debug is True:
-            log.debug("Embed with title '%s' has a len of '%s'", kwargs.get('title','None'), str(len(generic_embed)))
+            log.debug("Embed with title '%s' has a len of '%s'", kwargs.get('title', 'None'), str(len(generic_embed)))
         _out = {"embed": generic_embed}
         files = [file_item for file_item in files if file_item is not None]
         if len(files) == 1:

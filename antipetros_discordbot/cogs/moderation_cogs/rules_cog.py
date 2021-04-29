@@ -112,6 +112,7 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
         super().__init__(bot)
         self.rules_messages = {}
         self.ready = False
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 # endregion [Init]

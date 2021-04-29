@@ -291,6 +291,7 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
         TeamItem.config_name = self.config_name
         TeamItem.bot = self.bot
         self.is_ready = False
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 # endregion [Init]

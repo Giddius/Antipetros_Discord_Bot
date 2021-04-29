@@ -101,7 +101,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.ready = False
-
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 # endregion [Init]

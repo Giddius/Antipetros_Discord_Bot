@@ -73,6 +73,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 

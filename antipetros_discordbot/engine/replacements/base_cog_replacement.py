@@ -6,22 +6,14 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
 import gc
 import os
 import unicodedata
-
 from typing import TYPE_CHECKING, Union
-from inspect import getdoc
+from inspect import getdoc, getsource, getsourcefile, getsourcelines, getfile
 from textwrap import dedent
-
-
 import discord
-
 from discord.ext import commands, tasks
-
-
 import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.checks import allowed_requester
@@ -31,10 +23,10 @@ from antipetros_discordbot.schemas import AntiPetrosBaseCogSchema
 from antipetros_discordbot.auxiliary_classes.listener_object import ListenerObject
 from antipetros_discordbot.utility.event_data import ListenerEvents
 from antipetros_discordbot.utility.gidtools_functions import writejson, readit, writeit, pathmaker
+from antipetros_discordbot.engine.replacements.helper import JsonMetaDataProvider
 from enum import Enum, unique, auto
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from inspect import getdoc, getsource, getsourcefile, getsourcelines, getfile
 
 # endregion[Imports]
 
@@ -129,13 +121,9 @@ class AntiPetrosBaseCog(commands.Cog):
     Adds a `name` attribute.
     Adds `__repr__` and `__str__`.
     """
-
+    meta_data_provider = JsonMetaDataProvider(pathmaker(APPDATA['documentation'], 'cog_meta_data.json'))
     public = True
     meta_status = CogMetaStatus.EMPTY
-    long_description = "Missing"
-    extra_info = ""
-    short_doc = ""
-    brief = ""
 
     required_config_data = {'base_config': {},
                             'cogs_config': {}}
@@ -152,6 +140,32 @@ class AntiPetrosBaseCog(commands.Cog):
         self.allowed_channels = allowed_requester(self, 'channels')
         self.allowed_roles = allowed_requester(self, 'roles')
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
+        self.meta_data_getter = self.meta_data_provider.get_auto_provider(self)
+        self.meta_data_setter = self.meta_data_provider.set_auto_provider(self)
+        self.meta_data_setter('docstring', self.docstring)
+
+    @property
+    def description(self):
+        _out = self.meta_data_getter('description')
+        if not _out:
+            _out = self.docstring
+        return _out
+
+    @property
+    def long_description(self):
+        return self.meta_data_getter('long_description')
+
+    @property
+    def short_doc(self):
+        return self.meta_data_getter('short_doc')
+
+    @property
+    def brief(self):
+        return self.meta_data_getter('brief')
+
+    @property
+    def extra_info(self):
+        return self.meta_data_getter('extra_info')
 
     @property
     def docstring(self):
@@ -164,10 +178,6 @@ class AntiPetrosBaseCog(commands.Cog):
     @ property
     def all_commands(self) -> list:
         return self.get_commands()
-
-    @property
-    def description(self):
-        return dedent(str(getdoc(self.__class__)))
 
     @property
     def github_link(self):

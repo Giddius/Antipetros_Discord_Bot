@@ -126,6 +126,7 @@ class ImageManipulatorCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "ca
         #                         'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
         self.old_map_message = None
         self.ready = False
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 

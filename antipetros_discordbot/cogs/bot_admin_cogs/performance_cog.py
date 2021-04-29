@@ -111,6 +111,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
         self.ready = False
         self.general_db = general_db
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 # endregion[Init]

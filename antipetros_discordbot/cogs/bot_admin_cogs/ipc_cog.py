@@ -31,7 +31,6 @@ import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
 
-
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
@@ -91,6 +90,7 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.ready = False
+        self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
 # endregion [Init]
@@ -101,6 +101,7 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 # endregion [Properties]
 
 # region [Setup]
+
 
     @universal_log_profiler
     async def on_ready_setup(self):
@@ -125,6 +126,7 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 # endregion [Listener]
 
 # region [Commands]
+
 
     @ipc.server.route()
     @universal_log_profiler
@@ -153,7 +155,6 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 
 # region [HelperMethods]
 
-
     async def execute_shutdown(self):
         await asyncio.sleep(5)
         await self.bot.shutdown_mechanic()
@@ -162,7 +163,6 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

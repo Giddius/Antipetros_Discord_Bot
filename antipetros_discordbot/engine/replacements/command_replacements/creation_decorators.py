@@ -6,46 +6,13 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
 import gc
 import os
 import unicodedata
-
-
-
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
 import discord
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-# from discord import Embed, File
-
 from discord.ext import commands, tasks
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
-
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
 import gidlogger as glog
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
-
 from .base_group import AntiPetrosBaseGroup
 from .base_command import AntiPetrosBaseCommand
 
