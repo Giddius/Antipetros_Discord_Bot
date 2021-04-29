@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS commands_tbl (
     "brief" TEXT,
     "short_doc" TEXT,
     "usage" TEXT,
-    "signature" TEXT,
     "example" TEXT,
     "gif_path" TEXT,
     "github_link" TEXT,

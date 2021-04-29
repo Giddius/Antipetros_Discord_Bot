@@ -135,7 +135,6 @@ class AioGeneralStorageSQLite:
                           "brief",
                           "short_doc",
                           "usage",
-                          "signature",
                           "example",
                           "gif",
                           "github_link",
@@ -188,9 +187,9 @@ class AioGeneralStorageSQLite:
         await self.db.aio_write('insert_image', (name, image_bytes))
 
     @universal_log_profiler
-    async def insert_commands_many(self, commands: List[commands.Command]):
+    async def insert_commands_many(self, commands_list: List[commands.Command]):
         commands_data = []
-        for command in commands:
+        for command in commands_list:
             name = command.name
             cog_name = str(command.cog)
             is_group = 1 if isinstance(command, AntiPetrosBaseGroup) else 0

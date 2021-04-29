@@ -8,7 +8,6 @@ INSERT
         "brief",
         "short_doc",
         "usage",
-        "signature",
         "example",
         "gif_path",
         "github_link",
@@ -28,7 +27,6 @@ VALUES (
             FROM "cogs_tbl"
             WHERE "name" = ?
         ),
-        ?,
         ?,
         ?,
         ?,

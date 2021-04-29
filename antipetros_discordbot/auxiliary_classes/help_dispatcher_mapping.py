@@ -84,7 +84,7 @@ from importlib.machinery import SourceFileLoader
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 import gidlogger as glog
-
+from antipetros_discordbot.engine.replacements import CommandCategory
 
 # endregion[Imports]
 
@@ -118,12 +118,19 @@ class HelpMethodDispatchMap(UserDict):
         self.data = in_dict
 
     def get(self, key, default=None):
+        print(f"{type(key)=}")
         if isinstance(key, Enum):
             _out = self.data.get(key, default)
             if _out is not None:
                 return _out
+        if key in CommandCategory.all_command_categories.values():
+            return self.data.get(CommandCategory, default)
+        for data_key, value in self.data.items():
+            if isinstance(key, data_key):
+                return value
         try:
             class_key = key.__class__
+            print(class_key)
             _out = self.data.get(class_key, default)
             if _out is not None:
                 return _out
@@ -139,9 +146,12 @@ class HelpMethodDispatchMap(UserDict):
     def __contains__(self, key):
         if isinstance(key, Enum):
             return key in {data_key for data_key in self.data if isinstance(data_key, Enum)}
+        if type(key) in {data_key for data_key in self.data}:
+            return True
         try:
             class_key = key.__class__
-            return class_key in {data_key for data_key in self.data}
+            if class_key in {data_key for data_key in self.data}:
+                return True
         except AttributeError:
             pass
         return False

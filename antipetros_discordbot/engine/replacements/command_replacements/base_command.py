@@ -13,11 +13,12 @@ import os
 import sys
 import asyncio
 import unicodedata
-
+from pprint import pprint, pformat
 from typing import Any
 from inspect import getdoc
 from functools import singledispatchmethod
 import inspect
+import re
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
 import discord
@@ -48,7 +49,7 @@ from discord.ext import commands, tasks, flags, ipc
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 import gidlogger as glog
-
+from copy import copy, deepcopy
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
@@ -195,7 +196,9 @@ class AntiPetrosBaseCommand(commands.Command):
     def description(self):
         description = self.data_getters['meta_data']('description')
         if description in ['', None, 'NA']:
-            return self.docstring
+            description = self.docstring
+        if not description:
+            description = 'NA'
         return description
 
     @description.setter
@@ -213,9 +216,23 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def usage(self):
-        usage = self.data_getters['meta_data']('usage', 'NA')
+        usage = {}
 
-        return usage
+        for key, value in self.callback.__annotations__.items():
+            if key not in ['self', 'ctx']:
+
+                if value is str:
+                    usage[f"<{key}>"] = "Text that needs to be put in quotes if it contains spaces."
+                else:
+                    usage[f"<{key}>"] = value.usage_description if hasattr(value, 'usage_description') else getdoc(value).splitlines()[0]
+        usage_line = "@AntiPetros "
+        usage_explanation = []
+        for key, value in usage.items():
+            usage_line += f"{key} "
+            value = '\n'.join(map(lambda x: x.strip(), re.split(r"\,|\.", value)))
+            usage_explanation.append(f"{key}\n{value.strip()}\n-----")
+        full_usage = usage_line.strip() + '\n' + '█' * len(usage_line) + '\n' + '\n'.join(usage_explanation)
+        return full_usage
 
     @usage.setter
     def usage(self, value):
@@ -223,7 +240,9 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def signature(self):
-        signature = self.data_getters['meta_data']('signature', 'NA')
+        signature = inspect.signature(self.callback).parameters
+        signature = {key: value for key, value in signature.items() if key not in ['self', 'ctx']}
+
         return signature
 
     @signature.setter

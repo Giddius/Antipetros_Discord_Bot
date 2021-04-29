@@ -32,6 +32,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.enums import ExtraHelpParameter, HelpCategory
 if TYPE_CHECKING:
     pass
+
 # endregion[Imports]
 
 # region [TODO]
@@ -132,6 +133,11 @@ class CommandConverter(Converter):
             raise ParameterError('command', argument)
         return command
 
+    @classmethod
+    @property
+    def usage_description(cls):
+        return "The name or alias of a Command that this bot has. Case-INsensitive"
+
 
 def date_time_full_converter_flags(argument):
     return date_parse(argument)
@@ -150,12 +156,19 @@ class CogConverter(Converter):
             raise ParameterError("cog", argument)
         return cog
 
+    @classmethod
+    @property
+    def usage_description(cls):
+        return "The name of a Cog that this bot has. Case-INsensitive"
+
 
 class CategoryConverter(Converter):
 
     async def convert(self, ctx: commands.Context, argument: str) -> CommandCategory:
         try:
-            return getattr(CommandCategory, await self._normalize_argument(argument))
+            norm_name = await self._normalize_argument(argument)
+            _out = getattr(CommandCategory, norm_name)
+            return _out
         except (TypeError, ValueError) as e:
             raise ParameterError("category", argument) from e
 
@@ -164,6 +177,11 @@ class CategoryConverter(Converter):
             argument = argument.replace('_', '').replace(' ', '')
             argument = argument.casefold()
             return argument.removesuffix('commandcategory').upper()
+
+    @classmethod
+    @property
+    def usage_description(cls):
+        return "The name of a Command-Category this bot has. Case-INsensitive\nPossible Values: " + '\n'.join(item for item in CommandCategory.all_command_categories)
 
 
 class CheckConverter(Converter):
@@ -185,6 +203,11 @@ class CheckConverter(Converter):
             raise ParameterError("check", argument)
         return _out
 
+    @classmethod
+    @property
+    def usage_description(cls):
+        return "The name of a Command-Check-Function this bot has. Case-INsensitive\nPossible Values: " + '\n'.join(item for item in cls.check_map)
+
 
 class UrlConverter(Converter):
 
@@ -193,6 +216,11 @@ class UrlConverter(Converter):
             raise ParameterError("url", argument)
 
         return fix_url_prefix(argument)
+
+    @classmethod
+    @property
+    def usage_description(cls):
+        return "A valid URL"
 
 
 class HelpCategoryConverter(Converter):
@@ -211,6 +239,11 @@ class HelpCategoryConverter(Converter):
         mod_argument = argument.casefold()
         return mod_argument.replace(' ', '').replace('-', '')
 
+    @classmethod
+    @property
+    def usage_description(cls):
+        return "Name of a Help-Category. Case-INsensitive.\nPossible Values: " + '\n'.join(name for name in HelpCategory.__members__)
+
 
 class ExtraHelpParameterConverter(Converter):
     possible_parameter_enum = ExtraHelpParameter
@@ -226,6 +259,11 @@ class ExtraHelpParameterConverter(Converter):
     async def _normalize_argument(self, argument: str):
         mod_argument = argument.casefold()
         return mod_argument.replace(' ', '').replace('_', '').replace('-', '')
+
+    @classmethod
+    @property
+    def usage_description(cls):
+        return "Name of an Extra-Help-Parameter. Case-INsensitive.\nPossible Values: " + '\n'.join(name for name in ExtraHelpParameter.__members__)
 
         # region[Main_Exec]
 if __name__ == '__main__':

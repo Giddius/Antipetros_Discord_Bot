@@ -167,7 +167,7 @@ class CommandCategory(metaclass=CommandCategoryMeta):
     base_command_category = None
     needed_attributes = ['commands', 'allowed_roles']
     meta_data_provider = JsonMetaDataProvider(pathmaker(APPDATA['documentation'], 'categories_meta_data.json'))
-    doc_attributes = ['description', 'long_description', 'short_doc', 'brief', 'extra_info']
+    doc_attributes = ['long_description', 'short_doc', 'brief', 'extra_info']
     always_exclude_role_ids = frozenset({'449481990513754112', '513318914516844559'})  # ["@everyone", "@admin the stupid old one"]
 
     @classmethod
@@ -184,6 +184,14 @@ class CommandCategory(metaclass=CommandCategoryMeta):
     @property
     def name(cls):
         return cls.__name__
+
+    @classmethod
+    @property
+    def description(cls):
+        _out = cls.meta_data_getter('description')
+        if _out is None:
+            _out = cls.docstring
+        return _out
 
     @classmethod
     @property

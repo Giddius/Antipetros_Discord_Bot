@@ -298,7 +298,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     @auto_meta_info_command(categories=[CommandCategory.META])
     async def help(self, ctx: commands.Context, in_object: Optional[Union[HelpCategoryConverter, CommandConverter, CogConverter, CategoryConverter]], extra_parameter: Optional[ExtraHelpParameterConverter]):
         raw_params = ctx.message.content.split(ctx.invoked_with)[-1].strip()
-        print(raw_params)
+
         author = await self.bot.retrieve_antistasi_member(ctx.author.id)
         if in_object is None and raw_params == '':
             async for embed_data in self.help_overview_embed(author, extra_parameter):
@@ -401,8 +401,9 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         categories_data = await self.get_category_data(category_filter=member_filter)
 
         for category_name, category in categories_data.items():
+            short_doc = 'NA' if not category.short_doc else category.short_doc
             wiki_link = embed_hyperlink(f'{category_name} {"wiki page.title()"}', category.github_wiki_link)
-            fields.append(self.bot.field_item(name=category_name, value=f"{ZERO_WIDTH}\n{wiki_link}\n{ZERO_WIDTH}\n" + '\n'.join(f" > {line}"for line in category.short_doc.splitlines()) + f"\n{ZERO_WIDTH}", inline=False))
+            fields.append(self.bot.field_item(name=category_name, value=f"{ZERO_WIDTH}\n{wiki_link}\n{ZERO_WIDTH}\n" + '\n'.join(f" > {line}"for line in short_doc.splitlines()) + f"\n{ZERO_WIDTH}", inline=False))
 
         # TODO: change links to link to the cogs folder and to the cogs wiki title page
         links = f"{embed_hyperlink('GITHUB REPO', self.bot.github_url)}\n{embed_hyperlink('CATEGORIES GITHUB WIKI',self.general_wiki_links.get('category'))}"
@@ -418,11 +419,16 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
     @universal_log_profiler
     async def help_specific_command_embed(self, author: discord.Member, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand], extra_parameter: ExtraHelpParameter = None):
-        field_attr = ['signature', 'allowed_in_dms', 'enabled']
-
+        field_attr = ['allowed_in_dms']
+        allowed_channels = command.allowed_channels if command.allowed_channels not in ['', [], 'NA', None] else ['all']
         fields = []
+
+        fields.append(self.bot.field_item(name='usage'.title(), value=f"```css\n{command.usage}\n```"))
         for attr in field_attr:
-            fields.append(self.bot.field_item(name=attr, value=getattr(command, attr)))
+            value = getattr(command, attr)
+            if isinstance(value, bool):
+                value = "yes" if value is True else 'no'
+            fields.append(self.bot.field_item(name=attr, value=value))
 
         fields.append(self.bot.field_item(name='aliases', value='\n'.join(f"`{item}`" for item in command.aliases) if command.aliases else "`None`"))
 
@@ -439,12 +445,50 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                                                        fields=fields,
                                                        author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url})
         return embed_data
+
+    @universal_log_profiler
+    async def help_specific_category(self, author: discord.Member, category: CommandCategory, extra_parameter: ExtraHelpParameter = None):
+        fields = []
+        category_commands = category.commands if category.commands else []
+        allowed_roles = category.allowed_roles if category.allowed_roles else []
+        allowed_roles = [await self.bot.retrieve_antistasi_role(item) for item in allowed_roles]
+        fields.append(self.bot.field_item(name='Allowed Roles', value='\n'.join(f"`{role_name}`" for role_name in allowed_roles)))
+        fields.append(self.bot.field_item(name="commands".title(), value='\n'.join(f"`{command.name}` {command.brief}" for command in category_commands)))
+        links = f"{embed_hyperlink(f'{category} GITHUB REPO', category.github_link)}\n{embed_hyperlink(f'{category} GITHUB WIKI',category.github_wiki_link)}"
+        async for embed_data in self.bot.make_paginatedfields_generic_embed(title=f"{category} Help",
+                                                                            description=make_box(links) + f"\n{ZERO_WIDTH}\n{category.description}\n{ZERO_WIDTH}\n",
+                                                                            thumbnail="help",
+                                                                            color="GIDDIS_FAVOURITE",
+                                                                            timestamp=None,
+                                                                            fields=fields,
+                                                                            author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url}):
+            yield embed_data
+
+    @universal_log_profiler
+    async def help_specific_cog(self, author: discord.Member, cog: AntiPetrosBaseCog, extra_parameter: ExtraHelpParameter = None):
+        fields = []
+        cog_commands = cog.all_commands if cog.all_commands else []
+        cog_listeners = cog.all_listeners if cog.all_listeners else []
+
+        fields.append(self.bot.field_item(name='Listeners', value='\n'.join(f"`{listener.name}` {listener.description}" for listener in cog_listeners)))
+        fields.append(self.bot.field_item(name="commands".title(), value='\n'.join(f"`{command.name}` {command.brief}" for command in cog_commands)))
+        links = f"{embed_hyperlink(f'{cog.name.upper()} GITHUB REPO', cog.github_link)}\n{embed_hyperlink(f'{cog.name.upper()} GITHUB WIKI',cog.github_wiki_link)}"
+        async for embed_data in self.bot.make_paginatedfields_generic_embed(title=f"{cog.name.title()} Help",
+                                                                            description=make_box(links) + f"\n{ZERO_WIDTH}\n{cog.description}\n{ZERO_WIDTH}\n",
+                                                                            thumbnail="help",
+                                                                            color="GIDDIS_FAVOURITE",
+                                                                            timestamp=None,
+                                                                            fields=fields,
+                                                                            author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url}):
+            yield embed_data
 # endregion[Embeds]
 
 # region [HelperMethods]
 
     @universal_log_profiler
     async def _check_channel_visibility(self, author: discord.Member, channel_name: str):
+        if channel_name == 'all':
+            return True
         channel = await self.bot.channel_from_name(channel_name)
         channel_member_permissions = channel.permissions_for(author)
         if channel_member_permissions.administrator is True or channel_member_permissions.read_messages is True:
@@ -462,18 +506,18 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         return _out
 
     @ universal_log_profiler
-    async def _general_cog_help(self, ctx: commands.Context, in_object, extra_parameter: ExtraHelpParameter = None):
-        async for embed_data in self.help_cogs_embed(ctx.author):
+    async def _general_cog_help(self, ctx: commands.Context, author: discord.Member, in_object, extra_parameter: ExtraHelpParameter = None):
+        async for embed_data in self.help_cogs_embed(author, extra_parameter):
             await self._send_help(ctx, embed_data)
 
     @ universal_log_profiler
-    async def _general_command_help(self, ctx: commands.Context, in_object, extra_parameter: ExtraHelpParameter = None):
-        async for embed_data in self.help_commands_embed(ctx.author):
+    async def _general_command_help(self, ctx: commands.Context, author: discord.Member, in_object, extra_parameter: ExtraHelpParameter = None):
+        async for embed_data in self.help_commands_embed(author, extra_parameter):
             await self._send_help(ctx, embed_data)
 
     @ universal_log_profiler
-    async def _general_category_help(self, ctx: commands.Context, in_object, extra_parameter: ExtraHelpParameter = None):
-        async for embed_data in self.help_categories_embed(ctx.author):
+    async def _general_category_help(self, ctx: commands.Context, author: discord.Member, in_object, extra_parameter: ExtraHelpParameter = None):
+        async for embed_data in self.help_categories_embed(author, extra_parameter):
             await self._send_help(ctx, embed_data)
 
     @ universal_log_profiler
@@ -526,19 +570,21 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
     @ universal_log_profiler
     async def _send_cog_help(self, ctx: commands.Context, author: discord.Member, cog: commands.Cog, extra_parameter: ExtraHelpParameter = None):
-        await ctx.send('cog')
+        async for embed_data in self.help_specific_cog(author, cog, extra_parameter):
+            await self._send_help(ctx, embed_data)
 
     @ universal_log_profiler
     async def _send_command_help(self, ctx: commands.Context, author: discord.Member, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand], extra_parameter: ExtraHelpParameter = None):
         embed_data = await self.help_specific_command_embed(author, command, extra_parameter)
-        await ctx.send(**embed_data)
+        await self._send_help(ctx, embed_data)
 
     @ universal_log_profiler
-    async def _send_category_help(self, ctx: commands.Context, category: CommandCategory, extra_parameter: ExtraHelpParameter = None):
-        await ctx.send('toolbox')
+    async def _send_category_help(self, ctx: commands.Context, author: discord.Member, category: CommandCategory, extra_parameter: ExtraHelpParameter = None):
+        async for embed_data in self.help_specific_category(author, category, extra_parameter):
+            await self._send_help(ctx, embed_data)
 
     @ universal_log_profiler
-    async def _send_check_help(self, ctx: commands.Context, check: BaseAntiPetrosCheck, extra_parameter: ExtraHelpParameter = None):
+    async def _send_check_help(self, ctx: commands.Context, author: discord.Member, check: BaseAntiPetrosCheck, extra_parameter: ExtraHelpParameter = None):
         await ctx.send('check')
 
     @ universal_log_profiler
@@ -602,11 +648,11 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             delete_after = None
 
         if isinstance(help_msg, str):
-            await self.bot.split_to_messages(target, help_msg, delete_after=delete_after)
+            await self.bot.split_to_messages(target, help_msg, delete_after=delete_after, allowed_mentions=discord.AllowedMentions.none())
         elif isinstance(help_msg, dict):
-            await target.send(**help_msg, delete_after=delete_after)
+            await target.send(**help_msg, delete_after=delete_after, allowed_mentions=discord.AllowedMentions.none())
         elif isinstance(help_msg, discord.Embed):
-            await target.send(embed=help_msg, delete_after=delete_after)
+            await target.send(embed=help_msg, delete_after=delete_after, allowed_mentions=discord.AllowedMentions.none())
         if self.delete_invoking_message is True:
             await delete_message_if_text_channel(ctx)
 

@@ -245,6 +245,7 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # region [Init]
 
+
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
@@ -293,7 +294,6 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_message')
     @universal_log_profiler
     async def add_reaction_to_message_sorter_listener(self, msg: discord.Message):
@@ -312,10 +312,9 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # region [Commands]
 
-
     @auto_meta_info_command()
     @owner_or_admin(False)
-    async def add_channel_reaction_instruction(self, ctx: commands.Context, name: str, channel: discord.TextChannel, *emojis):
+    async def add_channel_reaction_instruction(self, ctx: commands.Context, name: str, channel: discord.TextChannel, *emojis: str):
         if name.casefold() in {item.name.casefold() for item in self.reaction_instructions}:
             raise NameInUseError(name, "Reaction Instructions")
         if len(emojis) > 20:
@@ -416,7 +415,6 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 
 # region [HelperMethods]
-
 
     @universal_log_profiler
     async def _handle_exceptions_data(self, exception_data):
