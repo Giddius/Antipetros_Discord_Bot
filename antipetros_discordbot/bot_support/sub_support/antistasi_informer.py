@@ -17,6 +17,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus
+from antipetros_discordbot.auxiliary_classes.all_item import AllItem
 # endregion[Imports]
 
 # region [TODO]
@@ -49,6 +50,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 class AntistasiInformer(SubSupportBase):
     general_data_file = pathmaker(APPDATA['fixed_data'], 'general_data.json')
     everyone_role_id = 449481990513754112
+    all_item = AllItem()
 
     def __init__(self, bot, support):
         self.bot = bot
@@ -137,9 +139,13 @@ class AntistasiInformer(SubSupportBase):
         return await self.antistasi_guild.fetch_member(user_id)
 
     def sync_channel_from_name(self, channel_name: str) -> discord.abc.GuildChannel:
+        if channel_name.casefold() == 'all':
+            return self.all_item
         return {channel.name.casefold(): channel for channel in self.antistasi_guild.channels}.get(channel_name.casefold())
 
     async def channel_from_name(self, channel_name: str) -> discord.abc.GuildChannel:
+        if channel_name.casefold() == 'all':
+            return self.all_item
         return {channel.name.casefold(): channel for channel in self.antistasi_guild.channels}.get(channel_name.casefold())
 
     def sync_channel_from_id(self, channel_id: int) -> discord.abc.GuildChannel:
@@ -155,9 +161,13 @@ class AntistasiInformer(SubSupportBase):
         return {member.name.casefold(): member for member in self.antistasi_guild.members}.get(member_name.casefold(), None)
 
     def sync_role_from_string(self, role_name: str) -> discord.Role:
+        if role_name.casefold() == 'all':
+            return self.all_item
         return {role.name.casefold(): role for role in self.antistasi_guild.roles}.get(role_name.casefold(), None)
 
     async def role_from_string(self, role_name) -> discord.Role:
+        if role_name.casefold() == 'all':
+            return self.all_item
         return {role.name.casefold(): role for role in self.antistasi_guild.roles}.get(role_name.casefold())
 
     async def retrieve_antistasi_role(self, role_id: int) -> discord.Role:

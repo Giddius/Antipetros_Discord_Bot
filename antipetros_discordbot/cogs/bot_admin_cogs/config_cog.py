@@ -82,8 +82,6 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
     public = False
     meta_status = CogMetaStatus.OPEN_TODOS | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING
-    long_description = ""
-    extra_info = ""
     required_config_data = {'base_config': {},
                             'cogs_config': {"notify_when_changed": "yes",
                                             "notify_via": "bot-testing",
@@ -193,7 +191,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
 # region [Commands]
 
-    @auto_meta_info_command(enabled=True)
+    @auto_meta_info_command()
     @ owner_or_admin()
     @log_invoker(log, 'info')
     async def list_configs(self, ctx):
@@ -202,6 +200,8 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
         The names are without the extension, and show up like they are needed as input for other config commands.
 
+        Example:
+            @AntiPetros list_configs
         """
         embed_data = await self.bot.make_generic_embed(title=f'Configs for {self.bot.display_name}',
                                                        description='```diff\n' + '\n'.join(self.existing_configs.keys()) + '\n```',
@@ -217,6 +217,9 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
         Args:
             config_name (str, optional): Name of the config, or 'all' for all configs. Defaults to 'all'.
+
+        Example:
+            @AntiPetros config_request cogs_config
         """
         if '.' in config_name:
             config_name = config_name.split('.')[0]
@@ -297,6 +300,15 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
     @ owner_or_admin()
     @ log_invoker(log, 'critical')
     async def profiling_switch(self, ctx: commands.Context, action: str = "status"):
+        """
+        Turns log Profiling on or off, or reports if it is currently on or not.
+
+        Args:
+            action (str, optional): Needs to be one of "status", "enable", "disable", "switch". Defaults to "status".
+
+        Example:
+            @AntiPetros profiling_switch switch
+        """
         action_map = {'status': self._report_profiling_enabled,
                       'enable': partial(self._changed_profiling_enabled, new_status="1"),
                       'disable': partial(self._changed_profiling_enabled, new_status="0"),

@@ -66,7 +66,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.DEVTOOLS}):
     """
-    soon
+    Checks antistasi Templates for correctness, Currently Outdated and need a new algorithm. WiP
     """
 # region [ClassAttributes]
 

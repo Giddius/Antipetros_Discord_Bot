@@ -79,15 +79,7 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     Different interactions with saved Antistasi Community Server Logs. Works by connecting to and interacting with the Online Storage where the logs are saved.
     """
 # region [ClassAttributes]
-    long_description = dedent("""
-                            Is not real time, in regards to getting new log files, it can have a delay of up to 10 min.
-                            """).strip()
-
-    extra_info = dedent("""
-                        The nexcloud library is not written for asyncio and also has some generaly weird behaviours and bugs.
-                        This means, that the `Server?` command and other commands depending on the log files could randomly fail. Just try it again some time later.
-                        If the failures persist, tell me (`Giddi`).
-                        """).strip()
+    public = True
 
     already_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
 
@@ -217,6 +209,7 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Listener]
 
 # region [Commands]
+
 
     @universal_log_profiler
     def _transform_mod_name(self, mod_name: str):

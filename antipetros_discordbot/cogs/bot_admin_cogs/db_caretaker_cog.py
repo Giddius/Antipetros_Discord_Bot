@@ -68,14 +68,13 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': CommandCategory.META}):
     """
-    WiP
+    Cog to handle mostly background and update Task for the Database.
     """
 # region [ClassAttributes]
 
     public = False
     meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
-    long_description = ""
-    extra_info = ""
+
     required_config_data = {'base_config': {},
                             'cogs_config': {}}
 

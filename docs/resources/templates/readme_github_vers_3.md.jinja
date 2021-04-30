@@ -1,0 +1,144 @@
+{% extends "base_readme_template.md.jinja" %}
+
+{% block main_image %}
+<p align="center"><img src="{{ antipetros_image_location }}" alt="{{ project_name }} Avatar"/></p>
+{% endblock %}
+
+{% block toc %}
+
+$$$TOC$$$
+
+{% endblock %}
+
+{% block brief_description %}
+
+__**Bot-Name:**__
+
+> {{ bot_name }}
+
+__**Version:**__
+
+> {{ package_version }}
+
+{{ brief_description }}
+
+{% endblock %}
+
+
+{% block installation %}
+
+### PyPi
+
+```shell
+pip install {{ package_name }}=={{ package_version }}
+```
+
+{% endblock %}
+
+
+{% block usage %}
+
+{% for script_name, script_description in scripts.items() %}
+- __**{{ main_script_name }} {{ script_name }}**__
+    > {{ script_description }}
+
+{% endfor %}
+
+{% endblock %}
+
+
+{% block description %}
+
+{{ long_description }}
+
+{% endblock %}
+
+{% block features %}
+
+{% if current_cogs %}
+<details><summary><b>Currently usable Cogs</b></summary><blockquote>
+
+{% for cogname, value in current_cogs.items() %}
+{% if 'FOR_DEBUG' not in value.state %}
+### <p align="center"><b>[{{ cogname }}]({{ value.file_path }})</b></p>
+
+<details><summary><b>Description</b></summary>
+
+
+
+
+#### Short Description
+
+<blockquote>{{ value.description }}</blockquote>
+
+#### Config Name
+
+<blockquote>{{ value.config_name }}</blockquote>
+
+
+#### Cog State Tags
+
+```diff
+{%- for state_tag in value.state -%}
+{% if state_tag=='WORKING' %}
++ {{ state_tag }}
+{% else %}
+- {{ state_tag }}
+{% endif %}
+{%- endfor -%}
+```
+
+</details>
+
+---
+{% endif %}
+{% endfor %}
+</blockquote></details>
+{% endif %}
+{% endblock %}
+
+
+{% block dependencies %}
+
+**Developed with Python Version `{{ python_version }}`**
+
+### Python dependencies
+
+{% for dependency_name, dependency_version in dependencies.items() %}
+- **{{dependency_name}}** *{{dependency_version}}*
+{% endfor %}
+
+### External dependencies
+
+{% for ext_dep_name, ext_dep_value in external_dependencies.items() %}
+- [{{ ext_dep_name }}]({{ ext_dep_value.url }})
+    - __Windows__
+        {{ ext_dep_value.windows }}
+
+    - __Unix__
+        {{ ext_dep_value.unix }}
+{% endfor %}
+{% endblock %}
+
+
+{% block development %}
+
+### Future Plans
+
+{% for future_plan_title, future_plan_description in future_plans.items() %}
+- __{{ future_plan_title }}__
+
+    > {{ future_plan_description }}
+{% endfor %}
+
+{% endblock %}
+
+{% block see_also %}
+
+### Links
+
+{% for link_name, link_url in links.items() %}
+- [{{ link_name }}]({{ link_url }})
+{% endfor %}
+
+{% endblock %}

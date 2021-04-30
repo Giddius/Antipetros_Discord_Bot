@@ -99,7 +99,7 @@ class CodeHighlighStyle(Enum):
 
 class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.GENERAL}):
     """
-    WiP
+    Commands to provide several types of stats to the user.
     """
 # region [ClassAttributes]
 

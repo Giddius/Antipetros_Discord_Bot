@@ -45,6 +45,8 @@ from pyyoutube import Api
 from inspect import cleandoc, getdoc, getmembers, getsource, getsourcefile
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from marshmallow import Schema, fields
+from rich import inspect as rinspect
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion [Imports]
@@ -212,11 +214,51 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
             return True
         return False
 
+    @auto_meta_info_command()
+    async def dump_command(self, ctx: commands.Context):
+        command = self.bot.get_command("check_unmention_everyone")
+        writejson(command.dump(), 'blah.json')
+        await ctx.send('wuff')
+
+    @auto_meta_info_command()
+    async def check_all_role(self, ctx: commands.Context):
+        all_role = AllRole()
+        other_role = await self.bot.retrieve_antistasi_role(570374286334754948)
+        all_role_is_other_role = all_role is other_role
+        other_role_is_all_role = other_role is all_role
+        await ctx.send(str(f"{all_role_is_other_role=}"), allowed_mentions=discord.AllowedMentions.none())
+        await ctx.send(str(f"{other_role_is_all_role=}"), allowed_mentions=discord.AllowedMentions.none())
+
+    @auto_meta_info_command()
+    async def dump_role(self, ctx: commands.Context, role: discord.Role = None):
+        schema = RoleSchema()
+        if role is None:
+            pass
+
+        data = schema.dump(role)
+        name = 'giddis_roles.json' if role is None else role.name.replace(' ', '_') + '.json'
+        writejson(data, name)
+        await ctx.send('done')
+
+    @auto_meta_info_command()
+    async def embed_mention_check(self, ctx: commands.Context, member: discord.Member):
+
+        embed_data = await self.bot.make_generic_embed(Title='Test', description=member.mention)
+        await ctx.send(**embed_data)
+
+    @auto_meta_info_command()
+    async def webhook_test(self, ctx: commands.Context):
+        from discord import Webhook, AsyncWebhookAdapter
+        from aiohttp import ClientSession
+        async with ClientSession() as session:
+            webhook = Webhook.from_url('https://discord.com/api/webhooks/837390112730906624/oqQ9P9irf5AGrbV6zM0zSfdnleH-L8cwX6Ou1y-3eqbA00ngzN1wkaXRU39rp_eo8PcS', adapter=AsyncWebhookAdapter(session))
+            await webhook.send('hello')
+
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     async def cog_check(self, ctx):
-        if ctx.author.id == self.bot.creator.id:
+        if ctx.author.id == 576522029470056450:
             return True
         return False
 

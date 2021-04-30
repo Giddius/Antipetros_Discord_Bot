@@ -1,0 +1,18 @@
+**Developed with Python Version `{{ python_version }}`**
+
+### Python dependencies
+
+{% for dependency_name, dependency_version in dependencies.items() %}
+- **{{dependency_name}}** *{{dependency_version}}*
+{% endfor %}
+
+### External dependencies
+
+{% for ext_dep_name, ext_dep_value in external_dependencies.items() %}
+- [{{ ext_dep_name }}]({{ ext_dep_value.url }})
+    - __Windows__
+        {{ ext_dep_value.windows }}
+
+    - __Unix__
+        {{ ext_dep_value.unix }}
+{% endfor %}

@@ -14,7 +14,7 @@ import sys
 import asyncio
 import unicodedata
 from pprint import pprint, pformat
-from typing import Any
+from typing import Any, get_type_hints, get_args, _GenericAlias
 from inspect import getdoc
 from functools import singledispatchmethod
 import inspect
@@ -93,6 +93,7 @@ class AntiPetrosBaseCommand(commands.Command):
     alias_data_provider = JsonAliasProvider()
     source_code_data_provider = SourceCodeProvider()
     bot_mention_placeholder = '@BOTMENTION'
+    args_regex = re.compile(r"args\:\n(?P<args_values>.*)\n\s*?example\:|$", re.IGNORECASE | re.DOTALL)
 
     schema = AntiPetrosBaseCommandSchema()
 
@@ -118,6 +119,10 @@ class AntiPetrosBaseCommand(commands.Command):
         self.handle_category_kwargs(kwargs.get('categories', []))
         self.module_object = sys.modules[func.__module__]
         self.data_setters['meta_data']("docstring", self.docstring)
+
+    @property
+    def bot(self):
+        return self.cog.bot
 
     @singledispatchmethod
     def handle_category_kwargs(self, categories: Any):
@@ -218,20 +223,39 @@ class AntiPetrosBaseCommand(commands.Command):
     def usage(self):
         usage = {}
 
-        for key, value in self.callback.__annotations__.items():
-            if key not in ['self', 'ctx']:
+        # for key, value in self.callback.__annotations__.items():
+        #     if key not in ['self', 'ctx']:
 
-                if value is str:
-                    usage[f"<{key}>"] = "Text that needs to be put in quotes if it contains spaces."
-                else:
-                    usage[f"<{key}>"] = value.usage_description if hasattr(value, 'usage_description') else getdoc(value).splitlines()[0]
-        usage_line = "@AntiPetros "
+        #         if value is str:
+        #             usage[f"<{key}>"] = "Text that needs to be put in quotes if it contains spaces."
+        #         elif value is int:
+        #             usage[f"<{key}>"] = "A number"
+        #         else:
+        #             if isinstance(value, _GenericAlias):
+        #                 value = get_args(value)[0]
+        #                 if value is str:
+        #                     usage[f"<{key}>"] = "Text that needs to be put in quotes if it contains spaces."
+        #                 elif value is int:
+        #                     usage[f"<{key}>"] = "A number"
+        #                 else:
+        #                     usage[f"<{key}>"] = value.usage_description if hasattr(value, 'usage_description') else getdoc(value).splitlines()[0]
+        #             usage[f"<{key}>"] = value.usage_description if hasattr(value, 'usage_description') else getdoc(value).splitlines()[0]
+        arg_match = self.args_regex.search(self.docstring)
+        if arg_match:
+            arg_lines = list(map(lambda x: x.strip(), arg_match.group('args_values').splitlines()))
+            for line in arg_lines:
+                key, value = line.split(':')
+                if '(' in key:
+                    key = key.split('(')[0]
+
+                usage[f"<{key.strip()}>"] = value.strip()
+        usage_line = f"@AntiPetros <{self.name} or alias> "
         usage_explanation = []
         for key, value in usage.items():
             usage_line += f"{key} "
             value = '\n'.join(map(lambda x: x.strip(), re.split(r"\,|\.", value)))
             usage_explanation.append(f"{key}\n{value.strip()}\n-----")
-        full_usage = usage_line.strip() + '\n' + '█' * len(usage_line) + '\n' + '\n'.join(usage_explanation)
+        full_usage = usage_line.strip() + '\n' + '▬' * len(usage_line) + '\n' + '\n'.join(usage_explanation)
         return full_usage
 
     @usage.setter
@@ -277,15 +301,15 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def allowed_channels(self):
-        allowed_channels = ['all']
+        allowed_channels = []
         for check in self.checks:
             if hasattr(check, "allowed_channels"):
                 allowed_channels += check.allowed_channels(self)
         if allowed_channels == []:
-            return ['NA']
+            return []
         if len(allowed_channels) > 1 and 'all' in allowed_channels:
             allowed_channels.remove('all')
-        return allowed_channels
+        return list(map(self.bot.sync_channel_from_name, allowed_channels))
 
     @property
     def allowed_roles(self):
@@ -294,10 +318,10 @@ class AntiPetrosBaseCommand(commands.Command):
             if hasattr(check, "allowed_roles"):
                 allowed_roles += check.allowed_roles(self)
         if allowed_roles == []:
-            return ['NA']
+            return []
         if len(allowed_roles) > 1 and 'all' in allowed_roles:
             allowed_roles.remove('all')
-        return allowed_roles
+        return list(map(self.bot.sync_role_from_string, allowed_roles))
 
     @property
     def allowed_in_dms(self):

@@ -34,7 +34,7 @@ from antipetros_discordbot.utility.misc import delete_message_if_text_channel
 from antipetros_discordbot.utility.checks import BaseAntiPetrosCheck
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE, SPECIAL_SPACE_2
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, ExtraHelpParameter, HelpCategory
 from antipetros_discordbot.auxiliary_classes.help_dispatcher_mapping import HelpMethodDispatchMap
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink, make_box
@@ -46,7 +46,7 @@ from antipetros_discordbot.utility.general_decorator import is_refresh_task, uni
 import inflect
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-
+from antipetros_discordbot.auxiliary_classes.all_item import AllItem
 if os.getenv('IS_DEV', 'false').casefold() == 'true':
     pass
 
@@ -94,7 +94,7 @@ def no_name_modifier(in_name: str) -> str:
 
 @universal_log_profiler
 def filter_with_user_role(owner_ids: List[int], in_member: discord.Member, only_working: bool = True, only_enabled: bool = True):
-    role_names = ['all'] + [role.name.casefold() for role in in_member.roles]
+    roles = [AllItem()] + [role for role in in_member.roles]
     excluded_cogs = {'GeneralDebugCog', 'HelpCog'}
 
     def actual_filter(in_object):
@@ -108,10 +108,10 @@ def filter_with_user_role(owner_ids: List[int], in_member: discord.Member, only_
                 return False
             if is_owner is True:
                 return True
-            if in_object.hidden is True and 'admin' not in role_names:
+            if in_object.hidden is True and 'admin' not in {role.name.casefold() for role in roles}:
                 return False
-            allowed_roles = [c_role.casefold() for c_role in in_object.allowed_roles]
-            return any(role in allowed_roles for role in role_names)
+            allowed_roles = [c_role for c_role in in_object.allowed_roles]
+            return any(role in allowed_roles for role in roles)
         elif isinstance(in_object, commands.Cog):
 
             if str(in_object) in excluded_cogs:
@@ -122,7 +122,7 @@ def filter_with_user_role(owner_ids: List[int], in_member: discord.Member, only_
                 return True
 
             if in_object.public is False:
-                return any(role in ['admin', 'admin lead'] for role in role_names)
+                return any(role.name.casefold() in ['admin', 'admin lead'] for role in roles)
             else:
                 return True
         elif issubclass(in_object, CommandCategory):
@@ -169,12 +169,10 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-        self.help_dispatch_map = HelpMethodDispatchMap({AntiPetrosBaseCog: self._send_cog_help,
-                                                        AntiPetrosBaseCommand: self._send_command_help,
+        self.help_dispatch_map = HelpMethodDispatchMap({AntiPetrosBaseCommand: self._send_command_help,
                                                         AntiPetrosFlagCommand: self._send_command_help,
                                                         AntiPetrosBaseGroup: self._send_command_help,
                                                         CommandCategory: self._send_category_help,
-                                                        HelpCategory.COG: self._general_cog_help,
                                                         HelpCategory.COMMAND: self._general_command_help,
                                                         HelpCategory.CATEGORY: self._general_category_help})
 
@@ -191,6 +189,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [Init]
 
 # region [Properties]
+
 
     @property
     @universal_log_profiler
@@ -296,7 +295,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # region [Commands]
 
     @auto_meta_info_command(categories=[CommandCategory.META])
-    async def help(self, ctx: commands.Context, in_object: Optional[Union[HelpCategoryConverter, CommandConverter, CogConverter, CategoryConverter]], extra_parameter: Optional[ExtraHelpParameterConverter]):
+    async def help(self, ctx: commands.Context, in_object: Optional[Union[HelpCategoryConverter, CommandConverter, CategoryConverter]], extra_parameter: Optional[ExtraHelpParameterConverter]):
         raw_params = ctx.message.content.split(ctx.invoked_with)[-1].strip()
 
         author = await self.bot.retrieve_antistasi_member(ctx.author.id)
@@ -317,7 +316,6 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [DataStorage]
 
 # region [Embeds]
-
 
     @universal_log_profiler
     async def help_overview_embed(self, author: discord.Member, extra_parameter: ExtraHelpParameter = None):
@@ -356,7 +354,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         fields = []
         cog_data = await self.get_cog_data(cog_filter=member_filter)
         for cog_name, cog in cog_data.items():
-            wiki_link = embed_hyperlink(f"{cog_name} {'wiki page'.title()}", cog.github_wiki_link)
+            wiki_link = embed_hyperlink(f"{cog_name} {'wiki page'}", cog.github_wiki_link)
             fields.append(self.bot.field_item(name=cog_name, value=f"{ZERO_WIDTH}\n{wiki_link}\n{ZERO_WIDTH}\n" + '\n'.join(f"> {line}"for line in cog.description.splitlines()) + f"\n{ZERO_WIDTH}", inline=False))
 
         # TODO: change links to link to the cogs folder and to the cogs wiki title page
@@ -379,7 +377,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         frequency_dict = await self.bot.get_command_frequency(from_datetime=None, to_datetime=None, as_counter=True)
         command_data = {key: value for key, value in sorted(command_data.items(), key=lambda x: (frequency_dict.get(x[0], 0), x[0]), reverse=True)}
         for command_name, command in command_data.items():
-            wiki_link = embed_hyperlink(f"{command_name} {'wiki page'.title()}", command.github_wiki_link)
+            wiki_link = embed_hyperlink(f"{command_name} {'wiki page'}", command.github_wiki_link)
             fields.append(self.bot.field_item(name=command_name, value=f"{ZERO_WIDTH}\n{wiki_link}\n{ZERO_WIDTH}\n" + '\n'.join(f"> {line}"for line in command.brief.splitlines()) + f"\n{ZERO_WIDTH}", inline=False))
 
         # TODO: change links to link to the cogs folder and to the cogs wiki title page
@@ -417,36 +415,98 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                                                                             author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url}):
             yield embed_data
 
+    # @universal_log_profiler
+    # async def help_specific_command_embed(self, author: discord.Member, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand], extra_parameter: ExtraHelpParameter = None):
+    #     field_attr = ['allowed_in_dms']
+    #     allowed_channels = command.allowed_channels if command.allowed_channels not in ['', [], 'NA', None] else ['all']
+    #     fields = []
+
+    #     fields.append(self.bot.field_item(name='usage'.title(), value=f"```css\n{command.usage}\n```"))
+    #     for attr in field_attr:
+    #         value = getattr(command, attr)
+    #         if isinstance(value, bool):
+    #             value = '✅' if value is True else '❎'
+    #         fields.append(self.bot.field_item(name=attr, value=value, inline=False))
+
+    #     fields.append(self.bot.field_item(name='aliases', value='\n'.join(f"`{item}`" for item in command.aliases) if command.aliases else "`None`", inline=True))
+
+    #     fields.append(self.bot.field_item(name='allowed channels'.title(), value='\n'.join([f"`{item}`" for item in command.allowed_channels if await self._check_channel_visibility(author, item) is True]), inline=True))
+    #     fields.append(self.bot.field_item(name='allowed roles'.title(), value='\n'.join([f"`{item}`" for item in command.allowed_roles]), inline=True))
+
+    #     fields.append(self.bot.field_item(name='example', value=f"```css\n{command.example}\n```"))
+    #     links = f"{embed_hyperlink(f'{command.name.upper()} GITHUB REPO', command.github_link)}\n{embed_hyperlink(f'{command.name.upper()} GITHUB WIKI',command.github_wiki_link)}"
+    #     embed_data = await self.bot.make_generic_embed(title=command.name + ' HELP',
+    #                                                    description=f"{links}\n{ZERO_WIDTH}\n" + '\n'.join(f"> {line}" for line in command.description.splitlines()),
+    #                                                    thumbnail=await command.get_source_code_image(),
+    #                                                    image=command.gif,
+    #                                                    url=command.github_link,
+    #                                                    fields=fields,
+    #                                                    author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url})
+    #     return embed_data
+
     @universal_log_profiler
     async def help_specific_command_embed(self, author: discord.Member, command: Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand], extra_parameter: ExtraHelpParameter = None):
-        field_attr = ['allowed_in_dms']
-        allowed_channels = command.allowed_channels if command.allowed_channels not in ['', [], 'NA', None] else ['all']
+        # TODO: Create HELP EMBED formatter class to attach to each command.
+        def two_collumn_seperator_gen():
+            while True:
+                yield ', '
+                yield '\n'
+
+        author_allowed_to_use_string = ''
+        author_roles = set([AllItem()] + author.roles)
+
+        if set(command.allowed_roles).isdisjoint(set(author_roles)):
+            author_allowed_to_use_string = "__**You are not allowed to use the described Command**__\n" + ZERO_WIDTH + '\n'
+
+        allowed_channels = [channel for channel in command.allowed_channels if await self._check_channel_visibility(author, channel) is True]
+
+        allowed_channels = sorted(allowed_channels, key=lambda x: x.position)
+        gen = two_collumn_seperator_gen()
+
+        allowed_channels_value = ''.join(f"⍟ {channel.mention}{next(gen)}" if isinstance(channel, discord.TextChannel) else f"{channel}{next(gen)}" for channel in allowed_channels)
+
+        allowed_roles = sorted(command.allowed_roles, key=lambda x: x.position, reverse=True)
+        allowed_roles_value = '\n'.join(role.mention for role in allowed_roles)
+
+        allowed_in_dms_value = '✅' if command.allowed_in_dms is True else '❎'
+        usage_value = f"```css\n{command.usage}\n```"
+        if command.aliases:
+            aliases = sorted(list(command.aliases))
+            aliases_value = '\n'.join(f"• `{alias}`" for alias in aliases)
+        else:
+            aliases_value = '*no aliases*'
+        github_repo_value = embed_hyperlink('link🔗', command.github_link)
+        github_wiki_value = embed_hyperlink('link🔗', command.github_wiki_link)
+        example_value = f"```css\n{command.example}\n```"
+        fields_data = {'allowed channels': (allowed_channels_value, False),
+                       'allowed roles': (allowed_roles_value, False),
+                       'in dm allowed': (allowed_in_dms_value, True),
+                       'usage': (usage_value, False),
+                       'aliases': (aliases_value, True),
+                       'on github': (github_repo_value, True),
+                       'wiki': (github_wiki_value, True),
+                       'example': (example_value, False)}
+
+        fields_order = ['usage', 'aliases', 'allowed channels', 'allowed roles', 'in dm allowed', 'on github', 'wiki', 'example']
         fields = []
+        for order_name in fields_order:
+            fields.append(self.bot.field_item(name=f"**{order_name.title()}**", value=fields_data.get(order_name)[0], inline=fields_data.get(order_name)[1]))
 
-        fields.append(self.bot.field_item(name='usage'.title(), value=f"```css\n{command.usage}\n```"))
-        for attr in field_attr:
-            value = getattr(command, attr)
-            if isinstance(value, bool):
-                value = "yes" if value is True else 'no'
-            fields.append(self.bot.field_item(name=attr, value=value))
+        links = f"**{embed_hyperlink(f'{command.name.upper()} GITHUB REPO', command.github_link)}**🔗\n**{embed_hyperlink(f'{command.name.upper()} GITHUB WIKI',command.github_wiki_link)}**🔗"
 
-        fields.append(self.bot.field_item(name='aliases', value='\n'.join(f"`{item}`" for item in command.aliases) if command.aliases else "`None`"))
+        embed_data = await self.bot.make_generic_embed(title=command.name.upper(),
+                                                       description=f"{author_allowed_to_use_string}" + '\n'.join(f" > {line}" for line in command.description.splitlines()),
+                                                       footer={'text': command.extra_info} if command.extra_info not in ['', None, 'NA'] else None,
+                                                       #    image=command.gif,
+                                                       #    thumbnail=await command.get_source_code_image(),
+                                                       thumbnail=None,
+                                                       author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url},
+                                                       url=command.github_wiki_link,
+                                                       fields=fields)
 
-        fields.append(self.bot.field_item(name='allowed channels'.title(), value='\n'.join([f"`{item}`" for item in command.allowed_channels if await self._check_channel_visibility(author, item) is True])))
-        fields.append(self.bot.field_item(name='allowed roles'.title(), value='\n'.join([f"`{item}`" for item in command.allowed_roles])))
-
-        fields.append(self.bot.field_item(name='example', value=f"```css\n{command.example}\n```"))
-        links = f"{embed_hyperlink(f'{command.name.upper()} GITHUB REPO', command.github_link)}\n{embed_hyperlink(f'{command.name.upper()} GITHUB WIKI',command.github_wiki_link)}"
-        embed_data = await self.bot.make_generic_embed(title=command.name + ' HELP',
-                                                       description=f"{links}\n{ZERO_WIDTH}\n" + '\n'.join(f"> {line}" for line in command.description.splitlines()),
-                                                       thumbnail=await command.get_source_code_image(),
-                                                       image=command.gif,
-                                                       url=command.github_link,
-                                                       fields=fields,
-                                                       author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url})
         return embed_data
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def help_specific_category(self, author: discord.Member, category: CommandCategory, extra_parameter: ExtraHelpParameter = None):
         fields = []
         category_commands = category.commands if category.commands else []
@@ -464,7 +524,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                                                                             author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url}):
             yield embed_data
 
-    @universal_log_profiler
+    @ universal_log_profiler
     async def help_specific_cog(self, author: discord.Member, cog: AntiPetrosBaseCog, extra_parameter: ExtraHelpParameter = None):
         fields = []
         cog_commands = cog.all_commands if cog.all_commands else []
@@ -485,11 +545,11 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [HelperMethods]
 
-    @universal_log_profiler
-    async def _check_channel_visibility(self, author: discord.Member, channel_name: str):
-        if channel_name == 'all':
+    @ universal_log_profiler
+    async def _check_channel_visibility(self, author: discord.Member, channel: discord.abc.GuildChannel):
+        if channel.name.casefold() == 'all':
             return True
-        channel = await self.bot.channel_from_name(channel_name)
+
         channel_member_permissions = channel.permissions_for(author)
         if channel_member_permissions.administrator is True or channel_member_permissions.read_messages is True:
             return True
@@ -683,6 +743,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx: commands.Context):
         return True

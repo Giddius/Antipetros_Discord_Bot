@@ -61,7 +61,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories': CommandCategory.ADMINTOOLS | CommandCategory.TEAMTOOLS}):
     """
-    Soon
+    Creates and Runs Giveaways.
     """
 # region [ClassAttributes]
 

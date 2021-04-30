@@ -77,19 +77,10 @@ from struct import unpack_from as _unpack_from, calcsize as _calcsize
 
 class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.DEVTOOLS}):
     """
-    soon
+    Presents infos about the community servers, mods and players.
     """
 # region [ClassAttributes]
-    long_description = dedent("""
-                            Is not real time, in regards to getting new log files, it can have a delay of up to 10 min.
-                            """).strip()
-
-    extra_info = dedent("""
-                        The nexcloud library is not written for asyncio and also has some generaly weird behaviours and bugs.
-                        This means, that the `Server?` command and other commands depending on the log files could randomly fail. Just try it again some time later.
-                        If the failures persist, tell me (`Giddi`).
-                        """).strip()
-
+    public = True
     server_symbol = "https://i.postimg.cc/dJgyvGH7/server-symbol.png"
 
     meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING

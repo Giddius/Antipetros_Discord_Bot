@@ -34,8 +34,11 @@ from antipetros_discordbot.cogs import BOT_ADMIN_COG_PATHS, DISCORD_ADMIN_COG_PA
 from antipetros_discordbot.utility.converters import CommandConverter
 from antipetros_discordbot.utility.data_gathering import save_cog_command_data
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
+
 from .replacements import AntiPetrosBaseHelp
 from antipetros_discordbot.engine.replacements import CommandCategory
+from antipetros_discordbot.utility.checks import BaseAntiPetrosCheck
+
 # endregion[Imports]
 
 
@@ -96,6 +99,7 @@ class AntiPetrosBot(commands.Bot):
                          ** kwargs)
         self._update_profiling_check()
         CommandCategory.bot = self
+
         self.token = token
         self.support = BotSupporter(self)
         self.support.recruit_subsupports()

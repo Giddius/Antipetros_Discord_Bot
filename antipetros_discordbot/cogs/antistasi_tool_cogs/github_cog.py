@@ -88,7 +88,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.DEVTOOLS}):
     """
-    WiP
+    Access and meta info about the Antistasi Github. Still WiP
     """
 # region [ClassAttributes]
 

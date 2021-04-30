@@ -60,7 +60,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.TEAMTOOLS | CommandCategory.ADMINTOOLS | CommandCategory.DEVTOOLS}):
     """
-    Soon
+    Commands to interact with Steam, the Steam Workshop and to alert if mods are updated. Still WiP
     """
     # region [ClassAttributes]
 

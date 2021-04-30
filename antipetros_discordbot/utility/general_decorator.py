@@ -118,7 +118,8 @@ def universal_log_profiler(f):
             start_time = process_time_ns()
             _out = await f(*args, **kwargs)
             time_taken = process_time_ns() - start_time
-            logger.profile("<PROFILING> module: %s, function: %s, time_taken: %s ns</PROFILING>", f.__module__, f.__name__, str(time_taken))
+            if time_taken > 0:
+                logger.profile("<PROFILING> module: %s, function: %s, time_taken: %s ns</PROFILING>", f.__module__, f.__name__, str(time_taken))
         else:
             _out = await f(*args, **kwargs)
         return _out
@@ -130,7 +131,8 @@ def universal_log_profiler(f):
             start_time = process_time_ns()
             _out = f(*args, **kwargs)
             time_taken = process_time_ns() - start_time
-            logger.profile("<PROFILING> module: %s, function: %s, time_taken: %s ns</PROFILING>", f.__module__, f.__name__, str(time_taken))
+            if time_taken > 0:
+                logger.profile("<PROFILING> module: %s, function: %s, time_taken: %s ns</PROFILING>", f.__module__, f.__name__, str(time_taken))
         else:
             _out = f(*args, **kwargs)
         return _out

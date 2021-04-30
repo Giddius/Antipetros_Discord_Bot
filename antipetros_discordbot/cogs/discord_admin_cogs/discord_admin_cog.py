@@ -66,8 +66,7 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 
     public = False
     meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
-    long_description = ""
-    extra_info = ""
+
     required_config_data = {'base_config': {},
                             'cogs_config': {}}
     required_folder = []
@@ -119,6 +118,14 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
     @owner_or_admin()
     @log_invoker(log, "critical")
     async def delete_msg(self, ctx, *msgs: discord.Message):
+        """
+        Deletes messages.
+
+        Can take several message Ids as input, as long as they are seperated by a single space.
+
+        Example:
+            @AntiPetros delete_msg 837700676872044604 837488218567475200
+        """
         for msg in msgs:
 
             await msg.delete()
@@ -135,6 +142,9 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 
         Args:
             delete_after (int, optional): time in seconds after which to delete the empty message. Defaults to None which means that it does not delete the empty message.
+
+        Example:
+            @AntiPetros the_bot_new_clothes 120
         """
         msg = ZERO_WIDTH * 20 + '\n'
         await ctx.send('THE BOTS NEW CLOTHES' + (msg * 60), delete_after=delete_after)
@@ -145,6 +155,17 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
     @owner_or_admin()
     @log_invoker(log, "critical")
     async def write_message(self, ctx: commands.Context, channel: discord.TextChannel, *, message: str):
+        """
+        Writes a message as the bot to a specific channel.
+
+
+        Args:
+            channel (discord.TextChannel): name or id of channel. Preferably use Id as it is failsafe.
+            message (str): The message you want to write, does not need any quotes and can be multiline
+
+        Examples:
+            @AntiPetros write_message 645930607683174401 This is my message
+        """
         await channel.send(message)
         await ctx.message.delete()
 
@@ -187,6 +208,9 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
             --image (str):
             --disable-mentions (bool):
             --delete-after (int):
+
+        Example:
+            @AntiPetros make_embed -t "My Title" -d "This is my description" -dis yes -da 120
         """
         allowed_mentions = discord.AllowedMentions.none() if flags.pop("disable_mentions") is True else None
         delete_after = flags.pop('delete_after')
@@ -206,8 +230,14 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
         await asyncio.sleep(60)
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(categories=[CommandCategory.TEAMTOOLS, CommandCategory.DEVTOOLS])
     async def all_guild_emojis(self, ctx: commands.Context):
+        """
+        Collects all Guild emojis and sends them as zipped file.
+
+        Example:
+            @AntiPetros all_guild_emojis
+        """
         async with ctx.typing():
             start_message = await ctx.send('Please wait this could take a minute or more!')
             with TemporaryDirectory() as tempdir:

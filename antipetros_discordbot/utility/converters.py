@@ -74,6 +74,11 @@ class LanguageConverter(Converter):
             return self.languages_by_country_code.get(argument)
         raise CommandError
 
+    @classmethod
+    @property
+    def usage_description(cls):
+        return "Name of the language or language code (iso639-1). Case-INsensitive"
+
 
 class DateTimeFullConverter(Converter):
     def __init__(self):
@@ -264,6 +269,7 @@ class ExtraHelpParameterConverter(Converter):
     @property
     def usage_description(cls):
         return "Name of an Extra-Help-Parameter. Case-INsensitive.\nPossible Values: " + '\n'.join(name for name in ExtraHelpParameter.__members__)
+
 
         # region[Main_Exec]
 if __name__ == '__main__':

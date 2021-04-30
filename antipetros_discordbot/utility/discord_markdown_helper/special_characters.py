@@ -1,5 +1,6 @@
 ZERO_WIDTH = '\u200b'
 SPECIAL_SPACE = '\u00A0'
+SPECIAL_SPACE_2 = '\u2003'
 
 
 class ListMarker:

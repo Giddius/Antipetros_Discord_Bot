@@ -53,7 +53,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categories": CommandCategory.ADMINTOOLS}):
     """
-    Soon
+    Commands to purge messages.
     """
 
 # region [ClassAttributes]
@@ -103,6 +103,12 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
     @commands.is_owner()
     @in_allowed_channels()
     async def purge_antipetros(self, ctx: commands.Context, **command_flags):
+        """
+        Removes all messages of the bot and optionally of giddi.
+
+        Example:
+            @AntiPetros purge_antipetros -gid yes -n 1000
+        """
 
         def is_antipetros(message):
             if command_flags.get('and_giddi') is False:

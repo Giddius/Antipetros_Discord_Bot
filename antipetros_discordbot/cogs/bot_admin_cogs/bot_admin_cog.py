@@ -67,8 +67,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
     public = False
     meta_status = CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
-    long_description = "Almost all commands are either locked to Admins and Admin Leads or just Admin Leads. The Creator Giddi has an overwrite and can invoke all commands."
-    extra_info = "!WARNING! all command invocations are logged.\nSpecific Data that is logged:" + '\n'.join(["date and time", "command name", "prefix used", "user name", "user id", "channel name", "invoking message content"])
     required_config_data = {'base_config': {'general_settings': {"cogs_location": "antipetros_discordbot.cogs"}},
                             'cogs_config': {}}
 
@@ -161,6 +159,14 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
     @auto_meta_info_command(aliases=['reload', 'refresh'])
     @commands.is_owner()
     async def reload_all_ext(self, ctx):
+        """
+        Reloads all enabled extensions.
+
+        Currently not working perfectly, it is recommended to just restart the bot.
+
+        Example:
+            @AntiPetros reload_all_ext
+        """
         BASE_CONFIG.read()
         COGS_CONFIG.read()
         reloaded_extensions = []
@@ -192,12 +198,29 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
     @auto_meta_info_command(aliases=['die', 'rip', 'go-away', 'go_away', 'go.away', 'goaway', 'get_banned'])
     @owner_or_admin()
     async def shutdown(self, ctx, *, reason: str = 'No reason given'):
+        """
+        Shuts the bot down, via normal shutdown procedure.
+
+        Args:
+            reason (str, optional): The Reason that should be written to the Log of the Bot. Defaults to 'No reason given'.
+
+        Example:
+            @AntiPetros shutdown
+        """
         log.critical('shutdown command received from "%s" with reason: "%s"', ctx.author.name, reason)
         await ctx.message.delete()
         await self.bot.shutdown_mechanic()
 
     @ auto_meta_info_command(aliases=['you_dead?', 'are-you-there', 'poke-with-stick'])
     async def life_check(self, ctx: commands.Context):
+        """
+        Checks if the bot is running, receiving messages and capable to answer, or even if two instances are running.
+
+        This is a more fun version of a `pong` command
+
+        Example:
+            @AntiPetros life_check
+        """
         if random.randint(0, len(self.alive_phrases)) == 0:
             file = discord.File(APPDATA['bertha.png'])
             await ctx.reply('My assistent will record your command for me, please speak into her Banhammer', file=file)
@@ -208,7 +231,17 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
     @owner_or_admin()
     @log_invoker(log, "critical")
     async def add_to_blacklist(self, ctx, user: discord.Member):
+        """
+        Adds a User to the Bots Blacklist.
 
+        The User will not be able to trigger the bot as long as he is on the Blacklist. Best to use user-id as the parameter.
+
+        Args:
+            user (discord.Member): A discord User of the Guild. Input can be name or Id, but best to use Id.
+
+        Example:
+            @AntiPetros add_to_blacklist 576522029470056450
+        """
         if user.bot is True:
             # TODO: make as embed
             await ctx.send("the user you are trying to add is a **__BOT__**!\n\nThis can't be done!")
@@ -223,6 +256,17 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
     @owner_or_admin()
     @log_invoker(log, "critical")
     async def remove_from_blacklist(self, ctx, user: discord.Member):
+        """
+        Removes a User from the Blacklist.
+
+        Best to use user-id as the parameter.
+
+        Args:
+            user (discord.Member): A discord User of the Guild. Input can be name or Id, but best to use Id.
+
+        Example:
+            @AntiPetros remove_from_blacklist 576522029470056450
+        """
 
         await self.bot.unblacklist_user(user)
         await ctx.send(f"I have unblacklisted user {user.name}")
@@ -264,6 +308,10 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
     @auto_meta_info_command()
     @only_giddi()
     async def send_loop_info(self, ctx: commands.Context, loop_attr: str = None):
+        """
+        Tells which loop is running.
+
+        """
         loop_attr = 'name' if loop_attr is None else loop_attr
         if loop_attr.casefold() not in self.loop_regex.groupindex.keys():
             await ctx.send(f"`{loop_attr}` is not a valid value for the parameter `loop_attr`.\nNeeds to be one of " + ', '.join(f"`{g_name}`" for g_name in self.loop_regex.groupindex.keys()), delete_after=120)
@@ -277,6 +325,17 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
     @auto_meta_info_command()
     @owner_or_admin()
     async def disable_cog(self, ctx: commands.Context, cog: CogConverter):
+        """
+        Unloads a specific Cog.
+
+        This disables all functionality and all backgroundtasks associated with that Cog. It also sets the config to not load the cog, so it does not get reloaded on accident.
+
+        Args:
+            cog (CogConverter): Name of the Cog, case-INsensitive. prefix `Cog` is optional.
+
+        Example:
+            @AntiPetros disable_cog Klimbim
+        """
         name = cog.qualified_name
         await ctx.send(f"Trying to disable Cog `{name}`")
         self.bot.remove_cog(name)
@@ -290,6 +349,12 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
     @auto_meta_info_command()
     @owner_or_admin()
     async def current_cogs(self, ctx: commands.Context):
+        """
+        Gives a List of all currently active and loaded Cogs.
+
+        Example:
+            @AntiPetros current_cogs
+        """
         text = ""
         for cog_name, cog_object in self.bot.cogs.items():
             text += f"NAME: {cog_name}, CONFIG_NAME: {cog_object.config_name}\n{'-'*10}\n"

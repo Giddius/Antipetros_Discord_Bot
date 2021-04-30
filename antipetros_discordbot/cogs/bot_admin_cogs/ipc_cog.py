@@ -71,14 +71,13 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': CommandCategory.META}):
     """
-    WiP
+    Cog to make InterProcessCommunication easier and also enables the Bot-website to get data more easily.
     """
 # region [ClassAttributes]
 
     public = False
     meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
-    long_description = ""
-    extra_info = ""
+
     required_config_data = {'base_config': {},
                             'cogs_config': {}}
     required_folder = []

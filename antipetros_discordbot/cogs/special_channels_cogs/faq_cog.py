@@ -165,8 +165,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 # region [Commands]
 
 
-    @auto_meta_info_command()
-    @ allowed_channel_and_allowed_role(in_dm_allowed=False)
+    @auto_meta_info_command(aliases=['faq'])
     @commands.cooldown(1, 10, commands.BucketType.channel)
     async def post_faq_by_number(self, ctx, faq_numbers: commands.Greedy[int]):
         """
@@ -177,7 +176,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         Deletes invoking message
 
         Args:
-            faq_numbers (commands.Greedy[int]): minimum one faq number to request, maximum as many as you want seperated by one space (i.e. 14 12 3)
+            faq_numbers (commands.Greedy[int]): minimum one faq number, no maximum,each seperated by one space (ie 14 12 3)
 
         Example:
             @AntiPetros post_faq_by_number 4 8 12

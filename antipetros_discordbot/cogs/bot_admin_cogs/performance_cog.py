@@ -81,8 +81,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     public = True
     meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
-    long_description = ""
-    extra_info = ""
     required_config_data = {'base_config': {},
                             'cogs_config': {"threshold_latency_warning": "250",
                                             "threshold_memory_warning": "0.5",
@@ -200,6 +198,15 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
     @auto_meta_info_command()
     @owner_or_admin()
     async def report_latency(self, ctx, with_graph: bool = True):
+        """
+        Reports the latency in the last 24h
+
+        Args:
+            with_graph (bool, optional): if it should be presented in graph form. Defaults to True.
+
+        Example:
+            @AntiPetros report_latency yes
+        """
         report_data = await self.general_db.get_latency_data_last_24_hours()
 
         stat_data = [item.latency for item in report_data]
@@ -217,6 +224,15 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
     @auto_meta_info_command()
     @owner_or_admin()
     async def report_memory(self, ctx, with_graph: bool = True, since_last_hours: int = 24):
+        """
+        Reports the memory use in the last 24h
+
+        Args:
+            with_graph (bool, optional): if it should be presented in graph form. Defaults to True.
+
+        Example:
+            @AntiPetros report_memory yes
+        """
         initial_memory = os.getenv('INITIAL_MEMORY_USAGE')
         initial_memory_annotated = bytes2human(int(initial_memory), annotate=True)
         report_data = await self.general_db.get_memory_data_last_24_hours()
@@ -242,6 +258,15 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
     @auto_meta_info_command()
     @owner_or_admin()
     async def report_cpu(self, ctx, with_graph: bool = True):
+        """
+        Reports the cpu use in the last 24h
+
+        Args:
+            with_graph (bool, optional): if it should be presented in graph form. Defaults to True.
+
+        Example:
+            @AntiPetros report_cpu yes
+        """
         report_data = await self.general_db.get_cpu_data_last_24_hours()
 
         stat_data = [item.usage_percent for item in report_data]
@@ -260,7 +285,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
     @owner_or_admin()
     async def report(self, ctx):
         """
-        Reports both current latency and memory usage as Graph.
+        Reports all collected metrics as Graph.
 
         Example:
             @AntiPetros report
@@ -274,24 +299,11 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
             await ctx.send('not enough data points collected to report!', delete_after=120)
             await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command()
-    @owner_or_admin()
-    async def cpu_info(self, ctx: commands.Context):
-        cpu_percent = psutil.cpu_percent(interval=None)
-        cpu_logical_count = psutil.cpu_count()
-        cpu_strict_count = psutil.cpu_count(logical=False)
-        cpu_load_avg = [x / psutil.cpu_count() * 100 for x in psutil.getloadavg()]
-        fields = [self.bot.field_item(name="CPU Percent", value=f"{cpu_percent} %"),
-                  self.bot.field_item(name="CPU count logical", value=cpu_logical_count),
-                  self.bot.field_item(name="CPU strict count", value=cpu_strict_count),
-                  self.bot.field_item(name="CPU load average", value=f"1 minute: {cpu_load_avg[0]}\n5 minutes: {cpu_load_avg[1]}\n15 minutes: {cpu_load_avg[2]}")]
-        embed_data = await self.bot.make_generic_embed(title="CPU Data", fields=fields)
-        await ctx.send(**embed_data)
-
 
 # endregion[Commands]
 
 # region [Helper]
+
 
     async def parse_logs_for_profile(self):
         log_folder = APPDATA.log_folder
@@ -428,6 +440,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 
 # region [SpecialMethods]
+
 
     def __str__(self) -> str:
         return self.qualified_name
