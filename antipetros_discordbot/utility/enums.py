@@ -117,6 +117,10 @@ class CogMetaStatus(Flag):
 
 @unique
 class UpdateTypus(Flag):
+    CYCLIC = auto()
+    GUILD = auto()
+    ROLES = auto()
+    MEMBERS = auto()
     CONFIG = auto()
     COMMANDS = auto()
     COGS = auto()

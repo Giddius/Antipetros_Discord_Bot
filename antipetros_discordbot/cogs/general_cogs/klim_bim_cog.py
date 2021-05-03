@@ -364,7 +364,9 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         All standard DnD Dice are available, d4, d6, d8, d10, d12, d20, d100.
 
         Args:
-            dice_line (str): the dice you want to roll in the format `2d6`, first number is amount. Multiple different dice can be rolled, just seperate them by a space `2d6 4d20 1d4`.
+            dice_line (str): the dice you want to roll in the format `2d6`, first number is amount. Multiple different dice can be rolled, just seperate them by a space. Like: 2d6 4d20 1d4.
+        Example:
+            @AntiPetros roll_dice 14d4 14d6 14d8 14d10 14d12 14d20 14d100
         """
         # TODO: Refractor this ugly mess
         dice_limit = 100

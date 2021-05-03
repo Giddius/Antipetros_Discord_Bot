@@ -27,6 +27,23 @@ class ListMarker:
     vertical_bar_thick = '┃'
     connector_round = '╰'
 
+    @classmethod
+    def make_list(cls, in_data, symbol=None):
+        symbol = cls.bullet if symbol is None else symbol
+        return '\n'.join(f"{symbol} {item}" for item in in_data)
+
+    @classmethod
+    def _column_symbol_generator(cls, amount_columns: int, seperator: str):
+        while True:
+            for i in range(amount_columns - 1):
+                yield seperator
+            yield "\n"
+
+    @classmethod
+    def make_column_list(cls, in_data, symbol=None, amount_columns: int = 2, seperator: str = ', '):
+        col_gen = cls._column_symbol_generator(amount_columns, seperator)
+        return ''.join(f"{symbol} {item}{next(col_gen)}" for item in in_data)
+
 
 class Seperators:
     basic = '-'

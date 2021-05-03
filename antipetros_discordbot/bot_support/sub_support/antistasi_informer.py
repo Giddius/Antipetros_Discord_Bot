@@ -8,16 +8,21 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from typing import Dict, Generator, List
+from typing import Dict, Generator, List, Optional, Iterable, Callable, Union, Iterable
+import asyncio
+import random
+from time import time, time_ns, monotonic, monotonic_ns, process_time, process_time_ns, perf_counter, perf_counter_ns
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import discord
+from collections import UserDict, namedtuple
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus
 from antipetros_discordbot.auxiliary_classes.all_item import AllItem
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 # endregion[Imports]
 
 # region [TODO]
@@ -47,6 +52,120 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
+class AutoDict(UserDict):
+
+    def __init__(self, key_attribute: Union[str, Iterable[str]], items: Optional[Iterable] = None, keep_sorted: bool = False, key_modifier: Callable = None, sort_key: Callable = None) -> None:
+        self._key_attribute = key_attribute if isinstance(key_attribute, (list, set, tuple, frozenset)) else [key_attribute]
+        self.key_modifier = key_modifier
+        self.is_multi = len(self.key_attribute) > 1
+        self._keep_sorted = keep_sorted
+        self._sort_key = sort_key
+        self._reverse = False
+        super().__init__()
+        if items is not None:
+            self.add_items(items)
+
+    def _try_key_modifier(self, in_data):
+        try:
+            return self.key_modifier(in_data)
+        except AttributeError:
+            return in_data
+
+    def _update(self):
+        items = list(self.data.values())
+        self.data = {}
+        self.add_items(items)
+
+    def add_items(self, items: Iterable):
+        for item in items:
+            for attr in self.key_attribute:
+                key = getattr(item, attr)
+                if self.key_modifier is not None:
+                    key = self._try_key_modifier(key)
+                self.data[key] = item
+        self.sort()
+
+    def get(self, key, default=None):
+        key = self._try_key_modifier(key)
+        return self.data.get(key, default)
+
+    def __setitem__(self, key, item):
+        if self.key_modifier is not None:
+            key = self._try_key_modifier(key)
+        super().__setitem__(key=key, item=item)
+
+    def __contains__(self, key):
+        try:
+            return self._try_key_modifier(getattr(key, self.key_attribute)) in self.data.values()
+        except AttributeError:
+            pass
+
+        key = self._try_key_modifier(key)
+
+        return super().__contains__(key=key)
+
+    def __getitem__(self, key):
+        key = self._try_key_modifier(key)
+        return super().__getitem__(key=key)
+
+    def __delitem__(self, key):
+        key = self._try_key_modifier(key)
+        super().__delitem__(key=key)
+
+    def sort(self):
+        if self.keep_sorted is True:
+            self.data = dict(sorted(self.data.items(), key=self.sort_key, reverse=self.reverse))
+
+    @property
+    def key_attribute(self):
+        return self._key_attribute
+
+    @key_attribute.setter
+    def key_attribute(self, value):
+        if value != self._key_attribute:
+            self._key_attribute = value if isinstance(value, (list, set, tuple, frozenset)) else [value]
+            self._update()
+
+    @property
+    def keep_sorted(self):
+        return self._keep_sorted
+
+    @keep_sorted.setter
+    def keep_sorted(self, value):
+        if isinstance(value, bool) is False:
+            raise TypeError("keep_sorted needs to be of type bool")
+        if value is not self._keep_sorted:
+            self._keep_sorted = value
+            self.sort()
+
+    @property
+    def sort_key(self):
+        return self._sort_key
+
+    @sort_key.setter
+    def sort_key(self, value):
+        if not callable(value):
+            raise TypeError('sort_key needs to be an callable')
+        self._sort_key = value
+        self.sort()
+
+    @property
+    def reverse(self):
+        return self._reverse
+
+    @reverse.setter
+    def reverse(self, value):
+        if not isinstance(value, bool):
+            raise TypeError('reverse needs to of type bool')
+        if value is not self._reverse:
+            self._reverse = value
+            self.sort()
+
+    @classmethod
+    def fromkeys(cls, iterable, value=None):
+        return NotImplemented
+
+
 class AntistasiInformer(SubSupportBase):
     general_data_file = pathmaker(APPDATA['fixed_data'], 'general_data.json')
     everyone_role_id = 449481990513754112
@@ -57,6 +176,9 @@ class AntistasiInformer(SubSupportBase):
         self.support = support
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
+        self.members_dict = None
+        self.roles_dict = None
+        self.channels_dict = None
 
         glog.class_init_notification(log, self)
 
@@ -65,6 +187,13 @@ class AntistasiInformer(SubSupportBase):
             if role_name.casefold() in [role.name.casefold() for role in member.roles]:
                 return True
         return False
+
+    @universal_log_profiler
+    async def _make_stored_dicts(self):
+        for cat in ['channels', 'members', 'roles']:
+            attr = getattr(self.antistasi_guild, cat)
+
+            setattr(self, f"{cat}_dict", AutoDict(['name', 'id'], attr, keep_sorted=True, key_modifier=lambda x: x.lower(), sort_key=lambda x: x[1].created_at))
 
     @property
     def everyone_role(self) -> discord.Role:
@@ -155,20 +284,27 @@ class AntistasiInformer(SubSupportBase):
         return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)
 
     def sync_member_by_id(self, member_id: int) -> discord.Member:
-        return {member.id: member for member in self.antistasi_guild.members}.get(member_id, None)
+        return self.members_dict.get(member_id, None)
+
+    def sync_member_by_name(self, member_name: str) -> discord.Member:
+        if member_name.casefold() == 'all':
+            return self.all_item
+        return self.members_dict.get(member_name.casefold(), None)
 
     async def member_by_name(self, member_name: str) -> discord.Member:
-        return {member.name.casefold(): member for member in self.antistasi_guild.members}.get(member_name.casefold(), None)
+        if member_name.casefold() == 'all':
+            return self.all_item
+        return self.members_dict.get(member_name.casefold(), None)
 
     def sync_role_from_string(self, role_name: str) -> discord.Role:
         if role_name.casefold() == 'all':
             return self.all_item
-        return {role.name.casefold(): role for role in self.antistasi_guild.roles}.get(role_name.casefold(), None)
+        return self.roles_dict.get(role_name.casefold(), None)
 
     async def role_from_string(self, role_name) -> discord.Role:
         if role_name.casefold() == 'all':
             return self.all_item
-        return {role.name.casefold(): role for role in self.antistasi_guild.roles}.get(role_name.casefold())
+        return self.roles_dict.get(role_name.casefold())
 
     async def retrieve_antistasi_role(self, role_id: int) -> discord.Role:
         return {role.id: role for role in self.antistasi_guild.roles}.get(role_id)
@@ -186,10 +322,12 @@ class AntistasiInformer(SubSupportBase):
 
     async def if_ready(self) -> None:
         await self.antistasi_guild.chunk(cache=True)
+        await self._make_stored_dicts()
         log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self, typus: UpdateTypus) -> None:
-        return
+        if any(check_typus in typus for check_typus in [UpdateTypus.MEMBERS, UpdateTypus.ROLES, UpdateTypus.GUILD]):
+            await self._make_stored_dicts()
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self) -> None:
@@ -203,6 +341,16 @@ def get_class() -> SubSupportBase:
 
 
 if __name__ == '__main__':
+    # CheckItem = namedtuple("CheckItem", ['name', 'age', 'best_friend'])
+    # name_data = loadjson(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\tools\scratches\random_names.json")
+    # data = []
+    # for name in random.choices(name_data, k=100):
+    #     data.append(CheckItem(name, random.randint(1, 100), random.choice(name_data)))
+    # st_time = time_ns()
+    # x = AutoDict(['name', 'age'], data, True, lambda x: x.casefold(), lambda x: str(x[0]))
+    # taken_time = time_ns() - st_time
+    # taken_time = taken_time / 1000000000
+    # print(taken_time)
+    # writejson({key: value._asdict() for key, value in x.items()}, 'checky.json', sort_keys=False)
     pass
-
 # endregion[Main_Exec]

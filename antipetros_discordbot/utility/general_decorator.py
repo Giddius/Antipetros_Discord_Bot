@@ -148,6 +148,14 @@ def is_refresh_task(f):
     return f
 
 
+def handler_method(f):
+
+    f.is_handler = True
+    f.handled_attr = f.__name__.removeprefix('_handle_')
+
+    return f
+
+
 # region[Main_Exec]
 
 

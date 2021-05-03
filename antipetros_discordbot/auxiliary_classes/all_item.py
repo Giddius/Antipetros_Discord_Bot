@@ -104,7 +104,7 @@ import gidlogger as glog
 
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
+from icecream import ic
 
 # endregion[Imports]
 
@@ -133,6 +133,12 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class AllItem:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
 
     def __init__(self):
         self.guild = None

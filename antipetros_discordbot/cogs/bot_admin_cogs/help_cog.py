@@ -295,7 +295,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # region [Commands]
 
     @auto_meta_info_command(categories=[CommandCategory.META])
-    async def help(self, ctx: commands.Context, in_object: Optional[Union[HelpCategoryConverter, CommandConverter, CategoryConverter]], extra_parameter: Optional[ExtraHelpParameterConverter]):
+    async def help(self, ctx: commands.Context, in_object: CommandConverter, extra_parameter: Optional[ExtraHelpParameterConverter]):
         raw_params = ctx.message.content.split(ctx.invoked_with)[-1].strip()
 
         author = await self.bot.retrieve_antistasi_member(ctx.author.id)
@@ -497,7 +497,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         embed_data = await self.bot.make_generic_embed(title=command.name.upper(),
                                                        description=f"{author_allowed_to_use_string}" + '\n'.join(f" > {line}" for line in command.description.splitlines()),
                                                        footer={'text': command.extra_info} if command.extra_info not in ['', None, 'NA'] else None,
-                                                       #    image=command.gif,
+                                                       image=command.gif,
                                                        #    thumbnail=await command.get_source_code_image(),
                                                        thumbnail=None,
                                                        author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url},

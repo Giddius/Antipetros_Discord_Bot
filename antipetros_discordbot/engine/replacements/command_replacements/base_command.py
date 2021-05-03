@@ -93,7 +93,7 @@ class AntiPetrosBaseCommand(commands.Command):
     alias_data_provider = JsonAliasProvider()
     source_code_data_provider = SourceCodeProvider()
     bot_mention_placeholder = '@BOTMENTION'
-    args_regex = re.compile(r"args\:\n(?P<args_values>.*)\n\s*?example\:|$", re.IGNORECASE | re.DOTALL)
+    args_regex = re.compile(r"args\:\n(?P<args_values>.*?)(?:\n\s*example:.*)?$", re.IGNORECASE | re.DOTALL)
 
     schema = AntiPetrosBaseCommandSchema()
 
@@ -181,7 +181,7 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def extra_info(self):
-        extra_info = self.data_getters['meta_data']('extra_info', 'NA')
+        extra_info = self.data_getters['meta_data']('extra_info', None)
         return extra_info
 
     @extra_info.setter
@@ -249,7 +249,10 @@ class AntiPetrosBaseCommand(commands.Command):
                     key = key.split('(')[0]
 
                 usage[f"<{key.strip()}>"] = value.strip()
-        usage_line = f"@AntiPetros <{self.name} or alias> "
+        usage_line = f"@AntiPetros "
+        if self.parent is not None:
+            usage_line += f"<{self.parent.name} or parent alias> "
+        usage_line += f"<{self.name} or alias> "
         usage_explanation = []
         for key, value in usage.items():
             usage_line += f"{key} "
@@ -301,6 +304,8 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def allowed_channels(self):
+        if self.parent is not None:
+            return self.parent.allowed_channels
         allowed_channels = []
         for check in self.checks:
             if hasattr(check, "allowed_channels"):
@@ -313,6 +318,8 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def allowed_roles(self):
+        if self.parent is not None:
+            return self.parent.allowed_roles
         allowed_roles = []
         for check in self.checks:
             if hasattr(check, "allowed_roles"):
@@ -335,17 +342,19 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def allowed_members(self):
+        if self.parent is not None:
+            return self.parent.allowed_members
         allowed_members = []
         for check in self.checks:
             if hasattr(check, "allowed_members"):
                 allowed_members += check.allowed_members(self)
         if allowed_members == []:
-            return ['all']
+            return self.bot.sync_member_by_name('all')
         if len(allowed_members) > 1 and 'all' in allowed_members:
             allowed_members.remove('all')
         if allowed_members == ['all']:
-            return allowed_members
-        return list(map(lambda x: x.name, allowed_members))
+            return self.bot.sync_member_by_name('all')
+        return allowed_members
 
     def dump(self):
         return self.schema.dump(self)

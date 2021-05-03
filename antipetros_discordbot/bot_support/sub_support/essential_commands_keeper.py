@@ -18,7 +18,8 @@ import arrow
 from humanize import naturaltime
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+import asyncio
+import signal
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, pickleit
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
@@ -83,6 +84,9 @@ class EssentialCommandsKeeper(SubSupportBase):
     def shutdown_message_channel(self):
         channel_name = BASE_CONFIG.retrieve("shutdown_message", "channel_name", typus=str, direct_fallback='bot-commands')
         return self.bot.sync_channel_from_name(channel_name)
+
+    def shutdown_signal(self, *args):
+        self.loop.create_task(self.shutdown_mechanic())
 
     async def shutdown_mechanic(self):
         try:

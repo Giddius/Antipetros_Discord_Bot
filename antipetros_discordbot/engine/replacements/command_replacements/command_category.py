@@ -122,6 +122,11 @@ class CommandCategoryMeta(type):
 
         return x
 
+    def __instancecheck__(cls, instance):
+        if issubclass(instance, cls.base_command_category) and hash(instance) == cls.__hash__():
+            return True
+        return super().__instancecheck__(instance)
+
     def __repr__(cls) -> str:
         return f"{cls.name}"
 

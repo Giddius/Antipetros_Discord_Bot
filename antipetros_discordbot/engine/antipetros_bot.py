@@ -36,7 +36,7 @@ from antipetros_discordbot.utility.data_gathering import save_cog_command_data
 from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
 
 from .replacements import AntiPetrosBaseHelp
-from antipetros_discordbot.engine.replacements import CommandCategory
+from antipetros_discordbot.engine.replacements import CommandCategory, AntiPetrosBaseGroup
 from antipetros_discordbot.utility.checks import BaseAntiPetrosCheck
 
 # endregion[Imports]
@@ -79,7 +79,10 @@ class AntiPetrosBot(commands.Bot):
     essential_cog_paths = BOT_ADMIN_COG_PATHS + DISCORD_ADMIN_COG_PATHS
     dev_cog_paths = DEV_COG_PATHS
     description_file = pathmaker(APPDATA['documentation'], 'bot_description.md')
-
+    activity_dict = {'playing': discord.ActivityType.playing,
+                     'watching': discord.ActivityType.watching,
+                     'listening': discord.ActivityType.listening,
+                     'streaming': discord.ActivityType.streaming}
 # endregion[ClassAttributes]
 
     def __init__(self, token: str = None, is_test: bool = False, ipc_key: str = None, ** kwargs):
@@ -90,13 +93,13 @@ class AntiPetrosBot(commands.Bot):
                          case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'),
                          self_bot=False,
                          command_prefix='$$',
-                         activity=self.activity_from_config(),
                          intents=self.get_intents(),
                          fetch_offline_members=True,
                          member_cache_flags=discord.MemberCacheFlags.all(),
                          help_command=None,
                          strip_after_prefix=True,
                          ** kwargs)
+        self.setup_finished = False
         self._update_profiling_check()
         CommandCategory.bot = self
 
@@ -112,6 +115,7 @@ class AntiPetrosBot(commands.Bot):
         self.clients_to_close = []
         self.used_startup_message = None
         self.ipc_key = ipc_key
+        self.to_update_methods = []
         if BASE_CONFIG.retrieve('ipc', "use_ipc_server", typus=bool, direct_fallback=False) is True:
             if self.ipc_key is None:
                 raise AttributeError("ipc_key is missing")
@@ -228,7 +232,9 @@ class AntiPetrosBot(commands.Bot):
         log.info("Bot is ready")
         log.info('Bot is currently rate limited: %s', str(self.is_ws_ratelimited()))
 
+        self.setup_finished = await asyncio.sleep(5, True)
         log.info('%s End of Setup Procedures %s', '+-+' * 15, '+-+' * 15)
+        await self.set_activity()
         if os.getenv('INFO_RUN') == "1":
             await asyncio.sleep(5)
             for cog_name, cog_object in self.cogs.items():
@@ -304,6 +310,15 @@ class AntiPetrosBot(commands.Bot):
         else:
             msg = f"{title}\n\n{description}\n\n{image}"
             self.used_startup_message = await channel.send(msg, delete_after=delete_time)
+
+    async def to_all_as_tasks(self, command, *args, **kwargs):
+        all_tasks = []
+        all_target_objects = [cog_object for cog_object in self.cogs.values()] + [subsupport for subsupport in self.subsupports]
+        for target_object in all_target_objects:
+            if hasattr(target_object, command):
+                task = asyncio.create_task(getattr(target_object, command)(*args, **kwargs))
+                all_tasks.append(task)
+        return all_tasks
 
     async def to_all_cogs(self, command, *args, **kwargs):
         all_tasks = []
@@ -385,21 +400,13 @@ class AntiPetrosBot(commands.Bot):
             await super().close()
             time.sleep(2)
 
-    def activity_from_config(self, option='standard_activity'):
-        if self.is_debug is True:
-            return discord.Activity(name='🚬 Getting Debugged Hard', type=discord.ActivityType.playing)
-        activity_dict = {'playing': discord.ActivityType.playing,
-                         'watching': discord.ActivityType.watching,
-                         'listening': discord.ActivityType.listening,
-                         'streaming': discord.ActivityType.streaming}
-        text, activity_type = BASE_CONFIG.getlist('activity', option)
-        text = text.title()
-        if activity_type not in activity_dict:
-            log.critical("'%s' is not an Valid ActivityType, aborting activity change")
-            return
-        activity_type = activity_dict.get(activity_type)
-
-        return discord.Activity(name=text, type=activity_type)
+    async def set_activity(self):
+        actvity_type = self.activity_dict.get('watching')
+        value = len([member.id for member in self.bot.antistasi_guild.members if member.status is discord.Status.online])
+        text = f"{value} User currently in this Guild"
+        await self.change_presence(activity=discord.Activity(type=actvity_type, name=text))
+        if (self.set_activity, (UpdateTypus.MEMBERS, UpdateTypus.CYCLIC)) not in self.to_update_methods:
+            self.to_update_methods.append((self.set_activity, (UpdateTypus.MEMBERS, UpdateTypus.CYCLIC)))
 
     async def cog_by_name(self, query_cog_name: str):
         return {cog_name.casefold(): cog for cog_name, cog in self.cogs.items()}.get(query_cog_name.casefold())
@@ -415,9 +422,24 @@ class AntiPetrosBot(commands.Bot):
     async def command_by_name(self, query_command_name: str):
         command_name_dict = {}
         for command in self.commands:
+            if isinstance(command, AntiPetrosBaseGroup):
+                for subcommand in command.commands:
+                    command_name_dict[f"{command.name}.{subcommand.name}".casefold()] = subcommand
+                    command_name_dict[f"{command.name} {subcommand.name}".casefold()] = subcommand
+                    for p_alias in command.aliases:
+                        command_name_dict[f"{p_alias}.{subcommand.name}".casefold()] = subcommand
+                        command_name_dict[f"{p_alias} {subcommand.name}".casefold()] = subcommand
+                        for alias in subcommand.aliases:
+                            command_name_dict[f"{command.name}.{alias}".casefold()] = subcommand
+                            command_name_dict[f"{command.name} {alias}".casefold()] = subcommand
+                            command_name_dict[f"{p_alias}.{alias}".casefold()] = subcommand
+                            command_name_dict[f"{p_alias} {alias}".casefold()] = subcommand
+
             command_name_dict[command.name.casefold()] = command
             for alias in command.aliases:
                 command_name_dict[alias.casefold()] = command
+
+        writejson(list(command_name_dict.keys()), 'checky.json')
         return command_name_dict.get(query_command_name.casefold(), None)
 
     def all_cog_commands(self):
