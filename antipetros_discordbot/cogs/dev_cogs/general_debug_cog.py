@@ -46,7 +46,7 @@ from inspect import cleandoc, getdoc, getmembers, getsource, getsourcefile
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from marshmallow import Schema, fields
 from rich import inspect as rinspect
-from antipetros_discordbot.engine.replacements.helper.help_embed_builder import HelpCommandEmbedBuilder
+from antipetros_discordbot.engine.replacements.helper.help_embed_builder import HelpEmbedBuilder
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion [Imports]
@@ -257,9 +257,13 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
             await webhook.send('hello')
 
     @auto_meta_info_command()
+    async def send_checks(self, ctx: commands.Context, command: CommandConverter):
+        await ctx.send('\n'.join(check for check in command.checks))
+
+    @auto_meta_info_command()
     async def check_help_embed_builder(self, ctx: commands.Context, command: CommandConverter):
         async with ctx.typing():
-            builder = HelpCommandEmbedBuilder(self.bot, ctx.author, command)
+            builder = HelpEmbedBuilder(self.bot, ctx.author, command)
 
             embed_data = await builder.to_embed()
 

@@ -260,7 +260,13 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             templ_data.append(self.mod_lookup_data.get(transformed_mod_name))
 
         template = self.jinja_env.get_template('arma_required_mods.html.jinja')
-        embed_data = await self.bot.make_generic_embed(title=f"Mods currently on the {server}", description='```diff\n' + '\n------------\n'.join(f"- {item.get('name')}" for item in templ_data) + '\n```')
+        values = []
+        for item in templ_data:
+            try:
+                values.append(f"- {item.get('name')}")
+            except AttributeError:
+                continue
+        embed_data = await self.bot.make_generic_embed(title=f"Mods currently on the {server}", description='```diff\n' + '\n------------\n'.join(item for item in values) + '\n```')
         with TemporaryDirectory() as tempdir:
             html_path = pathmaker(tempdir, f"{mod_server}_mods.html")
             writeit(html_path, template.render(req_mods=templ_data, server_name=server.replace('_', ' ')))

@@ -28,8 +28,8 @@ def get_version():
     return __version__
 
 
-ANTIPETROS_STOP_CMD = "antipetrosbot stop"
-ANTIPETROS_START_CMD = f"nohup antipetrosbot run -t {os.getenv('DISCORD_TOKEN')} -nu {os.getenv('NEXTCLOUD_USERNAME')} -np {os.getenv('NEXTCLOUD_PASSWORD')} &"
+ANTIPETROS_STOP_CMD = "supervisorctl stop all"
+ANTIPETROS_START_CMD = "supervisorctl start all"
 ANTIPETROS_UPDATE_CMD = "python3.9 -m pip install --upgrade antipetros_discordbot"
 ANTIPETROS_UPDATE_CMD_VERSION = ANTIPETROS_UPDATE_CMD + '==' + get_version()
 ANTIPETROS_GET_PATH_CMD = "antipetrosbot get-path"

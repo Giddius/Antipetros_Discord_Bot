@@ -42,8 +42,7 @@ from discord.ext import commands, tasks
 # from natsort import natsorted
 
 # from fuzzywuzzy import fuzz, process
-
-
+import inspect
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 import gidlogger as glog
@@ -53,6 +52,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 from antipetros_discordbot.utility.misc import make_config_name, sync_antipetros_repo_rel_path
 from antipetros_discordbot.engine.replacements.helper import JsonMetaDataProvider
+from antipetros_discordbot.auxiliary_classes.all_item import AllItem
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand
 # endregion[Imports]
@@ -123,9 +123,10 @@ class CommandCategoryMeta(type):
         return x
 
     def __instancecheck__(cls, instance):
-        if issubclass(instance, cls.base_command_category) and hash(instance) == cls.__hash__():
-            return True
-        return super().__instancecheck__(instance)
+        if inspect.isclass(instance) is False:
+            return super().__instancecheck__(instance)
+        else:
+            return issubclass(instance, CommandCategory)
 
     def __repr__(cls) -> str:
         return f"{cls.name}"
@@ -242,13 +243,13 @@ class CommandCategory(metaclass=CommandCategoryMeta):
 
     @classmethod
     @property
-    def allowed_roles(cls) -> Set[int]:
+    def allowed_roles(cls) -> Set[discord.Role]:
         return set()
 
     @classmethod
     @property
-    def extra_roles(cls) -> List[int]:
-        return BASE_CONFIG.retrieve(cls.config_name, f"{cls.name.casefold()}_extra_role_ids", typus=List[int], direct_fallback=[])
+    def extra_roles(cls) -> List[discord.Role]:
+        return list(map(cls.bot.sync_retrieve_antistasi_role, BASE_CONFIG.retrieve(cls.config_name, f"{cls.name.casefold()}_extra_role_ids", typus=List[int], direct_fallback=[])))
 
     @classmethod
     def visibility_check(cls, in_member: discord.Member):
@@ -271,7 +272,7 @@ class GeneralCommandCategory(CommandCategory):
     @classmethod
     @property
     def allowed_roles(cls) -> Set[str]:
-        return {cls.bot.everyone_role_id}
+        return {AllItem()}
 
 
 class AdminToolsCommandCategory(CommandCategory):
@@ -282,12 +283,12 @@ class AdminToolsCommandCategory(CommandCategory):
 
     @classmethod
     @property
-    def allowed_roles(cls) -> Set[str]:
+    def allowed_roles(cls) -> Set[discord.Role]:
         _out = cls.extra_roles
         for role in cls.bot.antistasi_guild.roles:
             if role.id not in cls.always_exclude_role_ids and not role.name.casefold().endswith("_subscriber"):
                 if role.permissions.administrator is True and role.is_bot_managed() is False:
-                    _out.append(role.id)
+                    _out.append(role)
         return set(_out)
 
 
@@ -300,12 +301,12 @@ class DevToolsCommandCategory(CommandCategory):
 
     @classmethod
     @property
-    def allowed_roles(cls) -> Set[str]:
+    def allowed_roles(cls) -> Set[discord.Role]:
         _out = cls.extra_roles
         for role in cls.bot.antistasi_guild.roles:
             if role.id not in cls.always_exclude_role_ids and not role.name.casefold().endswith("_subscriber") and role.is_bot_managed() is False:
                 if cls.dev_regex.search(role.name):
-                    _out.append(role.id)
+                    _out.append(role)
         return set(_out)
 
 
@@ -318,12 +319,12 @@ class TeamToolsCommandCategory(CommandCategory):
 
     @classmethod
     @property
-    def allowed_roles(cls) -> Set[str]:
+    def allowed_roles(cls) -> Set[discord.Role]:
         _out = cls.extra_roles
         for role in cls.bot.antistasi_guild.roles:
             if role.id not in cls.always_exclude_role_ids and not role.name.casefold().endswith("_subscriber") and role.is_bot_managed() is False:
                 if cls.team_regex.search(role.name):
-                    _out.append(role.id)
+                    _out.append(role)
         return set(_out)
 
 
@@ -335,7 +336,7 @@ class MetaCommandCategory(CommandCategory):
 
     @classmethod
     @property
-    def allowed_roles(cls) -> Set[str]:
+    def allowed_roles(cls) -> Set[discord.Role]:
         _out = cls.extra_roles
         return set(_out)
 

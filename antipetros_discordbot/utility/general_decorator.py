@@ -152,9 +152,25 @@ def handler_method(f):
 
     f.is_handler = True
     f.handled_attr = f.__name__.removeprefix('_handle_')
+    f.applicable_to = 'all'
 
     return f
 
+
+def handler_method_only_commands(f):
+    f.is_handler = True
+    f.handled_attr = f.__name__.removeprefix('_handle_')
+    f.applicable_to = 'commands'
+
+    return f
+
+
+def handler_method_only_categories(f):
+    f.is_handler = True
+    f.handled_attr = f.__name__.removeprefix('_handle_')
+    f.applicable_to = 'categories'
+
+    return f
 
 # region[Main_Exec]
 

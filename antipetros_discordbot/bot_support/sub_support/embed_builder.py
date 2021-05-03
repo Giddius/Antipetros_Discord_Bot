@@ -35,7 +35,7 @@ from antipetros_discordbot.utility.gidtools_functions import (loadjson, pathmake
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-
+import re
 # endregion[Imports]
 
 # region [TODO]
@@ -92,6 +92,8 @@ class EmbedBuilder(SubSupportBase):
     field_item = EmbedFieldItem
     max_embed_size = 6000
     max_embed_fields = 20
+    max_field_value_length = 1024
+    value_split_regex = re.compile(r"[\n\s\.]")
 
     def __init__(self, bot, support):
         self.bot = bot
@@ -194,7 +196,7 @@ class EmbedBuilder(SubSupportBase):
             field_item = field_item._replace(name=str(self.default_field_name_num) + '.')
             self.default_field_name_num += 1
         if field_item.value in [None, '']:
-            field_item = field_item._replace(value=ZERO_WIDTH)
+            field_item = field_item._replace(value='None')
         if field_item.inline is None:
             field_item = field_item._replace(inline=self.default_inline_value)
         return field_item
@@ -203,10 +205,28 @@ class EmbedBuilder(SubSupportBase):
     def _size_of_field(field):
         return len(field.name) + len(field.value)
 
+    def split_value_for_length(self, in_data: str):
+        if len(in_data) == 0:
+            yield len(in_data)
+        chunks = in_data.split('\n')
+        new_data = ''
+        while chunks != []:
+            while chunks != [] and len(new_data) < self.max_field_value_length and len(new_data + '\n' + chunks[0]) < self.max_field_value_length:
+                new_data += '\n' + chunks.pop(0)
+            yield new_data
+            new_data = ''
+        if new_data:
+            yield new_data
+
     def handle_paginated_field(self, embed, field_item, applied_fields):
-        field = self._fix_field_item(field_item)
-        embed.add_field(name=field.name, value=field.value, inline=field.inline)
-        return embed, applied_fields + 1
+        added = 0
+        for value in self.split_value_for_length(field_item.value):
+            new_field_item = self.field_item(name=field_item.name, value=value, inline=field_item.inline)
+            field = self._fix_field_item(new_field_item)
+            embed.add_field(name=field.name, value=field.value, inline=field.inline)
+            added += 1
+
+        return embed, applied_fields + added
 
     async def _paginatedfields_generic_embed_helper(self, fields, embed):
 

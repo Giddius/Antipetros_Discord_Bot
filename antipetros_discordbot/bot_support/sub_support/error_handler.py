@@ -88,7 +88,8 @@ class ErrorHandler(SubSupportBase):
                                    commands.errors.CommandNotFound: self._handle_command_not_found,
                                    ParseDiceLineError: self._handle_dice_line_error,
                                    NameInUseError: self._handle_name_in_use_error,
-                                   CustomEmojiError: self._handle_custom_emoji_error}
+                                   CustomEmojiError: self._handle_custom_emoji_error,
+                                   commands.errors.BadUnionArgument: self._handle_bad_union_argument}
 
         self.cooldown_data = CoolDownDict()
 
@@ -160,6 +161,10 @@ class ErrorHandler(SubSupportBase):
 
     async def _handle_not_necessary_role(self, ctx, error, error_traceback):
         embed_data = await self.bot.make_generic_embed(footer='default_footer', title='Missing Role', thumbnail=self.error_thumbnail, description=await self.transform_error_msg(error.msg), field=[self.bot.field_item(name='Your Roles:', value='\n'.join(role.name for role in ctx.author.roles))])
+        await ctx.reply(delete_after=self.delete_reply_after, **embed_data)
+
+    async def _handle_bad_union_argument(self, ctx, error, error_traceback):
+        embed_data = await self.bot.make_generic_embed(footer='default_footer', title='Bad Input', thumbnail=self.error_thumbnail, description='Bad input for the command')
         await ctx.reply(delete_after=self.delete_reply_after, **embed_data)
 
     async def _handle_not_allowed_channel(self, ctx, error, error_traceback):

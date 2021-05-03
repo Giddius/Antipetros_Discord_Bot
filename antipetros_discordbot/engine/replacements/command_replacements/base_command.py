@@ -349,12 +349,12 @@ class AntiPetrosBaseCommand(commands.Command):
             if hasattr(check, "allowed_members"):
                 allowed_members += check.allowed_members(self)
         if allowed_members == []:
-            return self.bot.sync_member_by_name('all')
+            return set([self.bot.sync_member_by_name('all')])
         if len(allowed_members) > 1 and 'all' in allowed_members:
             allowed_members.remove('all')
         if allowed_members == ['all']:
-            return self.bot.sync_member_by_name('all')
-        return allowed_members
+            return set([self.bot.sync_member_by_name('all')])
+        return set(allowed_members)
 
     def dump(self):
         return self.schema.dump(self)

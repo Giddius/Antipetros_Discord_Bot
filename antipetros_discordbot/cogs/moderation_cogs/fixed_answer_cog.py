@@ -165,6 +165,16 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
     @auto_meta_info_command(aliases=['bobdev'])
     @only_bob()
     async def bob_streaming(self, ctx: commands.Context, *, extra_msg: str = None):
+        """
+        Only for Bob
+
+
+        Args:
+            extra_msg (str, optional): The message you want to add to the embed. Defaults to None.
+
+        Example:
+            @AntiPetros bob_streaming This is an extra message and is optional
+        """
         announcement_channel_name = COGS_CONFIG.retrieve(self.config_name, 'bob_streaming_announcement_channel_name', typus=str, direct_fallback='announcements')
         announcement_channel = await self.bot.channel_from_name(announcement_channel_name)
 

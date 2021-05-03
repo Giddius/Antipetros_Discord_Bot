@@ -75,7 +75,7 @@ from antipetros_discordbot.utility.misc import delete_message_if_text_channel
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink, make_box
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, ExtraHelpParameter, HelpCategory
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
-from antipetros_discordbot.utility.general_decorator import is_refresh_task, universal_log_profiler, handler_method
+from antipetros_discordbot.utility.general_decorator import is_refresh_task, universal_log_profiler, handler_method, handler_method_only_categories, handler_method_only_commands
 from antipetros_discordbot.utility.gidtools_functions import loadjson, readit
 from async_property import async_property
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
@@ -84,10 +84,9 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 import inflect
 import inspect
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand
+from antipetros_discordbot.engine.replacements.helper import CommandCategory
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-
-    from antipetros_discordbot.engine.replacements.helper import CommandCategory
 
 
 # endregion[Imports]
@@ -150,7 +149,7 @@ class AbstractProvider(ABC):
 
     def __init__(self, in_builder: "HelpCommandEmbedBuilder"):
         self.bot = in_builder.bot
-        self.command = in_builder.command
+        self.in_object = in_builder.in_object
         self.member = in_builder.member
 
     @abstractmethod
@@ -164,20 +163,34 @@ class AbstractProvider(ABC):
         ...
 
     @property
+    def typus(self):
+        if isinstance(self.in_object, CommandCategory):
+            return 'categories'
+        if isinstance(self.in_object, (AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand)):
+            return 'commands'
+
+    @property
     def is_group(self):
-        return isinstance(self.command, commands.Group)
+        return isinstance(self.in_object, commands.Group)
 
     @property
     def is_sub_command(self):
-        return self.command.parent is not None
+        if hasattr(self.in_object, 'parent'):
+            return self.in_object.parent is not None
+        return False
 
     @property
     def member_can_invoke(self):
         member_roles = set([AllItem()] + [role for role in self.member.roles])
-        if set(self.command.allowed_roles).isdisjoint(member_roles) is False:
+        if self.member.id in self.bot.owner_ids:
             return True
-        if self.member in self.command.allowed_members or AllItem() in self.command.allowed_members:
+        if set(self.in_object.allowed_roles).isdisjoint(member_roles) is False:
             return True
+        try:
+            if self.member in self.in_object.allowed_members or AllItem() in self.in_object.allowed_members:
+                return True
+        except TypeError:
+            pass
         return False
 
 
@@ -187,19 +200,28 @@ class AbstractFieldProvider(AbstractProvider):
     def __init__(self, in_builder: "HelpCommandEmbedBuilder"):
         super().__init__(in_builder)
         self.all_handler = None
-        self.field_name_handler = self._no_handling
+        self.field_name_handler = self._no_underscore_and_to_title
         self._set_handler_attribute()
 
     def _set_handler_attribute(self):
         self.all_handler = {}
         for method_name, method_object in inspect.getmembers(self, inspect.ismethod):
             if hasattr(method_object, 'is_handler') and method_object.is_handler is True:
-                self.all_handler[method_object.handled_attr] = partial(method_object, attr_name=method_object.handled_attr)
+                self.all_handler[method_object.handled_attr] = method_object
 
     @ classmethod
     @ property
     def bool_symbol_map(cls) -> Dict[bool, str]:
         return NotImplemented
+
+    async def handle_name(self, name):
+        try:
+            return await self.field_name_handler(name)
+        except Exception:
+            return name
+
+    async def _no_underscore_and_to_title(self, in_data):
+        return in_data.replace('_', ' ').title()
 
     async def _no_handling(self, in_data):
         return in_data
@@ -217,16 +239,16 @@ class DefaultTitleProvider(AbstractProvider):
 
     async def __call__(self):
         if self.is_sub_command:
-            return f"{self.command.parent.name} {self.command.name}"
+            return f"{self.in_object.parent.name} {self.in_object.name}"
 
-        return self.command.name
+        return self.in_object.name
 
 
 class DefaultDescriptionProvider(AbstractProvider):
     provides = 'description'
 
     async def __call__(self):
-        description = self.command.description
+        description = self.in_object.description
         if self.member_can_invoke is False:
             description = f"__** You do not have the necesary roles to actually invoke this command**__\n{ZERO_WIDTH}\n" + description
         return description
@@ -236,6 +258,8 @@ class DefaulThumbnailProvider(AbstractProvider):
     provides = "thumbnail"
 
     async def __call__(self):
+        if hasattr(self.in_object, "get_source_code_image"):
+            return await self.in_object.get_source_code_image()
         return None
 
 
@@ -264,7 +288,7 @@ class DefaulURLProvider(AbstractProvider):
     provides = 'url'
 
     async def __call__(self):
-        return self.command.github_wiki_link
+        return self.in_object.github_wiki_link
 
 
 class DefaultFieldsProvider(AbstractFieldProvider):
@@ -274,7 +298,7 @@ class DefaultFieldsProvider(AbstractFieldProvider):
     async def __call__(self):
         fields = []
         for handler_attr, handler_func in self.all_handler.items():
-            if hasattr(self.command, handler_attr):
+            if hasattr(self.in_object, handler_attr) and handler_func.applicable_to in ['all', self.typus]:
                 new_item = await handler_func()
                 if new_item is not None:
                     fields.append(new_item)
@@ -283,7 +307,7 @@ class DefaultFieldsProvider(AbstractFieldProvider):
     @ property
     def visible_channels(self):
         _out = []
-        for channel in self.command.allowed_channels:
+        for channel in self.in_object.allowed_channels:
             if channel.name.casefold() == 'all':
                 _out.append(channel)
 
@@ -294,59 +318,80 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         return _out
 
     @ handler_method
-    async def _handle_usage(self, attr_name):
-        name = await self.field_name_handler(attr_name)
-        value = CodeBlock(getattr(self.command, attr_name), 'css')
+    async def _handle_usage(self):
+        attr_name = "usage"
+        name = await self.handle_name(attr_name)
+        value = CodeBlock(getattr(self.in_object, attr_name), 'css')
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
     @ handler_method
-    async def _handle_aliases(self, attr_name):
-        name = await self.field_name_handler(attr_name)
-        items = [f"`{alias}`" for alias in getattr(self.command, attr_name)]
+    async def _handle_aliases(self):
+        attr_name = "aliases"
+        name = await self.handle_name(attr_name)
+        items = [f"`{alias}`" for alias in sorted(getattr(self.in_object, attr_name))]
         value = ListMarker.make_list(items)
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
+    @handler_method_only_commands
+    async def _handle_allowed_members(self):
+        attr_name = "allowed_members"
+        name = await self.handle_name(attr_name)
+        value = getattr(self.in_object, attr_name)
+        if not value:
+            value = None
+        else:
+            value = '\n'.join(member.mention for member in value)
+        return self.field_item(name=name, value=value, inline=False)
+
     @ handler_method
-    async def _handle_allowed_channels(self, attr_name):
-        name = await self.field_name_handler(attr_name)
-        value = ListMarker.make_column_list([channel.mention for channel in self.visible_channels], ListMarker.star)
+    async def _handle_allowed_channels(self):
+        attr_name = "allowed_channels"
+        name = await self.handle_name(attr_name)
+        channels = sorted(getattr(self.in_object, attr_name), key=lambda x: x.position)
+        value = ListMarker.make_column_list([channel.mention for channel in channels], ListMarker.star, amount_columns=1)
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
     @ handler_method
-    async def _handle_allowed_roles(self, attr_name):
-        name = await self.field_name_handler(attr_name)
-        value = '\n'.join(role.mention for role in getattr(self.command, attr_name))
+    async def _handle_allowed_roles(self):
+        attr_name = "allowed_roles"
+        name = await self.handle_name(attr_name)
+        roles = sorted(getattr(self.in_object, attr_name), key=lambda x: x.position)
+        value = '\n'.join(role.mention for role in roles)
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
     @ handler_method
-    async def _handle_allowed_in_dm(self, attr_name):
-        name = await self.field_name_handler(attr_name)
-        value = self.bool_symbol_map.get(getattr(self.command, attr_name))
+    async def _handle_allowed_in_dms(self):
+        attr_name = "allowed_in_dms"
+        name = await self.handle_name(attr_name)
+        value = self.bool_symbol_map.get(getattr(self.in_object, attr_name))
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
     @ handler_method
-    async def _handle_github_link(self, attr_name):
-        name = await self.field_name_handler(attr_name)
-        value = embed_hyperlink('link 🔗', getattr(self.command, attr_name))
-        inline = False
+    async def _handle_github_link(self):
+        attr_name = "github_link"
+        name = await self.handle_name(attr_name)
+        value = embed_hyperlink('link 🔗', getattr(self.in_object, attr_name))
+        inline = True
         return self.field_item(name=name, value=value, inline=inline)
 
     @ handler_method
-    async def _handle_github_wiki_link(self, attr_name):
-        name = await self.field_name_handler(attr_name)
-        value = embed_hyperlink('link 🔗', getattr(self.command, attr_name))
-        inline = False
+    async def _handle_github_wiki_link(self):
+        attr_name = "github_wiki_link"
+        name = await self.handle_name(attr_name)
+        value = embed_hyperlink('link 🔗', getattr(self.in_object, attr_name))
+        inline = True
         return self.field_item(name=name, value=value, inline=inline)
 
     @ handler_method
-    async def _handle_extra_info(self, attr_name):
-        name = await self.field_name_handler(attr_name)
-        attr_value = getattr(self.command, attr_name)
+    async def _handle_extra_info(self):
+        attr_name = "extra_info"
+        name = await self.handle_name(attr_name)
+        attr_value = getattr(self.in_object, attr_name)
         if attr_value is None:
             return None
         value = f"`{attr_value}`"
@@ -354,9 +399,20 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         return self.field_item(name=name, value=value, inline=inline)
 
     @handler_method
-    async def _handle_example(self, attr_name):
-        name = await self.field_name_handler(attr_name)
-        value = CodeBlock(getattr(self.command, attr_name), 'css')
+    async def _handle_example(self):
+        attr_name = "example"
+        name = await self.handle_name(attr_name)
+        value = CodeBlock(getattr(self.in_object, attr_name), 'css')
+        inline = False
+        return self.field_item(name=name, value=value, inline=inline)
+
+    @handler_method_only_categories
+    async def _handle_commands(self):
+        attr_name = "commands"
+        name = await self.handle_name(attr_name)
+        frequ_dict = await self.bot.get_command_frequency()
+        sorted_commands = sorted(getattr(self.in_object, attr_name), key=lambda x: frequ_dict.get(x.name, 0), reverse=True)
+        value = ListMarker.make_list([f"`{command}`" for command in sorted_commands])
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
@@ -375,7 +431,7 @@ class DefaultTimestampProvider(AbstractProvider):
         return datetime.now(tz=timezone.utc)
 
 
-class HelpCommandEmbedBuilder:
+class HelpEmbedBuilder:
     field_item = EmbedFieldItem
 
     default_title_provider = DefaultTitleProvider
@@ -389,10 +445,10 @@ class HelpCommandEmbedBuilder:
     default_color_provider = DefaultColorProvider
     default_Timestamp_provider = DefaultTimestampProvider
 
-    def __init__(self, bot: "AntiPetrosBot", invoking_person: Union[discord.Member, discord.User], command: Union["AntiPetrosBaseCommand", "AntiPetrosBaseGroup", "AntiPetrosFlagCommand"]):
+    def __init__(self, bot: "AntiPetrosBot", invoking_person: Union[discord.Member, discord.User], in_object: Union["AntiPetrosBaseCommand", "AntiPetrosBaseGroup", "AntiPetrosFlagCommand", CommandCategory]):
         self.bot = bot
-        self.command = command
-        self.member = self.bot.members_dict.get(invoking_person.id) if isinstance(invoking_person, discord.User) else invoking_person
+        self.in_object = in_object
+        self.member = self.bot.sync_member_by_id(invoking_person.id) if isinstance(invoking_person, discord.User) else invoking_person
 
         self.title_provider = self.default_title_provider(self)
         self.description_provider = self.default_description_provider(self)
@@ -418,7 +474,10 @@ class HelpCommandEmbedBuilder:
                                                        url=await self.url_provider(),
                                                        color=await self.color_provider(),
                                                        timestamp=await self.timestamp_provider())
-        return embed_data
+
+        yield embed_data
+        if hasattr(self.in_object, "gif") and self.in_object.gif is not None:
+            yield {"file": discord.File(self.in_object.gif)}
 
 # region[Main_Exec]
 

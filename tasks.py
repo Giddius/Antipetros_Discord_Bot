@@ -137,7 +137,7 @@ def main_dir_from_git():
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 VENV_ACTIVATOR_PATH = pathmaker(THIS_FILE_DIR, '.venv/Scripts/activate.bat', rev=True)
 load_dotenv(pathmaker(THIS_FILE_DIR, 'tools/_project_devmeta.env'))
-
+BACKUP_FOLDER = pathmaker(r"D:\Archives\git_bundles")
 FOLDER = {'docs': pathmaker(THIS_FILE_DIR, 'docs'),
           'docs_data': pathmaker(THIS_FILE_DIR, 'docs', 'resources', 'data'),
           'docs_templates': pathmaker(THIS_FILE_DIR, 'docs', 'resources', 'templates'),
@@ -975,7 +975,7 @@ def get_branch_names(c, branch_type: str = 'local'):
 
 @task(name='git-bundle')
 def create_git_bundle(c, target_folder=None, target_name=None):
-    target_folder = pathmaker(os.getenv('BACKUP_FOLDER')) if target_folder is None else pathmaker(target_folder)
+    target_folder = pathmaker(BACKUP_FOLDER) if target_folder is None else pathmaker(target_folder)
     target_name = os.getenv('PROJECT_NAME') if target_name is None else target_name
     target_name = f"{target_name}[{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}].bundle"
     target_path = pathmaker(target_folder, target_name, rev=True)

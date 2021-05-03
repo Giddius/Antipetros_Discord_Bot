@@ -25,6 +25,7 @@ from antipetros_discordbot.utility.event_data import ListenerEvents
 from antipetros_discordbot.utility.gidtools_functions import writejson, readit, writeit, pathmaker
 from antipetros_discordbot.engine.replacements.helper import JsonMetaDataProvider
 from enum import Enum, unique, auto
+from antipetros_discordbot.utility.checks import AllowedChannelAndAllowedRoleCheck, AdminOrAdminLeadCheck
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -143,6 +144,22 @@ class AntiPetrosBaseCog(commands.Cog):
         self.meta_data_getter = self.meta_data_provider.get_auto_provider(self)
         self.meta_data_setter = self.meta_data_provider.set_auto_provider(self)
         self.meta_data_setter('docstring', self.docstring)
+
+    def _insert_needed_config_data(self):
+        for config, key in [(BASE_CONFIG, 'base_config'), (COGS_CONFIG, 'cogs_config')]:
+
+            if config is COGS_CONFIG and config.has_section(self.config_name) is False:
+                config.add_section(self.config_name)
+                for command in self.all_commands:
+                    if any(isinstance(check, AllowedChannelAndAllowedRoleCheck) for check in command.checks) and all(not isinstance(check, AdminOrAdminLeadCheck) for check in command.checks):
+                        for command_config_data in [(f"{command.name}_enabled", 'yes'), (f"{command.name}_allowed_channels", ''), (f"{command.name}_allowed_roles", '')]:
+                            if config.has_option(self.config_name, command_config_data[0]) is False:
+                                config.set(self.config_name, command_config_data[0], command_config_data[1])
+            for option, value in self.required_config_data.get(key).items():
+                if config.has_option(self.config_name, option) is False:
+                    config.set(self.config_name, option, value)
+                if config.get(self.config_name, option) == '':
+                    config.set(self.config_name, option, value)
 
     @property
     def description(self):
