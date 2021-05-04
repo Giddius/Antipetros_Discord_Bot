@@ -261,6 +261,27 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         await ctx.send('\n'.join(check for check in command.checks))
 
     @auto_meta_info_command()
+    async def show_discord_version(self, ctx: commands.Context):
+        from discord import version_info
+        await ctx.send('discord.py v{0.major}.{0.minor}.{0.micro}-{0.releaselevel}'.format(version_info))
+
+    @auto_meta_info_command()
+    async def show_appinfo(self, ctx: commands.Context):
+        from antipetros_discordbot.schemas.extra_schemas.appinfo_schema import AppInfoSchema
+        appinfo = await self.bot.application_info()
+        schema = AppInfoSchema()
+        data = schema.dump(appinfo)
+        await ctx.send(pformat(data))
+
+    @auto_meta_info_command()
+    async def check_other_guild_emoji(self, ctx: commands.Context):
+        other_guild_id = 837389179025096764
+        emoji_id = 839097950184931378
+        other_guild = self.bot.get_guild(other_guild_id)
+        test_emoji = await other_guild.fetch_emoji(emoji_id)
+        await ctx.send(test_emoji)
+
+    @ auto_meta_info_command()
     async def check_help_embed_builder(self, ctx: commands.Context, command: CommandConverter):
         async with ctx.typing():
             builder = HelpEmbedBuilder(self.bot, ctx.author, command)

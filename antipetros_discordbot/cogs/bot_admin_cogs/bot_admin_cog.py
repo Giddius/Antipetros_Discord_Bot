@@ -8,6 +8,8 @@ from datetime import datetime
 import random
 import asyncio
 import re
+from io import BytesIO
+from zipfile import ZipFile, ZIP_LZMA
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands, tasks
@@ -155,6 +157,31 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 
 # endregion[Listener]
+
+# region[Commands]
+
+
+    @auto_meta_info_command()
+    @commands.is_owner()
+    async def send_stored_files(self, ctx: commands.Context):
+        async with ctx.typing():
+            start_dir = str(APPDATA)
+            with BytesIO() as bytefile:
+                with ZipFile(bytefile, 'a', compression=ZIP_LZMA) as zippy:
+                    for dirname, folderlist, filelist in os.walk(start_dir):
+                        if 'arma_config_data' not in dirname.casefold():
+                            for folder in folderlist:
+                                if folder.casefold() != 'arma_config_data':
+                                    full_path = await asyncio.sleep(0, pathmaker(dirname, folder))
+                                    rel_path = await asyncio.sleep(0, pathmaker(os.path.relpath(full_path, start_dir)))
+                                    await asyncio.to_thread(zippy.write, full_path, rel_path)
+                            for file in filelist:
+                                full_path = await asyncio.sleep(0, pathmaker(dirname, file))
+                                rel_path = await asyncio.sleep(0, pathmaker(os.path.relpath(full_path, start_dir)))
+                                await asyncio.to_thread(zippy.write, full_path, rel_path)
+                bytefile.seek(0)
+                discord_file = discord.File(bytefile, 'stored_files.zip')
+                await ctx.send(file=discord_file, delete_after=120)
 
     @auto_meta_info_command(aliases=['reload', 'refresh'])
     @commands.is_owner()
@@ -378,6 +405,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         embed_data = await self.bot.make_generic_embed(title="Rate Limit Check", description=f"The Bot {verbose_result} currently Rate Limited.", color=color, thumbnail=thumbnail)
         await ctx.send(**embed_data)
 
+# endregion[Commands]
 
 # region [Helper]
 
@@ -388,6 +416,8 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 
 # endregion[Helper]
+
+# region [SpecialMethods]
 
     def cog_check(self, ctx):
         return True
@@ -410,6 +440,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
     def cog_unload(self):
         # self.garbage_clean_loop.stop()
         log.debug("Cog '%s' UNLOADED!", str(self))
+# endregion[SpecialMethods]
 
 # region[Main_Exec]
 

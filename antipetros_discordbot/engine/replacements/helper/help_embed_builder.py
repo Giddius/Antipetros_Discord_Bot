@@ -247,8 +247,17 @@ class DefaultTitleProvider(AbstractProvider):
 class DefaultDescriptionProvider(AbstractProvider):
     provides = 'description'
 
+    async def get_commands(self):
+
+        frequ_dict = await self.bot.get_command_frequency()
+        sorted_commands = sorted(getattr(self.in_object, 'commands'), key=lambda x: frequ_dict.get(x.name, 0), reverse=True)
+        value = ListMarker.make_list([f"`{command}`" for command in sorted_commands])
+        return '\n'.join(map(lambda x: f"{SPECIAL_SPACE*8}{x}", value.splitlines()))
+
     async def __call__(self):
         description = self.in_object.description
+        if self.typus == 'categories':
+            description = description + f'{ZERO_WIDTH}\n{ZERO_WIDTH}\n**Commands:**\n' + await self.get_commands()
         if self.member_can_invoke is False:
             description = f"__** You do not have the necesary roles to actually invoke this command**__\n{ZERO_WIDTH}\n" + description
         return description
@@ -258,8 +267,6 @@ class DefaulThumbnailProvider(AbstractProvider):
     provides = "thumbnail"
 
     async def __call__(self):
-        if hasattr(self.in_object, "get_source_code_image"):
-            return await self.in_object.get_source_code_image()
         return None
 
 
@@ -298,6 +305,7 @@ class DefaultFieldsProvider(AbstractFieldProvider):
     async def __call__(self):
         fields = []
         for handler_attr, handler_func in self.all_handler.items():
+            handler_attr = handler_attr.removesuffix('_ca').removesuffix('_co')
             if hasattr(self.in_object, handler_attr) and handler_func.applicable_to in ['all', self.typus]:
                 new_item = await handler_func()
                 if new_item is not None:
@@ -406,13 +414,11 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
-    @handler_method_only_categories
-    async def _handle_commands(self):
+    @handler_method_only_commands
+    async def _handle_commands_co(self):
         attr_name = "commands"
-        name = await self.handle_name(attr_name)
-        frequ_dict = await self.bot.get_command_frequency()
-        sorted_commands = sorted(getattr(self.in_object, attr_name), key=lambda x: frequ_dict.get(x.name, 0), reverse=True)
-        value = ListMarker.make_list([f"`{command}`" for command in sorted_commands])
+        name = await self.handle_name('sub_commands')
+        value = ListMarker.make_list([f"`{command}`" for command in getattr(self.in_object, attr_name)])
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 

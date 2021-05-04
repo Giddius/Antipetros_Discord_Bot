@@ -14,8 +14,6 @@ import unicodedata
 
 
 from marshmallow import Schema, fields
-from antipetros_discordbot.schemas.extra_schemas import RequiredFileSchema, RequiredFolderSchema, ListenerSchema
-from antipetros_discordbot.schemas.command_schema import AntiPetrosBaseCommandSchema
 import gidlogger as glog
 
 
@@ -45,17 +43,20 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class AntiPetrosBaseCogSchema(Schema):
-    required_folder = fields.Nested(RequiredFolderSchema())
-    required_files = fields.Nested(RequiredFileSchema())
-    all_listeners = fields.List(fields.Nested(ListenerSchema()))
-    all_commands = fields.List(fields.Nested(AntiPetrosBaseCommandSchema()))
+class UserSchema(Schema):
+    class Meta:
+        additional = ('id', 'display_name', 'name')
+
+
+class AppInfoSchema(Schema):
+    owner = fields.Nested(UserSchema)
+    icon = fields.Function(lambda obj: obj.icon_url._url)
 
     class Meta:
-        additional = ('name', 'config_name', 'public', 'description', 'long_description', 'extra_info', 'qualified_name', 'required_config_data', 'short_doc', 'brief', 'github_link', 'github_wiki_link')
+        additional = ('id', 'name', 'description', 'bot_public', 'bot_require_code_grant', 'summary')
 
 
-# region[Main_Exec]
+    # region[Main_Exec]
 if __name__ == '__main__':
     pass
 

@@ -108,6 +108,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         }
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
+
         glog.class_init_notification(log, self)
 
 # endregion [Init]
