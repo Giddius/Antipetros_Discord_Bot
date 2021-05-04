@@ -10,18 +10,18 @@ import os
 import sys
 import time
 import asyncio
-
+import json
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
 from typing import List, Union, Mapping, Optional, Union, Hashable, Any
 
-from collections import UserDict
+from collections import UserDict, namedtuple
 from watchgod import Change, awatch
 from discord.ext import tasks, commands, ipc
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+from itertools import product
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.enums import UpdateTypus
 from antipetros_discordbot.utility.misc import save_bin_file
@@ -68,19 +68,46 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class CommandAutoDict(UserDict):
 
-    def __init__(self, bot: "AntiPetrosBot") -> None:
+    def __init__(self, bot: "AntiPetrosBot", case_folded: bool = True) -> None:
         super().__init__()
         self.bot = bot
+        self.case_folded = case_folded
         self._collect_commands()
 
+    @universal_log_profiler
     def _collect_commands(self):
-        pass
+        self.data = {}
+        for command in self.bot.commands:
+            names = [command.name] + command.aliases
+            for name in names:
+                self.data[name] = command
+            if command.is_group is True:
+                for sub_command in command.commands:
+                    sub_names = [sub_command.name] + sub_command.aliases
+                    for p_name, s_name in product(names, sub_names):
+                        self.data[f"{p_name} {s_name}"] = sub_command
+        if self.case_folded is True:
+            self.data = {key.casefold(): value for key, value in self.data.items()}
+
+    @universal_log_profiler
+    async def sort_commands(self, usage_counter):
+
+        self.data = {key: value for key, value in sorted(self.data.items(), key=lambda x: usage_counter.get(x[1].name, 0), reverse=True)}
+
+    @universal_log_profiler
+    def get(self, key, default=None):
+        if self.case_folded is True:
+            key = key.casefold()
+        return self.data.get(key, default)
+
+    async def update_commands(self):
+        self._collect_commands()
 
 
 class AntiPetrosBot(commands.Bot):
 
     # region [ClassAttributes]
-
+    ToUpdateItem = namedtuple("ToUpdateItem", ["function", "typus_triggers"])
     creator_id = 576522029470056450
 
     discord_admin_cog_import_path = "antipetros_discordbot.cogs.discord_admin_cogs.discord_admin_cog"
@@ -118,6 +145,7 @@ class AntiPetrosBot(commands.Bot):
         self.support = None
         self.used_startup_message = None
         self.ipc = None
+        self.command_dict = None
 
         self._setup()
 
@@ -154,6 +182,8 @@ class AntiPetrosBot(commands.Bot):
         await self._start_watchers()
 
         await self.set_activity()
+        await self._make_command_dict()
+
         self.setup_finished = True
         if os.getenv('INFO_RUN') == "1":
             await self._info_run()
@@ -200,6 +230,10 @@ class AntiPetrosBot(commands.Bot):
     def overwrite_methods(self):
         for name, meth in self.support.overwritten_methods.items():
             setattr(self, name, meth)
+
+    async def _make_command_dict(self):
+        self.command_dict = CommandAutoDict(self, True)
+        self.bot.to_update_methods.append(self.ToUpdateItem(self.command_dict.update_commands, [UpdateTypus.COMMANDS, UpdateTypus.ALIAS, UpdateTypus.CONFIG, UpdateTypus.CYCLIC]))
 
 # endregion[Setup]
 
@@ -303,7 +337,6 @@ class AntiPetrosBot(commands.Bot):
 
 # region [Helper]
 
-
     @staticmethod
     def _update_profiling_check():
         profiling_enabled = BASE_CONFIG.retrieve('profiling', 'enable_profiling', typus=str, direct_fallback='0')
@@ -326,6 +359,7 @@ class AntiPetrosBot(commands.Bot):
 
 
 # endregion[Helper]
+
 
     async def send_startup_message(self):
         await self._handle_previous_shutdown_msg()
@@ -414,49 +448,16 @@ class AntiPetrosBot(commands.Bot):
         value = len([member.id for member in self.bot.antistasi_guild.members if member.status is discord.Status.online])
         text = f"{value} User currently in this Guild"
         await self.change_presence(activity=discord.Activity(type=actvity_type, name=text))
-        if (self.set_activity, (UpdateTypus.MEMBERS, UpdateTypus.CYCLIC)) not in self.to_update_methods:
-            self.to_update_methods.append((self.set_activity, (UpdateTypus.MEMBERS, UpdateTypus.CYCLIC)))
+        if self.ToUpdateItem(self.set_activity, [UpdateTypus.CYCLIC, UpdateTypus.MEMBERS]) not in self.to_update_methods:
+            self.to_update_methods.append(self.ToUpdateItem(self.set_activity, [UpdateTypus.CYCLIC, UpdateTypus.MEMBERS]))
 
     def get_cog(self, name: str):
         return {cog_name.casefold(): cog for cog_name, cog in self.__cogs.items()}.get(name.casefold())
-
-    async def command_by_name(self, query_command_name: str):
-        command_name_dict = {}
-        for command in self.commands:
-            if isinstance(command, AntiPetrosBaseGroup):
-                for subcommand in command.commands:
-                    command_name_dict[f"{command.name}.{subcommand.name}".casefold()] = subcommand
-                    command_name_dict[f"{command.name} {subcommand.name}".casefold()] = subcommand
-                    for p_alias in command.aliases:
-                        command_name_dict[f"{p_alias}.{subcommand.name}".casefold()] = subcommand
-                        command_name_dict[f"{p_alias} {subcommand.name}".casefold()] = subcommand
-                        for alias in subcommand.aliases:
-                            command_name_dict[f"{command.name}.{alias}".casefold()] = subcommand
-                            command_name_dict[f"{command.name} {alias}".casefold()] = subcommand
-                            command_name_dict[f"{p_alias}.{alias}".casefold()] = subcommand
-                            command_name_dict[f"{p_alias} {alias}".casefold()] = subcommand
-
-            command_name_dict[command.name.casefold()] = command
-            for alias in command.aliases:
-                command_name_dict[alias.casefold()] = command
-
-        writejson(list(command_name_dict.keys()), 'checky.json')
-        return command_name_dict.get(query_command_name.casefold(), None)
 
     def all_cog_commands(self):
         for cog_name, cog_object in self.cogs.items():
             for command in cog_object.get_commands():
                 yield command
-
-    async def get_antistasi_emoji(self, name):
-        for _emoji in self.antistasi_guild.emojis:
-            if _emoji.name.casefold() == name.casefold():
-                return _emoji
-
-    async def message_creator(self, message=None, embed=None, file=None):
-        if message is None and embed is None:
-            message = 'message has no content'
-        await self.creator.member_object.send(content=message, embed=embed, file=file)
 
     async def split_to_messages(self, ctx, message, split_on='\n', in_codeblock=False, syntax_highlighting='json'):
         _out = ''
@@ -494,7 +495,6 @@ class AntiPetrosBot(commands.Bot):
 
 
 # region [SpecialMethods]
-
 
     async def _try_delete_startup_message(self):
         if self.used_startup_message is not None:

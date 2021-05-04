@@ -116,7 +116,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
     @property
     @universal_log_profiler
     def notify_members(self):
-        members = [self.bot.creator.member_object]
+        members = [self.bot.creator.member]
         member_ids = COGS_CONFIG.retrieve(self.config_name, "notify_member_ids", typus=List[int], direct_fallback=[])
         for member_id in member_ids:
             members.append(self.bot.sync_member_by_id(member_id))

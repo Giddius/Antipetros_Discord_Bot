@@ -76,6 +76,11 @@ class EssentialCommandsKeeper(SubSupportBase):
         self.bot.remove_command(command.name)
         self.bot.add_command(command)
 
+    async def message_creator(self, message=None, embed=None, file=None):
+        if message is None and embed is None:
+            message = 'message has no content'
+        await self.bot.creator.member.send(content=message, embed=embed, file=file)
+
     async def not_implemented(self, ctx: commands.Context):
         embed_data = await self.bot.make_generic_embed(title='NOT IMPLEMENTED',
                                                        description='Sorry but the command is a Placeholder and is not yet implemented',

@@ -89,6 +89,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class AntiPetrosBaseCommand(commands.Command):
+    is_group = False
     meta_data_provider = JsonMetaDataProvider(pathmaker(APPDATA['documentation'], 'command_meta_data.json'))
     alias_data_provider = JsonAliasProvider()
     source_code_data_provider = SourceCodeProvider()
@@ -369,6 +370,11 @@ class AntiPetrosBaseCommand(commands.Command):
 
     def __repr__(self):
         return f"{super().__class__.__name__}({self.__class__.__name__})"
+
+    def __str__(self):
+        if self.parent is not None:
+            return f"{self.parent.name} {self.name}"
+        return self.name
 
 
 # region[Main_Exec]

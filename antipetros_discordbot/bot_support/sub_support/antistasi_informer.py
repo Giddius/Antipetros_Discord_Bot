@@ -134,6 +134,11 @@ class AntistasiInformer(SubSupportBase):
                     _out['dev helper'].append(member)
         return _out
 
+    async def get_antistasi_emoji(self, name):
+        for _emoji in self.antistasi_guild.emojis:
+            if _emoji.name.casefold() == name.casefold():
+                return _emoji
+
     @property
     def general_data(self):
         return loadjson(self.general_data_file)

@@ -30,6 +30,7 @@ from antipetros_discordbot.utility.checks import (OnlyGiddiCheck, OnlyBobMurphyC
 from antipetros_discordbot.utility.misc import check_if_url, fix_url_prefix
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import ExtraHelpParameter, HelpCategory
+from icecream import ic
 if TYPE_CHECKING:
     pass
 
@@ -133,7 +134,9 @@ class CommandConverter(Converter):
 
     async def convert(self, ctx: commands.Context, argument) -> Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup]:
         bot = ctx.bot
-        command = await bot.command_by_name(argument)
+        ic(argument)
+
+        command = bot.command_dict.get(argument)
         if command is None:
             raise ParameterError('command', argument)
         return command

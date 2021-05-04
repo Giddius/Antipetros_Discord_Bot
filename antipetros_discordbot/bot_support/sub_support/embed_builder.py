@@ -450,7 +450,7 @@ class EmbedBuilder(SubSupportBase):
         self.special_authors = {'bot_author': {'name': self.bot.display_name, 'url': self.bot.github_url, 'icon_url': self.bot.user.avatar_url},
                                 'default_author': self.default_author,
                                 'armahosts': {'name': 'Server Provided by ARMAHOSTS🔗', "url": self.bot.armahosts_url, 'icon_url': self.bot.armahosts_icon}}
-        self.special_footers = {'feature_request_footer': {'text': "For feature suggestions and feature request, contact @Giddi".title(), "icon_url": self.bot.creator.member_object.avatar_url},
+        self.special_footers = {'feature_request_footer': {'text': "For feature suggestions and feature request, contact @Giddi".title(), "icon_url": self.bot.creator.member.avatar_url},
                                 'default_footer': self.default_footer,
                                 'armahosts': {'text': self.bot.armahosts_footer_text + '\n' + self.bot.armahosts_url}}
         self.replacement_map = {"$BOT_NAME$": self.bot.display_name}

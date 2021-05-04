@@ -362,7 +362,7 @@ class ImageManipulatorCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "ca
         await attachment.save(path)
         stamp_name = file_name.split('.')[0].replace(' ', '_').strip().upper()
         await ctx.reply(f"successfully, saved new stamp. The stamp name to use is `{stamp_name}`")
-        await self.bot.creator.member_object.send(f"New stamp was added by `{ctx.author.name}`", file=await attachment.to_file())
+        await self.bot.creator.member.send(f"New stamp was added by `{ctx.author.name}`", file=await attachment.to_file())
         self._get_stamps()
 
     @auto_meta_info_command()

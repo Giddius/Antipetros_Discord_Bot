@@ -225,7 +225,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                 "Version": (str(os.getenv('ANTIPETROS_VERSION')), True),
                 "Uptime": (self.uptime, True),
                 "Current Latency": (f"{round(self.bot.latency * 1000)} ms", True),
-                "Created By": (self.bot.creator.member_object.mention, True),
+                "Created By": (self.bot.creator.member.mention, True),
                 "Github Link": (embed_hyperlink('Github Repo', self.bot.github_url), True),
                 "Wiki": (embed_hyperlink('Github Wiki', self.bot.github_wiki_url), True),
                 "Invocations since launch": (await self.bot.get_amount_invoked_overall(), True),

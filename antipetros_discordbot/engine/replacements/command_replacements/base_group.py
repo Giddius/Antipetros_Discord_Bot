@@ -73,6 +73,8 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class AntiPetrosBaseGroup(GroupMixin, AntiPetrosBaseCommand):
+    is_group = True
+
     def __init__(self, *args, **attrs):
         self.invoke_without_command = attrs.pop('invoke_without_command', False)
         super().__init__(*args, **attrs)

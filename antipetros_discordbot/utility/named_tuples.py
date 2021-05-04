@@ -21,7 +21,7 @@ CITY_ITEM = namedtuple('TimeZoneItem', ['id', 'continent', 'name', 'timezone'])
 FeatureSuggestionItem = namedtuple("FeatureSuggestionItem", ['author_name', 'author_nick', 'author_id', 'author_roles', 'author_top_role', 'author_joined_at', 'send_at', 'message', 'extra_data_path'], defaults=(None,))
 
 # Me
-CreatorMember = namedtuple("CreatorMember", ['name', 'id', 'member_object'], defaults=(None,))
+CreatorMember = namedtuple("CreatorMember", ['name', 'id', 'member'], defaults=(None,))
 
 
 # for performance
