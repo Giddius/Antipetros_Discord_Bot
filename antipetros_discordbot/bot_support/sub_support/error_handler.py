@@ -32,6 +32,10 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from antipetros_discordbot.bot_support.sub_support.sub_support_helper.cooldown_dict import CoolDownDict
 from antipetros_discordbot.utility.enums import UpdateTypus
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+    from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
 # endregion[Imports]
 
 # region [TODO]
@@ -70,11 +74,12 @@ class ErrorHandler(SubSupportBase):
     config_name = 'error_handling'
     error_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Dialog-error-round.svg/1200px-Dialog-error-round.svg.png"
 
-    def __init__(self, bot, support):
+    def __init__(self, bot: "AntiPetrosBot", support: "BotSupporter"):
         self.bot = bot
         self.support = support
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
+        self.support.overwritten_methods |= {'on_error': self.handle_base_errors, 'on_command_error': self.handle_errors, 'on_ipc_error': self.handle_ipc_error}
         self.emphasis_regex = re.compile(r"'.*?'")
         self.error_handle_table = {commands.MaxConcurrencyReached: self._handle_max_concurrency,
                                    commands.CommandOnCooldown: self._handle_command_on_cooldown,
@@ -128,6 +133,10 @@ class ErrorHandler(SubSupportBase):
         kwarg_string = ', '.join(f"{key}: {str(value)}" for key, value in kwargs.items())
         arg_string = ', '.join(str(arg) for arg in args)
         log.error(f"{event_method} - '{arg_string}' - '{kwarg_string}'")
+
+    async def handle_ipc_error(self, endpoint, error):
+        log.error(error, exc_info=True)
+        await self.bot.message_creator(f"Encountered IPC-error: {error}")
 
     async def handle_errors(self, ctx, error):
         error_traceback = '\n'.join(traceback.format_exception(error, value=error, tb=None))

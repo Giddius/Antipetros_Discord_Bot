@@ -68,6 +68,10 @@ class EssentialCommandsKeeper(SubSupportBase):
 
         glog.class_init_notification(log, self)
 
+    @ property
+    def shutdown_command(self):
+        return self.bot.get_command('shutdown')
+
     def refresh_command(self, command: commands.Command):
         self.bot.remove_command(command.name)
         self.bot.add_command(command)
@@ -86,7 +90,7 @@ class EssentialCommandsKeeper(SubSupportBase):
         return self.bot.sync_channel_from_name(channel_name)
 
     def shutdown_signal(self, *args):
-        self.loop.create_task(self.shutdown_mechanic())
+        asyncio.create_task(self.shutdown_mechanic())
 
     async def shutdown_mechanic(self):
         try:

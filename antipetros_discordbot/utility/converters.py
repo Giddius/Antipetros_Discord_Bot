@@ -156,7 +156,7 @@ class CogConverter(Converter):
         if not mod_argument.endswith('cog'):
             mod_argument += 'cog'
 
-        cog = await bot.cog_by_name(mod_argument)
+        cog = await bot.get_cog(mod_argument)
         if cog is None:
             raise ParameterError("cog", argument)
         return cog

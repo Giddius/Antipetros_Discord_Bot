@@ -15,7 +15,7 @@ import re
 from PIL import Image, ImageDraw, ImageFont
 from async_property import async_property, async_cached_property
 import discord
-
+import asyncio
 from discord.ext import commands
 
 
@@ -124,7 +124,7 @@ class FaqItem:
 
     @async_cached_property
     async def number_image(self):
-        return await self.bot.execute_in_thread(self._make_number_image, self.number)
+        return await asyncio.to_thread(self._make_number_image, self.number)
 
     @ staticmethod
     def _get_text_dimensions(text_string, font):

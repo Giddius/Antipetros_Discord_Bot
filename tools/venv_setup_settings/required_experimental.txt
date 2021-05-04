@@ -4,7 +4,7 @@ Flask-SQLAlchemy==2.5.1
 Flask-WTF==0.14.3
 Quart==0.14.1
 asyncinit==0.2.4
-dirtools==0.2.0
+dirtools2
 discord-pretty-help==1.3.0
 disputils==0.1.3
 imgkit==1.2.2

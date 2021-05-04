@@ -57,6 +57,14 @@ class CommandStatistician(SubSupportBase):
         glog.class_init_notification(log, self)
         self.after_action()
 
+    @property
+    def all_command_names(self):
+        _out = []
+        for command in self.bot.commands:
+            _out.append(command.name)
+            _out += command.aliases
+        return _out
+
     async def if_ready(self):
         asyncio.create_task(self.insert_command_data())
 

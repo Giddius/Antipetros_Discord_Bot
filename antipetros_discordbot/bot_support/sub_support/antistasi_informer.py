@@ -90,7 +90,7 @@ class AntistasiInformer(SubSupportBase):
 
     @property
     def everyone_role(self) -> discord.Role:
-        return self.sync_retrieve_antistasi_role(self.everyone_role_id)
+        return self.antistasi_guild.get_role(self.everyone_role_id)
 
     @property
     def bertha_emoji(self) -> discord.Emoji:

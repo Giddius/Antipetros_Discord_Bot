@@ -240,12 +240,12 @@ class ImageManipulatorCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "ca
                         temp_file = Path(pathmaker(temp_dir, 'temp_file.png'))
                         log.debug("Tempfile '%s' created", temp_file)
                         await _file.save(temp_file)
-                        in_image = await self.bot.execute_in_thread(Image.open, temp_file)
-                        in_image = await self.bot.execute_in_thread(in_image.copy)
+                        in_image = await asyncio.to_thread(Image.open, temp_file)
+                        in_image = await asyncio.to_thread(in_image.copy)
                     factor = self.target_stamp_fraction if flags.get('factor') is None else flags.get('factor')
                     pos_function = self.stamp_pos_functions.get(first_pos | second_pos)
 
-                    in_image = await self.bot.execute_in_thread(pos_function, in_image, _stamp, factor)
+                    in_image = await asyncio.to_thread(pos_function, in_image, _stamp, factor)
                     name = 'antistasified_' + os.path.splitext(_file.filename)[0]
                     await ctx.message.delete()
                     # TODO: make as embed
@@ -389,13 +389,13 @@ class ImageManipulatorCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "ca
             base_image = Image.open(imagefilepath)
             base_image.load()
         width, height = base_image.size
-        image_font = await self.bot.execute_in_thread(find_min_fontsize, self.fonts.get(mod_font_name), [line for line in text.splitlines() if line != ''], width, height)
+        image_font = await asyncio.to_thread(find_min_fontsize, self.fonts.get(mod_font_name), [line for line in text.splitlines() if line != ''], width, height)
         top_space = 0
         for line in text.splitlines():
             if line == '':
                 top_space += ((height // 20) * 2)
             else:
-                base_image, top_space = await self.bot.execute_in_thread(self.draw_text_line, base_image, line, top_space, image_font)
+                base_image, top_space = await asyncio.to_thread(self.draw_text_line, base_image, line, top_space, image_font)
         await self._send_image(ctx, base_image, image_attachment.filename.split('.')[0] + '_with_text.png', "Modified Image", message_text="Here is your image with pasted Text", image_format='png')
 
     @auto_meta_info_command()
@@ -416,8 +416,8 @@ class ImageManipulatorCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "ca
 
     async def _make_font_preview(self, font_name, font_path):
         b_image = Image.new('RGBA', (512, 512), color=(256, 256, 256, 0))
-        image_font = await self.bot.execute_in_thread(make_perfect_fontsize, font_path, font_name, 512, 512)
-        preview_image = await self.bot.execute_in_thread(self.draw_text_center, b_image, font_name, image_font)
+        image_font = await asyncio.to_thread(make_perfect_fontsize, font_path, font_name, 512, 512)
+        preview_image = await asyncio.to_thread(self.draw_text_center, b_image, font_name, image_font)
         return preview_image
 
     @auto_meta_info_command()
@@ -574,7 +574,7 @@ class ImageManipulatorCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "ca
     async def _member_avatar_helper(self, user: discord.Member, placement: callable, opacity: float):
         avatar_image = await self.get_avatar_from_user(user)
         stamp = self._get_stamp_image('ASLOGO', opacity)
-        modified_avatar = await self.bot.execute_in_thread(placement, avatar_image, stamp, self.avatar_stamp_fraction)
+        modified_avatar = await asyncio.to_thread(placement, avatar_image, stamp, self.avatar_stamp_fraction)
         return modified_avatar
 
     @universal_log_profiler

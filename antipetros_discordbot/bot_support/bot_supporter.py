@@ -48,6 +48,7 @@ class BotSupporter:
         self.bot = bot
         self.subsupports = []
         self.available_subsupport_classes = SUB_SUPPORT_CLASSES
+        self.overwritten_methods = {}
 
     def find_available_subsupport_classes(self):
         pass
@@ -70,6 +71,7 @@ class BotSupporter:
         return hasattr(self, attribute_name) and all(hasattr(subsupport, attribute_name) is False for subsupport in self.subsupports)
 
     async def to_all_subsupports(self, attribute_name, *args, **kwargs):
+        # TODO: Refactor so it is callable like cogs
         if self.really_has_attribute(attribute_name):
             if iscoroutine(getattr(self, attribute_name)):
                 await getattr(self, attribute_name)(*args, **kwargs)

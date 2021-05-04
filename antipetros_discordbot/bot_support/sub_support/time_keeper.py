@@ -56,6 +56,10 @@ class TimeKeeper(SubSupportBase):
         self.start_time = None
         glog.class_init_notification(log, self)
 
+    @ property
+    def std_date_time_format(self):
+        return "%Y-%m-%d %H:%M:%S"
+
     async def if_ready(self):
         self.start_time = datetime.utcnow()
         log.debug("'%s' sub_support is READY", str(self))

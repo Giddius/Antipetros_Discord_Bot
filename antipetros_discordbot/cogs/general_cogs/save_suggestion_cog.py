@@ -367,7 +367,7 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
             html_path = pathmaker(tempfold, "suggestion_report.html")
             pdf_path = pathmaker(tempfold, 'suggestion_report.pdf')
             log.debug('rendering template and writing to file')
-            writeit(html_path, await self.bot.execute_in_thread(template.render, var_dict))
+            writeit(html_path, await asyncio.to_thread(template.render, var_dict))
             log.debug('copying stylesheet')
             shutil.copyfile(self.css_files.get('basic_report_style.css')[0], pathmaker(tempfold, self.css_files.get('basic_report_style.css')[1]))
             log.debug('transforming html to pdf')

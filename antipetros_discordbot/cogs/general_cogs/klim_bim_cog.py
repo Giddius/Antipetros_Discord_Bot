@@ -397,10 +397,10 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
                 result_image_files.append(APPDATA[f"{mod_type_of_dice}_{roll_result}.png"])
                 await asyncio.sleep(0)
 
-        # await self.bot.execute_in_thread(random.shuffle, result_image_files)
-        result_images = await self.bot.execute_in_thread(self._get_dice_images, result_image_files)
-        result_image = await self.bot.execute_in_thread(self.paste_together, *result_images)
-        result_combined = await self.bot.execute_in_thread(self._sum_dice_results, results)
+        # await asyncio.to_thread(random.shuffle, result_image_files)
+        result_images = await asyncio.to_thread(self._get_dice_images, result_image_files)
+        result_image = await asyncio.to_thread(self.paste_together, *result_images)
+        result_combined = await asyncio.to_thread(self._sum_dice_results, results)
         fields = [self.bot.field_item(name="Sum", value='`' + str(result_combined) + '`', inline=False)]
 
         embed_data = await self.bot.make_generic_embed(title=f'{ctx.author.display_name} rolled:',
@@ -445,7 +445,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
                 roll_result = await self._roll_the_dice(sides_of_die)
                 results[mod_type_of_dice].append(roll_result)
                 await asyncio.sleep(0)
-        result_combined = await self.bot.execute_in_thread(self._sum_dice_results, results)
+        result_combined = await asyncio.to_thread(self._sum_dice_results, results)
         fields = [self.bot.field_item(name="Sum", value='`' + str(result_combined) + '`', inline=False)]
         for key, value in results.items():
             if len(value) > 1:
