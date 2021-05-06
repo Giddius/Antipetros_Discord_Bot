@@ -9,7 +9,7 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import re
-
+import asyncio
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -84,8 +84,8 @@ class RegexKeeper(SubSupportBase):
     def regex(self, regex_name):
         return self.regexes.get(regex_name)
 
-    async def if_ready(self):
-        await self.bot.execute_in_thread(self._compile_all_regexes)
+    async def on_ready_setup(self):
+        await asyncio.to_thread(self._compile_all_regexes)
         log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self, typus: UpdateTypus):

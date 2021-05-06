@@ -11,6 +11,7 @@ import os
 from typing import Dict, Generator, List, Optional, Iterable, Callable, Union, Iterable
 import asyncio
 import random
+
 from time import time, time_ns, monotonic, monotonic_ns, process_time, process_time_ns, perf_counter, perf_counter_ns
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
@@ -63,19 +64,10 @@ class AntistasiInformer(SubSupportBase):
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.members_name_dict = None
-        self.members_id_dict = None
         self.roles_name_dict = None
-        self.roles_id_dict = None
         self.channels_name_dict = None
-        self.channels_id_dict = None
 
         glog.class_init_notification(log, self)
-
-    def check_member_has_any_role(self, role_names: List[str], member: discord.Member) -> bool:
-        for role_name in role_names:
-            if role_name.casefold() in [role.name.casefold() for role in member.roles]:
-                return True
-        return False
 
     @universal_log_profiler
     async def _make_stored_dicts(self):
@@ -84,13 +76,12 @@ class AntistasiInformer(SubSupportBase):
         for cat in ['channels', 'members', 'roles']:
             attr = getattr(self.antistasi_guild, cat)
             name_attr_dict = {item.name.casefold(): item for item in attr}
-            id_attr_dict = {item.id: item for item in attr}
             setattr(self, f"{cat}_name_dict", name_attr_dict)
-            setattr(self, f"{cat}_id_dict", id_attr_dict)
+            log.info("created '%s_name_dict' fresh", cat)
 
     @property
     def everyone_role(self) -> discord.Role:
-        return self.sync_retrieve_antistasi_role(self.everyone_role_id)
+        return self.get_antistasi_role(self.everyone_role_id)
 
     @property
     def bertha_emoji(self) -> discord.Emoji:
@@ -117,24 +108,6 @@ class AntistasiInformer(SubSupportBase):
         return self.antistasi_guild.filesize_limit
 
     @property
-    def dev_members(self) -> List[discord.Member]:
-
-        return [member for member in self.antistasi_guild.members if self.check_member_has_any_role(["dev helper", "dev team", "dev team lead"], member) is True]
-
-    @property
-    def dev_member_by_role(self) -> Dict[str, List[discord.Member]]:
-        _out = {"dev team lead": [], "dev team": [], "dev helper": []}
-        for member in self.dev_members:
-            if member.bot is False:
-                if self.check_member_has_any_role(['dev team lead'], member) is True:
-                    _out['dev team lead'].append(member)
-                elif self.check_member_has_any_role(['dev team'], member) is True:
-                    _out['dev team'].append(member)
-                elif self.check_member_has_any_role(['dev helper'], member) is True:
-                    _out['dev helper'].append(member)
-        return _out
-
-    @property
     def general_data(self):
         return loadjson(self.general_data_file)
 
@@ -149,61 +122,46 @@ class AntistasiInformer(SubSupportBase):
     def blacklisted_users(self) -> list:
         return loadjson(APPDATA['blacklist.json'])
 
+    async def get_antistasi_emoji(self, name):
+        for _emoji in self.antistasi_guild.emojis:
+            if _emoji.name.casefold() == name.casefold():
+                return _emoji
+            await asyncio.sleep(0)
+
     def blacklisted_user_ids(self) -> Generator[int, None, None]:
         for user_item in self.blacklisted_users:
             yield user_item.get('id')
 
     async def get_message_directly(self, channel_id: int, message_id: int) -> discord.Message:
-        channel = await self.channel_from_id(channel_id)
+        channel = self.channel_from_id(channel_id)
         return await channel.fetch_message(message_id)
 
-    async def retrieve_antistasi_member(self, user_id: int) -> discord.Member:
+    async def fetch_antistasi_member(self, user_id: int) -> discord.Member:
         return await self.antistasi_guild.fetch_member(user_id)
 
-    def sync_channel_from_name(self, channel_name: str) -> discord.abc.GuildChannel:
+    def channel_from_name(self, channel_name: str) -> discord.abc.GuildChannel:
         if channel_name.casefold() == 'all':
             return self.all_item
-        return {channel.name.casefold(): channel for channel in self.antistasi_guild.channels}.get(channel_name.casefold())
+        return self.channels_name_dict.get(channel_name.casefold())
 
-    async def channel_from_name(self, channel_name: str) -> discord.abc.GuildChannel:
-        if channel_name.casefold() == 'all':
-            return self.all_item
-        return {channel.name.casefold(): channel for channel in self.antistasi_guild.channels}.get(channel_name.casefold())
-
-    def sync_channel_from_id(self, channel_id: int) -> discord.abc.GuildChannel:
-        return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)
-
-    async def channel_from_id(self, channel_id: int) -> discord.abc.GuildChannel:
-        return {channel.id: channel for channel in self.antistasi_guild.channels}.get(channel_id)
+    def channel_from_id(self, channel_id: int) -> discord.abc.GuildChannel:
+        return self.antistasi_guild.get_channel(channel_id)
 
     def sync_member_by_id(self, member_id: int) -> discord.Member:
-        return self.members_id_dict.get(member_id, None)
+        return self.antistasi_guild.get_member(member_id)
 
-    def sync_member_by_name(self, member_name: str) -> discord.Member:
+    def member_by_name(self, member_name: str) -> discord.Member:
         if member_name.casefold() == 'all':
             return self.all_item
         return self.members_name_dict.get(member_name.casefold(), None)
 
-    async def member_by_name(self, member_name: str) -> discord.Member:
-        if member_name.casefold() == 'all':
-            return self.all_item
-        return self.members_name_dict.get(member_name.casefold(), None)
-
-    def sync_role_from_string(self, role_name: str) -> discord.Role:
+    def role_from_string(self, role_name: str) -> discord.Role:
         if role_name.casefold() == 'all':
             return self.all_item
         return self.roles_name_dict.get(role_name.casefold(), None)
 
-    async def role_from_string(self, role_name) -> discord.Role:
-        if role_name.casefold() == 'all':
-            return self.all_item
-        return self.roles_name_dict.get(role_name.casefold())
-
-    async def retrieve_antistasi_role(self, role_id: int) -> discord.Role:
-        return {role.id: role for role in self.antistasi_guild.roles}.get(role_id)
-
-    def sync_retrieve_antistasi_role(self, role_id: int) -> discord.Role:
-        return {role.id: role for role in self.antistasi_guild.roles}.get(role_id)
+    def get_antistasi_role(self, role_id: int) -> discord.Role:
+        return self.antistasi_guild.get_role(role_id)
 
     async def all_members_with_role(self, role: str) -> List[discord.Member]:
         role = await self.role_from_string(role)
@@ -213,7 +171,7 @@ class AntistasiInformer(SubSupportBase):
                 _out.append(member)
         return list(set(_out))
 
-    async def if_ready(self) -> None:
+    async def on_ready_setup(self) -> None:
         await self.antistasi_guild.chunk(cache=True)
         await self._make_stored_dicts()
         log.debug("'%s' sub_support is READY", str(self))

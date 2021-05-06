@@ -136,29 +136,29 @@ class TeamItem:
 
     @property
     def member_role(self):
-        return self.bot.sync_role_from_string(self.name)
+        return self.bot.role_from_string(self.name)
 
     @property
     def helper_role(self):
         if "team" in self.name.casefold():
             helper_role_name = self.name.casefold().replace(' team', ' helper')
-            helper_role = self.bot.sync_role_from_string(helper_role_name)
+            helper_role = self.bot.role_from_string(helper_role_name)
             if helper_role is None:
                 helper_role_name = f"Trial {self.name}"
-                helper_role = self.bot.sync_role_from_string(helper_role_name)
+                helper_role = self.bot.role_from_string(helper_role_name)
             return helper_role
 
     @property
     def lead_role(self):
         lead_role_name = f"{self.name} Lead"
-        return self.bot.sync_role_from_string(lead_role_name)
+        return self.bot.role_from_string(lead_role_name)
 
     @property
     def extra_role(self):
         extra_role_name = COGS_CONFIG.retrieve(self.config_name, self.config_option_names.get('extra_role'), typus=str, direct_fallback='not_set')
         if extra_role_name == 'not_set':
             return None
-        return self.bot.sync_role_from_string(extra_role_name)
+        return self.bot.role_from_string(extra_role_name)
 
     @property
     def member_list_string(self):
@@ -242,7 +242,7 @@ class TeamItem:
     @classmethod
     async def from_dict(cls, in_values: dict):
         team_name = in_values.get('team_name')
-        channel = await cls.bot.channel_from_id(in_values.get('channel_id'))
+        channel = cls.bot.channel_from_id(in_values.get('channel_id'))
         header_message = await channel.fetch_message(in_values.get('header_message_id'))
         all_member_list_message = await channel.fetch_message(in_values.get('all_member_list_message_id'))
 
@@ -593,7 +593,7 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
             self.team_items.append(await TeamItem.from_dict(item))
         last_changed_data = loadjson(self.team_item_data_file).get('last_changed_message')
         if last_changed_data is not None:
-            last_changed_channel = await self.bot.channel_from_id(last_changed_data.get('channel_id'))
+            last_changed_channel = self.bot.channel_from_id(last_changed_data.get('channel_id'))
             self.last_changed_message = await last_changed_channel.fetch_message(last_changed_data.get('message_id'))
 
     @universal_log_profiler

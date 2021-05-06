@@ -25,8 +25,8 @@ from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 
 from antipetros_discordbot.utility.converters import CommandConverter
 from antipetros_discordbot.utility.exceptions import ParameterErrorWithPossibleParameter
-
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, RequiredFolder, auto_meta_info_command
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker, ZERO_WIDTH, SPECIAL_SPACE, Seperators
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, RequiredFolder, auto_meta_info_command, auto_meta_info_group
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
@@ -110,7 +110,6 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
 # region [Setup]
 
-
     @universal_log_profiler
     async def on_ready_setup(self):
         """
@@ -130,6 +129,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 # endregion [Setup]
 
 # region [Properties]
+
 
     @property
     @universal_log_profiler
@@ -169,7 +169,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
     @universal_log_profiler
     async def get_notify_roles(self):
-        return [await self.bot.role_from_string(role_name) for role_name in self.notify_role_names]
+        return [self.bot.role_from_string(role_name) for role_name in self.notify_role_names]
 
     @universal_log_profiler
     async def send_config_file(self, ctx, config_name):
@@ -190,6 +190,42 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 # endregion [HelperMethods]
 
 # region [Commands]
+
+    @auto_meta_info_group(case_insensitive=True, categories=[CommandCategory.META], invoke_without_command=False)
+    @owner_or_admin()
+    async def change_prefix(self, ctx: commands.Context):
+        pass
+
+    @change_prefix.command(name='add')
+    @owner_or_admin()
+    async def add_prefix(self, ctx: commands.Context, *, new_prefix: str):
+        current_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+        if ' ' in new_prefix:
+            await ctx.send(embed=await self.bot.make_cancelled_embed(title='change_prefix add Error', msg='A prefix can not contain spaces!'))
+            return
+
+        if new_prefix in current_prefixes:
+            embed_extra_info = f"Current Prefixes:\n{ZERO_WIDTH}\n```diff\n" + ListMarker.make_list(current_prefixes) + '\n```'
+            await ctx.send(embed=await self.bot.make_cancelled_embed(title='change_prefix add Error', msg=f'Prefix `{new_prefix}` is already set as prefix for the bot!', extra=embed_extra_info))
+            return
+
+        new_prefixes = current_prefixes + [new_prefix]
+        BASE_CONFIG.set('prefix', 'command_prefix', ', '.join(new_prefixes))
+        await ctx.send(f"Prefix `{new_prefix}` was added to the bots Prefixes\nCurrent Prefixes:\n```diff\n" + '\n'.join(new_prefixes) + '\n```')
+
+    @change_prefix.command(name='remove')
+    @owner_or_admin()
+    async def remove_prefix(self, ctx: commands.Context, *, prefix_to_remove: str):
+        current_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+        if prefix_to_remove not in current_prefixes:
+            embed_extra_info = f"Current Prefixes:\n{ZERO_WIDTH}\n```diff\n" + ListMarker.make_list(current_prefixes) + '\n```'
+            await ctx.send(embed=await self.bot.make_cancelled_embed(title='change_prefix remove Error', msg=f"Prefix `{prefix_to_remove}` is not a Prefix of the bot", extra=embed_extra_info))
+            return
+
+        new_prefixes = current_prefixes.copy()
+        new_prefixes.remove(prefix_to_remove)
+        BASE_CONFIG.set('prefix', 'command_prefix', ', '.join(new_prefixes))
+        await ctx.send(f"Prefix `{prefix_to_remove}` was removed from the bot Prefixes\nCurrent Prefixes:\n```diff\n" + '\n'.join(new_prefixes) + '\n```')
 
     @auto_meta_info_command()
     @ owner_or_admin()
@@ -292,7 +328,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         add_success = await command.set_alias(new_alias)
         if add_success is True:
             await ctx.send(f"successfully added `{new_alias}` to the command aliases of `{command.name}`")
-            await self.bot.creator.member_object.send(f"A new alias was set by `{ctx.author.name}`\n**Command:** `{command.name}`\n**New Alias:** `{new_alias}`")
+            await self.bot.creator.send(f"A new alias was set by `{ctx.author.name}`\n**Command:** `{command.name}`\n**New Alias:** `{new_alias}`")
         else:
             await ctx.send(f"error with adding alias `{new_alias}` to `{command.name}`, alias was **NOT** added!")
 
@@ -360,14 +396,13 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
                 await member.send(**embed_data)
 
         else:
-            channel = await self.bot.channel_from_name(self.notify_via)
+            channel = self.bot.channel_from_name(self.notify_via)
             await channel.send(content=' '.join(role.mention for role in roles), **embed_data)
 
 
 # endregion[Helper]
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

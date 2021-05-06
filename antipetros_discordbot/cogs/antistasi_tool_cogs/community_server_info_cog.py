@@ -121,8 +121,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # region [Setup]
     @universal_log_profiler
     async def on_ready_setup(self):
-        self.notification_channel = await self.bot.channel_from_name('bot-testing')
-        self.log_watcher_cog = await self.bot.cog_by_name("AntistasiLogWatcherCog")
+        self.notification_channel = self.bot.channel_from_name('bot-testing')
+        self.log_watcher_cog = await self.bot.get_cog("AntistasiLogWatcherCog")
         asyncio.create_task(self._initialise_server_holder())
 
         self.check_server_status_loop.start()
@@ -170,6 +170,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [Commands]
 
+
     @auto_meta_info_command(aliases=['server', 'servers', 'server?', 'servers?'], categories=CommandCategory.GENERAL)
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 60, commands.BucketType.channel)
@@ -185,7 +186,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         exclude = COGS_CONFIG.retrieve(self.config_name, 'exclude_from_show_online', typus=List[str], direct_fallback=["Testserver_3", 'Eventserver'])
         exclude = set(map(lambda x: x.casefold(), exclude))
         if all(server_item.is_online is False for server_item in self.servers if server_item.name not in exclude):
-            announcements_channel = await self.bot.channel_from_id(self.announcements_channel_id)
+            announcements_channel = self.bot.channel_from_id(self.announcements_channel_id)
             embed_data = await self.bot.make_generic_embed(title='All Server seem to be offline',
                                                            description=f'Please look in {announcements_channel.mention} if there is information regarding the Server',
                                                            thumbnail="not_possible")
@@ -205,25 +206,25 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                         game = info.game
                         password_needed = "YES 🔐" if info.password_protected is True else 'NO 🔓'
                         server_name = info.server_name
-                        embed_data = await self.bot.make_generic_embed(title=server_name,
-                                                                       thumbnail=self.server_symbol,
-                                                                       fields=[self.bot.field_item(name="Server Address", value=str(server_item.address), inline=True),
-                                                                               self.bot.field_item(name="Port", value=str(server_item.port), inline=True),
-                                                                               self.bot.field_item(name="Teamspeak", value=f"38.65.5.151  {ZERO_WIDTH}  **OR**  {ZERO_WIDTH}  antistasi.armahosts.com"),
-                                                                               self.bot.field_item(name="━━━━━━━━━━━━", value=ZERO_WIDTH, inline=False),
-                                                                               self.bot.field_item(name="Game", value=game, inline=True),
-                                                                               self.bot.field_item(name="Players", value=f"{player_count}/{max_players}", inline=True),
-                                                                               self.bot.field_item(name="Ping", value=str(ping) if str(ping) is not None else "NA", inline=True),
-                                                                               self.bot.field_item(name="Map", value=map_name, inline=True),
-                                                                               self.bot.field_item(name="Password", value=f"{password_needed}", inline=True),
-                                                                               self.bot.field_item(name='Battlemetrics', value="🔗 " + embed_hyperlink('link to Battlemetrics', server_item.battlemetrics_url), inline=True)],
-                                                                       author="armahosts",
-                                                                       footer="armahosts",
-                                                                       color="blue")
-
-                        # mod_list_command = self.bot.get_command('get_newest_mod_data')
-                        async with self.log_watcher_cog.get_newest_mod_data_only_file(server_item.name) as html_file:
-                            await ctx.send(**embed_data, file=html_file, delete_after=self.server_message_remove_time)
+                        async with self.log_watcher_cog.get_newest_mod_data_only_file(server_item.name) as html_file_image_path:
+                            embed_data = await self.bot.make_generic_embed(title=server_name,
+                                                                           thumbnail=self.server_symbol,
+                                                                           fields=[self.bot.field_item(name="Server Address", value=str(server_item.address), inline=True),
+                                                                                   self.bot.field_item(name="Port", value=str(server_item.port), inline=True),
+                                                                                   self.bot.field_item(name="Teamspeak", value=f"38.65.5.151  {ZERO_WIDTH}  **OR**  {ZERO_WIDTH}  antistasi.armahosts.com"),
+                                                                                   self.bot.field_item(name="━━━━━━━━━━━━", value=ZERO_WIDTH, inline=False),
+                                                                                   self.bot.field_item(name="Game", value=game, inline=True),
+                                                                                   self.bot.field_item(name="Players", value=f"{player_count}/{max_players}", inline=True),
+                                                                                   self.bot.field_item(name="Ping", value=str(ping) if str(ping) is not None else "NA", inline=True),
+                                                                                   self.bot.field_item(name="Map", value=map_name, inline=True),
+                                                                                   self.bot.field_item(name="Password", value=f"{password_needed}", inline=True),
+                                                                                   self.bot.field_item(name='Battlemetrics', value="🔗 " + embed_hyperlink('link to Battlemetrics', server_item.battlemetrics_url), inline=True)],
+                                                                           author="armahosts",
+                                                                           footer="armahosts",
+                                                                           color="blue",
+                                                                           image=html_file_image_path[1])
+                            await ctx.send(file=html_file_image_path[0], delete_after=self.server_message_remove_time)
+                            await ctx.send(**embed_data, delete_after=self.server_message_remove_time)
                         # await ctx.invoke(mod_list_command, server_item.name)
                         await asyncio.sleep(0.5)
                 except asyncio.exceptions.TimeoutError:
@@ -351,6 +352,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

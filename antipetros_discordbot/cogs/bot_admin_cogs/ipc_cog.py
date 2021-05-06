@@ -130,7 +130,7 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
     @ipc.server.route()
     @universal_log_profiler
     async def shut_down(self, data):
-        member = await self.bot.retrieve_antistasi_member(data.member_id)
+        member = await self.bot.fetch_antistasi_member(data.member_id)
         admin_role = {role.name.casefold(): role for role in self.bot.antistasi_guild.roles}.get('admin')
         trial_admin_role = {role.name.casefold(): role for role in self.bot.antistasi_guild.roles}.get("trial admin")
         if await self.bot.is_owner(member) is True or admin_role in member.roles or trial_admin_role in member.roles:

@@ -21,6 +21,10 @@ from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus
 from antipetros_discordbot.utility.sqldata_storager import general_db
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+    from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
 # endregion[Imports]
 
 # region [TODO]
@@ -51,7 +55,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class ChannelStatistician(SubSupportBase):
-    exclude_channels = ["website-admin-team",
+    exclude_channels = {"website-admin-team",
                         "wiki-mods",
                         "sponsors",
                         "probationary-list",
@@ -61,15 +65,16 @@ class ChannelStatistician(SubSupportBase):
                         "event-team",
                         "black-book",
                         "admin-team",
-                        "admin-meeting-notes"]
-    exclude_categories = ["admin info",
+                        "admin-meeting-notes"}
+    exclude_categories = {"admin info",
                           "staff rooms",
-                          "voice channels"]
+                          "voice channels"}
     general_db = general_db
 
-    def __init__(self, bot, support):
+    def __init__(self, bot: "AntiPetrosBot", support: "BotSupporter"):
         self.bot = bot
         self.support = support
+        self.support.overwritten_methods |= {'on_message': self.record_channel_usage}
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.ready = False
@@ -85,8 +90,9 @@ class ChannelStatistician(SubSupportBase):
             return
         channel = msg.channel
         if channel.name.casefold() not in self.exclude_channels and channel.category.name.casefold() not in self.exclude_categories:
-            await self.general_db.insert_channel_use(channel)
+            asyncio.create_task(self.general_db.insert_channel_use(channel))
             log.info("channel usage recorded for channel '%s'", channel.name)
+        await self.bot.process_commands(msg)
 
     async def make_heat_map(self):
         pass
@@ -129,7 +135,7 @@ class ChannelStatistician(SubSupportBase):
             if text_channel_id not in existing_text_channel_ids:
                 await self.general_db.update_text_channel_deleted(text_channel_id)
 
-    async def if_ready(self):
+    async def on_ready_setup(self):
         asyncio.create_task(self.insert_channels_into_db())
         self.ready = True
         log.debug("'%s' sub_support is READY", str(self))

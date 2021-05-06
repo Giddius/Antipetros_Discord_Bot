@@ -138,7 +138,7 @@ class BlacklistWarden(SubSupportBase):
     def is_blacklisted(self, other):
         return other in self._blacklisted_user
 
-    async def if_ready(self):
+    async def on_ready_setup(self):
         self.get_blacklisted_user()
         log.debug("'%s' sub_support is READY", str(self))
 

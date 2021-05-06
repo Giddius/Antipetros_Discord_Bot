@@ -30,7 +30,6 @@ import discord
 # from dotenv import load_dotenv
 
 
-
 # from github import Github, GithubException
 
 # from jinja2 import BaseLoader, Environment
@@ -121,7 +120,7 @@ class GiveAwayEvent:
         if isinstance(in_channel, discord.TextChannel):
             return in_channel.id
         elif isinstance(in_channel, int):
-            return await self.bot.channel_from_id(in_channel)
+            return self.bot.channel_from_id(in_channel)
 
     async def convert_message(self, in_message: Union[discord.Message, int]):
         if isinstance(in_message, discord.Message):
@@ -135,7 +134,7 @@ class GiveAwayEvent:
         if isinstance(in_author, discord.Member):
             return in_author.id
         elif isinstance(in_author, int):
-            return await self.bot.retrieve_antistasi_member(in_author)
+            return await self.bot.fetch_antistasi_member(in_author)
 
     async def to_dict(self):
         return {'title': self.title,

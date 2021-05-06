@@ -327,8 +327,12 @@ class EmbedBuilder(SubSupportBase):
         file_path = pathmaker(APPDATA["saved_embeds"], file_name)
         writejson(embed.to_dict(), file_path)
 
-    async def make_cancelled_embed(self):
-        pass
+    async def make_cancelled_embed(self, title: str, msg: str, extra: str = None):
+        embed = Embed(title=title, description=msg, color=discord.Color.red())
+        embed.set_thumbnail(url=self.standard_embed_symbols.get("cross_mark"))
+        if extra is not None:
+            embed.add_field(name='Extra Info', value=extra, inline=False)
+        return embed
 
     async def make_confirmed_embed(self):
         pass
@@ -446,11 +450,11 @@ class EmbedBuilder(SubSupportBase):
     def default_type(self):
         return 'rich'
 
-    async def if_ready(self):
+    async def on_ready_setup(self):
         self.special_authors = {'bot_author': {'name': self.bot.display_name, 'url': self.bot.github_url, 'icon_url': self.bot.user.avatar_url},
                                 'default_author': self.default_author,
                                 'armahosts': {'name': 'Server Provided by ARMAHOSTS🔗', "url": self.bot.armahosts_url, 'icon_url': self.bot.armahosts_icon}}
-        self.special_footers = {'feature_request_footer': {'text': "For feature suggestions and feature request, contact @Giddi".title(), "icon_url": self.bot.creator.member_object.avatar_url},
+        self.special_footers = {'feature_request_footer': {'text': "For feature suggestions and feature request, contact @Giddi".title(), "icon_url": self.bot.creator.avatar_url},
                                 'default_footer': self.default_footer,
                                 'armahosts': {'text': self.bot.armahosts_footer_text + '\n' + self.bot.armahosts_url}}
         self.replacement_map = {"$BOT_NAME$": self.bot.display_name}

@@ -50,18 +50,16 @@ def when_mentioned_or_roles_or():
         `callable`: the dynamic function
     """
 
-    config_set_prefixes = BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])
-    all_prefixes = list(set(config_set_prefixes))
-    role_exceptions = BASE_CONFIG.retrieve('prefix', 'invoke_by_role_exceptions', typus=List[str], direct_fallback=[])
-
     def inner(bot, msg):
-        extra = all_prefixes
+        config_set_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+        role_exceptions = BASE_CONFIG.retrieve('prefix', 'invoke_by_role_exceptions', typus=List[str], direct_fallback=[])
+        extra = config_set_prefixes
         r = []
         if BASE_CONFIG.retrieve('prefix', 'invoke_by_role_and_mention', typus=bool, direct_fallback=True):
             r.append(bot.user.mention)
             r.append(f"<@!{bot.user.id}>")
-            for role in bot.all_bot_roles:
-                if role.name.casefold() not in {role_exception.casefold() for role_exception in role_exceptions}:  # and role.mentionable is True:
+            for role in bot.member.roles:
+                if role.name.casefold() not in {role_exception.casefold() for role_exception in role_exceptions} and role is not bot.everyone_role:
                     r.append(role.mention + ' ')
 
         absolutely_all_prefixes = r + extra

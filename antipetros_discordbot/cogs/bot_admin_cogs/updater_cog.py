@@ -109,9 +109,9 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
     @universal_log_profiler
     async def update(self, typus: UpdateTypus):
-        for method, typus_trigger in self.bot.to_update_methods:
-            if any(trigger in typus for trigger in typus_trigger):
-                await method()
+        for to_update_item in self.bot.to_update_methods:
+            if any(trigger in typus for trigger in to_update_item.typus_triggers):
+                await to_update_item.function()
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]

@@ -10,18 +10,18 @@ import os
 import sys
 import time
 import asyncio
-from datetime import datetime
+import json
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
-from typing import List, Union
-from discord.ext.commands import MinimalHelpCommand
+from typing import List, Union, Mapping, Optional, Union, Hashable, Any
 
+from collections import UserDict, namedtuple
 from watchgod import Change, awatch
 from discord.ext import tasks, commands, ipc
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+from itertools import product
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.enums import UpdateTypus
 from antipetros_discordbot.utility.misc import save_bin_file
@@ -34,12 +34,12 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.cogs import BOT_ADMIN_COG_PATHS, DISCORD_ADMIN_COG_PATHS, DEV_COG_PATHS
 from antipetros_discordbot.utility.converters import CommandConverter
 from antipetros_discordbot.utility.data_gathering import save_cog_command_data
-from antipetros_discordbot.utility.poor_mans_abc import attribute_checker
-
-from .replacements import AntiPetrosBaseHelp
+from datetime import datetime, timedelta, timezone
+from antipetros_discordbot.utility.emoji_handling import is_unicode_emoji
 from antipetros_discordbot.engine.replacements import CommandCategory, AntiPetrosBaseGroup
-from antipetros_discordbot.utility.checks import BaseAntiPetrosCheck
-
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
+import signal
+import platform
 # endregion[Imports]
 
 
@@ -67,15 +67,52 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # TODO: Document and Docstrings
 
 
+class CommandAutoDict(UserDict):
+
+    def __init__(self, bot: "AntiPetrosBot", case_folded: bool = True) -> None:
+        super().__init__()
+        self.bot = bot
+        self.case_folded = case_folded
+        self._collect_commands()
+
+    @universal_log_profiler
+    def _collect_commands(self):
+        self.data = {}
+        for command in set(self.bot.all_commands.values()):
+            names = [command.name] + command.aliases
+            for name in names:
+                self.data[name] = command
+            if command.is_group is True:
+                for sub_command in command.commands:
+                    sub_names = [sub_command.name] + sub_command.aliases
+                    for p_name, s_name in product(names, sub_names):
+                        self.data[f"{p_name} {s_name}"] = sub_command
+        if self.case_folded is True:
+            self.data = {key.casefold(): value for key, value in self.data.items()}
+
+    @universal_log_profiler
+    async def sort_commands(self, usage_counter):
+
+        self.data = {key: value for key, value in sorted(self.data.items(), key=lambda x: usage_counter.get(x[1].name, 0), reverse=True)}
+
+    @universal_log_profiler
+    def get(self, key, default=None):
+        if self.case_folded is True:
+            key = key.casefold()
+        return self.data.get(key, default)
+
+    async def update_commands(self):
+        self._collect_commands()
+
+
 class AntiPetrosBot(commands.Bot):
 
     # region [ClassAttributes]
-
-    creator = CreatorMember('Giddi', 576522029470056450, None, None)
+    ToUpdateItem = namedtuple("ToUpdateItem", ["function", "typus_triggers"])
+    creator_id = 576522029470056450
+    launch_date = datetime(year=2021, month=3, day=11)
 
     discord_admin_cog_import_path = "antipetros_discordbot.cogs.discord_admin_cogs.discord_admin_cog"
-    bot_feature_suggestion_folder = APPDATA["bot_feature_suggestion_data"]
-    bot_feature_suggestion_json_file = APPDATA['bot_feature_suggestions.json']
     testing_channel = BASE_CONFIG.retrieve("debug", "current_testing_channel", typus=str, direct_fallback='bot-testing')
     essential_cog_paths = BOT_ADMIN_COG_PATHS + DISCORD_ADMIN_COG_PATHS
     dev_cog_paths = DEV_COG_PATHS
@@ -84,53 +121,150 @@ class AntiPetrosBot(commands.Bot):
                      'watching': discord.ActivityType.watching,
                      'listening': discord.ActivityType.listening,
                      'streaming': discord.ActivityType.streaming}
+
+    max_message_length = 1900
 # endregion[ClassAttributes]
 
-    def __init__(self, token: str = None, is_test: bool = False, ipc_key: str = None, ** kwargs):
+    def __init__(self, token: str = None, ipc_key: str = None, ** kwargs):
 
         # region [Init]
-
-        super().__init__(owner_ids=set([self.creator.id] + [_id for _id in BASE_CONFIG.retrieve('general_settings', 'owner_ids', typus=List[int], direct_fallback=[])]),
+        self.setup_finished = False
+        super().__init__(owner_ids=set([self.creator_id] + [_id for _id in BASE_CONFIG.retrieve('general_settings', 'owner_ids', typus=List[int], direct_fallback=[])]),
                          case_insensitive=BASE_CONFIG.getboolean('command_settings', 'invocation_case_insensitive'),
                          self_bot=False,
-                         command_prefix='$$',
-                         intents=self.get_intents(),
+                         command_prefix=when_mentioned_or_roles_or(),
+                         intents=self._get_intents(),
                          fetch_offline_members=True,
                          member_cache_flags=discord.MemberCacheFlags.all(),
                          help_command=None,
                          strip_after_prefix=True,
                          ** kwargs)
-        self.setup_finished = False
+
+        self.sessions = {}
+        self.to_update_methods = []
+        self.token = token
+        self.ipc_key = ipc_key
+        self.support = None
+        self.used_startup_message = None
+        self.ipc = None
+        self._command_dict = None
+
+        self._setup()
+
+        glog.class_init_notification(log, self)
+
+# endregion[Init]
+
+# region [Setup]
+    @universal_log_profiler
+    def _setup(self):
         self._update_profiling_check()
         CommandCategory.bot = self
-
-        self.token = token
         self.support = BotSupporter(self)
         self.support.recruit_subsupports()
-        self.max_message_length = 1900
-        self.commands_executed = 0
-        self.bot_member = None
-        self.aio_request_session = None
-        self.all_bot_roles = None
-        self.current_day = datetime.utcnow().day
-        self.clients_to_close = []
-        self.used_startup_message = None
-        self.ipc_key = ipc_key
-        self.to_update_methods = []
+        self.overwrite_methods()
+        self._handle_ipc()
+        self.add_check(user_not_blacklisted)
+        self._get_initial_cogs()
+        COGS_CONFIG.read()
+
+    @universal_log_profiler
+    async def on_ready(self):
+        if platform.system() == 'Linux':
+            self.loop.add_signal_handler(signal.SIGINT, self.shutdown_mechanic)
+            self.loop.add_signal_handler(3, self.shutdown_mechanic)
+        else:
+            signal.signal(signal.SIGINT, self.shutdown_signal)
+
+        log.info('%s has connected to Discord!', self.name)
+
+        await self._ensure_guild_is_chunked()
+        await self._start_sessions()
+        await self.to_all_as_tasks('on_ready_setup')
+
+        await self.send_startup_message()
+
+        await self._start_watchers()
+
+        await self.set_activity()
+        self._make_command_dict()
+
+        self.setup_finished = True
+        if os.getenv('INFO_RUN') == "1":
+            await self._info_run()
+        log.info("Bot is ready")
+        log.info('%s End of Setup Procedures %s', '+-+' * 15, '+-+' * 15)
+
+    async def on_ipc_ready(self):
+        """Called upon the IPC Server being ready"""
+        log.info(f"{self.ipc.host} {self.ipc.port} is ready")
+
+# ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+    @universal_log_profiler
+    async def _start_sessions(self):
+        self.sessions = {}
+        self.sessions['aio_request_session'] = aiohttp.ClientSession(loop=self.loop)
+        log.info("Session '%s' was started", repr(self.sessions['aio_request_session']))
+
+    @universal_log_profiler
+    async def _ensure_guild_is_chunked(self):
+        if self.antistasi_guild.chunked is False:
+            log.debug("Antistasi Guild is not chunked, chunking Guild now")
+            await self.antistasi_guild.chunk(cache=True)
+            log.debug("finished chunking Antistasi Guild")
+
+    async def _start_watchers(self):
+        self._watch_for_config_changes.start()
+        self._watch_for_alias_changes.start()
+
+    async def _info_run(self):
+        await asyncio.sleep(5)
+        for cog_name, cog_object in self.cogs.items():
+            print(f"Collecting command-info for '{cog_name}'")
+            # TODO: Change to Schema dump
+            save_cog_command_data(cog_object, output_file=os.getenv('INFO_RUN_OUTPUT_FILE'))
+        await self.bot.close()
+
+    @universal_log_profiler
+    def _handle_ipc(self):
         if BASE_CONFIG.retrieve('ipc', "use_ipc_server", typus=bool, direct_fallback=False) is True:
             if self.ipc_key is None:
                 raise AttributeError("ipc_key is missing")
             self.ipc = ipc.Server(self, secret_key=self.ipc_key, host=BASE_CONFIG.retrieve('ipc', 'host', typus=str), port=BASE_CONFIG.retrieve('ipc', 'port', typus=int))
 
-        user_not_blacklisted(self, log)
-        if is_test is False:
-            self._setup()
+    @universal_log_profiler
+    def overwrite_methods(self):
+        for name, meth in self.support.overwritten_methods.items():
+            setattr(self, name, meth)
 
-        glog.class_init_notification(log, self)
+    @universal_log_profiler
+    def _make_command_dict(self):
+        self._command_dict = CommandAutoDict(self, True)
+        update_item = self.ToUpdateItem(self._command_dict.update_commands, [UpdateTypus.COMMANDS, UpdateTypus.ALIAS, UpdateTypus.CONFIG, UpdateTypus.CYCLIC])
+        if update_item not in self.to_update_methods:
+            self.to_update_methods.append(update_item)
 
-        # endregion[Init]
+# endregion[Setup]
+
+# region [Properties]
+
+    @ property
+    @universal_log_profiler
+    def id(self):
+        return self.user.id
 
     @property
+    @universal_log_profiler
+    def name(self):
+        return self.user.name
+
+    @ property
+    @universal_log_profiler
+    def display_name(self):
+        return self.bot.user.display_name
+
+    @property
+    @universal_log_profiler
     def description(self):
         if os.path.isfile(self.description_file) is False:
             writeit(self.description_file, '')
@@ -142,33 +276,119 @@ class AntiPetrosBot(commands.Bot):
             writeit(self.description_file, value)
 
     @property
+    @universal_log_profiler
+    def creator(self):
+        return self.antistasi_guild.get_member(self.creator_id)
+
+    @property
+    @universal_log_profiler
+    def member(self):
+        return self.antistasi_guild.get_member(self.id)
+
+    @property
+    @universal_log_profiler
+    def roles(self):
+        return [role for role in self.member.roles if role is not self.everyone_role]
+
+    @property
+    @universal_log_profiler
     def github_url(self):
         return BASE_CONFIG.retrieve('links', 'github_repo', typus=str, direct_fallback="https://github.com/404")
 
     @property
+    @universal_log_profiler
     def github_wiki_url(self):
         return BASE_CONFIG.retrieve('links', 'github_wiki', typus=str, direct_fallback="https://github.com/404")
 
-    def add_cog(self, cog):
-        attribute_checker(cog)
-        return super().add_cog(cog)
+    @property
+    @universal_log_profiler
+    def portrait_url(self):
+        option_name = f"{self.display_name.casefold()}_portrait_image"
+        return BASE_CONFIG.retrieve('links', option_name, typus=str, direct_fallback=None)
 
-    async def on_ipc_ready(self):
-        """Called upon the IPC Server being ready"""
-        log.info(f"{self.ipc.host} {self.ipc.port} is ready")
+    @ property
+    @universal_log_profiler
+    def is_debug(self):
+        dev_env_var = os.getenv('IS_DEV', 'false')
+        if dev_env_var.casefold() == 'true':
+            return True
+        elif dev_env_var.casefold() == 'false':
+            return False
+        else:
+            raise RuntimeError('is_debug')
 
-    async def on_ipc_error(self, endpoint, error):
-        """Called upon an error being raised within an IPC route"""
-        log.critical(endpoint, "raised", error)
+    @ property
+    @universal_log_profiler
+    def notify_contact_member(self):
+        return BASE_CONFIG.get('blacklist', 'notify_contact_member')
 
-    def _update_profiling_check(self):
+    @property
+    @universal_log_profiler
+    def commands_map(self):
+        if self._command_dict is None:
+            self._make_command_dict()
+        return self._command_dict
+
+    @property
+    @universal_log_profiler
+    def current_prefixes(self):
+        return list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+
+    @property
+    @universal_log_profiler
+    def all_prefixes(self):
+        prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+        for role in self.member.roles:
+            if role.name.casefold() not in ['dev helper', 'antidevtros'] and role is not self.everyone_role and role.id != 839778664702148608:
+                prefixes.append(role.mention)
+        prefixes.append(self.member.mention)
+        sorted_prefixes = sorted(list(set(prefixes)), key=lambda x: (str(self.id) in x, x.startswith('<'), is_unicode_emoji(x)), reverse=True)
+
+        return sorted_prefixes
+
+    @property
+    @universal_log_profiler
+    def version(self):
+        return os.getenv('ANTIPETROS_VERSION')
+
+
+# endregion[Properties]
+
+# region [Loops]
+
+    @ tasks.loop(count=1, reconnect=True)
+    async def _watch_for_config_changes(self):
+        # TODO: How to make sure they are also correctly restarted, regarding all loops on the bot
+        async for changes in awatch(APPDATA['config'], loop=self.loop):
+            for change_typus, change_path in changes:
+                log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
+            if self.setup_finished is True:
+                self._update_profiling_check()
+                await self.to_all_cogs('update', typus=UpdateTypus.CONFIG)
+
+    @ tasks.loop(count=1, reconnect=True)
+    async def _watch_for_alias_changes(self):
+        async for changes in awatch(APPDATA['command_aliases.json'], loop=self.loop):
+            for change_typus, change_path in changes:
+                log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
+            if self.setup_finished is True:
+                await self.to_all_cogs('update', typus=UpdateTypus.ALIAS)
+
+
+# endregion[Loops]
+
+# region [Helper]
+
+    @staticmethod
+    @universal_log_profiler
+    def _update_profiling_check():
         profiling_enabled = BASE_CONFIG.retrieve('profiling', 'enable_profiling', typus=str, direct_fallback='0')
         os.environ['ANTIPETROS_PROFILING'] = profiling_enabled
         log.info("Profiling is %s", "ENABLED" if profiling_enabled == "1" else "DISABLED")
 
     @staticmethod
-    def get_intents():
-
+    @universal_log_profiler
+    def _get_intents():
         if BASE_CONFIG.get('intents', 'convenience_setting') == 'all':
             intents = discord.Intents.all()
         elif BASE_CONFIG.get('intents', 'convenience_setting') == 'default':
@@ -180,126 +400,28 @@ class AntiPetrosBot(commands.Bot):
                     setattr(intents, sub_intent, BASE_CONFIG.getboolean('intents', sub_intent))
         return intents
 
-    def run(self, **kwargs):
-        if self.token is None:
-            raise RuntimeError("Discord Token is None")
-        super().run(self.token, bot=True, reconnect=True, **kwargs)
-
-    def _setup(self):
-        self._get_initial_cogs()
-
-    # async def create_doc_json(self):
-    #     prefixes_list = []
-    #     prefixes = BASE_CONFIG.getlist('prefix', 'command_prefix')
-    #     role_exceptions = BASE_CONFIG.getlist('prefix', 'invoke_by_role_exceptions')
-    #     extra = prefixes
-    #     for role in self.all_bot_roles:
-    #         if role.name not in role_exceptions and role.name.casefold() not in role_exceptions:  # and role.mentionable is True:
-    #             prefixes_list += [role.name]
-    #     prefixes_list += extra
-    #     prefixes_list += [self.display_name]
-    #     bot_info = {'display_name': self.display_name,
-    #                 'description': self.description,
-    #                 'guilds': [guild.name for guild in self.guilds],
-    #                 'prefixes': prefixes_list,
-    #                 'invite': 'https://discord.gg/m7e792Kg',
-    #                 'help_command': self.help_invocation,
-    #                 'owner': {key: value for key, value in self.creator._asdict().items() if key not in ['member_object', 'user_object']}}
-    #     if os.path.isfile(pathmaker(APPDATA['debug'], 'general_debug')):
-    #         bot_info = bot_info | loadjson(pathmaker(APPDATA['debug'], 'general_debug'))
-
-    async def on_ready(self):
-        log.info('%s has connected to Discord!', self.user.name)
-
-        await self.antistasi_guild.chunk(cache=True)
-        await self._get_bot_info()
-        await self._start_sessions()
-        await self.wait_until_ready()
-        await self.set_delayed_bot_attributes()
-        await asyncio.sleep(2)
-        await self.support.to_all_subsupports(attribute_name='if_ready')
-        all_cog_setup_tasks = await self.to_all_cogs('on_ready_setup')
-        if all_cog_setup_tasks:
-            await asyncio.wait(all_cog_setup_tasks, return_when="ALL_COMPLETED")
-        if self.is_debug is True:
-            await self.debug_function()
-        if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is True:
-            await self.send_startup_message()
-        await self.handle_previous_shutdown_msg()
-        self._watch_for_shutdown_trigger.start()
-        self._watch_for_config_changes.start()
-        self._watch_for_alias_changes.start()
-        log.info("Debug Session: %s", self.is_debug)
-        log.info("Bot is ready")
-        log.info('Bot is currently rate limited: %s', str(self.is_ws_ratelimited()))
-
-        self.setup_finished = await asyncio.sleep(5, True)
-        log.info('%s End of Setup Procedures %s', '+-+' * 15, '+-+' * 15)
-        await self.set_activity()
-        if os.getenv('INFO_RUN') == "1":
-            await asyncio.sleep(5)
-            for cog_name, cog_object in self.cogs.items():
-                print(f"Collecting command-info for '{cog_name}'")
-
-                save_cog_command_data(cog_object, output_file=os.getenv('INFO_RUN_OUTPUT_FILE'))
-            await self.bot.close()
-
-    async def handle_previous_shutdown_msg(self):
-        if self.is_debug is False and os.path.isfile(self.shutdown_message_pickle_file):
+    @universal_log_profiler
+    async def _try_delete_startup_message(self):
+        if self.used_startup_message is not None:
             try:
-                last_shutdown_message = get_pickled(self.shutdown_message_pickle_file)
-                message = await self.get_message_directly(last_shutdown_message.get('channel_id'), last_shutdown_message.get('message_id'))
-                await message.delete()
-            except Exception as error:
-                log.debug(error)
-            finally:
-                os.remove(self.shutdown_message_pickle_file)
+                await self.used_startup_message.delete()
+                log.debug('deleted startup message')
+            except discord.NotFound:
+                log.debug('startup message was already deleted')
 
-    async def set_delayed_bot_attributes(self):
-        self.on_command_error = self.support.handle_errors
-
-    @ tasks.loop(count=1, reconnect=True)
-    async def _watch_for_config_changes(self):
-        # TODO: How to make sure they are also correctly restarted, regarding all loops on the bot
-        async for changes in awatch(APPDATA['config'], loop=self.loop):
-            for change_typus, change_path in changes:
-                log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
-            self._update_profiling_check()
-            await self.to_all_cogs('update', typus=UpdateTypus.CONFIG)
-
-    @ tasks.loop(count=1, reconnect=True)
-    async def _watch_for_alias_changes(self):
-        async for changes in awatch(APPDATA['command_aliases.json'], loop=self.loop):
-            for change_typus, change_path in changes:
-                log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
-            await self.to_all_cogs('update', typus=UpdateTypus.ALIAS)
-
-    @ tasks.loop(count=1, reconnect=True)
-    async def _watch_for_shutdown_trigger(self):
-        async for changes in awatch(APPDATA['shutdown_trigger'], loop=self.loop):
-            for change_typus, change_path in changes:
-                log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
-                if change_typus is Change.added:
-                    name, extension = os.path.basename(change_path).split('.')
-                    if extension.casefold() == 'trigger':
-                        if name.casefold() == 'shutdown':
-                            await self.shutdown_mechanic()
-                        elif name.casefold() == 'emergency_shutdown':
-                            sys.exit()
-
-    async def on_message(self, message: discord.Message) -> None:
-        if self.is_ready() is True:
-            await self.support.record_channel_usage(message)
-        await self.process_commands(message)
-
+# endregion[Helper]
+    @universal_log_profiler
     async def send_startup_message(self):
+        await self._handle_previous_shutdown_msg()
+        if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is False:
+            return
         if self.is_debug is True:
-            channel = await self.channel_from_name(self.testing_channel)
+            channel = self.channel_from_name(self.testing_channel)
             embed_data = await self.make_generic_embed(title=f"{self.display_name} is Ready",
                                                        fields=[self.bot.field_item(name='Is Debug Session', value=str(self.is_debug))])
             await channel.send(**embed_data, delete_after=60)
             return
-        channel = await self.channel_from_name(BASE_CONFIG.get('startup_message', 'channel'))
+        channel = self.channel_from_name(BASE_CONFIG.get('startup_message', 'channel'))
         delete_time = 60 if self.is_debug is True else BASE_CONFIG.getint('startup_message', 'delete_after')
         delete_time = None if delete_time <= 0 else delete_time
         title = f"**{BASE_CONFIG.get('startup_message', 'title').title()}**"
@@ -312,6 +434,19 @@ class AntiPetrosBot(commands.Bot):
             msg = f"{title}\n\n{description}\n\n{image}"
             self.used_startup_message = await channel.send(msg, delete_after=delete_time)
 
+    @universal_log_profiler
+    async def _handle_previous_shutdown_msg(self):
+        if self.is_debug is False and os.path.isfile(self.shutdown_message_pickle_file):
+            try:
+                last_shutdown_message = get_pickled(self.shutdown_message_pickle_file)
+                message = await self.get_message_directly(last_shutdown_message.get('channel_id'), last_shutdown_message.get('message_id'))
+                await message.delete()
+            except Exception as error:
+                log.debug(error)
+            finally:
+                os.remove(self.shutdown_message_pickle_file)
+
+    @universal_log_profiler
     async def to_all_as_tasks(self, command, *args, **kwargs):
         all_tasks = []
         all_target_objects = [cog_object for cog_object in self.cogs.values()] + [subsupport for subsupport in self.subsupports]
@@ -319,34 +454,21 @@ class AntiPetrosBot(commands.Bot):
             if hasattr(target_object, command):
                 task = asyncio.create_task(getattr(target_object, command)(*args, **kwargs))
                 all_tasks.append(task)
-        return all_tasks
+        if all_tasks:
+            await asyncio.wait(all_tasks, return_when="ALL_COMPLETED", timeout=None)
 
+    @universal_log_profiler
     async def to_all_cogs(self, command, *args, **kwargs):
         all_tasks = []
         for cog_name, cog_object in self.cogs.items():
             if hasattr(cog_object, command):
                 task = asyncio.create_task(getattr(cog_object, command)(*args, **kwargs))
                 all_tasks.append(task)
-        return all_tasks
+        if all_tasks:
+            await asyncio.wait(all_tasks, return_when="ALL_COMPLETED", timeout=None)
+            log.info("All 'on_ready_setup' methods finished")
 
-    async def _get_bot_info(self):
-        if self.all_bot_roles is None:
-            self.all_bot_roles = []
-            self.bot_member = await self.retrieve_antistasi_member(self.id)
-            for index, role in enumerate(self.bot_member.roles):
-                if index != 0:
-                    self.all_bot_roles.append(role)
-
-        self.command_prefix = when_mentioned_or_roles_or()
-
-        AntiPetrosBot.creator = self.creator._replace(**{'member_object': await self.retrieve_antistasi_member(self.creator.id), 'user_object': await self.fetch_user(self.creator.id)})
-
-    async def _start_sessions(self):
-        if self.aio_request_session is None:
-            self.aio_request_session = aiohttp.ClientSession(loop=self.loop)
-            self.clients_to_close.append(self.aio_request_session)
-            log.debug("'%s' was started", str(self.aio_request_session))
-
+    @universal_log_profiler
     def _get_initial_cogs(self):
         """
         Loads `Cogs` that are enabled.
@@ -376,175 +498,26 @@ class AntiPetrosBot(commands.Bot):
 
         log.info("extensions-cogs loaded: %s", ', '.join(self.cogs))
 
-    async def close(self):
-        try:
-            try:
-                if self.used_startup_message is not None:
-                    await self.used_startup_message.delete()
-            except discord.NotFound:
-                log.debug('startup message was already deleted')
-            log.info("shutting down bot loops")
-
-            log.info("retiring troops")
-            self.support.retire_subsupport()
-
-            for session in self.clients_to_close:
-                await session.close()
-                log.info("'%s' was shut down", str(session))
-            log.debug('aiosession closed: %s', str(self.aio_request_session.closed))
-
-            log.info("closing bot")
-            await self.wait_until_ready()
-        except Exception as error:
-            log.error(error, exc_info=True)
-        finally:
-            await super().close()
-            time.sleep(2)
-
+    @universal_log_profiler
     async def set_activity(self):
+        # TODO: make dynamic
         actvity_type = self.activity_dict.get('watching')
         value = len([member.id for member in self.bot.antistasi_guild.members if member.status is discord.Status.online])
         text = f"{value} User currently in this Guild"
         await self.change_presence(activity=discord.Activity(type=actvity_type, name=text))
-        if (self.set_activity, (UpdateTypus.MEMBERS, UpdateTypus.CYCLIC)) not in self.to_update_methods:
-            self.to_update_methods.append((self.set_activity, (UpdateTypus.MEMBERS, UpdateTypus.CYCLIC)))
+        if self.ToUpdateItem(self.set_activity, [UpdateTypus.CYCLIC, UpdateTypus.MEMBERS]) not in self.to_update_methods:
+            self.to_update_methods.append(self.ToUpdateItem(self.set_activity, [UpdateTypus.CYCLIC, UpdateTypus.MEMBERS]))
 
-    async def cog_by_name(self, query_cog_name: str):
-        return {cog_name.casefold(): cog for cog_name, cog in self.cogs.items()}.get(query_cog_name.casefold())
+    @universal_log_profiler
+    def get_cog(self, name: str):
+        return {cog_name.casefold(): cog for cog_name, cog in self.__cogs.items()}.get(name.casefold())
 
-    async def cog_by_id(self, cog_id: int):
-        return {cog.full_cog_id: cog for cog_name, cog in self.cogs.items()}.get(cog_id)
-
-    @property
-    def cog_name_id_map(self):
-        # TODO: Redo when ID up again
-        return {cog_name.casefold(): cog for cog_name, cog in self.cogs.items()}
-
-    async def command_by_name(self, query_command_name: str):
-        command_name_dict = {}
-        for command in self.commands:
-            if isinstance(command, AntiPetrosBaseGroup):
-                for subcommand in command.commands:
-                    command_name_dict[f"{command.name}.{subcommand.name}".casefold()] = subcommand
-                    command_name_dict[f"{command.name} {subcommand.name}".casefold()] = subcommand
-                    for p_alias in command.aliases:
-                        command_name_dict[f"{p_alias}.{subcommand.name}".casefold()] = subcommand
-                        command_name_dict[f"{p_alias} {subcommand.name}".casefold()] = subcommand
-                        for alias in subcommand.aliases:
-                            command_name_dict[f"{command.name}.{alias}".casefold()] = subcommand
-                            command_name_dict[f"{command.name} {alias}".casefold()] = subcommand
-                            command_name_dict[f"{p_alias}.{alias}".casefold()] = subcommand
-                            command_name_dict[f"{p_alias} {alias}".casefold()] = subcommand
-
-            command_name_dict[command.name.casefold()] = command
-            for alias in command.aliases:
-                command_name_dict[alias.casefold()] = command
-
-        writejson(list(command_name_dict.keys()), 'checky.json')
-        return command_name_dict.get(query_command_name.casefold(), None)
-
+    @universal_log_profiler
     def all_cog_commands(self):
         for cog_name, cog_object in self.cogs.items():
             for command in cog_object.get_commands():
                 yield command
 
-    async def get_antistasi_emoji(self, name):
-        for _emoji in self.antistasi_guild.emojis:
-            if _emoji.name.casefold() == name.casefold():
-                return _emoji
-
-    @property
-    def all_command_names(self):
-        _out = []
-        for command in self.commands:
-            _out.append(command.name)
-            _out += command.aliases
-        return _out
-
-    @property
-    def admins(self):
-        role = {role.name.casefold(): role for role in self.antistasi_guild.roles}.get("admin".casefold())
-        _out = []
-        for member in self.antistasi_guild.members:
-            if role in member.roles:
-                _out.append(member)
-        return list(set(_out))
-
-    @ property
-    def id(self):
-        return self.user.id
-
-    @ property
-    def display_name(self):
-        return self.bot.user.display_name
-
-    @ property
-    def is_debug(self):
-        dev_env_var = os.getenv('IS_DEV', 'false')
-        if dev_env_var.casefold() == 'true':
-            return True
-        elif dev_env_var.casefold() == 'false':
-            return False
-        else:
-            raise RuntimeError('is_debug')
-
-    @ property
-    def notify_contact_member(self):
-        return BASE_CONFIG.get('blacklist', 'notify_contact_member')
-
-    @ property
-    def std_date_time_format(self):
-        return "%Y-%m-%d %H:%M:%S"
-
-    @ property
-    def shutdown_command(self):
-        return self.get_command('shutdown')
-
-    @property
-    def portrait_url(self):
-        option_name = f"{self.display_name.casefold()}_portrait_image"
-        return BASE_CONFIG.retrieve('links', option_name, typus=str, direct_fallback=None)
-
-    async def message_creator(self, message=None, embed=None, file=None):
-        if message is None and embed is None:
-            message = 'message has no content'
-        await self.creator.member_object.send(content=message, embed=embed, file=file)
-
-    async def split_to_messages(self, ctx, message, split_on='\n', in_codeblock=False, syntax_highlighting='json'):
-        _out = ''
-        chunks = message.split(split_on)
-        for chunk in chunks:
-            if sum(map(len, _out)) + len(chunk + split_on) < self.max_message_length:
-                _out += chunk + split_on
-            else:
-                if in_codeblock is True:
-                    _out = f"```{syntax_highlighting}\n{_out}\n```"
-                await ctx.send(_out)
-                await asyncio.sleep(1)
-                _out = ''
-        if in_codeblock is True:
-            _out = f"```{syntax_highlighting}\n{_out}\n```"
-        await ctx.send(_out)
-
-    async def execute_in_thread(self, func, *args, **kwargs):
-        return await asyncio.to_thread(func, *args, **kwargs)
-
-    async def save_feature_suggestion_extra_data(self, data_name, data_content):
-        path = pathmaker(self.bot_feature_suggestion_folder, data_name)
-        await self.execute_in_thread(save_bin_file, path, data_content)
-        return path
-
-    async def add_to_feature_suggestions(self, item):
-        feat_suggest_json = loadjson(self.bot_feature_suggestion_json_file)
-        feat_suggest_json.append(item._asdict())
-        writejson(feat_suggest_json, self.bot_feature_suggestion_json_file)
-
-    async def reload_cog_from_command_name(self, command: Union[str, commands.Command]):
-        if isinstance(command, str):
-            converter = CommandConverter()
-            command = await converter.no_context_convert(self, command)
-
-        self.reload_extension(command.module.__name__)
         # file_name = f"{cog.config_name}_cog"
         # for option in BASE_CONFIG.options('extensions'):
         #     if option.split('.')[-1].casefold() == file_name.casefold():
@@ -557,12 +530,31 @@ class AntiPetrosBot(commands.Bot):
         #                 break
         #         break
 
-    async def debug_function(self):
-        log.debug("debug function triggered")
-        log.info('no debug function set')
-        log.debug("debug function finished")
 
 # region [SpecialMethods]
+
+    async def _close_sessions(self):
+        for session_name, session in self.sessions.items():
+            await session.close()
+            log.info("'%s' was shut down", session_name)
+
+    async def close(self):
+        try:
+            log.info("retiring troops")
+            self.support.retire_subsupport()
+            await self._close_sessions()
+
+            await self.wait_until_ready()
+        except Exception as error:
+            log.error(error, exc_info=True)
+        finally:
+            log.info("closing bot")
+            await super().close()
+
+    def run(self, **kwargs):
+        if self.token is None:
+            raise RuntimeError("Discord Token is None")
+        super().run(self.token, bot=True, reconnect=True, **kwargs)
 
     def __repr__(self):
         return f"{self.__class__.__name__}()"
@@ -571,8 +563,14 @@ class AntiPetrosBot(commands.Bot):
         return self.__class__.__name__
 
     def __getattr__(self, attr_name):
+        if attr_name in self.sessions:
+            return self.sessions[attr_name]
         if hasattr(self.support, attr_name) is True:
             return getattr(self.support, attr_name)
         return getattr(super(), attr_name)
 
 # endregion[SpecialMethods]
+
+
+if __name__ == '__main__':
+    x = AntiPetrosBot()

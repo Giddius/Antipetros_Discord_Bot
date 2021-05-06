@@ -148,7 +148,7 @@ class CommunityServerInfo:
         channel_id = COGS_CONFIG.retrieve(self.config_name, 'starter_info_channel_id', typus=int, direkt_fallback=None)
         if channel_id is None:
             raise NeededConfigValueMissing("starter_info_channel_id", self.config_name, self.__class__.__name__)
-        return self.bot.sync_channel_from_id(channel_id)
+        return self.bot.channel_from_id(channel_id)
 
     @property
     def starter_info_message(self):

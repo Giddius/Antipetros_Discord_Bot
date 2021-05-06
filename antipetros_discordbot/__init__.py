@@ -7,11 +7,14 @@ import os
 from importlib.metadata import metadata
 from dotenv import load_dotenv
 from psutil import virtual_memory
+from datetime import datetime, timedelta, timezone
 import logging
 MAIN_DIR = os.path.abspath(os.path.dirname(__file__))
 if os.path.islink(MAIN_DIR) is True:
 
     MAIN_DIR = os.readlink(MAIN_DIR).replace('\\\\?\\', '')
+
+START_TIME = datetime.now(tz=timezone.utc)
 
 
 def add_profiling_log_level():
@@ -45,7 +48,7 @@ def set_env():
 
     else:
         os.environ['IS_DEV'] = 'false'
-
+    os.environ['ANTIPETRO_START_TIME'] = START_TIME.isoformat()
     os.environ['APP_NAME'] = metadata(__name__).get('name')
     os.environ['AUTHOR_NAME'] = metadata(__name__).get('author')
     os.environ['ANTIPETROS_VERSION'] = metadata(__name__).get('version')

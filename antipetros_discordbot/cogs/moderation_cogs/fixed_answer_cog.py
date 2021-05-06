@@ -176,9 +176,9 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
             @AntiPetros bob_streaming This is an extra message and is optional
         """
         announcement_channel_name = COGS_CONFIG.retrieve(self.config_name, 'bob_streaming_announcement_channel_name', typus=str, direct_fallback='announcements')
-        announcement_channel = await self.bot.channel_from_name(announcement_channel_name)
+        announcement_channel = self.bot.channel_from_name(announcement_channel_name)
 
-        bob_member = await self.bot.retrieve_antistasi_member(346595708180103170)
+        bob_member = await self.bot.fetch_antistasi_member(346595708180103170)
         extra_message = "Drop in to see what he's up to and to ask any questions you may have" if extra_msg is None else extra_msg
 
         embed_data = await self.bot.make_generic_embed(title="Bob Murphy is now streaming Antistasi Development!",

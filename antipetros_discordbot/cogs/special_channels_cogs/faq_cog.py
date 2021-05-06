@@ -98,7 +98,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
     @universal_log_profiler
     def faq_channel(self):
         channel_id = COGS_CONFIG.retrieve(self.config_name, 'faq_channel_id', typus=int, direct_fallback=673410398510383115)
-        return self.bot.sync_channel_from_id(channel_id)
+        return self.bot.channel_from_id(channel_id)
 
 
 # endregion [Properties]

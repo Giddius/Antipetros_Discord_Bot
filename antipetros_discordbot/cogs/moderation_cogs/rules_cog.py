@@ -122,7 +122,7 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     @property
     @universal_log_profiler
     def rules_channel(self):
-        return self.bot.sync_channel_from_id(self.rules_channel_id)
+        return self.bot.channel_from_id(self.rules_channel_id)
 
 # endregion [Properties]
 

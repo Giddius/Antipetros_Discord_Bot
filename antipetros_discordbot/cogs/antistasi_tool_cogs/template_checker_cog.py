@@ -150,7 +150,7 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
                 await asyncio.sleep(2)
                 attachment_data = await attachment.read()
                 attachment_data = attachment_data.decode('utf-8', errors='ignore')
-                found_data = await self.bot.execute_in_thread(template_checker_run, attachment_data, case_insensitive)
+                found_data = await asyncio.to_thread(template_checker_run, attachment_data, case_insensitive)
                 found_data_amount_errors = found_data.get('found_errors')
                 found_data = found_data.get('items')
                 description = "**__NO__** errors in this Template File"

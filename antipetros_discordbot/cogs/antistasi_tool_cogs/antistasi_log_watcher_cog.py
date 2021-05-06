@@ -30,7 +30,7 @@ import pytz
 from jinja2 import Environment, FileSystemLoader
 # * Gid Imports -->
 import gidlogger as glog
-
+from weasyprint import HTML
 # * Local Imports -->
 from antipetros_discordbot.utility.misc import async_dict_items_iterator, async_list_iterator, async_write_it
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role
@@ -40,7 +40,7 @@ from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_antistasi_log_watcher_cog import LogServer
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
-
+from io import BytesIO, StringIO
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -136,7 +136,7 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     @universal_log_profiler
     async def member_to_notify(self):
         member_ids = COGS_CONFIG.retrieve(self.config_name, 'member_id_to_notify_oversized', typus=List[int], direct_fallback=[])
-        return [await self.bot.retrieve_antistasi_member(member_id) for member_id in member_ids]
+        return [await self.bot.fetch_antistasi_member(member_id) for member_id in member_ids]
 
     @property
     @universal_log_profiler
@@ -210,7 +210,6 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [Commands]
 
-
     @universal_log_profiler
     def _transform_mod_name(self, mod_name: str):
         mod_name = mod_name.removeprefix('@')
@@ -224,15 +223,23 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         log_item = log_item[0]
         mod_data = await log_item.mod_data
         templ_data = []
-        template = await self.bot.execute_in_thread(self.jinja_env.get_template, 'arma_required_mods.html.jinja')
+        template = await asyncio.to_thread(self.jinja_env.get_template, 'arma_required_mods.html.jinja')
         for item in mod_data:
             transformed_mod_name = self._transform_mod_name(item)
             templ_data.append(self.mod_lookup_data.get(transformed_mod_name))
-        with TemporaryDirectory() as tempdir:
-            html_path = pathmaker(tempdir, f"{mod_server}_mods.html")
-            await async_write_it(html_path, template.render(req_mods=templ_data, server_name=server.replace('_', ' ')))
-            html_file = discord.File(html_path)
-            yield html_file
+
+        html_string = template.render(req_mods=templ_data, server_name=server.replace('_', ' '))
+        html_path = pathmaker(APPDATA['temp_files'], f"{server}_mods.html")
+        writeit(html_path, html_string)
+        html_file = discord.File(html_path)
+
+        weasy_html = HTML(string=html_string)
+        image_path = pathmaker(APPDATA['temp_files'], f"{server}_mods.png")
+        weasy_html.write_png(image_path, optimize_images=True, presentational_hints=True, resolution=125)
+
+        yield (html_file, image_path)
+        os.remove(image_path)
+        os.remove(html_path)
 
     @auto_meta_info_command(aliases=['mods', 'mods?', 'mod_list', 'mod_list?'], categories=CommandCategory.GENERAL)
     @allowed_channel_and_allowed_role()
@@ -329,7 +336,7 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def zip_log_file(self, file_path):
         zip_path = pathmaker(os.path.dirname(file_path), os.path.basename(file_path).split('.')[0] + '.zip')
         with ZipFile(zip_path, 'w', ZIP_LZMA) as zippy:
-            await self.bot.execute_in_thread(zippy.write, file_path, os.path.basename(file_path))
+            await asyncio.to_thread(zippy.write, file_path, os.path.basename(file_path))
         return zip_path
 
     @universal_log_profiler

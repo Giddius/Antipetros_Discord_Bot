@@ -28,7 +28,7 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus
 from antipetros_discordbot.utility.data_gathering import save_cog_command_data
-import signal
+
 
 # endregion[Imports]
 
@@ -332,8 +332,7 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
     os.environ['INFO_RUN'] = "0"
 
     anti_petros_bot = AntiPetrosBot(token=token, ipc_key=ipc_key)
-    signal.signal(signal.SIGINT, anti_petros_bot.shutdown_signal)
-    signal.signal(signal.SIGTERM, anti_petros_bot.shutdown_signal)
+
     if BASE_CONFIG.retrieve('ipc', "use_ipc_server", typus=bool, direct_fallback=False) is True:
         anti_petros_bot.ipc.start()
     anti_petros_bot.run()

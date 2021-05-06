@@ -178,7 +178,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [Commands]
 
-
     @auto_meta_info_command()
     async def get_file(self, ctx: commands.Context, file_name: str):
         async with ctx.typing():
@@ -258,6 +257,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [HelperMethods]
 
+
     @universal_log_profiler
     async def _find_comments(self, file_content: str):
         parsed_content = sqf_parse(file_content)
@@ -279,15 +279,15 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
     @ asynccontextmanager
     async def _make_other_source_code_images(self, scode: str):
-        lexer = await self.bot.execute_in_thread(guess_lexer, scode)
-        image = await self.bot.execute_in_thread(highlight, scode, lexer, ImageFormatter(style=self.code_style,
-                                                                                         font_name='Fira Code',
-                                                                                         line_number_bg="#2f3136",
-                                                                                         line_number_fg="#ffffff",
-                                                                                         line_number_chars=3,
-                                                                                         line_pad=5,
-                                                                                         font_size=20,
-                                                                                         line_number_bold=True))
+        lexer = await asyncio.to_thread(guess_lexer, scode)
+        image = await asyncio.to_thread(highlight, scode, lexer, ImageFormatter(style=self.code_style,
+                                                                                font_name='Fira Code',
+                                                                                line_number_bg="#2f3136",
+                                                                                line_number_fg="#ffffff",
+                                                                                line_number_chars=3,
+                                                                                line_pad=5,
+                                                                                font_size=20,
+                                                                                line_number_bold=True))
         with BytesIO() as image_binary:
             image_binary.write(image)
             image_binary.seek(0)

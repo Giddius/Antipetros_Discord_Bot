@@ -9,7 +9,7 @@ import os
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+from discord.ext import commands
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 
@@ -42,7 +42,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-def user_not_blacklisted(bot, logger):
+async def user_not_blacklisted(ctx: commands.Context):
     """
     Checks if the User invoking the command is Blacklisted from invoking commands.
 
@@ -55,15 +55,14 @@ def user_not_blacklisted(bot, logger):
         logger `logging.Logger`: Logger to log the invokation try of the blacklisted User.
 
     """
-    async def predicate(ctx):
-        if bot.is_blacklisted(ctx.author):
-            logger.warning('Tried invocation by blacklisted user: "%s", id: "%s"', ctx.author.name, str(ctx.author.id))
-            await bot.command_call_blocked(ctx)
+    bot = ctx.bot
+    if bot.is_blacklisted(ctx.author):
+        log.warning('Tried invocation by blacklisted user: "%s", id: "%s"', ctx.author.name, str(ctx.author.id))
+        await bot.command_call_blocked(ctx)
 
-            return False
+        return False
 
-        return True
-    return bot.add_check(predicate)
+    return True
 
 
 # region[Main_Exec]
