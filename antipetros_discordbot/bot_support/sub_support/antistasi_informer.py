@@ -77,6 +77,7 @@ class AntistasiInformer(SubSupportBase):
             attr = getattr(self.antistasi_guild, cat)
             name_attr_dict = {item.name.casefold(): item for item in attr}
             setattr(self, f"{cat}_name_dict", name_attr_dict)
+            log.info("created '%s_name_dict' fresh", cat)
 
     @property
     def everyone_role(self) -> discord.Role:

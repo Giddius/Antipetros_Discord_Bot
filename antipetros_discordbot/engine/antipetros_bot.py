@@ -39,6 +39,7 @@ from antipetros_discordbot.utility.emoji_handling import is_unicode_emoji
 from antipetros_discordbot.engine.replacements import CommandCategory, AntiPetrosBaseGroup
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 import signal
+import platform
 # endregion[Imports]
 
 
@@ -169,8 +170,12 @@ class AntiPetrosBot(commands.Bot):
 
     @universal_log_profiler
     async def on_ready(self):
-        signal.signal(signal.SIGINT, self.shutdown_signal)
-        signal.signal(signal.SIGTERM, self.shutdown_signal)
+        if platform.system() == 'Linux':
+            self.loop.add_signal_handler(signal.SIGINT, self.shutdown_mechanic)
+            self.loop.add_signal_handler(3, self.shutdown_mechanic)
+        else:
+            signal.signal(signal.SIGINT, self.shutdown_signal)
+
         log.info('%s has connected to Discord!', self.name)
 
         await self._ensure_guild_is_chunked()
