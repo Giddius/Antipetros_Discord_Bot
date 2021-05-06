@@ -8,7 +8,8 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+from typing import TYPE_CHECKING, Union, Optional, Callable, List
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import asyncio
@@ -17,6 +18,11 @@ from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus
 from antipetros_discordbot.utility.sqldata_storager import general_db
+from collections import Counter
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+    from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
+
 # endregion[Imports]
 
 # region [TODO]
@@ -49,25 +55,30 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 class CommandStatistician(SubSupportBase):
     general_db = general_db
 
-    def __init__(self, bot, support):
+    def __init__(self, bot: "AntiPetrosBot", support: "BotSupporter"):
         self.bot = bot
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.support = support
+        self.last_invocation = datetime.now(tz=timezone.utc)
         glog.class_init_notification(log, self)
         self.after_action()
 
     @property
-    def all_command_names(self):
-        _out = []
-        for command in self.bot.commands:
-            _out.append(command.name)
-            _out += command.aliases
-        return _out
+    def command_amount(self) -> int:
+        return len(list(set(self.bot.commands)))
 
-    async def if_ready(self):
+    @property
+    def cog_amount(self) -> int:
+        return len(list(self.bot.cogs.values()))
+
+    async def most_invoked_commands(self):
+        frequ_counter = await self.get_command_frequency()
+        most_common = frequ_counter.most_common(1)
+        return most_common[0]
+
+    async def on_ready_setup(self):
         asyncio.create_task(self.insert_command_data())
-
         log.debug("'%s' command staff soldier is READY", str(self))
 
     async def insert_command_data(self):
@@ -82,15 +93,12 @@ class CommandStatistician(SubSupportBase):
         await self.general_db.insert_cogs_many(cog_objects)
         await self.general_db.insert_commands_many(command_objects)
 
-    async def get_command_frequency(self, from_datetime: datetime = None, to_datetime: datetime = None, as_counter: bool = True):
+    async def get_command_frequency(self, from_datetime: datetime = None, to_datetime: datetime = None, as_counter: bool = True) -> Counter:
         return await self.general_db.get_command_usage(from_datetime=from_datetime, to_datetime=to_datetime, as_counter=as_counter)
 
-    async def get_amount_invoked_overall(self):
-        pass
-
-    async def get_todays_invoke_data(self):
-
-        pass
+    async def get_amount_invoked_overall(self) -> int:
+        frequ_dict = await self.get_command_frequency()
+        return len(list(frequ_dict.elements()))
 
     async def update(self, typus: UpdateTypus):
 
@@ -103,6 +111,7 @@ class CommandStatistician(SubSupportBase):
     def after_action(self):
 
         async def record_command_invocation(ctx):
+            self.last_invocation = datetime.now(tz=timezone.utc)
             _command = ctx.command
             if _command.name in ['shutdown', "get_command_stats", None, '']:
                 return
@@ -113,6 +122,7 @@ class CommandStatistician(SubSupportBase):
 
             log.debug("command invocations was recorded")
             await self.bot.commands_map.sort_commands(await self.get_command_frequency())
+
         return self.bot.after_invoke(record_command_invocation)
 
     def __str__(self) -> str:

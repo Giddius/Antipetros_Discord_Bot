@@ -328,7 +328,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         add_success = await command.set_alias(new_alias)
         if add_success is True:
             await ctx.send(f"successfully added `{new_alias}` to the command aliases of `{command.name}`")
-            await self.bot.creator.member.send(f"A new alias was set by `{ctx.author.name}`\n**Command:** `{command.name}`\n**New Alias:** `{new_alias}`")
+            await self.bot.creator.send(f"A new alias was set by `{ctx.author.name}`\n**Command:** `{command.name}`\n**New Alias:** `{new_alias}`")
         else:
             await ctx.send(f"error with adding alias `{new_alias}` to `{command.name}`, alias was **NOT** added!")
 

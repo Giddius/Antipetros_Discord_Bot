@@ -1,7 +1,11 @@
 from emoji.unicode_codes.en import EMOJI_ALIAS_UNICODE_ENGLISH
-from emoji import demojize
+from emoji import demojize, emoji_count
 from contextlib import contextmanager
 import random
+
+
+def is_unicode_emoji(data: str):
+    return emoji_count(data) > 0
 
 
 @contextmanager

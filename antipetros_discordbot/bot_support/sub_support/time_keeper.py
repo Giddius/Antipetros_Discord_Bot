@@ -8,8 +8,8 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from datetime import datetime
-
+from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, Union, Optional
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -17,6 +17,7 @@ import gidlogger as glog
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus
+from antipetros_discordbot.utility.misc import alt_seconds_to_pretty
 # endregion[Imports]
 
 # region [TODO]
@@ -53,15 +54,28 @@ class TimeKeeper(SubSupportBase):
         self.support = support
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
-        self.start_time = None
+
         glog.class_init_notification(log, self)
 
+    @property
+    def start_time(self) -> datetime:
+        return datetime.fromisoformat(os.getenv('ANTIPETRO_START_TIME'))
+
     @ property
-    def std_date_time_format(self):
+    def std_date_time_format(self) -> str:
         return "%Y-%m-%d %H:%M:%S"
 
-    async def if_ready(self):
-        self.start_time = datetime.utcnow()
+    @property
+    def uptime(self):
+        now = datetime.now(tz=timezone.utc)
+        delta_time = now - self.start_time
+        return round(delta_time.total_seconds())
+
+    @property
+    def uptime_pretty(self) -> str:
+        return alt_seconds_to_pretty(self.uptime)
+
+    async def on_ready_setup(self):
         log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self, typus: UpdateTypus):

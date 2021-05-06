@@ -147,7 +147,7 @@ class {{ sub_support.name }}(SubSupportBase):
         glog.class_init_notification(log, self)
 
 
-    async def if_ready(self):
+    async def on_ready_setup(self):
         log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self, typus):

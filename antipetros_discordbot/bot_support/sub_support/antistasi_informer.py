@@ -218,7 +218,7 @@ class AntistasiInformer(SubSupportBase):
                 _out.append(member)
         return list(set(_out))
 
-    async def if_ready(self) -> None:
+    async def on_ready_setup(self) -> None:
         await self.antistasi_guild.chunk(cache=True)
         await self._make_stored_dicts()
         log.debug("'%s' sub_support is READY", str(self))

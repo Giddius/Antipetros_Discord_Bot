@@ -45,6 +45,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 
 
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE, Seperators, ListMarker
 from antipetros_discordbot.utility.converters import CommandConverter
 from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle
 
@@ -137,14 +138,6 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Properties]
 
-    @property
-    @universal_log_profiler
-    def uptime(self):
-        now_time = datetime.utcnow()
-        delta_time = now_time - self.bot.start_time
-        seconds = round(delta_time.total_seconds())
-        return alt_seconds_to_pretty(seconds)
-
     @cached_property
     @universal_log_profiler
     def join_rankdict(self):
@@ -212,24 +205,26 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         Example:
             @AntiPetros info_bot
         """
-        name = self.bot.display_name
-        cleaned_prefixes = await self._clean_bot_prefixes(ctx)
-        command_usage_counter = await self.bot.get_command_frequency(as_counter=True)
-        most_used_command_name, most_used_command_amount = command_usage_counter.most_common(1)[0]
 
-        data = {"Usable Prefixes": ('\n'.join(cleaned_prefixes), False),
-                "Commands are Case-INsensitive?": ('✅' if self.bot.case_insensitive is True else '❎', False),
-                "Number of Commands": (await self.amount_commands(), True),
+        name = self.bot.name
+        cleaned_prefixes = self.bot.all_prefixes
+        insensitive_commands_emoji = '✅' if self.bot.case_insensitive is True else '❎'
+        most_used_command_name, most_used_command_amount = await self.bot.most_invoked_commands()
+
+        data = {"Usable Prefixes": (ListMarker.make_list(cleaned_prefixes, indent=1), False),
+                "Case-INsensitive?": (insensitive_commands_emoji, False),
+                "Number of Commands": (self.bot.command_amount, True),
                 "Most used Command": (f"`{most_used_command_name}` used {most_used_command_amount} times", True),
-                "Release Date": (datetime(year=2021, month=3, day=11).strftime("%a the %d. of %b, %Y"), True),
-                "Version": (str(os.getenv('ANTIPETROS_VERSION')), True),
-                "Uptime": (self.uptime, True),
+                "Release Date": (self.bot.launch_date.strftime("%a the %d. of %b, %Y"), True),
+                "Version": (self.bot.version, True),
+                "Uptime": (self.bot.uptime_pretty, True),
                 "Current Latency": (f"{round(self.bot.latency * 1000)} ms", True),
-                "Created By": (self.bot.creator.member.mention, True),
-                "Github Link": (embed_hyperlink('Github Repo', self.bot.github_url), True),
-                "Wiki": (embed_hyperlink('Github Wiki', self.bot.github_wiki_url), True),
+                "Created By": (self.bot.creator.mention, True),
+                "Github Link": (embed_hyperlink('Github Repo 🔗', self.bot.github_url), True),
+                "Wiki": (embed_hyperlink('Github Wiki 🔗', self.bot.github_wiki_url), True),
                 "Invocations since launch": (await self.bot.get_amount_invoked_overall(), True),
-                "Roles": (', '.join(role.mention for role in self.bot.all_bot_roles if "everybody" not in role.name.casefold()), False)}
+                "Roles": (', '.join(role.mention for role in self.bot.roles), False),
+                "Last Invocation": (self.bot.last_invocation.strftime(self.bot.std_date_time_format + ' UTC'), True)}
 
         fields = []
         for key, value in data.items():

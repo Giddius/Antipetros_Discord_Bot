@@ -144,6 +144,11 @@ class AntiPetrosBaseCog(commands.Cog):
         self.meta_data_getter = self.meta_data_provider.get_auto_provider(self)
         self.meta_data_setter = self.meta_data_provider.set_auto_provider(self)
         self.meta_data_setter('docstring', self.docstring)
+        self._ensure_config_data()
+
+    def _ensure_config_data(self):
+        if COGS_CONFIG.has_section(self.config_name) is False:
+            COGS_CONFIG.add_section(self.config_name)
 
     @property
     def description(self):

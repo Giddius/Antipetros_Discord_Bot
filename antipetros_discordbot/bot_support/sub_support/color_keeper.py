@@ -140,7 +140,7 @@ class ColorKeeper(SubSupportBase):
         await async_write_json(data, file)
         await self._make_color_items()
 
-    async def if_ready(self):
+    async def on_ready_setup(self):
         await self._make_color_items()
         log.debug("'%s' sub_support is READY", str(self))
 

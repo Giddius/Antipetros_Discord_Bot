@@ -40,7 +40,7 @@ from typing import List, TYPE_CHECKING
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
-
+import asyncio
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -78,8 +78,8 @@ class ChannelReactionInstruction(BaseReactionInstruction):
         self.channel = channel
         super().__init__(name, emojis)
 
-    async def check_trigger(self, msg: discord.Message):
-        return msg.channel is self.channel
+    async def check_trigger(self, message: discord.Message):
+        return message.channel is self.channel
 
     async def get_info_embed(self):
         embed_data = await self.bot.make_generic_embed(title=await async_split_camel_case_string(str(self)),
@@ -155,21 +155,21 @@ class WordReactionInstruction(BaseReactionInstruction):
         word = self._word
         return word
 
-    async def check_trigger(self, msg: discord.Message):
+    async def check_trigger(self, message: discord.Message):
         for key, value in self.exceptions.items():
             if key == 'by_role':
-                if any(role in value for role in msg.author.roles):
+                if any(role in value for role in message.author.roles):
                     return False
             elif key == 'by_category':
-                if msg.channel.category in value:
+                if message.channel.category in value:
                     return False
             elif key == 'by_channel':
-                if msg.channel in value:
+                if message.channel in value:
                     return False
             elif key == 'by_user':
-                if msg.author in value:
+                if message.author in value:
                     return False
-        content = msg.content
+        content = message.content
         if self.case_insensitive is True:
             content = content.casefold()
         return self.word in re.split(r"[\!\"\#\$%\&'\(\)\*\+,\-\./:;<=>\?@\[\\\]\^_`\{\|\}\~\s]", content)
@@ -303,7 +303,7 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
             if msg.author.bot is True:
                 return
             for instruction in self.reaction_instructions:
-                await instruction(msg)
+                asyncio.create_task(instruction(msg))
         except discord.errors.NotFound:
             return
 

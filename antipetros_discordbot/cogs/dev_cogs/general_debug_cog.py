@@ -298,6 +298,10 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
             return True
         return False
 
+    @auto_meta_info_command()
+    async def is_user_bot(self, ctx: commands.Context, member: discord.Member):
+        await ctx.send(member.bot)
+
 
 def setup(bot):
     """

@@ -135,7 +135,7 @@ class ChannelStatistician(SubSupportBase):
             if text_channel_id not in existing_text_channel_ids:
                 await self.general_db.update_text_channel_deleted(text_channel_id)
 
-    async def if_ready(self):
+    async def on_ready_setup(self):
         asyncio.create_task(self.insert_channels_into_db())
         self.ready = True
         log.debug("'%s' sub_support is READY", str(self))

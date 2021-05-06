@@ -84,7 +84,7 @@ class RegexKeeper(SubSupportBase):
     def regex(self, regex_name):
         return self.regexes.get(regex_name)
 
-    async def if_ready(self):
+    async def on_ready_setup(self):
         await asyncio.to_thread(self._compile_all_regexes)
         log.debug("'%s' sub_support is READY", str(self))
 

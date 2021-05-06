@@ -26,7 +26,7 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus
-
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
@@ -89,7 +89,7 @@ class EssentialCommandsKeeper(SubSupportBase):
     async def message_creator(self, message=None, embed=None, file=None):
         if message is None and embed is None:
             message = 'message has no content'
-        await self.bot.creator.member.send(content=message, embed=embed, file=file)
+        await self.bot.creator.send(content=message, embed=embed, file=file)
 
     async def not_implemented(self, ctx: commands.Context):
         embed_data = await self.bot.make_generic_embed(title='NOT IMPLEMENTED',
@@ -129,7 +129,24 @@ class EssentialCommandsKeeper(SubSupportBase):
         finally:
             await self.bot.close()
 
-    async def if_ready(self):
+    @universal_log_profiler
+    async def split_to_messages(self, ctx, message, split_on='\n', in_codeblock=False, syntax_highlighting='json'):
+        _out = ''
+        chunks = message.split(split_on)
+        for chunk in chunks:
+            if sum(map(len, _out)) + len(chunk + split_on) < self.bot.max_message_length:
+                _out += chunk + split_on
+            else:
+                if in_codeblock is True:
+                    _out = f"```{syntax_highlighting}\n{_out}\n```"
+                await ctx.send(_out)
+                await asyncio.sleep(1)
+                _out = ''
+        if in_codeblock is True:
+            _out = f"```{syntax_highlighting}\n{_out}\n```"
+        await ctx.send(_out)
+
+    async def on_ready_setup(self):
 
         log.debug("'%s' sub_support is READY", str(self))
 

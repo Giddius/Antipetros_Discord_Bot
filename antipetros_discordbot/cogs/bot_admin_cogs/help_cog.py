@@ -114,6 +114,7 @@ class GeneralHelpFieldsProviderBasic(AbstractGeneralHelpProvider):
 
     async def __call__(self):
         fields = self.in_builder.default_fields.copy()
+        fields.append(self.field_item(name='Prefixes', value=ListMarker.make_list(self.bot.all_prefixes)))
         fields.append(self.field_item(name='Special Command __`command-list`__', value="Lists all possible __commands__, that you are allowed to invoke.\nSubcommands do not get listed, they are listed at the parent commands help embed."))
         fields.append(self.field_item(name='Special Command __`category-list`__', value="Lists all possible __categories__, that you are allowed to use"))
         fields.append(self.field_item(name='general help usage'.title(), value=self.general_usage))
@@ -121,10 +122,16 @@ class GeneralHelpFieldsProviderBasic(AbstractGeneralHelpProvider):
         return fields
 
 
+class GeneralHelpImageProviderBasic(AbstractGeneralHelpProvider):
+    provides = 'image'
+
+    async def __call__(self):
+        return self.bot.portrait_url
+
+
 class GeneralHelpEmbedBuilder:
     field_item = EmbedFieldItem
     parts = ["title", "description", "color", "timestamp", "footer", "image", "thumbnail", "fields", 'url', 'author']
-    default_title = "HELP"
     default_color = "GIDDIS_FAVOURITE"
     default_timestamp = datetime.now(tz=timezone.utc)
     default_footer = None
@@ -138,6 +145,10 @@ class GeneralHelpEmbedBuilder:
 
     def add_provider(self, provider):
         setattr(self, provider.provides + '_provider', provider)
+
+    @property
+    def default_title(self):
+        return f"{self.bot.name} Help"
 
     @property
     def default_url(self):
@@ -308,6 +319,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     async def general_help(self, ctx: commands.Context):
         builder = GeneralHelpEmbedBuilder(self.bot, ctx)
         builder.add_provider(GeneralHelpFieldsProviderBasic(builder))
+        builder.add_provider(GeneralHelpImageProviderBasic(builder))
         embed_dict = await builder.to_dict()
         async for embed_data in self.bot.make_paginatedfields_generic_embed(**embed_dict):
             await self.send_help(ctx, embed_data)

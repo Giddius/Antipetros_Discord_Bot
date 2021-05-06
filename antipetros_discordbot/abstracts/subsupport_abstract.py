@@ -41,7 +41,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class SubSupportBase(ABC):
     @abstractmethod
-    async def if_ready(self):
+    async def on_ready_setup(self):
         ...
 
     @abstractmethod
