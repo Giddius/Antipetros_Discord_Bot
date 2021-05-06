@@ -124,9 +124,9 @@ class TopicItem:
                         color: str,
                         image: str = None):
 
-        creator = await bot.retrieve_antistasi_member(creator_id)
+        creator = await bot.fetch_antistasi_member(creator_id)
         message = await subscription_channel.fetch_message(message_id)
-        role = await bot.retrieve_antistasi_role(role_id)
+        role = bot.get_antistasi_role(role_id)
         return cls(name=name,
                    emoji=emoji,
                    creator=creator,
@@ -201,7 +201,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
         if name is None:
             return None
-        return self.bot.sync_channel_from_name(name)
+        return self.bot.channel_from_name(name)
 
     @property
     @universal_log_profiler
@@ -231,7 +231,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
                     if normalize_emoji(str(reaction.emoji)) != normalize_emoji(topic.emoji):
                         await message.clear_reaction(reaction.emoji)
                 return
-            reaction_user = await self.bot.retrieve_antistasi_member(payload.user_id)
+            reaction_user = await self.bot.fetch_antistasi_member(payload.user_id)
             if reaction_user.bot is True:
                 return
             if topic.role in reaction_user.roles:
@@ -262,7 +262,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
                     if normalize_emoji(str(reaction.emoji)) != normalize_emoji(topic.emoji):
                         await message.clear_reaction(reaction.emoji)
                 return
-            reaction_user = await self.bot.retrieve_antistasi_member(payload.user_id)
+            reaction_user = await self.bot.fetch_antistasi_member(payload.user_id)
             if reaction_user.bot is True:
                 return
             if topic.role not in reaction_user.roles:
@@ -367,7 +367,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
         if name is None:
             return None
-        return await self.bot.channel_from_name(name)
+        return self.bot.channel_from_name(name)
 
     @universal_log_profiler
     async def _remove_subscription_reaction(self, member: discord.member, topic_item: TopicItem):
@@ -542,7 +542,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         if topic_creator_id is None:
             topic_creator = ctx.author
         else:
-            topic_creator = await self.bot.retrieve_antistasi_member(topic_creator_id)
+            topic_creator = await self.bot.fetch_antistasi_member(topic_creator_id)
         if topic_creator is None:
             await ctx.send(f'Unable to find Creator with id `{topic_creator_id}`')
             return
@@ -614,7 +614,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
             # TODO: Custom Error and handling
             await ctx.send(f'unable to find a Topic with the name `{topic_name}`')
             return
-        member = await self.bot.retrieve_antistasi_member(ctx.author.id)
+        member = await self.bot.fetch_antistasi_member(ctx.author.id)
         if topic_item.role not in member.roles:
             # TODO: Custom Error and handling
             await ctx.send(f'You are currently not subscribed to the topic `{topic_name}`')

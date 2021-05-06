@@ -25,7 +25,8 @@ from antipetros_discordbot.utility.event_data import ListenerEvents
 from antipetros_discordbot.utility.gidtools_functions import writejson, readit, writeit, pathmaker
 from antipetros_discordbot.engine.replacements.helper import JsonMetaDataProvider
 from enum import Enum, unique, auto
-
+from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES
+from antipetros_discordbot.utility.checks import AllowedChannelAndAllowedRoleCheck
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -147,8 +148,18 @@ class AntiPetrosBaseCog(commands.Cog):
         self._ensure_config_data()
 
     def _ensure_config_data(self):
+
         if COGS_CONFIG.has_section(self.config_name) is False:
             COGS_CONFIG.add_section(self.config_name)
+            log.info("Added section '%s' to cogs_config.ini", self.config_name)
+        for command in self.get_commands():
+            if any(isinstance(check, AllowedChannelAndAllowedRoleCheck) for check in command.checks):
+                for suffix, default_value in COMMAND_CONFIG_SUFFIXES.values():
+                    if COGS_CONFIG.has_option(self.config_name, f"{command.name}_{suffix}") is False:
+                        COGS_CONFIG.set(self.config_name, f"{command.name}_{suffix}", str(default_value))
+        for option, value in self.required_config_data.get("cogs_config").items():
+            if COGS_CONFIG.has_option(self.config_name, option) is False:
+                COGS_CONFIG.set(self.config_name, option, str(value))
 
     @property
     def description(self):

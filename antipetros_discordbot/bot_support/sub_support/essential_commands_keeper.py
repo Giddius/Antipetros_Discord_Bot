@@ -102,7 +102,7 @@ class EssentialCommandsKeeper(SubSupportBase):
     @property
     def shutdown_message_channel(self):
         channel_name = BASE_CONFIG.retrieve("shutdown_message", "channel_name", typus=str, direct_fallback='bot-commands')
-        return self.bot.sync_channel_from_name(channel_name)
+        return self.bot.channel_from_name(channel_name)
 
     def shutdown_signal(self, *args):
         asyncio.create_task(self.shutdown_mechanic())

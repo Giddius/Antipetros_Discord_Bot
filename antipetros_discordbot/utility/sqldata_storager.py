@@ -63,7 +63,7 @@ class ChannelUsageResult:
     async def convert_data_to_channels(self, bot):
         new_data = []
         for data in self.result_data:
-            new_data.append(await bot.channel_from_id(data))
+            new_data.append(bot.channel_from_id(data))
         self.result_data = new_data
 
     async def get_as_counter(self) -> Counter:

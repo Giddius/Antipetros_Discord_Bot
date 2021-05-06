@@ -546,8 +546,8 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
             await channel.send(embed=await self.make_already_saved_embed())
             return False
 
-        message_member = await self.bot.retrieve_antistasi_member(message.author.id)
-        reaction_member = await self.bot.retrieve_antistasi_member(reaction_user.id)
+        message_member = await self.bot.fetch_antistasi_member(message.author.id)
+        reaction_member = await self.bot.fetch_antistasi_member(reaction_user.id)
         now_time = datetime.utcnow()
         name = await self._collect_title(message.content)
         extra_data = (message.attachments[0].filename, await message.attachments[0].read()) if len(message.attachments) != 0 else None

@@ -315,7 +315,7 @@ class AntiPetrosBaseCommand(commands.Command):
             return []
         if len(allowed_channels) > 1 and 'all' in allowed_channels:
             allowed_channels.remove('all')
-        return list(map(self.bot.sync_channel_from_name, allowed_channels))
+        return list(map(self.bot.channel_from_name, allowed_channels))
 
     @property
     def allowed_roles(self):
@@ -329,7 +329,7 @@ class AntiPetrosBaseCommand(commands.Command):
             return []
         if len(allowed_roles) > 1 and 'all' in allowed_roles:
             allowed_roles.remove('all')
-        return list(map(self.bot.sync_role_from_string, allowed_roles))
+        return list(map(self.bot.role_from_string, allowed_roles))
 
     @property
     def allowed_in_dms(self):
@@ -350,11 +350,11 @@ class AntiPetrosBaseCommand(commands.Command):
             if hasattr(check, "allowed_members"):
                 allowed_members += check.allowed_members(self)
         if allowed_members == []:
-            return set([self.bot.sync_member_by_name('all')])
+            return set([self.bot.member_by_name('all')])
         if len(allowed_members) > 1 and 'all' in allowed_members:
             allowed_members.remove('all')
         if allowed_members == ['all']:
-            return set([self.bot.sync_member_by_name('all')])
+            return set([self.bot.member_by_name('all')])
         return set(allowed_members)
 
     def dump(self):

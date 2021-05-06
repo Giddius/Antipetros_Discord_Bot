@@ -63,7 +63,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))  # location of this f
 # endregion [Constants]
 
 
-class ImageManipulatorCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.GENERAL}):
+class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.GENERAL}):
     """
     Commands that manipulate or generate images.
     """
@@ -652,4 +652,4 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
-    bot.add_cog(ImageManipulatorCog(bot))
+    bot.add_cog(ImageManipulationCog(bot))

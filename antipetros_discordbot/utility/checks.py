@@ -58,7 +58,7 @@ class BaseAntiPetrosCheck:
         cog = ctx.cog
         command = ctx.command
         author = ctx.author
-        member = await bot.retrieve_antistasi_member(author.id)
+        member = await bot.fetch_antistasi_member(author.id)
         channel = ctx.channel
 
         if channel.type is discord.ChannelType.private and self.allowed_in_dm(command) is False:

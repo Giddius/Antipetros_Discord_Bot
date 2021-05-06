@@ -169,7 +169,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
     @universal_log_profiler
     async def get_notify_roles(self):
-        return [await self.bot.role_from_string(role_name) for role_name in self.notify_role_names]
+        return [self.bot.role_from_string(role_name) for role_name in self.notify_role_names]
 
     @universal_log_profiler
     async def send_config_file(self, ctx, config_name):
@@ -396,7 +396,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
                 await member.send(**embed_data)
 
         else:
-            channel = await self.bot.channel_from_name(self.notify_via)
+            channel = self.bot.channel_from_name(self.notify_via)
             await channel.send(content=' '.join(role.mention for role in roles), **embed_data)
 
 

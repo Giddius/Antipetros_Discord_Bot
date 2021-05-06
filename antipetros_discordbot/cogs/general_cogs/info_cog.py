@@ -336,7 +336,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             @AntiPetros info_other 576522029470056450
         """
         async with ctx.typing():
-            member = await self.bot.retrieve_antistasi_member(member_id)
+            member = await self.bot.fetch_antistasi_member(member_id)
             all_true_permissions = [str(permission) for permission, value in iter(member.guild_permissions) if value is True]
             permissions = "```css\n" + ', '.join(sorted(all_true_permissions)) + '\n```'
             data = {'Id': (f"`{member.id}`", True),
@@ -386,7 +386,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             oldest_member_and_date = self.time_sorted_guild_member_ids[0]
         else:
             oldest_member_and_date = self.time_sorted_guild_member_ids[-1]
-        member = await self.bot.retrieve_antistasi_member(oldest_member_and_date[0])
+        member = await self.bot.fetch_antistasi_member(oldest_member_and_date[0])
         join_time = oldest_member_and_date[1]
         return f'{member.mention} -> {member.name}, joined at {join_time.strftime("%H:%M:%S on %a the %Y.%b.%d")}'
 

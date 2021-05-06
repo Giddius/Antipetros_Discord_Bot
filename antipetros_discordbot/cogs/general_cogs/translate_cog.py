@@ -71,8 +71,11 @@ class TranslateCog(AntiPetrosBaseCog):
     meta_status = CogMetaStatus.WORKING
     long_description = ""
     extra_info = ""
+
     required_config_data = {'base_config': {},
-                            'cogs_config': {}}
+                            'cogs_config': {"emoji_translate_listener_enabled": "yes",
+                                            "emoji_translate_listener_allowed_channels": "bot-testing",
+                                            "emoji_translate_listener_allowed_roles": "all"}}
     required_folder = []
     required_files = []
 
@@ -110,14 +113,11 @@ class TranslateCog(AntiPetrosBaseCog):
                           'Hungary': 'hu',
                           'Netherlands': 'nl'}
 
-    required_config_data = dedent("""
-                                        emoji_translate_listener_enabled = yes
-                                        emoji_translate_listener_allowed_channels = bot-testing
-                                        emoji_translate_listener_allowed_roles = member""")
 
 # endregion [ClassAttributes]
 
 # region [Init]
+
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
@@ -135,7 +135,6 @@ class TranslateCog(AntiPetrosBaseCog):
 # endregion [Properties]
 
 # region [Setup]
-
 
     @universal_log_profiler
     async def on_ready_setup(self):
@@ -155,7 +154,6 @@ class TranslateCog(AntiPetrosBaseCog):
 # endregion [Loops]
 
 # region [Listener]
-
 
     @universal_log_profiler
     async def _emoji_translate_checks(self, payload):
@@ -294,6 +292,7 @@ class TranslateCog(AntiPetrosBaseCog):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

@@ -136,7 +136,7 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     @universal_log_profiler
     async def member_to_notify(self):
         member_ids = COGS_CONFIG.retrieve(self.config_name, 'member_id_to_notify_oversized', typus=List[int], direct_fallback=[])
-        return [await self.bot.retrieve_antistasi_member(member_id) for member_id in member_ids]
+        return [await self.bot.fetch_antistasi_member(member_id) for member_id in member_ids]
 
     @property
     @universal_log_profiler

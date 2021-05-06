@@ -249,7 +249,7 @@ class CommandCategory(metaclass=CommandCategoryMeta):
     @classmethod
     @property
     def extra_roles(cls) -> List[discord.Role]:
-        return list(map(cls.bot.sync_retrieve_antistasi_role, BASE_CONFIG.retrieve(cls.config_name, f"{cls.name.casefold()}_extra_role_ids", typus=List[int], direct_fallback=[])))
+        return list(map(cls.bot.get_antistasi_role, BASE_CONFIG.retrieve(cls.config_name, f"{cls.name.casefold()}_extra_role_ids", typus=List[int], direct_fallback=[])))
 
     @classmethod
     def visibility_check(cls, in_member: discord.Member):

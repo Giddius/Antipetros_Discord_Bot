@@ -165,6 +165,7 @@ class AntiPetrosBot(commands.Bot):
         self._handle_ipc()
         self.add_check(user_not_blacklisted)
         self._get_initial_cogs()
+        COGS_CONFIG.read()
 
     @universal_log_profiler
     async def on_ready(self):
@@ -410,12 +411,12 @@ class AntiPetrosBot(commands.Bot):
         if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is False:
             return
         if self.is_debug is True:
-            channel = await self.channel_from_name(self.testing_channel)
+            channel = self.channel_from_name(self.testing_channel)
             embed_data = await self.make_generic_embed(title=f"{self.display_name} is Ready",
                                                        fields=[self.bot.field_item(name='Is Debug Session', value=str(self.is_debug))])
             await channel.send(**embed_data, delete_after=60)
             return
-        channel = await self.channel_from_name(BASE_CONFIG.get('startup_message', 'channel'))
+        channel = self.channel_from_name(BASE_CONFIG.get('startup_message', 'channel'))
         delete_time = 60 if self.is_debug is True else BASE_CONFIG.getint('startup_message', 'delete_after')
         delete_time = None if delete_time <= 0 else delete_time
         title = f"**{BASE_CONFIG.get('startup_message', 'title').title()}**"

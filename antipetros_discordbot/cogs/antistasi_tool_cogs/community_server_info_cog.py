@@ -121,7 +121,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # region [Setup]
     @universal_log_profiler
     async def on_ready_setup(self):
-        self.notification_channel = await self.bot.channel_from_name('bot-testing')
+        self.notification_channel = self.bot.channel_from_name('bot-testing')
         self.log_watcher_cog = await self.bot.get_cog("AntistasiLogWatcherCog")
         asyncio.create_task(self._initialise_server_holder())
 
@@ -186,7 +186,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         exclude = COGS_CONFIG.retrieve(self.config_name, 'exclude_from_show_online', typus=List[str], direct_fallback=["Testserver_3", 'Eventserver'])
         exclude = set(map(lambda x: x.casefold(), exclude))
         if all(server_item.is_online is False for server_item in self.servers if server_item.name not in exclude):
-            announcements_channel = await self.bot.channel_from_id(self.announcements_channel_id)
+            announcements_channel = self.bot.channel_from_id(self.announcements_channel_id)
             embed_data = await self.bot.make_generic_embed(title='All Server seem to be offline',
                                                            description=f'Please look in {announcements_channel.mention} if there is information regarding the Server',
                                                            thumbnail="not_possible")

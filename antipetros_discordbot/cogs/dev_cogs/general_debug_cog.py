@@ -117,7 +117,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
     async def on_ready_setup(self):
 
-        self.bob_user = await self.bot.retrieve_antistasi_member(346595708180103170)
+        self.bob_user = await self.bot.fetch_antistasi_member(346595708180103170)
         for member in self.bot.antistasi_guild.members:
             if member.bot is True:
                 if member.display_name.casefold() == 'antidevtros':
@@ -164,12 +164,12 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
                     break
             if not command_string:
                 command_string = '[]'
-            extra_role_string = '\n'.join(f"`{self.bot.sync_retrieve_antistasi_role(_id).name}`" for _id in category.extra_roles)
+            extra_role_string = '\n'.join(f"`{self.bot.get_antistasi_role(_id).name}`" for _id in category.extra_roles)
             if not extra_role_string:
                 extra_role_string = '[]'
             allowed_roles_string = ""
 
-            for role in sorted(map(self.bot.sync_retrieve_antistasi_role, category.allowed_roles), key=lambda x: x.name):
+            for role in sorted(map(self.bot.get_antistasi_role, category.allowed_roles), key=lambda x: x.name):
 
                 try:
                     allowed_roles_string += f"\n`{role.name}`"
@@ -191,12 +191,12 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
             schema = RoleSchema()
             _out = {}
             for role in self.bot.antistasi_guild.roles:
-                if role is not await self.bot.retrieve_antistasi_role(449481990513754112):
+                if role is not self.bot.get_antistasi_role(449481990513754112):
                     _out[role.name] = schema.dump(role)
             _out = {key + '_' + str(value.get('id')): value for key, value in sorted(_out.items(), key=lambda x: x[1].get('position'), reverse=True)}
             writejson(_out, 'role_dump.json', sort_keys=False)
             await ctx.send('done', delete_after=90, allowed_mentions=discord.AllowedMentions.none())
-            other_admin_role = await self.bot.retrieve_antistasi_role(513318914516844559)
+            other_admin_role = self.bot.get_antistasi_role(513318914516844559)
             await self.bot.split_to_messages(ctx, pformat(schema.dump(other_admin_role)), in_codeblock=True)
 
     @auto_meta_info_command()
@@ -208,7 +208,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         await ctx.send(pformat(_out), allowed_mentions=discord.AllowedMentions.none(), delete_after=120)
 
     async def _check_channel_visibility(self, author: discord.Member, channel_name: str):
-        channel = await self.bot.channel_from_name(channel_name)
+        channel = self.bot.channel_from_name(channel_name)
         channel_member_permissions = channel.permissions_for(author)
         if channel_member_permissions.administrator is True or channel_member_permissions.read_messages is True:
             return True
