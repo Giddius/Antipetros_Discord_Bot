@@ -112,7 +112,7 @@ class CommandStatistician(SubSupportBase):
                 asyncio.create_task(self.general_db.insert_command_usage(_command))
 
             log.debug("command invocations was recorded")
-            await self.bot.command_dict.sort_commands(await self.get_command_frequency())
+            await self.bot.commands_map.sort_commands(await self.get_command_frequency())
         return self.bot.after_invoke(record_command_invocation)
 
     def __str__(self) -> str:

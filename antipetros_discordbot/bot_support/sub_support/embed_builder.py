@@ -327,8 +327,12 @@ class EmbedBuilder(SubSupportBase):
         file_path = pathmaker(APPDATA["saved_embeds"], file_name)
         writejson(embed.to_dict(), file_path)
 
-    async def make_cancelled_embed(self):
-        pass
+    async def make_cancelled_embed(self, title: str, msg: str, extra: str = None):
+        embed = Embed(title=title, description=msg, color=discord.Color.red())
+        embed.set_thumbnail(url=self.standard_embed_symbols.get("cross_mark"))
+        if extra is not None:
+            embed.add_field(name='Extra Info', value=extra, inline=False)
+        return embed
 
     async def make_confirmed_embed(self):
         pass

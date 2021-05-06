@@ -11,6 +11,7 @@ import os
 import random
 from datetime import datetime
 import random
+from typing import TYPE_CHECKING, Union
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands
@@ -25,6 +26,9 @@ from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
 
 # region [TODO]
@@ -59,7 +63,7 @@ class EssentialCommandsKeeper(SubSupportBase):
     shutdown_message_pickle_file = pathmaker(APPDATA['temp_files'], 'last_shutdown_message.pkl')
     goodbye_quotes_file = APPDATA['goodbye_quotes.json']
 
-    def __init__(self, bot: commands.Bot, support):
+    def __init__(self, bot: "AntiPetrosBot", support):
         self.bot = bot
         self.support = support
         self.loop = self.bot.loop
@@ -67,6 +71,12 @@ class EssentialCommandsKeeper(SubSupportBase):
         self.shutdown_message_pickle = None
 
         glog.class_init_notification(log, self)
+
+    async def reload_cog_from_command_name(self, command: Union[str, commands.Command]):
+        if isinstance(command, str):
+            command = self.bot.commands_map.get(command)
+
+        self.bot.reload_extension(command.module.__name__)
 
     @ property
     def shutdown_command(self):

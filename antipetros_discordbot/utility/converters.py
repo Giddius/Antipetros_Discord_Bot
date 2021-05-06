@@ -134,9 +134,8 @@ class CommandConverter(Converter):
 
     async def convert(self, ctx: commands.Context, argument) -> Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosFlagCommand, AntiPetrosBaseGroup]:
         bot = ctx.bot
-        ic(argument)
 
-        command = bot.command_dict.get(argument)
+        command = bot.commands_map.get(argument)
         if command is None:
             raise ParameterError('command', argument)
         return command

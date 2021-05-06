@@ -50,10 +50,9 @@ def when_mentioned_or_roles_or():
         `callable`: the dynamic function
     """
 
-    config_set_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
-    role_exceptions = BASE_CONFIG.retrieve('prefix', 'invoke_by_role_exceptions', typus=List[str], direct_fallback=[])
-
     def inner(bot, msg):
+        config_set_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+        role_exceptions = BASE_CONFIG.retrieve('prefix', 'invoke_by_role_exceptions', typus=List[str], direct_fallback=[])
         extra = config_set_prefixes
         r = []
         if BASE_CONFIG.retrieve('prefix', 'invoke_by_role_and_mention', typus=bool, direct_fallback=True):

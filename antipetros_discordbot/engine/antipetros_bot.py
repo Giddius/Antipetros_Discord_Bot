@@ -77,7 +77,7 @@ class CommandAutoDict(UserDict):
     @universal_log_profiler
     def _collect_commands(self):
         self.data = {}
-        for command in self.bot.commands:
+        for command in set(self.bot.all_commands.values()):
             names = [command.name] + command.aliases
             for name in names:
                 self.data[name] = command
@@ -145,7 +145,7 @@ class AntiPetrosBot(commands.Bot):
         self.support = None
         self.used_startup_message = None
         self.ipc = None
-        self.command_dict = None
+        self._command_dict = None
 
         self._setup()
 
@@ -182,7 +182,7 @@ class AntiPetrosBot(commands.Bot):
         await self._start_watchers()
 
         await self.set_activity()
-        await self._make_command_dict()
+        self._make_command_dict()
 
         self.setup_finished = True
         if os.getenv('INFO_RUN') == "1":
@@ -231,9 +231,11 @@ class AntiPetrosBot(commands.Bot):
         for name, meth in self.support.overwritten_methods.items():
             setattr(self, name, meth)
 
-    async def _make_command_dict(self):
-        self.command_dict = CommandAutoDict(self, True)
-        self.bot.to_update_methods.append(self.ToUpdateItem(self.command_dict.update_commands, [UpdateTypus.COMMANDS, UpdateTypus.ALIAS, UpdateTypus.CONFIG, UpdateTypus.CYCLIC]))
+    def _make_command_dict(self):
+        self._command_dict = CommandAutoDict(self, True)
+        update_item = self.ToUpdateItem(self._command_dict.update_commands, [UpdateTypus.COMMANDS, UpdateTypus.ALIAS, UpdateTypus.CONFIG, UpdateTypus.CYCLIC])
+        if update_item not in self.to_update_methods:
+            self.to_update_methods.append(update_item)
 
 # endregion[Setup]
 
@@ -299,6 +301,16 @@ class AntiPetrosBot(commands.Bot):
     def notify_contact_member(self):
         return BASE_CONFIG.get('blacklist', 'notify_contact_member')
 
+    @property
+    def commands_map(self):
+        if self._command_dict is None:
+            self._make_command_dict()
+        return self._command_dict
+
+    @property
+    def current_prefixes(self):
+        return list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+
 # endregion[Properties]
 
 # region [Loops]
@@ -357,9 +369,15 @@ class AntiPetrosBot(commands.Bot):
                     setattr(intents, sub_intent, BASE_CONFIG.getboolean('intents', sub_intent))
         return intents
 
+    async def _try_delete_startup_message(self):
+        if self.used_startup_message is not None:
+            try:
+                await self.used_startup_message.delete()
+                log.debug('deleted startup message')
+            except discord.NotFound:
+                log.debug('startup message was already deleted')
 
 # endregion[Helper]
-
 
     async def send_startup_message(self):
         await self._handle_previous_shutdown_msg()
@@ -444,6 +462,7 @@ class AntiPetrosBot(commands.Bot):
         log.info("extensions-cogs loaded: %s", ', '.join(self.cogs))
 
     async def set_activity(self):
+        # TODO: make dynamic
         actvity_type = self.activity_dict.get('watching')
         value = len([member.id for member in self.bot.antistasi_guild.members if member.status is discord.Status.online])
         text = f"{value} User currently in this Guild"
@@ -475,12 +494,6 @@ class AntiPetrosBot(commands.Bot):
             _out = f"```{syntax_highlighting}\n{_out}\n```"
         await ctx.send(_out)
 
-    async def reload_cog_from_command_name(self, command: Union[str, commands.Command]):
-        if isinstance(command, str):
-            converter = CommandConverter()
-            command = await converter.no_context_convert(self, command)
-
-        self.reload_extension(command.module.__name__)
         # file_name = f"{cog.config_name}_cog"
         # for option in BASE_CONFIG.options('extensions'):
         #     if option.split('.')[-1].casefold() == file_name.casefold():
@@ -495,14 +508,6 @@ class AntiPetrosBot(commands.Bot):
 
 
 # region [SpecialMethods]
-
-    async def _try_delete_startup_message(self):
-        if self.used_startup_message is not None:
-            try:
-                await self.used_startup_message.delete()
-                log.debug('deleted startup message')
-            except discord.NotFound:
-                log.debug('startup message was already deleted')
 
     async def _close_sessions(self):
         for session_name, session in self.sessions.items():
