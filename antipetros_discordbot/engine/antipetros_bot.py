@@ -278,12 +278,12 @@ class AntiPetrosBot(commands.Bot):
     @property
     @universal_log_profiler
     def creator(self):
-        return self.antistasi_guild.get_member(self.creator_id)
+        return self.get_antistasi_member(self.creator_id)
 
     @property
     @universal_log_profiler
     def member(self):
-        return self.antistasi_guild.get_member(self.id)
+        return self.get_antistasi_member(self.id)
 
     @property
     @universal_log_profiler

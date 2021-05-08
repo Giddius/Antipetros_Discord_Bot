@@ -28,10 +28,11 @@ class ListMarker:
     connector_round = '╰'
 
     @classmethod
-    def make_list(cls, in_data, symbol=None, indent: int = 0) -> str:
+    def make_list(cls, in_data, symbol=None, indent: int = 0, formatting: str = None) -> str:
         symbol = cls.bullet if symbol is None else symbol
         indent_unit = SPECIAL_SPACE * 8
-        return '\n'.join(f"{ZERO_WIDTH}{indent_unit*indent}{symbol} {item}" for item in in_data)
+        formatting = '' if formatting is None else formatting
+        return '\n'.join(f"{formatting}{ZERO_WIDTH}{indent_unit*indent}{symbol} {item}{formatting}" for item in in_data)
 
     @classmethod
     def _column_symbol_generator(cls, amount_columns: int, seperator: str):

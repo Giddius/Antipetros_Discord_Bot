@@ -454,7 +454,7 @@ class HelpEmbedBuilder:
     def __init__(self, bot: "AntiPetrosBot", invoking_person: Union[discord.Member, discord.User], in_object: Union["AntiPetrosBaseCommand", "AntiPetrosBaseGroup", "AntiPetrosFlagCommand", CommandCategory]):
         self.bot = bot
         self.in_object = in_object
-        self.member = self.bot.sync_member_by_id(invoking_person.id) if isinstance(invoking_person, discord.User) else invoking_person
+        self.member = self.bot.get_antistasi_member(invoking_person.id) if isinstance(invoking_person, discord.User) else invoking_person
 
         self.title_provider = self.default_title_provider(self)
         self.description_provider = self.default_description_provider(self)
