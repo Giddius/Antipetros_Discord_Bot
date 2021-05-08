@@ -142,7 +142,7 @@ class OnlyBobMurphyCheck(BaseAntiPetrosCheck):
 
     def allowed_members(self, command: commands.Command):
         bot = command.cog.bot
-        bob_murphy_member = bot.sync_member_by_id(346595708180103170)
+        bob_murphy_member = bot.get_antistasi_member(346595708180103170)
         return {bob_murphy_member}
 
 
@@ -152,7 +152,7 @@ class OnlyGiddiCheck(BaseAntiPetrosCheck):
 
     def allowed_members(self, command: commands.Command):
         bot = command.cog.bot
-        giddi_member = bot.sync_member_by_id(576522029470056450)
+        giddi_member = bot.get_antistasi_member(576522029470056450)
         return {giddi_member}
 
 

@@ -10,6 +10,7 @@
 import os
 import traceback
 from datetime import datetime
+import sys
 from typing import Tuple
 import re
 # * Third Party Imports --------------------------------------------------------------------------------->
@@ -132,11 +133,11 @@ class ErrorHandler(SubSupportBase):
     async def handle_base_errors(self, event_method, *args, **kwargs):
         kwarg_string = ', '.join(f"{key}: {str(value)}" for key, value in kwargs.items())
         arg_string = ', '.join(str(arg) for arg in args)
-        log.error(f"{event_method} - '{arg_string}' - '{kwarg_string}'")
+        log.error(f"{event_method} - '{arg_string}' - '{kwarg_string}'", exc_info=True)
 
     async def handle_ipc_error(self, endpoint, error):
         log.error(error, exc_info=True)
-        await self.bot.message_creator(f"Encountered IPC-error: {error}")
+        await self.bot.message_creator(f"Encountered IPC-error: {error} - Endpoint: {endpoint}")
 
     async def handle_errors(self, ctx, error):
         error_traceback = '\n'.join(traceback.format_exception(error, value=error, tb=None))

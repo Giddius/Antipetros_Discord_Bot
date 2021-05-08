@@ -107,14 +107,14 @@ class AbstractGeneralHelpProvider(ABC):
 class GeneralHelpFieldsProviderBasic(AbstractGeneralHelpProvider):
     field_item = EmbedFieldItem
     provides = 'fields'
-    command_list_usage = CodeBlock('@AntiPetros help command-list', 'css')
-    category_list_usage = CodeBlock('@AntiPetros help category-list', 'css')
-    general_usage = CodeBlock("@AntiPetros help <command-list, category-list or the name/alias of an command/category>", "css")
-    examples = f"{command_list_usage}\n{category_list_usage}\n{CodeBlock('@Antipetros help flip', 'css')}\n{CodeBlock('@AntiPetros help roll_dice text','css')}\n{CodeBlock('@AntiPetros help server?','css')}"
+    command_list_usage = '@AntiPetros help command-list'
+    category_list_usage = '@AntiPetros help category-list'
+    general_usage = CodeBlock("@AntiPetros help <command-list, category-list or the name/alias of an command/category>", 'Less')
+    examples = CodeBlock(f"{command_list_usage}\n{category_list_usage}\n@Antipetros help flip\n@AntiPetros help roll_dice text\n@AntiPetros help server?", "Less")
 
     async def __call__(self):
         fields = self.in_builder.default_fields.copy()
-        fields.append(self.field_item(name='Prefixes', value=ListMarker.make_list(self.bot.all_prefixes)))
+        fields.append(self.field_item(name='Prefixes you can use to invoke a command'.title(), value=ListMarker.make_list(self.bot.all_prefixes, indent=1, formatting='**')))
         fields.append(self.field_item(name='Special Command __`command-list`__', value="Lists all possible __commands__, that you are allowed to invoke.\nSubcommands do not get listed, they are listed at the parent commands help embed."))
         fields.append(self.field_item(name='Special Command __`category-list`__', value="Lists all possible __categories__, that you are allowed to use"))
         fields.append(self.field_item(name='general help usage'.title(), value=self.general_usage))
@@ -129,6 +129,18 @@ class GeneralHelpImageProviderBasic(AbstractGeneralHelpProvider):
         return self.bot.portrait_url
 
 
+class GeneralHelpDescriptionProvider(AbstractGeneralHelpProvider):
+    provides = 'description'
+
+    async def __call__(self):
+        # text = self.bot.description
+        text = f"{ZERO_WIDTH}\n" * 2 + f'**__TEXT DESCRIBING THE BOT AND ITS GENERAL USAGE NEEDED__**\n{ZERO_WIDTH}\n' + f"~~{self.bot.description}~~\n" + f"{ZERO_WIDTH}\n" * 2
+        text += '\n' + Seperators.make_line() + '\n'
+        text += f"{ZERO_WIDTH}\n" * 2 + '**__TEXT DESCRIBING THE HELP COMMAND AND ITS GENERAL USAGE NEEDED__**\n' + f"~~{self.in_builder.default_description}~~\n" + f"{ZERO_WIDTH}\n" * 2
+        # text += self.in_builder.default_description
+        return text
+
+
 class GeneralHelpEmbedBuilder:
     field_item = EmbedFieldItem
     parts = ["title", "description", "color", "timestamp", "footer", "image", "thumbnail", "fields", 'url', 'author']
@@ -141,7 +153,7 @@ class GeneralHelpEmbedBuilder:
     def __init__(self, bot: "AntiPetrosBot", ctx: commands.Context):
         self.ctx = ctx
         self.bot = bot
-        self.invoker = self.bot.sync_member_by_id(ctx.author.id)
+        self.invoker = self.bot.get_antistasi_member(ctx.author.id)
 
     def add_provider(self, provider):
         setattr(self, provider.provides + '_provider', provider)
@@ -320,12 +332,13 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         builder = GeneralHelpEmbedBuilder(self.bot, ctx)
         builder.add_provider(GeneralHelpFieldsProviderBasic(builder))
         builder.add_provider(GeneralHelpImageProviderBasic(builder))
+        builder.add_provider(GeneralHelpDescriptionProvider(builder))
         embed_dict = await builder.to_dict()
         async for embed_data in self.bot.make_paginatedfields_generic_embed(**embed_dict):
             await self.send_help(ctx, embed_data)
 
     async def command_category_list_embed(self, ctx: commands.Context):
-        member = self.bot.sync_member_by_id(ctx.author.id) if isinstance(ctx.author, discord.User) else ctx.author
+        member = self.bot.get_antistasi_member(ctx.author.id) if isinstance(ctx.author, discord.User) else ctx.author
         frequ_dict = await self.bot.get_command_frequency()
         member_roles = set([AllItem()] + [role for role in member.roles])
         if member.id in self.bot.owner_ids:
@@ -353,7 +366,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             yield embed_data
 
     async def command_list_embed(self, ctx: commands.Context):
-        member = self.bot.sync_member_by_id(ctx.author.id) if isinstance(ctx.author, discord.User) else ctx.author
+        member = self.bot.get_antistasi_member(ctx.author.id) if isinstance(ctx.author, discord.User) else ctx.author
 
         frequ_dict = await self.bot.get_command_frequency()
 
@@ -381,7 +394,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # region [HelperMethods]
 
     async def _get_command_list(self, ctx: commands.Context):
-        member = self.bot.sync_member_by_id(ctx.author.id) if isinstance(ctx.author, discord.User) else ctx.author
+        member = self.bot.get_antistasi_member(ctx.author.id) if isinstance(ctx.author, discord.User) else ctx.author
 
         _out = {}
         for cog_name, cog in self.bot.cogs.items():

@@ -133,7 +133,7 @@ def save_cog_command_data(cog, output_file=None):
     log.debug("commands for %s saved to %s", cog, command_json_file)
 
 
-async def get_member_data(bot):
+async def get_antistasi_member_data(bot):
     member_data = {"by_roles": {}}
     for role in await bot.antistasi_guild.fetch_roles():
         if '@everyone' not in role.name:
@@ -210,5 +210,5 @@ async def gather_data(bot):
     await get_general_data(bot)
     await get_channel_data(bot)
     await get_role_data(bot)
-    await get_member_data(bot)
+    await get_antistasi_member_data(bot)
     await get_channel_role_data(bot)

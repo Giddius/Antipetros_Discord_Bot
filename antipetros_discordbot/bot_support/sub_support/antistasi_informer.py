@@ -147,7 +147,7 @@ class AntistasiInformer(SubSupportBase):
     def channel_from_id(self, channel_id: int) -> discord.abc.GuildChannel:
         return self.antistasi_guild.get_channel(channel_id)
 
-    def sync_member_by_id(self, member_id: int) -> discord.Member:
+    def get_antistasi_member(self, member_id: int) -> discord.Member:
         return self.antistasi_guild.get_member(member_id)
 
     def member_by_name(self, member_name: str) -> discord.Member:
