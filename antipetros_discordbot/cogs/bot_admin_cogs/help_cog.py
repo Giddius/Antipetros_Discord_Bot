@@ -310,8 +310,11 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             await ctx.send(f"{in_object} seems to not match anything")
 
     @help.command(name='command_list')
-    async def help_command_list(self, ctx: commands.Context):
-        async for embed_data in self.command_list_embed(ctx):
+    async def help_command_list(self, ctx: commands.Context, hidden: str = None):
+        show_hidden = False
+        if hidden is not None and hidden.casefold() == 'hidden':
+            show_hidden = True
+        async for embed_data in self.command_list_embed(ctx, show_hidden=show_hidden):
             await self.send_help(ctx, embed_data)
 
     @help.command(name='category_list')
@@ -365,7 +368,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                                                                             author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url}):
             yield embed_data
 
-    async def command_list_embed(self, ctx: commands.Context):
+    async def command_list_embed(self, ctx: commands.Context, show_hidden: bool):
         member = self.bot.get_antistasi_member(ctx.author.id) if isinstance(ctx.author, discord.User) else ctx.author
 
         frequ_dict = await self.bot.get_command_frequency()
@@ -379,9 +382,12 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                   self.bot.field_item(name='Wiki Link', value=embed_hyperlink('link 🔗', github_wiki_url), inline=True)]
         cog_dict = await self._get_command_list(ctx)
         for cog, cog_commands in cog_dict.items():
-            if cog_commands:
-                value = ListMarker.make_list([f"`{command}`\n> {command.brief}\n{ZERO_WIDTH}\n" for command in sorted(cog_commands, key=lambda x: frequ_dict.get(x.name, 0), reverse=True)])
-                fields.append(self.bot.field_item(name=f"**{cog.name}**\n{ZERO_WIDTH}", value=value, inline=False))
+            if cog.name.casefold() != 'generaldebugcog':
+                if show_hidden is False:
+                    cog_commands = [command for command in cog_commands if command.hidden is False]
+                    if cog_commands:
+                        value = ListMarker.make_list([f"`{command}`\n> {command.brief}\n{ZERO_WIDTH}" for command in sorted(cog_commands, key=lambda x: frequ_dict.get(x.name, 0), reverse=True)])
+                        fields.append(self.bot.field_item(name=f"**{cog.name}**\n{ZERO_WIDTH}", value=value, inline=False))
         async for embed_data in self.bot.make_paginatedfields_generic_embed(title="Command List", description=description,
                                                                             thumbnail=thumbnail,
                                                                             color=color,

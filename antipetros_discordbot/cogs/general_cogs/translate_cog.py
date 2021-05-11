@@ -248,14 +248,15 @@ class TranslateCog(AntiPetrosBaseCog):
 
         Tries to auto-guess input language.
 
-        **Warning, your invoking message gets deleted!**
-
         Args:
             text_to_translate (str): the text to translate, quotes are optional
             to_language_id (Optional[LanguageConverter], optional): either can be the name of the language or an language code (iso639-1 language codes). Defaults to "english".
 
         Example:
                 @AntiPetros translate german This is the Sentence to translate
+
+        Info:
+            Your invoking message gets deleted!
         """
         translated = self.translator.translate(text=text_to_translate, dest=to_language_id, src="auto")
 

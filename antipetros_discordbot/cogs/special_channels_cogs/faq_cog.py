@@ -173,13 +173,14 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
         Either as an normal message or as an reply, if the invoking message was also an reply.
 
-        Deletes invoking message
-
         Args:
             faq_numbers (commands.Greedy[int]): minimum one faq number, no maximum,each seperated by one space (ie 14 12 3)
 
         Example:
             @AntiPetros post_faq_by_number 4 8 12
+
+        Info:
+            Deletes invoking message.
         """
 
         for faq_number in faq_numbers:

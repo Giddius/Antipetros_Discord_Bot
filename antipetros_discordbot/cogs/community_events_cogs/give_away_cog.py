@@ -301,26 +301,6 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
                                                          channel=ctx.channel,
                                                          message=give_away_message))
 
-    @ auto_meta_info_command(hidden=True, enabled=False)
-    @ allowed_channel_and_allowed_role(in_dm_allowed=False)
-    @ log_invoker(logger=log, level="info")
-    async def abort_give_away(self, ctx):
-        """
-        NOT IMPLEMENTED
-        """
-        await self.bot.not_implemented(ctx)
-        return
-
-    @ auto_meta_info_command(hidden=True, enabled=False)
-    @ allowed_channel_and_allowed_role(in_dm_allowed=False)
-    @ log_invoker(logger=log, level="info")
-    async def finish_give_away(self, ctx):
-        """
-        NOT IMPLEMENTED
-        """
-        await self.bot.not_implemented(ctx)
-        return
-
 
 # endregion [Commands]
 

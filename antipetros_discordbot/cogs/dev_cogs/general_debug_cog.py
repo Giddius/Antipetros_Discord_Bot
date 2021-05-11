@@ -8,6 +8,7 @@ import random
 from time import time
 from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
 import asyncio
+import json
 from pprint import pprint, pformat
 from dotenv import load_dotenv
 from datetime import datetime
@@ -47,6 +48,9 @@ from antipetros_discordbot.utility.sqldata_storager import general_db
 from marshmallow import Schema, fields
 from rich import inspect as rinspect
 from antipetros_discordbot.engine.replacements.helper.help_embed_builder import HelpEmbedBuilder
+from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
+from antipetros_discordbot.auxiliary_classes.server_item import ServerItem
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion [Imports]
@@ -76,17 +80,6 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion [TODO]
 
-class RoleSchema(Schema):
-    color = fields.Function(lambda obj: (obj.color.r, obj.color.g, obj.color.b))
-    created_at = fields.Function(lambda obj: obj.created_at.isoformat(timespec='seconds'))
-    tags = fields.Function(lambda obj: {'is_bot_managed': obj.tags.is_bot_managed(), 'is_integration': obj.tags.is_integration(), 'is_premium_subscriber': obj.tags.is_premium_subscriber()} if obj.tags is not None else {})
-    permissions = fields.Function(lambda obj: dict(obj.permissions))
-    guild = fields.Function(lambda obj: obj.guild.name)
-    members = fields.Function(lambda obj: [member.name + '_' + str(member.id) for member in obj.members])
-
-    class Meta:
-        additional = ('mention', 'mentionable', 'managed', 'id', 'hoist', 'name', 'position')
-
 
 class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     """
@@ -98,21 +91,13 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-        load_dotenv("nextcloud.env")
-        self.next_cloud_options = {
-            'webdav_hostname': f"https://antistasi.de/dev_drive/remote.php/dav/files/{os.getenv('NX_USERNAME')}/",
-            'webdav_login': os.getenv('NX_USERNAME'),
-            'webdav_password': os.getenv('NX_PASSWORD')
-        }
-        self.next_cloud_client = Client(self.next_cloud_options)
-        self.notified_nextcloud_files = []
+
         self.bob_user = None
         self.antidevtros_member = None
         self.antipetros_member = None
         self.edit_embed_message = None
         self.general_db = general_db
-        self.command_pop_list = []
-
+        self.server_item_1 = ServerItem('mainserver_1', "nae-ugs1.armahosts.com:2312", 'Mainserver_1')
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
@@ -129,166 +114,38 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
                     if self.antidevtros_member is not None and self.antipetros_member is not None:
                         break
         await generate_bot_data(self.bot, self.antipetros_member)
+
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 
-    @ auto_meta_info_command()
-    async def check_self_dump(self, ctx: commands.Context):
-        """
-        check if dostring survives. here also
-        """
-        async with ctx.typing():
-            _out = {self.bot.display_name: {}}
-            for cog_name, cog_object in self.bot.cogs.items():
-                log.info("Dumped %s to Json", cog_name)
-                _out[self.bot.display_name][cog_name] = cog_object.dump()
-            try:
-                writejson(_out, 'cog_dump.json')
-            except TypeError as error:
-                writeit('cog_dump_errorer.txt', pformat(_out))
+    @auto_meta_info_command()
+    async def dump_bot(self, ctx: commands.Context):
+        schema = AntiPetrosBotSchema()
+        data = schema.dump(self.bot)
+        with open('bot_dump.json', 'w') as f:
+            f.write(json.dumps(data, default=str, sort_keys=True, indent=4))
 
         await ctx.send('done')
 
     @auto_meta_info_command()
-    async def check_categories(self, ctx: commands.Context):
-        for category_name, category in CommandCategory.all_command_categories.items():
-
-            command_string = ''
-            for command in sorted(category.commands, key=lambda x: x.name):
-                command_string += f'\n`{command.name}`'
-                if len(command_string) >= 950:
-                    command_string += '\n...'
-                    break
-            if not command_string:
-                command_string = '[]'
-            extra_role_string = '\n'.join(f"`{self.bot.get_antistasi_role(_id).name}`" for _id in category.extra_roles)
-            if not extra_role_string:
-                extra_role_string = '[]'
-            allowed_roles_string = ""
-
-            for role in sorted(map(self.bot.get_antistasi_role, category.allowed_roles), key=lambda x: x.name):
-
-                try:
-                    allowed_roles_string += f"\n`{role.name}`"
-                except AttributeError:
-                    log.critical("AttributeError with role-id '%s' and resulting role '%s'", _id, str(role))
-            if not allowed_roles_string:
-                allowed_roles_string = "[]"
-            embed_data = await self.bot.make_generic_embed(title=category.name,
-                                                           description=category.docstring,
-                                                           fields=[self.bot.field_item(name='config_name', value=category.config_name),
-                                                                   self.bot.field_item(name='commands', value=command_string),
-                                                                   self.bot.field_item(name='allowed_roles', value=allowed_roles_string),
-                                                                   self.bot.field_item(name='extra_roles', value=extra_role_string)])
-            await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-
-    @ auto_meta_info_command()
-    async def dump_roles(self, ctx: commands.Context):
-        async with ctx.typing():
-            schema = RoleSchema()
-            _out = {}
-            for role in self.bot.antistasi_guild.roles:
-                if role is not self.bot.get_antistasi_role(449481990513754112):
-                    _out[role.name] = schema.dump(role)
-            _out = {key + '_' + str(value.get('id')): value for key, value in sorted(_out.items(), key=lambda x: x[1].get('position'), reverse=True)}
-            writejson(_out, 'role_dump.json', sort_keys=False)
-            await ctx.send('done', delete_after=90, allowed_mentions=discord.AllowedMentions.none())
-            other_admin_role = self.bot.get_antistasi_role(513318914516844559)
-            await self.bot.split_to_messages(ctx, pformat(schema.dump(other_admin_role)), in_codeblock=True)
+    async def cached_msgs(self, ctx: commands.Context):
+        data = list(map(lambda x: x.content, self.bot.cached_messages))
+        writejson(data, "cached_msgs.json")
 
     @auto_meta_info_command()
-    async def check_channel_visibility_checker(self, ctx: commands.Context, member: discord.Member):
-        _out = {}
-        for channel in self.bot.antistasi_guild.text_channels:
-            _out[channel.name] = await self._check_channel_visibility(member, channel.name)
-
-        await ctx.send(pformat(_out), allowed_mentions=discord.AllowedMentions.none(), delete_after=120)
-
-    async def _check_channel_visibility(self, author: discord.Member, channel_name: str):
-        channel = self.bot.channel_from_name(channel_name)
-        channel_member_permissions = channel.permissions_for(author)
-        if channel_member_permissions.administrator is True or channel_member_permissions.read_messages is True:
-            return True
-        return False
-
-    @auto_meta_info_command()
-    async def dump_command(self, ctx: commands.Context):
-        command = self.bot.get_command("check_unmention_everyone")
-        writejson(command.dump(), 'blah.json')
-        await ctx.send('wuff')
-
-    @auto_meta_info_command()
-    async def check_embed_ping(self, ctx: commands.Context, role: discord.Role):
-        embed = discord.Embed(title='Test', description=role.mention)
-        await ctx.send(embed=embed)
-
-    @auto_meta_info_command()
-    async def dump_role(self, ctx: commands.Context, role: discord.Role = None):
-        schema = RoleSchema()
-        if role is None:
-            pass
-
-        data = schema.dump(role)
-        name = 'giddis_roles.json' if role is None else role.name.replace(' ', '_') + '.json'
-        writejson(data, name)
+    async def save_msg(self, ctx: commands.Context, channel: discord.TextChannel, message_id: int):
+        msg = await channel.fetch_message(message_id)
+        with open(str(message_id) + ".txt", 'w', encoding='utf-8', errors='ignore') as f:
+            f.write(msg.content)
+        writejson(msg.content, str(message_id) + '.json')
         await ctx.send('done')
 
     @auto_meta_info_command()
-    async def embed_mention_check(self, ctx: commands.Context, member: discord.Member):
-
-        embed_data = await self.bot.make_generic_embed(Title='Test', description=member.mention)
-        await ctx.send(**embed_data)
-
-    @auto_meta_info_command()
-    async def tell_len_stored_dicts(self, ctx: commands.Context):
-        text = f"{ic.format(len(self.bot.roles_dict))} ||\n{ic.format(len(self.bot.members_dict))} ||\n{ic.format(len(self.bot.channels_dict))} ||"
-
-        await ctx.send(text, allowed_mentions=discord.AllowedMentions.none())
-
-    @auto_meta_info_command()
-    async def webhook_test(self, ctx: commands.Context):
-        from discord import Webhook, AsyncWebhookAdapter
-        from aiohttp import ClientSession
-        async with ClientSession() as session:
-            webhook = Webhook.from_url('https://discord.com/api/webhooks/837390112730906624/oqQ9P9irf5AGrbV6zM0zSfdnleH-L8cwX6Ou1y-3eqbA00ngzN1wkaXRU39rp_eo8PcS', adapter=AsyncWebhookAdapter(session))
-            await webhook.send('hello')
-
-    @auto_meta_info_command()
-    async def send_checks(self, ctx: commands.Context, command: CommandConverter):
-        await ctx.send('\n'.join(check for check in command.checks))
-
-    @auto_meta_info_command()
-    async def show_discord_version(self, ctx: commands.Context):
-        from discord import version_info
-        await ctx.send('discord.py v{0.major}.{0.minor}.{0.micro}-{0.releaselevel}'.format(version_info))
-
-    @auto_meta_info_command()
-    async def show_appinfo(self, ctx: commands.Context):
-        from antipetros_discordbot.schemas.extra_schemas.appinfo_schema import AppInfoSchema
-        appinfo = await self.bot.application_info()
-        schema = AppInfoSchema()
-        data = schema.dump(appinfo)
-        await ctx.send(pformat(data))
-
-    @auto_meta_info_command()
-    async def check_other_guild_emoji(self, ctx: commands.Context):
-        other_guild_id = 837389179025096764
-        emoji_id = 839097950184931378
-        other_guild = self.bot.get_guild(other_guild_id)
-        test_emoji = await other_guild.fetch_emoji(emoji_id)
-        await ctx.send(test_emoji)
-
-    @ auto_meta_info_command()
-    async def check_help_embed_builder(self, ctx: commands.Context, command: CommandConverter):
-        async with ctx.typing():
-            builder = HelpEmbedBuilder(self.bot, ctx.author, command)
-
-            embed_data = await builder.to_embed()
-
-            await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+    async def check_server_item(self, ctx: commands.Context):
+        await ctx.send(str(await self.server_item_1.get_info()))
 
     def cog_unload(self):
         log.debug("Cog '%s' UNLOADED!", str(self))
@@ -297,10 +154,6 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         if ctx.author.id == 576522029470056450:
             return True
         return False
-
-    @auto_meta_info_command()
-    async def is_user_bot(self, ctx: commands.Context, member: discord.Member):
-        await ctx.send(member.bot)
 
 
 def setup(bot):

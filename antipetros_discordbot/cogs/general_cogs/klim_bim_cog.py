@@ -267,13 +267,14 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         """
         Posts an ASCII Art version of the input text.
 
-        **Warning, your invoking message gets deleted!**
-
         Args:
             text (str): text you want to see as ASCII Art.
 
         Example:
             @AntiPetros make_figlet The text to figlet
+
+        Info:
+            Your invoking message gets deleted!
         """
         figlet = Figlet(font='gothic', width=300)
         new_text = figlet.renderText(text.upper())
@@ -365,7 +366,8 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         All standard DnD Dice are available, d4, d6, d8, d10, d12, d20, d100.
 
         Args:
-            dice_line (str): the dice you want to roll in the format `2d6`, first number is amount. Multiple different dice can be rolled, just seperate them by a space. Like: 2d6 4d20 1d4.
+            dice_line (str): the dice you want to roll in the format `2d6`, first number is amount. Multiple different dice can be rolled, just seperate them by a space. -> 2d6 4d20 1d4.
+
         Example:
             @AntiPetros roll_dice 14d4 14d6 14d8 14d10 14d12 14d20 14d100
         """
@@ -543,8 +545,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
         This makes it possible for the youtube link to show up when the `random_music` command is used.
 
-        **WARNING** When this command is used, it logs the user! It also messages Giddi the Link and the Name of the Person that added it**WARNING**
-
         Args:
             band (str): The name of the Band or Artist. Needs to be put in quotes(") if it contains spaces
             title (str): The name of the Tile. Needs to be put in quotes(") if it contains spaces
@@ -552,6 +552,9 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
         Example:
             @AntiPetros add_music "Weird Al Yankovic" "Amish Paradise" https://www.youtube.com/watch?v=lOfZLb33uCg
+
+        Info:
+            When this command is used, it logs the user! It also messages Giddi the Link and the Name of the Person that added it
         """
         if "youtube" not in youtube_link.casefold():
             await ctx.send('Please only provide links to youtube in the format `https://www.youtube.com/watch?v=XXXXXX`!', delete_after=120)

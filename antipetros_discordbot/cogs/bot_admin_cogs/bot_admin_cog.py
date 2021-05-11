@@ -333,23 +333,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         log.warning("%s log file%s was requested by '%s'", which_logs, 's' if which_logs == 'all' else '', ctx.author.name)
 
     @auto_meta_info_command()
-    @only_giddi()
-    async def send_loop_info(self, ctx: commands.Context, loop_attr: str = None):
-        """
-        Tells which loop is running.
-
-        """
-        loop_attr = 'name' if loop_attr is None else loop_attr
-        if loop_attr.casefold() not in self.loop_regex.groupindex.keys():
-            await ctx.send(f"`{loop_attr}` is not a valid value for the parameter `loop_attr`.\nNeeds to be one of " + ', '.join(f"`{g_name}`" for g_name in self.loop_regex.groupindex.keys()), delete_after=120)
-            await delete_message_if_text_channel(ctx)
-            return
-        loop = asyncio.get_event_loop()
-        loop_string = str(loop)  # "<uvloop.Loop running=True closed=False debug=False>"
-        loop_match = self.loop_regex.match(loop_string)
-        await ctx.send(loop_match.group(loop_attr.casefold()))
-
-    @auto_meta_info_command()
     @owner_or_admin()
     async def disable_cog(self, ctx: commands.Context, cog: CogConverter):
         """
@@ -387,23 +370,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
             text += f"NAME: {cog_name}, CONFIG_NAME: {cog_object.config_name}\n{'-'*10}\n"
         await self.bot.split_to_messages(ctx, text, in_codeblock=True, syntax_highlighting='fix')
 
-    @ auto_meta_info_command()
-    @owner_or_admin()
-    async def query_rate_limited(self, ctx: commands.Context):
-        """
-        Checks if the bot is rate limited currently.
-
-        The bot checks this every 30 min anyways (and logs the result), this command checks it on demand.
-
-        Example:
-            @AntiPetros query_rate_limited
-        """
-        result = self.bot.is_ws_ratelimited()
-        verbose_result = "**IS**" if result is True else "**IS NOT**"
-        color = 'red' if result is True else "green"
-        thumbnail = "cross_mark" if result is True else "check_mark"
-        embed_data = await self.bot.make_generic_embed(title="Rate Limit Check", description=f"The Bot {verbose_result} currently Rate Limited.", color=color, thumbnail=thumbnail)
-        await ctx.send(**embed_data)
 
 # endregion[Commands]
 

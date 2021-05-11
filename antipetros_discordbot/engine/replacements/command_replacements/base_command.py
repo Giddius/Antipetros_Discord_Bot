@@ -50,7 +50,7 @@ from discord.ext import commands, tasks, flags, ipc
 
 import gidlogger as glog
 from copy import copy, deepcopy
-
+from icecream import ic
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -94,8 +94,8 @@ class AntiPetrosBaseCommand(commands.Command):
     alias_data_provider = JsonAliasProvider()
     source_code_data_provider = SourceCodeProvider()
     bot_mention_placeholder = '@BOTMENTION'
-    args_regex = re.compile(r"args\:\n(?P<args_values>.*?)(?:\n\s*example:.*)?$", re.IGNORECASE | re.DOTALL)
-
+    # args_regex = re.compile(r"args\:\n(?P<args_values>.*?)(?:\n\s*example:.*)?$", re.IGNORECASE | re.DOTALL)
+    args_regex = re.compile(r"(?P<description>.*?)(?P<args>args\:.*?(?=example\:)?)?(?P<example>example\:.*)?$", re.IGNORECASE | re.DOTALL)
     schema = AntiPetrosBaseCommandSchema()
 
     def __init__(self, func, **kwargs):
@@ -191,7 +191,11 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def brief(self):
-        brief = self.data_getters['meta_data']('brief', 'NA')
+        brief = self.data_getters['meta_data']('brief')
+        if brief is None:
+            brief = self.data_getters['meta_data']('short_doc')
+        if brief is None:
+            brief = self._old_data.get('brief')
         return brief
 
     @brief.setter
@@ -241,16 +245,26 @@ class AntiPetrosBaseCommand(commands.Command):
         #                 else:
         #                     usage[f"<{key}>"] = value.usage_description if hasattr(value, 'usage_description') else getdoc(value).splitlines()[0]
         #             usage[f"<{key}>"] = value.usage_description if hasattr(value, 'usage_description') else getdoc(value).splitlines()[0]
+        if not self.docstring:
+            return ""
         arg_match = self.args_regex.search(self.docstring)
         if arg_match:
-            arg_lines = list(map(lambda x: x.strip(), arg_match.group('args_values').splitlines()))
+            arg_lines = list(map(lambda x: x.strip(), arg_match.group('args').splitlines()))
+            arg_lines = [arg_line for arg_line in arg_lines if arg_line != '']
             for line in arg_lines:
-                key, value = line.split(':')
+                try:
+                    key, value = line.split(':', maxsplit=1)
+                except ValueError as error:
+                    log.debug(ic.format(self.name))
+                    log.debug(ic.format(line))
+                    log.debug(ic.format(arg_lines))
+                    raise error
                 if '(' in key:
                     key = key.split('(')[0]
 
                 usage[f"<{key.strip()}>"] = value.strip()
-        usage_line = f"@AntiPetros "
+
+        usage_line = "@AntiPetros "
         if self.parent is not None:
             usage_line += f"<{self.parent.name} or parent alias> "
         usage_line += f"<{self.name} or alias> "

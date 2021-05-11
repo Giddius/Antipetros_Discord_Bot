@@ -91,21 +91,12 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     rules_channel_id = 648725988813045765
     rules_message_regex = re.compile(r"^(?P<number>\d+(\.\d)?)[\)\.]\s?\-?(?P<text>.*)")
     links_message_regex = re.compile(r"(?P<name>.*)\n(?P<link>https\:\/\/.*)")
-    fake_fight_club_rules = {'1st RULE': 'You do not talk about **Antistasi**.',
-                             '2nd RULE': 'You __DO__ __NOT__ talk about **Antistasi**.',
-                             '3rd RULE': 'If someone surrenders or goes limp, double tap him to be sure.',
-                             '4th RULE': 'Only twenty guys to a mega-squad.',
-                             '5th RULE': 'One mega-squad at a time.',
-                             '6th RULE': 'No priest outfit, no shoes, wear sandals.',
-                             '7th RULE': 'Campaigns will go on till sunday or till we finally killed all '
-                             'civis.',
-                             '8th RULE': 'If this is your first night at **Antistasi**, you __HAVE__ to '
-                             'squadlead.'}
 
 
 # endregion [ClassAttributes]
 
 # region [Init]
+
 
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
@@ -146,6 +137,7 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
 # endregion [Loops]
 
 # region [Listener]
+
 
     @commands.Cog.listener(name="on_raw_message_edit")
     @universal_log_profiler
@@ -202,22 +194,6 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
         await self.community_rules(ctx)
         await self.server_rules(ctx)
 
-    @auto_meta_info_command()
-    @allowed_channel_and_allowed_role(False)
-    @commands.cooldown(1, 30, commands.BucketType.channel)
-    async def better_rules(self, ctx: commands.Context):
-        fields = []
-        for rule_num, rule_text in self.fake_fight_club_rules.items():
-            fields.append(self.bot.field_item(name=f"**{rule_num}**", value=rule_text))
-        embed_data = await self.bot.make_generic_embed(title='The Better Community Rules',
-                                                       description="Welcome to ~~  FIGHT  ~~ **ANTISTASI**",
-                                                       footer={'text': '\\s ... Big \\S'},
-                                                       fields=fields,
-                                                       thumbnail='stupid_logo',
-                                                       color='pink')
-
-        await ctx.reply(**embed_data)
-
 
 # endregion [Commands]
 
@@ -227,6 +203,7 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
 
     @universal_log_profiler
     async def _make_rules_embed(self, rule_message: discord.Message):
@@ -288,6 +265,7 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

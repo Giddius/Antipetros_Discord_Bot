@@ -41,7 +41,7 @@ from antipetros_discordbot.utility.general_decorator import universal_log_profil
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
-
+from pprint import pprint
 # endregion[Imports]
 
 # region [TODO]
@@ -123,7 +123,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def on_ready_setup(self):
         self.notification_channel = self.bot.channel_from_name('bot-testing')
         self.log_watcher_cog = await self.bot.get_cog("AntistasiLogWatcherCog")
-        asyncio.create_task(self._initialise_server_holder())
+        await self._initialise_server_holder()
 
         self.check_server_status_loop.start()
 
@@ -183,6 +183,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         Example:
             @AntiPetros current_online_server
         """
+        pprint(self.servers)
         exclude = COGS_CONFIG.retrieve(self.config_name, 'exclude_from_show_online', typus=List[str], direct_fallback=["Testserver_3", 'Eventserver'])
         exclude = set(map(lambda x: x.casefold(), exclude))
         if all(server_item.is_online is False for server_item in self.servers if server_item.name not in exclude):
@@ -282,7 +283,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         await asyncio.sleep(120)
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command(categories=CommandCategory.ADMINTOOLS)
+    @auto_meta_info_command(categories=CommandCategory.ADMINTOOLS, hidden=True)
     @allowed_channel_and_allowed_role()
     @log_invoker(log, 'critical')
     async def exclude_from_server_status_notification(self, ctx: commands.Context, server_name: str):
@@ -295,7 +296,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         await self._add_to_server_status_change_exclusions(server_name)
         await ctx.send(f'Excluded {server_name} from status change notifications')
 
-    @auto_meta_info_command(categories=CommandCategory.ADMINTOOLS)
+    @auto_meta_info_command(categories=CommandCategory.ADMINTOOLS, hidden=True)
     @allowed_channel_and_allowed_role()
     @log_invoker(log, 'critical')
     async def undo_exclude_from_server_status_notification(self, ctx: commands.Context, server_name: str):

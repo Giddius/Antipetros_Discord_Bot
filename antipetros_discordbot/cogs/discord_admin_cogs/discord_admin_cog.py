@@ -163,7 +163,7 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
             channel (discord.TextChannel): name or id of channel. Preferably use Id as it is failsafe.
             message (str): The message you want to write, does not need any quotes and can be multiline
 
-        Examples:
+        Example:
             @AntiPetros write_message 645930607683174401 This is my message
         """
         await channel.send(message)

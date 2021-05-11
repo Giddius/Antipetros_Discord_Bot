@@ -42,7 +42,7 @@ from antipetros_discordbot.utility.misc import alt_seconds_to_pretty, antipetros
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, has_attachments, owner_or_admin
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, readit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from icecream import ic
 
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE, Seperators, ListMarker
@@ -236,6 +236,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                                                        url=self.bot.github_url,
                                                        fields=fields,
                                                        thumbnail=None)
+        ic(self.bot.portrait_url)
         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command()

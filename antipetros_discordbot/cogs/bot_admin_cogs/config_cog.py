@@ -199,30 +199,30 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
     @change_prefix.command(name='add')
     @owner_or_admin()
     async def add_prefix(self, ctx: commands.Context, *, new_prefix: str):
-        current_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+        non_mention_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
         if ' ' in new_prefix:
             await ctx.send(embed=await self.bot.make_cancelled_embed(title='change_prefix add Error', msg='A prefix can not contain spaces!'))
             return
 
-        if new_prefix in current_prefixes:
-            embed_extra_info = f"Current Prefixes:\n{ZERO_WIDTH}\n```diff\n" + ListMarker.make_list(current_prefixes) + '\n```'
+        if new_prefix in non_mention_prefixes:
+            embed_extra_info = f"Current Prefixes:\n{ZERO_WIDTH}\n```diff\n" + ListMarker.make_list(non_mention_prefixes) + '\n```'
             await ctx.send(embed=await self.bot.make_cancelled_embed(title='change_prefix add Error', msg=f'Prefix `{new_prefix}` is already set as prefix for the bot!', extra=embed_extra_info))
             return
 
-        new_prefixes = current_prefixes + [new_prefix]
+        new_prefixes = non_mention_prefixes + [new_prefix]
         BASE_CONFIG.set('prefix', 'command_prefix', ', '.join(new_prefixes))
         await ctx.send(f"Prefix `{new_prefix}` was added to the bots Prefixes\nCurrent Prefixes:\n```diff\n" + '\n'.join(new_prefixes) + '\n```')
 
     @change_prefix.command(name='remove')
     @owner_or_admin()
     async def remove_prefix(self, ctx: commands.Context, *, prefix_to_remove: str):
-        current_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
-        if prefix_to_remove not in current_prefixes:
-            embed_extra_info = f"Current Prefixes:\n{ZERO_WIDTH}\n```diff\n" + ListMarker.make_list(current_prefixes) + '\n```'
+        non_mention_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+        if prefix_to_remove not in non_mention_prefixes:
+            embed_extra_info = f"Current Prefixes:\n{ZERO_WIDTH}\n```diff\n" + ListMarker.make_list(non_mention_prefixes) + '\n```'
             await ctx.send(embed=await self.bot.make_cancelled_embed(title='change_prefix remove Error', msg=f"Prefix `{prefix_to_remove}` is not a Prefix of the bot", extra=embed_extra_info))
             return
 
-        new_prefixes = current_prefixes.copy()
+        new_prefixes = non_mention_prefixes.copy()
         new_prefixes.remove(prefix_to_remove)
         BASE_CONFIG.set('prefix', 'command_prefix', ', '.join(new_prefixes))
         await ctx.send(f"Prefix `{prefix_to_remove}` was removed from the bot Prefixes\nCurrent Prefixes:\n```diff\n" + '\n'.join(new_prefixes) + '\n```')
@@ -270,39 +270,6 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
                 await asyncio.sleep(0.5)
         else:
             await self.send_config_file(ctx, config_name)
-
-    @auto_meta_info_command()
-    @ owner_or_admin()
-    @ log_invoker(log, 'critical')
-    async def overwrite_config_from_file(self, ctx):
-        """
-        NOT IMPLEMENTED
-        """
-        await self.bot.not_implemented(ctx)
-
-    @ auto_meta_info_command()
-    @ owner_or_admin()
-    async def change_setting_to(self, ctx, config, section, option, value):
-        """
-        NOT IMPLEMENTED
-        """
-        await self.bot.not_implemented(ctx)
-
-    @ auto_meta_info_command()
-    @ owner_or_admin()
-    async def show_config_content(self, ctx: commands.Context, config_name: str = "all"):
-        """
-        NOT IMPLEMENTED
-        """
-        await self.bot.not_implemented(ctx)
-
-    @ auto_meta_info_command()
-    @ owner_or_admin()
-    async def show_config_content_raw(self, ctx: commands.Context, config_name: str = "all"):
-        """
-        NOT IMPLEMENTED
-        """
-        await self.bot.not_implemented(ctx)
 
     @ auto_meta_info_command()
     @ owner_or_admin()

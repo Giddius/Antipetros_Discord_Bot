@@ -194,7 +194,6 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # region [Properties]
 
-
     @property
     @universal_log_profiler
     def subscription_channel(self):
@@ -660,14 +659,9 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         else:
             await ctx.send(file=template_file)
 
-    # @auto_meta_info_command(hidden=True, enabled=True)
-    # @owner_or_admin()
-    # async def delete_test_role(self, ctx: commands.Context, role: discord.Role):
-    #     role_name = role.name
-    #     await role.delete(reason='Was for testing, and threw an error, cleaning up')
-    #     await ctx.send(f"`{role_name}` was removed", delete_after=60)
 
 # endregion[Commands]
+
 
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"

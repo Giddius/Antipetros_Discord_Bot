@@ -999,3 +999,38 @@ def delete_all_git_branches_except_development(c, force=False):
             print(error)
         c.run("git remote prune origin", echo=True, warn=True)
     print("the following branches are not fully merged:\n" + '\n'.join(not_fully_merged))
+
+
+@task(name='process-meta-data')
+def process_meta_data(c):
+    docstring_regex = re.compile(r"(?P<description>.*?)(?P<args>args\:.*?(?=example\:)?)?(?P<example>example\:.*?)?(?P<extra_info>info\:.*)?$", re.IGNORECASE | re.DOTALL)
+    file_path = pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'init_userdata', 'data_pack', 'fixed_data', 'documentation', 'command_meta_data.json')
+    data = loadjson(file_path)
+    _new_dict = {}
+    for command_name, command_attrs in data.items():
+        new_attrs = {'docstring': None,
+                     'example': None,
+                     'long_description': None,
+                     'brief': None,
+                     'extra_info': None,
+                     'description': None,
+                     'short_doc': None} | command_attrs
+
+        if new_attrs.get('docstring'):
+            docstring = new_attrs.get('docstring')
+            docstring_match = docstring_regex.search(docstring)
+            if docstring_match:
+                if not new_attrs.get('description') and docstring_match.group('description'):
+                    new_attrs['description'] = '\n'.join(map(lambda x: x.strip(), [line for line in docstring_match.group('description').splitlines() if line != '']))
+
+                if not new_attrs.get('example') and docstring_match.group('example'):
+                    new_attrs['example'] = '\n'.join(map(lambda x: x.strip(), [line for line in docstring_match.group('example').splitlines() if line != '' and line.strip().casefold() != 'example:']))
+
+                if not new_attrs.get('extra_info') and docstring_match.group('extra_info'):
+                    new_attrs['extra_info'] = '\n'.join(map(lambda x: x.strip(), [line for line in docstring_match.group('extra_info').splitlines() if line != '' and line.strip().casefold() != 'info:']))
+
+                if not new_attrs.get('short_doc') and docstring_match.group('description'):
+                    new_attrs['short_doc'] = list(map(lambda x: x.strip(), [line for line in docstring_match.group('description').splitlines() if line != '']))[0]
+
+        _new_dict[command_name] = new_attrs
+    writejson(_new_dict, file_path)

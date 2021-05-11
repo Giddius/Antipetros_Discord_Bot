@@ -15,7 +15,7 @@ import json
 import aiohttp
 import discord
 from typing import List, Union, Mapping, Optional, Union, Hashable, Any
-
+from webdav3.client import Client as WebdavClient
 from collections import UserDict, namedtuple
 from watchgod import Change, awatch
 from discord.ext import tasks, commands, ipc
@@ -24,9 +24,10 @@ import gidlogger as glog
 from itertools import product
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.enums import UpdateTypus
+from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.misc import save_bin_file
 from antipetros_discordbot.engine.global_checks import user_not_blacklisted
-from antipetros_discordbot.utility.named_tuples import CreatorMember
+from antipetros_discordbot.auxiliary_classes.version_item import VersionItem
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
 from antipetros_discordbot.utility.gidtools_functions import get_pickled, loadjson, pathmaker, readit, writejson, writeit
@@ -38,6 +39,7 @@ from datetime import datetime, timedelta, timezone
 from antipetros_discordbot.utility.emoji_handling import is_unicode_emoji
 from antipetros_discordbot.engine.replacements import CommandCategory, AntiPetrosBaseGroup
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
+from antipetros_discordbot.auxiliary_classes.server_item import ServerItem
 import signal
 import platform
 # endregion[Imports]
@@ -160,6 +162,8 @@ class AntiPetrosBot(commands.Bot):
     def _setup(self):
         self._update_profiling_check()
         CommandCategory.bot = self
+        ServerItem.bot = self
+        ServerItem.config_name = 'wurst'
         self.support = BotSupporter(self)
         self.support.recruit_subsupports()
         self.overwrite_methods()
@@ -204,6 +208,7 @@ class AntiPetrosBot(commands.Bot):
     async def _start_sessions(self):
         self.sessions = {}
         self.sessions['aio_request_session'] = aiohttp.ClientSession(loop=self.loop)
+        self.sessions['webdav_client'] = WebdavClient(get_nextcloud_options())
         log.info("Session '%s' was started", repr(self.sessions['aio_request_session']))
 
     @universal_log_profiler
@@ -270,6 +275,22 @@ class AntiPetrosBot(commands.Bot):
             writeit(self.description_file, '')
         return readit(self.description_file)
 
+    @property
+    def brief(self):
+        return ''
+
+    @property
+    def long_description(self):
+        return ''
+
+    @property
+    def short_doc(self):
+        return ''
+
+    @property
+    def extra_info(self):
+        return ''
+
     @description.setter
     def description(self, value):
         if self.description.casefold() in ['wip', None, '']:
@@ -293,15 +314,14 @@ class AntiPetrosBot(commands.Bot):
     @property
     @universal_log_profiler
     def github_url(self):
-        return BASE_CONFIG.retrieve('links', 'github_repo', typus=str, direct_fallback="https://github.com/404")
+        return BASE_CONFIG.retrieve('links', 'bot_github_repo', typus=str, direct_fallback="https://github.com/404")
 
     @property
     @universal_log_profiler
     def github_wiki_url(self):
-        return BASE_CONFIG.retrieve('links', 'github_wiki', typus=str, direct_fallback="https://github.com/404")
+        return BASE_CONFIG.retrieve('links', 'bot_github_wiki', typus=str, direct_fallback="https://github.com/404")
 
     @property
-    @universal_log_profiler
     def portrait_url(self):
         option_name = f"{self.display_name.casefold()}_portrait_image"
         return BASE_CONFIG.retrieve('links', option_name, typus=str, direct_fallback=None)
@@ -331,7 +351,7 @@ class AntiPetrosBot(commands.Bot):
 
     @property
     @universal_log_profiler
-    def current_prefixes(self):
+    def non_mention_prefixes(self):
         return list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
 
     @property
@@ -347,11 +367,13 @@ class AntiPetrosBot(commands.Bot):
         return sorted_prefixes
 
     @property
-    @universal_log_profiler
     def version(self):
-        return os.getenv('ANTIPETROS_VERSION')
+        version_string = os.getenv('ANTIPETROS_VERSION')
+        return VersionItem.from_string(version_string)
 
-
+    @property
+    def cog_list(self):
+        return list(self.cogs.values())
 # endregion[Properties]
 
 # region [Loops]
