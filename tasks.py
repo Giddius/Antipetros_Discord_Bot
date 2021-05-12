@@ -1032,5 +1032,11 @@ def process_meta_data(c):
                 if not new_attrs.get('short_doc') and docstring_match.group('description'):
                     new_attrs['short_doc'] = list(map(lambda x: x.strip(), [line for line in docstring_match.group('description').splitlines() if line != '']))[0]
 
+                if not new_attrs.get('brief') and new_attrs.get('short_doc'):
+                    brief = new_attrs.get("short_doc")
+                    if len(brief) > 30:
+                        brief = brief[:27] + '...'
+                    new_attrs['brief'] = brief
+
         _new_dict[command_name] = new_attrs
     writejson(_new_dict, file_path)

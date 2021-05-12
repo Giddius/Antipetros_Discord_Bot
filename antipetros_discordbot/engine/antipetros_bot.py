@@ -15,7 +15,7 @@ import json
 import aiohttp
 import discord
 from typing import List, Union, Mapping, Optional, Union, Hashable, Any
-from webdav3.client import Client as WebdavClient
+from aiodav import Client as AioWebdavClient
 from collections import UserDict, namedtuple
 from watchgod import Change, awatch
 from discord.ext import tasks, commands, ipc
@@ -208,7 +208,7 @@ class AntiPetrosBot(commands.Bot):
     async def _start_sessions(self):
         self.sessions = {}
         self.sessions['aio_request_session'] = aiohttp.ClientSession(loop=self.loop)
-        self.sessions['webdav_client'] = WebdavClient(get_nextcloud_options())
+        self.sessions['webdav_client'] = AioWebdavClient(**get_nextcloud_options())
         log.info("Session '%s' was started", repr(self.sessions['aio_request_session']))
 
     @universal_log_profiler

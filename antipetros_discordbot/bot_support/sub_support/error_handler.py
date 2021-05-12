@@ -80,7 +80,7 @@ class ErrorHandler(SubSupportBase):
         self.support = support
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
-        self.support.overwritten_methods |= {'on_error': self.handle_base_errors, 'on_command_error': self.handle_errors, 'on_ipc_error': self.handle_ipc_error}
+        self.support.overwritten_methods |= {'on_command_error': self.handle_errors, 'on_ipc_error': self.handle_ipc_error}  # 'on_error': self.handle_base_errors,
         self.emphasis_regex = re.compile(r"'.*?'")
         self.error_handle_table = {commands.MaxConcurrencyReached: self._handle_max_concurrency,
                                    commands.CommandOnCooldown: self._handle_command_on_cooldown,

@@ -28,7 +28,7 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus
 from antipetros_discordbot.utility.data_gathering import save_cog_command_data
-
+import json
 
 # endregion[Imports]
 
@@ -39,7 +39,7 @@ from antipetros_discordbot.utility.data_gathering import save_cog_command_data
 
 
 # region [Constants]
-load_dotenv('ipc.env')
+
 APPDATA = ParaStorageKeeper.get_appdata()
 BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
@@ -157,6 +157,11 @@ def cli():
     """
     dummy function to initiate click group.
     """
+
+
+@cli.command(name="app-data-info")
+def app_data_info():
+    print(json.dumps(ParaStorageKeeper.serialize()))
 
 
 @cli.group()
