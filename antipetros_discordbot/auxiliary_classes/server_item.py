@@ -17,20 +17,20 @@ import os
 import re
 import random
 from asyncstdlib import map as async_map
-from typing import Union, Callable, TYPE_CHECKING, BinaryIO
+from typing import Union, Callable, TYPE_CHECKING, BinaryIO, Tuple
 from datetime import datetime
 from tempfile import TemporaryDirectory
 from functools import cached_property, wraps, total_ordering
 from contextlib import asynccontextmanager
 from dateparser import parse as date_parse
-
+from collections import namedtuple
 from async_property import async_property, async_cached_property
-
+from aiodav import Client as AioWebdavClient
 from aiodav.client import Resource
 import gidlogger as glog
 from asyncio import Semaphore as AioSemaphore, Lock as AioLock
 
-from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, readit, writejson
+from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, readit, writejson, loadjson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.regexes import LOG_NAME_DATE_TIME_REGEX, LOG_SPLIT_REGEX, MOD_TABLE_START_REGEX, MOD_TABLE_END_REGEX, MOD_TABLE_LINE_REGEX
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
@@ -40,14 +40,21 @@ from antipetros_discordbot.utility.exceptions import NeededClassAttributeNotSet,
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
-from inspect import isawaitable, iscoroutine
+from inspect import isawaitable, iscoroutine, iscoroutinefunction
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
-from io import StringIO
+from jinja2 import Environment, FileSystemLoader, BaseLoader
+from io import StringIO, BytesIO
 import a2s
+from weasyprint import HTML
 import aiohttp
 from aiodav.exceptions import NoConnection
 from sortedcontainers import SortedDict, SortedList
 from marshmallow import Schema, fields
+from abc import ABC, ABCMeta, abstractmethod
+import discord
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog
+
 # endregion[Imports]
 
 # region [TODO]
@@ -77,6 +84,65 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
+ModFileItem = namedtuple('ModFileItem', ['html', 'image'])
+
+
+@unique
+class ServerStatus(Enum):
+    ON = auto()
+    OFF = auto()
+
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, bool):
+            if value is True:
+                return cls.ON
+            return cls.OFF
+        return super()._missing_(value)
+
+
+@unique
+class AntistasiSide(Enum):
+    GREENFOR = auto()
+    BLUFOR = auto()
+    REDFOR = auto()
+    CIV = auto()
+
+
+class AbstractConnectSignal(ABC):
+
+    def __init__(self) -> None:
+        self.targets = []
+
+    def connect(self, target: Callable):
+        self.targets.append(target)
+
+    @abstractmethod
+    async def emit(self, *args, **kwargs):
+        for target in self.targets:
+            if asyncio.iscoroutinefunction(target):
+                await target(*args, **kwargs)
+            else:
+                target(*args, **kwargs)
+
+
+class StatusSwitchSignal(AbstractConnectSignal):
+
+    async def emit(self, server: "ServerItem", switched_to: ServerStatus):
+        await super().emit(server, switched_to)
+
+
+class NewCampaignSignal(AbstractConnectSignal):
+
+    async def emit(self, server: "ServerItem", map_name: str, mission_type: str):
+        await super().emit(server, map_name, mission_type)
+
+
+class FlagCapturedSignal(AbstractConnectSignal):
+    async def emit(self, server: "ServerItem", flag_name: str, switched_to: AntistasiSide):
+        return await super().emit(server, flag_name, switched_to)
+
+
 def fix_path(in_path: str) -> str:
     path_parts = in_path.split('/')
     fixed_path = '/' + '/'.join(path_parts[-4:])
@@ -87,6 +153,75 @@ def fix_info_dict(info_dict: dict) -> dict:
     _ = info_dict.pop('path', None)
     _ = info_dict.pop('isdir', None)
     return info_dict
+
+
+def _transform_mod_name(mod_name: str):
+    mod_name = mod_name.removeprefix('@')
+    return mod_name
+
+
+class LogParser:
+    mod_lookup_data = loadjson(APPDATA['mod_lookup.json'])
+    new_campaign = NewCampaignSignal()
+    flag_captured = FlagCapturedSignal()
+
+    def __init__(self, server_item: "ServerItem") -> None:
+        self.server = server_item
+        self.current_log_item = None
+        self.current_byte_position = 0
+
+    async def _parse_mod_data(self) -> list:
+        _out = []
+        current_content_bytes = []
+        async for chunk in self.server.newest_log_item.content_iter():
+            current_content_bytes.append(chunk)
+        current_content = b''.join(current_content_bytes).decode('utf-8', errors='ignore')
+        split_match = LOG_SPLIT_REGEX.search(current_content)
+        if split_match:
+            pre_content = current_content[:split_match.end()]
+            cleaned_lower = MOD_TABLE_START_REGEX.split(pre_content)[-1]
+            mod_table = MOD_TABLE_END_REGEX.split(cleaned_lower)[0]
+            for line in mod_table.splitlines():
+                if line != '':
+                    line_match = MOD_TABLE_LINE_REGEX.search(line)
+                    _out.append({key: value.strip() for key, value in line_match.groupdict().items()})
+                await asyncio.sleep(0)
+
+            items = [item.get('mod_dir') for item in _out if item.get('official') == 'false' and item.get("mod_name") not in ["@members", "@TaskForceEnforcer", "@utility"]]
+            return sorted(items)
+
+    async def _render_mod_data(self) -> str:
+        mod_data = await self._parse_mod_data()
+
+        templ_data = []
+        for item in mod_data:
+            transformed_mod_name = await asyncio.sleep(0, _transform_mod_name(item))
+            templ_data.append(self.mod_lookup_data.get(transformed_mod_name))
+
+        return await asyncio.to_thread(self.mod_template.render, req_mods=templ_data, server_name=self.server.name.replace('_', ' '))
+
+    async def get_mod_data_html_file(self) -> discord.File:
+        with BytesIO() as bytefile:
+            html_string = await self._render_mod_data()
+            bytefile.write(html_string.encode('utf-8', errors='ignore'))
+            bytefile.seek(0)
+            return discord.File(bytefile, f"{self.server.name}_mods.html")
+
+    async def get_mod_data_image_file(self) -> discord.File:
+        html_string = await self._render_mod_data()
+        weasy_html = HTML(string=html_string)
+        with BytesIO() as bytefile:
+            await asyncio.to_thread(weasy_html.write_png, bytefile, optimize_images=False, presentational_hints=False, resolution=96)
+            bytefile.seek(0)
+            return discord.File(bytefile, f"{self.server.name}_mods.png")
+
+    @property
+    def mod_html_template_string(self):
+        return readit(APPDATA["arma_required_mods.html.jinja"])
+
+    @property
+    def mod_template(self):
+        return Environment(loader=BaseLoader).from_string(self.mod_html_template_string)
 
 
 class LogFileSchema(Schema):
@@ -110,7 +245,7 @@ class LogFileItem:
         self.created = date_parse(self.info.get("created"), settings={'TIMEZONE': 'UTC'}) if self.info.get("created") is not None else self._date_time_from_name()
         self.created_in_seconds = int(self.created.timestamp())
 
-    async def collect_info(self):
+    async def collect_info(self) -> None:
         async with self.limit_semaphore:
             self.info = await self.resource_item.info()
 
@@ -119,7 +254,7 @@ class LogFileItem:
 
     @classmethod
     @property
-    def warning_size_threshold(cls):
+    def warning_size_threshold(cls) -> int:
         limit = COGS_CONFIG.retrieve('antistasi_log_watcher', 'log_file_warning_size_threshold', typus=str, direct_fallback='200mb')
         match_result = cls.size_string_regex.search(limit)
         relative_size = int(match_result.group('number'))
@@ -127,36 +262,36 @@ class LogFileItem:
         return relative_size * SIZE_CONV_BY_SHORT_NAME.get(unit)
 
     @property
-    def etag(self):
+    def etag(self) -> str:
         return self.info.get("etag").strip('"')
 
     @property
-    def modified(self):
+    def modified(self) -> datetime:
         return date_parse(self.info.get("modified"), settings={'TIMEZONE': 'UTC'})
 
     @property
-    def size(self):
+    def size(self) -> int:
         return int(self.info.get("size"))
 
     @property
-    def size_pretty(self):
+    def size_pretty(self) -> str:
         return bytes2human(self.size, annotate=True)
 
     @cached_property
-    def created_pretty(self):
+    def created_pretty(self) -> str:
         return self.created.strftime("%Y-%m-%d %H:%M:%S UTC")
 
     @property
-    def modified_pretty(self):
+    def modified_pretty(self) -> str:
         return self.modified.strftime("%Y-%m-%d %H:%M:%S UTC")
 
     @property
-    def is_over_threshold(self):
+    def is_over_threshold(self) -> bool:
         if self.size >= self.warning_size_threshold:
             return True
         return False
 
-    def _date_time_from_name(self):
+    def _date_time_from_name(self) -> datetime:
         matched_data = LOG_NAME_DATE_TIME_REGEX.search(os.path.basename(self.path))
         if matched_data:
             date_time_string = f"{matched_data.group('year')}-{matched_data.group('month')}-{matched_data.group('day')} {matched_data.group('hour')}:{matched_data.group('minute')}:{matched_data.group('second')}"
@@ -188,36 +323,8 @@ class LogFileItem:
             return o.created_in_seconds <= self.created_in_seconds
         return NotImplemented
 
-    def dump(self):
+    def dump(self) -> dict:
         return self.schema.dump(self)
-
-
-@unique
-class ServerStatus(Enum):
-    ON = auto()
-    OFF = auto()
-
-    @classmethod
-    def _missing_(cls, value):
-        if isinstance(value, bool):
-            if value is True:
-                return cls.ON
-            return cls.OFF
-        return super()._missing_(value)
-
-
-class StatusSwitchSignal:
-
-    def __init__(self) -> None:
-        self.targets = []
-
-    def connect(self, target: Callable):
-        self.targets.append(target)
-
-    async def emit(self, server: "ServerItem", switched_to: ServerStatus):
-        for target in self.targets:
-
-            await target(server, switched_to)
 
 
 class ServerItem:
@@ -227,58 +334,74 @@ class ServerItem:
                               'testserver_1': "https://www.battlemetrics.com/servers/arma3/4789978",
                               'testserver_2': "https://www.battlemetrics.com/servers/arma3/9851037",
                               'eventserver': "https://www.battlemetrics.com/servers/arma3/9552734"}
-    bot = None
-    config_name = None
+
+    cog: "AntiPetrosBaseCog" = None
     encoding = 'utf-8'
-    delta_query_port = 1
     limit_lock = AioLock()
 
-    def __init__(self, name: str, full_address: str, log_folder: str) -> None:
-        if self.bot is None:
-            raise NeededClassAttributeNotSet('bot', self.__class__.__name__)
-        if self.config_name is None:
-            raise NeededClassAttributeNotSet('config_name', self.__class__.__name__)
+    client = None
+    status_switch_signal = StatusSwitchSignal()
+
+    def __init__(self, name: str, full_address: str, log_folder: str):
+        if self.cog is None:
+            raise NeededClassAttributeNotSet('cog', self.__class__.__name__)
+
         self.name = name
         self.full_address = full_address
         self.log_folder = log_folder
         self.log_items = SortedList()
         self.previous_status = None
-        self.status_switch_signal = StatusSwitchSignal()
+        self.log_parser = LogParser(self)
+
+    @classmethod
+    async def async_init(cls, name: str, full_address: str, log_folder: str):
+        if cls.client is None:
+            cls.client = AioWebdavClient(**get_nextcloud_options())
+        return cls(name=name, full_address=full_address, log_folder=log_folder)
+
+    async def get_mod_files(self):
+        htmL_file = await self.log_parser.get_mod_data_html_file()
+        image_file = await self.log_parser.get_mod_data_image_file()
+        return ModFileItem(html=htmL_file, image=image_file)
+
+    @cached_property
+    def config_name(self) -> str:
+        return self.cog.config_name
 
     @property
-    def client(self):
-        return self.bot.webdav_client
-
-    @property
-    def address(self):
+    def address(self) -> str:
         return self.full_address.split(':')[0]
 
     @property
-    def port(self):
+    def port(self) -> int:
         return int(self.full_address.split(':')[-1])
 
     @property
-    def query_port(self):
+    def query_port(self) -> int:
         return self.port + self.delta_query_port
 
     @property
-    def query_full_address(self):
+    def query_full_address(self) -> Tuple[str, int]:
         return (self.address, self.query_port)
 
     @property
-    def sub_log_folder_name(self):
+    def delta_query_port(self) -> int:
+        return COGS_CONFIG.retrieve(self.config_name, "delta_query_port", typus=int, direct_fallback=1)
+
+    @property
+    def sub_log_folder_name(self) -> str:
         return COGS_CONFIG.retrieve(self.config_name, 'sub_log_folder', typus=str, direct_fallback="Server")
 
     @property
-    def base_log_folder_name(self):
+    def base_log_folder_name(self) -> str:
         return COGS_CONFIG.retrieve(self.config_name, 'base_log_folder', typus=str, direct_fallback="Antistasi_Community_Logs")
 
     @property
-    def log_folder_path(self):
+    def log_folder_path(self) -> str:
         return f"{self.base_log_folder_name}/{self.log_folder}/{self.sub_log_folder_name}/"
 
     @property
-    def newest_log_item(self):
+    def newest_log_item(self) -> LogFileItem:
         return self.log_items[0]
 
     async def list_items_on_server(self):
@@ -289,8 +412,7 @@ class ServerItem:
                 yield item
                 await asyncio.sleep(0)
 
-    async def gather_log_items(self):
-
+    async def gather_log_items(self) -> None:
         new_items = []
         async for remote_log_item in self.list_items_on_server():
             new_items.append(remote_log_item)
@@ -300,7 +422,7 @@ class ServerItem:
         self.log_items.update(new_items)
         log.info("Gathered %s Log_file_items for Server %s", len(self.log_items), self.name)
 
-    async def update_log_items(self):
+    async def update_log_items(self) -> None:
         old_items = set(self.log_items)
         await self.gather_log_items()
         for item in set(self.log_items).difference(old_items):
@@ -308,7 +430,7 @@ class ServerItem:
         log.info("Updated log_items for server %s", self.name)
 
     @universal_log_profiler
-    async def is_online(self):
+    async def is_online(self) -> ServerStatus:
         try:
             check_data = await a2s.ainfo(self.query_full_address, timeout=self.timeout)
             status = ServerStatus.ON
@@ -321,13 +443,13 @@ class ServerItem:
         self.previous_status = status
         return status
 
-    async def get_info(self):
+    async def get_info(self) -> a2s.SourceInfo:
         return await a2s.ainfo(self.query_full_address, encoding=self.encoding)
 
-    async def get_rules(self):
+    async def get_rules(self) -> dict:
         return await a2s.arules(self.query_full_address)
 
-    async def get_players(self):
+    async def get_players(self) -> list:
         return await a2s.aplayers(self.query_full_address, encoding=self.encoding)
 
     def __str__(self) -> str:
@@ -335,6 +457,14 @@ class ServerItem:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self.name}, full_address={self.full_address}, log_base_folder={self.log_base_folder})"
+
+    def __hash__(self):
+        return hash(self.full_address)
+
+    def __eq__(self, o: object) -> bool:
+        if isinstance(o, ServerItem):
+            return hash(o) == hash(self)
+        return NotImplemented
 
 
 # region[Main_Exec]

@@ -99,13 +99,8 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         self.antipetros_member = None
         self.edit_embed_message = None
         self.general_db = general_db
-        ServerItem.config_name = 'debug'
-        self.server_item_1 = ServerItem('mainserver_1', "nae-ugs1.armahosts.com:2312", 'Mainserver_1')
-        self.server_item_2 = ServerItem('mainserver_2', "nae-ugs1.armahosts.com:2322", 'Mainserver_2')
-        self.server_item_test_2 = ServerItem('testserver_2', "nae-ugs1.armahosts.com:2352", 'Testserver_2')
-        self.server_item_1.status_switch_signal.connect(self.send_server_notification)
-        self.server_item_2.status_switch_signal.connect(self.send_server_notification)
-        self.server_item_test_2.status_switch_signal.connect(self.send_server_notification)
+        ServerItem.cog = self
+        ServerItem.status_switch_signal.connect(self.send_server_notification)
 
         glog.class_init_notification(log, self)
 
@@ -123,6 +118,9 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
                     if self.antidevtros_member is not None and self.antipetros_member is not None:
                         break
         await generate_bot_data(self.bot, self.antipetros_member)
+        self.server_item_1 = await ServerItem.async_init('mainserver_1', "nae-ugs1.armahosts.com:2312", 'Mainserver_1')
+        self.server_item_2 = await ServerItem.async_init('mainserver_2', "nae-ugs1.armahosts.com:2322", 'Mainserver_2')
+        self.server_item_test_2 = await ServerItem.async_init('testserver_2', "nae-ugs1.armahosts.com:2352", 'Testserver_2')
         self.check_server_online_loop.start()
         await self.server_item_1.is_online()
         await self.server_item_2.is_online()
@@ -185,6 +183,17 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
             await ctx.send(file=file)
 
     @ auto_meta_info_command()
+    async def check_mod_data(self, ctx: commands.Context):
+
+        x = await self.server_item_1.get_info()
+        pprint(dir(x))
+        await ctx.send(str(x.edf))
+        await ctx.send(str(x.has_keywords))
+        data = await self.server_item_1.get_mod_files()
+        await ctx.send(file=data.html)
+        await ctx.send(file=data.image)
+
+    @ auto_meta_info_command()
     async def check_server_item(self, ctx: commands.Context):
         cur = 0
         for item in self.server_item_1.log_items:
@@ -208,6 +217,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
     def cog_unload(self):
         self.check_server_online_loop.stop()
+        self.bot.loop.create_task(ServerItem.client.close())
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     async def cog_check(self, ctx):

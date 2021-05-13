@@ -14,7 +14,7 @@ import json
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
-from typing import List, Union, Mapping, Optional, Union, Hashable, Any, Callable
+from typing import List, Union, Mapping, Optional, Hashable, Any, Callable
 from aiodav import Client as AioWebdavClient
 from collections import UserDict, namedtuple
 from watchgod import Change, awatch
@@ -39,7 +39,6 @@ from datetime import datetime, timedelta, timezone
 from antipetros_discordbot.utility.emoji_handling import is_unicode_emoji
 from antipetros_discordbot.engine.replacements import CommandCategory, AntiPetrosBaseGroup
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
-from antipetros_discordbot.auxiliary_classes.server_item import ServerItem
 import signal
 import platform
 # endregion[Imports]
@@ -150,7 +149,7 @@ class AntiPetrosBot(commands.Bot):
         self.used_startup_message = None
         self.ipc = None
         self._command_dict = None
-
+        self.connect_counter = 0
         self._setup()
 
         glog.class_init_notification(log, self)
@@ -162,8 +161,6 @@ class AntiPetrosBot(commands.Bot):
     def _setup(self):
         self._update_profiling_check()
         CommandCategory.bot = self
-        ServerItem.bot = self
-        ServerItem.config_name = 'wurst'
         self.support = BotSupporter(self)
         self.support.recruit_subsupports()
         self.overwrite_methods()
@@ -172,25 +169,26 @@ class AntiPetrosBot(commands.Bot):
         self._get_initial_cogs()
         COGS_CONFIG.read()
 
+    async def on_resumed(self):
+        log.critical("Bot was reconnected and has resumed the session!")
+        await self.on_ready()
+
     @universal_log_profiler
     async def on_ready(self):
-        if platform.system() == 'Linux':
-            self.loop.add_signal_handler(signal.SIGINT, self.shutdown_mechanic)
-            self.loop.add_signal_handler(3, self.shutdown_mechanic)
-        else:
-            signal.signal(signal.SIGINT, self.shutdown_signal)
-
-        log.info('%s has connected to Discord!', self.name)
-
+        self.connect_counter += 1
         await self._ensure_guild_is_chunked()
-        await self._start_sessions()
+        if self.connect_counter == 1:
+            if platform.system() == 'Linux':
+                self.loop.add_signal_handler(signal.SIGINT, self.shutdown_mechanic)
+                self.loop.add_signal_handler(3, self.shutdown_mechanic)
+            else:
+                signal.signal(signal.SIGINT, self.shutdown_signal)
+            await self._start_sessions()
+            await self.send_startup_message()
+            await self._start_watchers()
+            await self.set_activity()
+        log.info('%s has connected to Discord!', self.name)
         await self.to_all_as_tasks('on_ready_setup')
-
-        await self.send_startup_message()
-
-        await self._start_watchers()
-
-        await self.set_activity()
         self._make_command_dict()
 
         self.setup_finished = True
@@ -207,8 +205,9 @@ class AntiPetrosBot(commands.Bot):
     @universal_log_profiler
     async def _start_sessions(self):
         self.sessions = {}
-        self.sessions['aio_request_session'] = aiohttp.ClientSession()
-        self.sessions['webdav_client'] = AioWebdavClient(**get_nextcloud_options())
+        if self.sessions.get('aio_request_session', None) is None or self.sessions.get('aio_request_session', None).closed is True:
+            self.sessions['aio_request_session'] = aiohttp.ClientSession()
+
         log.info("Session '%s' was started", repr(self.sessions['aio_request_session']))
 
     @universal_log_profiler
@@ -400,7 +399,6 @@ class AntiPetrosBot(commands.Bot):
 # endregion[Loops]
 
 # region [Helper]
-
 
     @staticmethod
     @universal_log_profiler
