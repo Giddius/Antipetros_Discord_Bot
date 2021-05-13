@@ -185,10 +185,6 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     @ auto_meta_info_command()
     async def check_mod_data(self, ctx: commands.Context):
 
-        x = await self.server_item_1.get_info()
-        pprint(dir(x))
-        await ctx.send(str(x.edf))
-        await ctx.send(str(x.has_keywords))
         data = await self.server_item_1.get_mod_files()
         await ctx.send(file=data.html)
         await ctx.send(file=data.image)

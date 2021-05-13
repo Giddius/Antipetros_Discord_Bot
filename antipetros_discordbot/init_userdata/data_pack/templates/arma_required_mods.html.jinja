@@ -9,7 +9,7 @@
     <style>
 @media print {
     @page {
-      size:262mm 371mm;
+      size:300mm 400mm;
     }
 }
 body {
@@ -32,7 +32,7 @@ h1 {
     color: white;
     font-weight: 200;
     font-family: segoe ui;
-    font-size: 2em;
+    font-size: 3em;
     margin: 0;
 }
 
@@ -91,6 +91,7 @@ a:hover {
     <div class="mod-list">
       <table>
         {% for mod in req_mods %}
+        {% if mod %}
         <tr data-type="ModContainer">
           <td data-type="DisplayName">{{ mod.name }}</td>
           <td>
@@ -100,6 +101,7 @@ a:hover {
             <a href="{{ mod.link }}" data-type="Link">{{ mod.link }}</a>
           </td>
         </tr>
+        {% endif %}
         {% endfor %}
       </table>
     </div>

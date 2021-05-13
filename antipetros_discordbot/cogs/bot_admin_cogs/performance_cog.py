@@ -175,6 +175,13 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
             await self.bot.message_creator(embed=await make_basic_embed(title='LATENCY WARNING!', text='Latency is very high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'latency': str(latency) + ' ms'}))
         await self.general_db.insert_latency_perfomance(now, raw_latency)
 
+    @latency_measure_loop.error
+    async def latency_measure_loop_error_handler(self, error):
+        log.error(error, exc_info=True)
+        if self.latency_measure_loop.is_running() is False:
+            self.latency_measure_loop.start()
+            log.warning("latency measure loop was restarted")
+
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     @universal_log_profiler
     async def memory_measure_loop(self):
