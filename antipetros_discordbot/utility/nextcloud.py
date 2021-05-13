@@ -8,7 +8,7 @@ def get_nextcloud_options():
     if os.getenv('NEXTCLOUD_USERNAME') is not None:
         _options['hostname'] = f"https://antistasi.de/dev_drive/remote.php/dav/files/{os.getenv('NEXTCLOUD_USERNAME')}/"
         _options['login'] = os.getenv('NEXTCLOUD_USERNAME')
-        _options["timeout"] = 300
+        # _options["timeout"] = 600
     else:
         if os.getenv('INFO_RUN') != "1":
             raise RuntimeError('no nextcloud Username set')

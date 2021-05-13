@@ -38,9 +38,9 @@ def loadjson(in_file):
     return _out
 
 
-def writejson(in_object, in_file, sort_keys=True, indent=4):
+def writejson(in_object, in_file, sort_keys=True, indent=4, **kwargs):
     with open(in_file, 'w') as jsonoutfile:
-        json.dump(in_object, jsonoutfile, sort_keys=sort_keys, indent=indent)
+        json.dump(in_object, jsonoutfile, sort_keys=sort_keys, indent=indent, **kwargs)
 
 
 def hash_to_solidcfg(in_file, in_name=None, in_config_loc='default'):

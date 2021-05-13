@@ -14,7 +14,7 @@ import json
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 import discord
-from typing import List, Union, Mapping, Optional, Union, Hashable, Any
+from typing import List, Union, Mapping, Optional, Union, Hashable, Any, Callable
 from aiodav import Client as AioWebdavClient
 from collections import UserDict, namedtuple
 from watchgod import Change, awatch
@@ -207,7 +207,7 @@ class AntiPetrosBot(commands.Bot):
     @universal_log_profiler
     async def _start_sessions(self):
         self.sessions = {}
-        self.sessions['aio_request_session'] = aiohttp.ClientSession(loop=self.loop)
+        self.sessions['aio_request_session'] = aiohttp.ClientSession()
         self.sessions['webdav_client'] = AioWebdavClient(**get_nextcloud_options())
         log.info("Session '%s' was started", repr(self.sessions['aio_request_session']))
 
@@ -401,6 +401,7 @@ class AntiPetrosBot(commands.Bot):
 
 # region [Helper]
 
+
     @staticmethod
     @universal_log_profiler
     def _update_profiling_check():
@@ -552,6 +553,8 @@ class AntiPetrosBot(commands.Bot):
         #                 break
         #         break
 
+    def add_update_method(self, meth: Callable, *typus: UpdateTypus):
+        self.to_update_methods.append(self.ToUpdateItem(meth, list(typus)))
 
 # region [SpecialMethods]
 

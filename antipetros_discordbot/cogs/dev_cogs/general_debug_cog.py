@@ -39,6 +39,7 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPet
 from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name, normalize_emoji
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.data_gathering import gather_data
 from antipetros_discordbot.utility.exceptions import NotAllowedChannelError
@@ -124,29 +125,34 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         await generate_bot_data(self.bot, self.antipetros_member)
         self.check_server_online_loop.start()
         await self.server_item_1.is_online()
-        t1 = asyncio.create_task(self.server_item_1.gather_log_items())
-        t2 = asyncio.create_task(self.server_item_2.gather_log_items())
-        t3 = asyncio.create_task(self.server_item_test_2.gather_log_items())
-        await asyncio.wait([t1, t2, t3], return_when="ALL_COMPLETED", timeout=None)
         await self.server_item_2.is_online()
         await self.server_item_test_2.is_online()
-        self.ready = await asyncio.sleep(5, True)
+        await asyncio.gather(self.server_item_1.gather_log_items(), self.server_item_2.gather_log_items(), self.server_item_test_2.gather_log_items())
+
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
 
-    @tasks.loop(seconds=30)
+    @tasks.loop(minutes=2)
     async def check_server_online_loop(self):
         if self.ready is False:
             return
+        log.info("updating Server Items")
         await self.server_item_1.is_online()
-        await self.server_item_2.is_online()
-        await self.server_item_test_2.is_online()
-        log.info("checked_if servers are online")
 
-    @auto_meta_info_command()
+        await self.server_item_2.is_online()
+
+        await self.server_item_test_2.is_online()
+
+        await self.server_item_1.update_log_items()
+        await self.server_item_test_2.update_log_items()
+        await self.server_item_2.update_log_items()
+        log.info("Server Items updated")
+
+    @ auto_meta_info_command()
     async def dump_bot(self, ctx: commands.Context):
         schema = AntiPetrosBotSchema()
         data = schema.dump(self.bot)
@@ -155,12 +161,12 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
         await ctx.send('done')
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def cached_msgs(self, ctx: commands.Context):
         data = list(map(lambda x: x.content, self.bot.cached_messages))
         writejson(data, "cached_msgs.json")
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def save_msg(self, ctx: commands.Context, channel: discord.TextChannel, message_id: int):
         msg = await channel.fetch_message(message_id)
         with open(str(message_id) + ".txt", 'w', encoding='utf-8', errors='ignore') as f:
@@ -168,25 +174,26 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         writejson(msg.content, str(message_id) + '.json')
         await ctx.send('done')
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_send_server_log_new(self, ctx: commands.Context):
-        item = self.server_item_1.log_items[0]
+        item = self.server_item_1.newest_log_item
         with BytesIO() as bitey:
-            await item.content(bitey)
+            async for chunk in item.content_iter():
+                bitey.write(chunk)
             bitey.seek(0)
             file = discord.File(bitey, item.name)
             await ctx.send(file=file)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_server_item(self, ctx: commands.Context):
         cur = 0
         for item in self.server_item_1.log_items:
-            await ctx.send(repr(item))
+            await ctx.send(CodeBlock(pformat(item.schema.dump(item)), 'json'))
             cur += 1
-            if cur == 2:
+            if cur == 5:
                 break
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def tell_server_online(self, ctx: commands.Context):
 
         for server in [self.server_item_1, self.server_item_2, self.server_item_test_2]:

@@ -15,20 +15,20 @@ import unicodedata
 from enum import Enum, auto, unique
 import os
 import re
-
+import random
 from asyncstdlib import map as async_map
 from typing import Union, Callable, TYPE_CHECKING, BinaryIO
 from datetime import datetime
 from tempfile import TemporaryDirectory
-from functools import cached_property, wraps
+from functools import cached_property, wraps, total_ordering
 from contextlib import asynccontextmanager
 from dateparser import parse as date_parse
 
 from async_property import async_property, async_cached_property
 
-
+from aiodav.client import Resource
 import gidlogger as glog
-
+from asyncio import Semaphore as AioSemaphore, Lock as AioLock
 
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, readit, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -41,10 +41,13 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from inspect import isawaitable, iscoroutine
+from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 from io import StringIO
 import a2s
 import aiohttp
-
+from aiodav.exceptions import NoConnection
+from sortedcontainers import SortedDict, SortedList
+from marshmallow import Schema, fields
 # endregion[Imports]
 
 # region [TODO]
@@ -74,29 +77,62 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
+def fix_path(in_path: str) -> str:
+    path_parts = in_path.split('/')
+    fixed_path = '/' + '/'.join(path_parts[-4:])
+    return fixed_path
+
+
+def fix_info_dict(info_dict: dict) -> dict:
+    _ = info_dict.pop('path', None)
+    _ = info_dict.pop('isdir', None)
+    return info_dict
+
+
+class LogFileSchema(Schema):
+    class Meta:
+        additional = ("path", "name", "info", "exists", 'size', 'size_pretty', 'created', 'modified', 'created_pretty', 'modified_pretty', 'is_over_threshold', 'etag', 'created_in_seconds')
+
+
+@total_ordering
 class LogFileItem:
+
     size_string_regex = re.compile(r"(?P<number>\d+)\s?(?P<unit>\w+)")
+    schema = LogFileSchema()
+    limit_semaphore = AioSemaphore(value=3)
 
-    def __init__(self, resource_item) -> None:
-        self.resource_item = resource_item
-        self.path = resource_item.urn.path()
+    def __init__(self, resource_item: Resource, info: dict) -> None:
+        self.path = fix_path(info.get('path'))
         self.name = os.path.basename(self.path)
-        self.info = None
+        self.resource_item = resource_item
+        self.info = fix_info_dict(info)
+        self.exists = True
+        self.created = date_parse(self.info.get("created"), settings={'TIMEZONE': 'UTC'}) if self.info.get("created") is not None else self._date_time_from_name()
+        self.created_in_seconds = int(self.created.timestamp())
 
-    async def get_info(self):
-        self.info = await self.resource_item.info()
+    async def collect_info(self):
+        async with self.limit_semaphore:
+            self.info = await self.resource_item.info()
 
+    async def update(self):
+        return NotImplemented
+
+    @classmethod
     @property
-    def warning_size_threshold(self):
+    def warning_size_threshold(cls):
         limit = COGS_CONFIG.retrieve('antistasi_log_watcher', 'log_file_warning_size_threshold', typus=str, direct_fallback='200mb')
-        match_result = self.size_string_regex.search(limit)
+        match_result = cls.size_string_regex.search(limit)
         relative_size = int(match_result.group('number'))
         unit = match_result.group('unit').casefold()
         return relative_size * SIZE_CONV_BY_SHORT_NAME.get(unit)
 
     @property
     def etag(self):
-        return self.info.get("etag")
+        return self.info.get("etag").strip('"')
+
+    @property
+    def modified(self):
+        return date_parse(self.info.get("modified"), settings={'TIMEZONE': 'UTC'})
 
     @property
     def size(self):
@@ -107,20 +143,12 @@ class LogFileItem:
         return bytes2human(self.size, annotate=True)
 
     @cached_property
-    def created(self):
-        return date_parse(self.info.get("created"), settings={'TIMEZONE': 'UTC'}) if self.info.get("created") is not None else self._date_time_from_name()
-
-    @property
-    def modified(self):
-        return date_parse(self.info.get("modified"), settings={'TIMEZONE': 'UTC'})
-
-    @cached_property
     def created_pretty(self):
-        return self.created.strftime("%Y-%m-%d %H:%M:%S")
+        return self.created.strftime("%Y-%m-%d %H:%M:%S UTC")
 
     @property
     def modified_pretty(self):
-        return self.modified.strftime("%Y-%m-%d %H:%M:%S")
+        return self.modified.strftime("%Y-%m-%d %H:%M:%S UTC")
 
     @property
     def is_over_threshold(self):
@@ -137,14 +165,31 @@ class LogFileItem:
         else:
             raise RuntimeError(f'unable to find date_time_string in {os.path.basename(self.path)}')
 
-    async def content(self, buffer):
-        return await self.resource_item.client.download_to(self.path, buffer)
+    async def content_iter(self):
+        async for chunk in await self.resource_item.client.download_iter(self.path):
+            yield chunk
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__} with path '{self.path}'"
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(" + ', '.join(map(str, [self.created_pretty, self.etag, self.modified_pretty, self.name, self.path, self.size, self.size_pretty])) + ')'
+
+    def __hash__(self):
+        return hash(self.name) + hash(self.created)
+
+    def __eq__(self, o: object) -> bool:
+        if isinstance(o, LogFileItem):
+            return hash(self) == hash(o)
+        return NotImplemented
+
+    def __le__(self, o: object) -> bool:
+        if isinstance(o, LogFileItem):
+            return o.created_in_seconds <= self.created_in_seconds
+        return NotImplemented
+
+    def dump(self):
+        return self.schema.dump(self)
 
 
 @unique
@@ -186,6 +231,7 @@ class ServerItem:
     config_name = None
     encoding = 'utf-8'
     delta_query_port = 1
+    limit_lock = AioLock()
 
     def __init__(self, name: str, full_address: str, log_folder: str) -> None:
         if self.bot is None:
@@ -195,7 +241,7 @@ class ServerItem:
         self.name = name
         self.full_address = full_address
         self.log_folder = log_folder
-        self.log_items = []
+        self.log_items = SortedList()
         self.previous_status = None
         self.status_switch_signal = StatusSwitchSignal()
 
@@ -231,16 +277,37 @@ class ServerItem:
     def log_folder_path(self):
         return f"{self.base_log_folder_name}/{self.log_folder}/{self.sub_log_folder_name}/"
 
+    @property
+    def newest_log_item(self):
+        return self.log_items[0]
+
+    async def list_items_on_server(self):
+        for info_item in await self.client.list(self.log_folder_path, get_info=True):
+            if info_item.get('isdir') is False:
+                resource_item = self.client.resource(fix_path(info_item.get('path')))
+                item = LogFileItem(resource_item=resource_item, info=info_item)
+                yield item
+                await asyncio.sleep(0)
+
     async def gather_log_items(self):
-        async for log_file_resource in self.list():
-            item = LogFileItem(log_file_resource)
-            await item.get_info()
-            self.log_items.append(item)
 
-        self.log_items = sorted(self.log_items, key=lambda x: x.modified, reverse=True)
+        new_items = []
+        async for remote_log_item in self.list_items_on_server():
+            new_items.append(remote_log_item)
 
+        # self.log_items = SortedList(new_items, key=lambda x: x.created_in_seconds)
+        self.log_items.clear()
+        self.log_items.update(new_items)
         log.info("Gathered %s Log_file_items for Server %s", len(self.log_items), self.name)
 
+    async def update_log_items(self):
+        old_items = set(self.log_items)
+        await self.gather_log_items()
+        for item in set(self.log_items).difference(old_items):
+            log.info("New log file %s for server %s", item.name, self.name)
+        log.info("Updated log_items for server %s", self.name)
+
+    @universal_log_profiler
     async def is_online(self):
         try:
             check_data = await a2s.ainfo(self.query_full_address, timeout=self.timeout)
@@ -262,13 +329,6 @@ class ServerItem:
 
     async def get_players(self):
         return await a2s.aplayers(self.query_full_address, encoding=self.encoding)
-
-    async def list(self):
-        for file_name in await self.client.list(self.log_folder_path):
-            if not file_name.endswith('/'):
-                item = self.client.resource(f"{self.log_folder_path}/{file_name}")
-                yield item
-                await asyncio.sleep(0)
 
     def __str__(self) -> str:
         return self.name

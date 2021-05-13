@@ -192,7 +192,7 @@ class EmbedBuilder(SubSupportBase):
         else:
             raise TypeError(f"'image' has to be of type 'str' or '{type(PIL.Image.Image)}' and not '{type(image)}'")
 
-    def _fix_field_item(self, field_item, ):
+    async def _fix_field_item(self, field_item, ):
         if field_item.name in [None, '']:
             field_item = field_item._replace(name=str(self.default_field_name_num) + '.')
             self.default_field_name_num += 1
@@ -219,11 +219,11 @@ class EmbedBuilder(SubSupportBase):
         if new_data:
             yield new_data
 
-    def handle_paginated_field(self, embed, field_item, applied_fields):
+    async def handle_paginated_field(self, embed, field_item, applied_fields):
         added = 0
         for value in self.split_value_for_length(field_item.value):
             new_field_item = self.field_item(name=field_item.name, value=value, inline=field_item.inline)
-            field = self._fix_field_item(new_field_item)
+            field = await self._fix_field_item(new_field_item)
             embed.add_field(name=field.name, value=field.value, inline=field.inline)
             added += 1
 
@@ -232,7 +232,7 @@ class EmbedBuilder(SubSupportBase):
     async def _paginatedfields_generic_embed_helper(self, fields, embed):
 
         applied_fields = 0
-        embed, applied_fields = self.handle_paginated_field(embed, fields.pop(0), applied_fields)
+        embed, applied_fields = await self.handle_paginated_field(embed, fields.pop(0), applied_fields)
 
         while len(fields) > 0 and (len(embed) + self._size_of_field(fields[0])) < self.max_embed_size and applied_fields < self.max_embed_fields:
             embed, applied_fields = self.handle_paginated_field(embed, fields.pop(0), applied_fields)
@@ -292,7 +292,7 @@ class EmbedBuilder(SubSupportBase):
 
         if fields is not None:
             for field in fields:
-                field = self._fix_field_item(field)
+                field = await self._fix_field_item(field)
                 generic_embed.add_field(name=field.name, value=field.value, inline=field.inline)
         self.default_field_name_num = 1
         # if self.bot.is_debug:

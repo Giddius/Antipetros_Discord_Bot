@@ -30,6 +30,7 @@ from discord.ext import tasks, commands, flags
 from async_property import async_property
 from inspect import getsource, getsourcefile, getsourcelines
 # * Gid Imports -->
+from sortedcontainers import SortedDict, SortedList
 import gidlogger as glog
 import markdown
 from pygments import highlight
@@ -129,7 +130,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-        self.time_sorted_guild_member_ids = []
+        self.time_sorted_guild_member_list = []
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
@@ -137,13 +138,6 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [Init]
 
 # region [Properties]
-
-    @cached_property
-    @universal_log_profiler
-    def join_rankdict(self):
-        all_members_and_date = [(member, member.joined_at) for member in self.bot.antistasi_guild.members]
-        all_members_sorted = sorted(all_members_and_date, key=lambda x: x[1])
-        return {member_data[0]: join_index + 1 for join_index, member_data in enumerate(all_members_sorted)}
 
     @property
     @universal_log_profiler
@@ -161,13 +155,13 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     async def on_ready_setup(self):
         if self.bot.antistasi_guild.chunked is False:
             await self.bot.antistasi_guild.chunk(cache=True)
-        asyncio.create_task(self.make_time_sorted_guild_member_id_list())
+        await self.make_time_sorted_guild_member_list()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     @universal_log_profiler
     async def update(self, typus: UpdateTypus):
-        return
+        await self.make_time_sorted_guild_member_list()
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
@@ -179,22 +173,20 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_member_join')
     @universal_log_profiler
     async def update_time_sorted_member_ids_join(self, member):
-        await self.make_time_sorted_guild_member_id_list()
+        await self.make_time_sorted_guild_member_list()
 
     @commands.Cog.listener(name='on_member_remove')
     @universal_log_profiler
     async def update_time_sorted_member_ids_remove(self, member):
-        await self.make_time_sorted_guild_member_id_list()
+        await self.make_time_sorted_guild_member_list()
 
 
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
@@ -248,16 +240,18 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         Example:
             @AntiPetros info_guild
         """
-        as_guild = self.bot.antistasi_guild
-        # await as_guild.chunk()
-        thumbnail = None
-        image = str(as_guild.banner_url)
-        description = as_guild.description
-        if description is None:
-            description = "This Guild has no description set"
-
-        data = {'Amount of Channels overall': (len([channel for channel in as_guild.channels if channel.type is not discord.ChannelType.category and not channel.name.casefold().startswith('ticket-')]), True),
-                'Amount of Text Channels': (len([channel for channel in as_guild.text_channels if channel.type is not discord.ChannelType.category and not channel.name.casefold().startswith('ticket-')]), True),
+        async with ctx.typing():
+            as_guild = self.bot.antistasi_guild
+            # await as_guild.chunk()
+            thumbnail = None
+            image = str(as_guild.banner_url)
+            description = as_guild.description
+            if description is None:
+                description = "This Guild has no description set"
+            log.debug('getting data')
+            data = {
+                'Amount of Channels overall': (len([await asyncio.sleep(0, channel) for channel in as_guild.channels if channel.type is not discord.ChannelType.category and not channel.name.casefold().startswith('ticket-')]), True),
+                'Amount of Text Channels': (len([await asyncio.sleep(0, channel) for channel in as_guild.text_channels if channel.type is not discord.ChannelType.category and not channel.name.casefold().startswith('ticket-')]), True),
                 'Amount of Voice Channels': (len(as_guild.voice_channels), True),
                 "Amount Members": (len(as_guild.members), True),
                 'Amount Custom Emojis': (len(as_guild.emojis), True),
@@ -267,20 +261,20 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                 'Current File Size Limit': (bytes2human(as_guild.filesize_limit, annotate=True), True),
                 "Preferred Locale": (as_guild.preferred_locale, True),
                 'Created at': (as_guild.created_at.strftime("%H:%M:%S on the %Y.%b.%d"), False),
-                "Owner": (f"{as_guild.owner.mention} -> {as_guild.owner.name}", False),
-                "Current Booster": ('\n'.join(f"{member.mention} -> {member.name}" for member in as_guild.premium_subscribers), False),
+                "Owner": (f"{as_guild.owner.mention} `{as_guild.owner.name}`", False),
+                "Current Booster": ('\n'.join([await asyncio.sleep(0, f"{member.mention} `{member.name}`") for member in sorted(as_guild.premium_subscribers, key=lambda x: len(x.display_name))]), False),
                 "Rules Channel": (as_guild.rules_channel.mention, False),
                 "Member for longest time": (await self._oldest_youngest_member(True), False),
                 "Member for shortest time": (await self._oldest_youngest_member(False), False),
                 "Most Used Channel": (await self.most_used_channel(), False)}
 
-        fields = []
-        for key, value in data.items():
-            if value[0] not in ['', None]:
-                fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
+            log.debug('adding fields')
 
-        embed_data = await self.bot.make_generic_embed(title=as_guild.name, url="https://antistasi.de/", description=description, thumbnail=thumbnail, fields=fields, image=image)
-        info_msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+            fields = [self.bot.field_item(name=key, value=str(value[0]), inline=value[1]) for key, value in data.items() if value[0]]
+
+            log.debug("making embed data")
+            embed_data = await self.bot.make_generic_embed(title=as_guild.name, url="https://antistasi.de/", description=description, thumbnail=thumbnail, fields=fields, image=image)
+        await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
@@ -312,7 +306,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                     'Roles': ('\n'.join(role.mention for role in sorted(member.roles, key=lambda x: x.position, reverse=True) if "everyone" not in role.name.casefold()), False),
                     'Account Created': (member.created_at.strftime("%H:%M:%S on the %Y.%b.%d"), True),
                     'Joined Antistasi Guild': (member.joined_at.strftime("%H:%M:%S on %a the %Y.%b.%d"), True),
-                    'Join Position': (self.join_rankdict.get(member), True),
+                    'Join Position': (self.time_sorted_guild_member_list.index(member) + 1, True),
                     'Permissions': (permissions, False)}
             fields = []
 
@@ -320,7 +314,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                 if value[0] not in ['', None]:
                     fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
             embed_data = await self.bot.make_generic_embed(title=member.name, description=f"The one and only {member.mention}", thumbnail=str(member.avatar_url), fields=fields, color=member.color)
-            await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command(hidden=True, categories=CommandCategory.ADMINTOOLS)
     @owner_or_admin(False)
@@ -347,7 +341,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                     'Roles': ('\n'.join(role.mention for role in sorted(member.roles, key=lambda x: x.position, reverse=True) if "everyone" not in role.name.casefold()), False),
                     'Account Created': (member.created_at.strftime("%H:%M:%S on the %Y.%b.%d"), True),
                     'Joined Antistasi Guild': (member.joined_at.strftime("%H:%M:%S on %a the %Y.%b.%d"), True),
-                    'Join Position': (self.join_rankdict.get(member), True),
+                    'Join Position': (self.time_sorted_guild_member_list.get(member), True),
                     'Permissions': (permissions, False)}
             fields = []
             for key, value in data.items():
@@ -355,22 +349,22 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                     fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
             embed_data = await self.bot.make_generic_embed(title=member.name, description=f"The one and only {member.mention}", thumbnail=str(member.avatar_url), fields=fields, color=member.color)
 
-            await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
 
 # endregion [Commands]
 
 # region [HelperMethods]
 
+
     @universal_log_profiler
-    async def make_time_sorted_guild_member_id_list(self):
+    async def make_time_sorted_guild_member_list(self):
         log.debug("Updating time_sorted_guild_member_id_list.")
         if self.bot.antistasi_guild.chunked is False:
             await self.bot.antistasi_guild.chunk(cache=True)
-        all_member_ids_and_time = [await asyncio.sleep(0, (member.id, member.joined_at)) for member in self.bot.antistasi_guild.members if member is not self.bot.antistasi_guild.owner]
-        sorted_member_ids_and_time = await asyncio.to_thread(sorted, all_member_ids_and_time, key=lambda x: x[1])
-        self.time_sorted_guild_member_ids = sorted_member_ids_and_time
-        log.debug("Finished updating time_sorted_guild_member_id_list.")
+        self.time_sorted_guild_member_list = SortedList(self.bot.antistasi_guild.members, key=lambda x: x.joined_at)
+
+        log.debug("Finished updating make_time_sorted_guild_member_list.")
 
     @universal_log_profiler
     async def _clean_bot_prefixes(self, ctx: commands.Context):
@@ -381,15 +375,18 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
     @universal_log_profiler
     async def _oldest_youngest_member(self, get_oldest=True):
-        if not self.time_sorted_guild_member_ids:
-            await self.make_time_sorted_guild_member_id_list()
+        if not self.time_sorted_guild_member_list:
+            await self.make_time_sorted_guild_member_list()
         if get_oldest is True:
-            oldest_member_and_date = self.time_sorted_guild_member_ids[0]
+            member = self.time_sorted_guild_member_list[0]
+            if member is self.bot.antistasi_guild.owner:
+                member = self.time_sorted_guild_member_list[1]
         else:
-            oldest_member_and_date = self.time_sorted_guild_member_ids[-1]
-        member = await self.bot.fetch_antistasi_member(oldest_member_and_date[0])
-        join_time = oldest_member_and_date[1]
-        return f'{member.mention} -> {member.name}, joined at {join_time.strftime("%H:%M:%S on %a the %Y.%b.%d")}'
+            member = self.time_sorted_guild_member_list[-1]
+
+        join_time = member.joined_at
+
+        return f'{member.mention} `{member.name}`, joined at {join_time.strftime("%H:%M:%S on %a the %Y.%b.%d")}'
 
     @universal_log_profiler
     async def most_used_channel(self):

@@ -55,13 +55,10 @@ class ChannelUsageResult:
         self.result_data = []
 
     async def add_data(self, data):
-        self.result_data.append(data)
+        self.result_data.append(await asyncio.sleep(0, data))
 
     async def convert_data_to_channels(self, bot):
-        new_data = []
-        for data in self.result_data:
-            new_data.append(bot.channel_from_id(data))
-        self.result_data = new_data
+        self.result_data = [bot.channel_from_id(data) for data in self.result_data]
 
     async def get_as_counter(self) -> Counter:
         return Counter(self.result_data)
@@ -321,8 +318,8 @@ class AioGeneralStorageSQLite:
         arguments = tuple(arg for arg in [from_datetime, to_datetime] if arg is not None)
         result = await self.db.aio_query(script_name, arguments, row_factory=True)
         result_item = ChannelUsageResult()
-        for row in result:
-            await result_item.add_data(row['channel_id'])
+
+        result_item.result_data = [row['channel_id'] for row in result]
         return result_item
 
     @universal_log_profiler

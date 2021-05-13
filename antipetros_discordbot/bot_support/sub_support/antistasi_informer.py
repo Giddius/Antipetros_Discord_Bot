@@ -17,6 +17,7 @@ from time import time, time_ns, monotonic, monotonic_ns, process_time, process_t
 import gidlogger as glog
 import discord
 from collections import UserDict, namedtuple
+from sortedcontainers import SortedDict, SortedList
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
