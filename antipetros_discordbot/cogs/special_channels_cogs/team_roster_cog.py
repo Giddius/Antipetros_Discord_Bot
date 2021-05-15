@@ -188,7 +188,6 @@ class TeamItem:
 
     async def header_embed(self):
         embed = discord.Embed(title=self.name, color=self.member_role.color)
-        embed.set_thumbnail(url=self.description_thumbnail)
         embed.set_image(url=self.image)
         embed.add_field(name="**What do they do:**", value=f"*{self.description}*", inline=False)
         embed.add_field(name="**How to join:**", value=f"*{self.join_description}*", inline=False)

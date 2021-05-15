@@ -216,7 +216,7 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
                                                        timestamp=timestamp,
                                                        footer={'text': "Last updated:"},
                                                        fields=fields,
-                                                       thumbnail='bertha_emoji_version',
+                                                       thumbnail=str(self.bot.bertha_emoji.url),
                                                        color='red')
         return embed_data
 
@@ -224,7 +224,7 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     async def get_rules_messages(self):
         self.rules_messages = {}
         async for message in self.rules_channel.history(limit=None):
-            content = message.content.strip().strip('-*').strip()
+            content = discord.utils.remove_markdown(message.content).strip('-').strip()
             first_line = content.splitlines()[0].strip('*_').casefold()
             if first_line == 'community rules':
                 self.rules_messages['community'] = message
