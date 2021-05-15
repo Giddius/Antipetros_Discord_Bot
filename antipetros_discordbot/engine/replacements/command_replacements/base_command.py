@@ -171,6 +171,10 @@ class AntiPetrosBaseCommand(commands.Command):
             self.data_setters['alias'](value)
 
     @property
+    def best_alias(self):
+        return self.alias_data_provider.get_best_alias(self)
+
+    @property
     def long_description(self):
         _help = self.data_getters['meta_data']('long_description', 'NA')
 

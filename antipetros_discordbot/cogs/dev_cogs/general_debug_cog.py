@@ -211,6 +211,10 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         channel = self.bot.channel_from_id(645930607683174401)
         await channel.send(text)
 
+    @auto_meta_info_command()
+    async def say_best_alias(self, ctx: commands.Context, command: CommandConverter):
+        await ctx.send(command.best_alias)
+
     def cog_unload(self):
         self.check_server_online_loop.stop()
         self.bot.loop.create_task(ServerItem.client.close())

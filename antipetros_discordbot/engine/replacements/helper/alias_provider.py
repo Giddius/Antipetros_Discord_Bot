@@ -15,7 +15,8 @@ from discord.ext import commands, tasks
 import gidlogger as glog
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from string import punctuation
+import re
 # endregion[Imports]
 
 # region [TODO]
@@ -50,6 +51,7 @@ class JsonAliasProvider:
     """
     alias_data_file = pathmaker(APPDATA['documentation'], 'command_aliases.json')
     base_config = ParaStorageKeeper.get_config('base_config')
+    punctuation_regex = re.compile(rf"[{re.escape(punctuation)}]")
 
     def __init__(self):
         if os.path.isfile(self.alias_data_file) is False:
@@ -122,6 +124,18 @@ class JsonAliasProvider:
 
     def save(self, data: dict) -> None:
         writejson(data, self.alias_data_file)
+
+    def get_best_alias(self, command: commands.Command) -> str:
+        weighted_aliases = sorted(command.aliases, key=self._alias_weighting)
+        return weighted_aliases[0]
+
+    def _alias_weighting(self, alias) -> int:
+        alias_length = len(self.punctuation_regex.sub('', alias))
+        amount_punctuation = len(self.punctuation_regex.findall(alias)) + 1
+        return self._alias_weighting_calculation(alias_length, amount_punctuation)
+
+    def _alias_weighting_calculation(self, alias_length: int, amount_punctuation: int) -> int:
+        return alias_length * amount_punctuation
 
 
 # region[Main_Exec]
