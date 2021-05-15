@@ -302,10 +302,10 @@ class EmbedBuilder(SubSupportBase):
             log.debug(ic.format(generic_embed.image))
         _out = {"embed": generic_embed}
         files = [file_item for file_item in files if file_item is not None]
-        if len(files) == 1:
-            _out["file"] = files[0]
-        elif len(files) > 1:
-            _out['files'] = files
+        # if len(files) == 1:
+        #     _out["file"] = files[0]
+        # elif len(files) > 1:
+        _out['files'] = files
         await self.save_image_and_thumbnail(generic_embed)
         return _out
 

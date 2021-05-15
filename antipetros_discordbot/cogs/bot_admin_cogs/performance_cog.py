@@ -336,6 +336,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
                         function = profiling_match.group('function').strip()
                         time_taken = int(profiling_match.group('time_taken'))
                         _out.append((date_time, module, function, time_taken))
+                await asyncio.sleep(0)
 
         return _out
 

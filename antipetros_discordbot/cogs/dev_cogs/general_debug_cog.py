@@ -24,7 +24,7 @@ from emoji import demojize, emojize, emoji_count
 from emoji.unicode_codes import EMOJI_UNICODE_ENGLISH
 from webdav3.client import Client
 from icecream import ic
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from dateparser import parse as date_parse
@@ -99,12 +99,12 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         self.antipetros_member = None
         self.edit_embed_message = None
         self.general_db = general_db
-        ServerItem.cog = self
-        ServerItem.status_switch_signal.connect(self.send_server_notification)
+        self.server_items = self.load_server_items()
 
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
+        await ServerItem.ensure_client()
 
         self.bob_user = await self.bot.fetch_antistasi_member(346595708180103170)
         for member in self.bot.antistasi_guild.members:
@@ -118,36 +118,31 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
                     if self.antidevtros_member is not None and self.antipetros_member is not None:
                         break
         await generate_bot_data(self.bot, self.antipetros_member)
-        self.server_item_1 = await ServerItem.async_init('mainserver_1', "nae-ugs1.armahosts.com:2312", 'Mainserver_1')
-        self.server_item_2 = await ServerItem.async_init('mainserver_2', "nae-ugs1.armahosts.com:2322", 'Mainserver_2')
-        self.server_item_test_2 = await ServerItem.async_init('testserver_2', "nae-ugs1.armahosts.com:2352", 'Testserver_2')
+
         self.check_server_online_loop.start()
-        await self.server_item_1.is_online()
-        await self.server_item_2.is_online()
-        await self.server_item_test_2.is_online()
-        await asyncio.gather(self.server_item_1.gather_log_items(), self.server_item_2.gather_log_items(), self.server_item_test_2.gather_log_items())
+        for server in self.server_items:
+            await server.is_online()
+        await asyncio.gather(*[server.gather_log_items() for server in self.server_items])
 
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
+        await ServerItem.ensure_client()
+
         log.debug('cog "%s" was updated', str(self))
 
-    @tasks.loop(minutes=2)
+    @property
+    def server_names(self):
+        return COGS_CONFIG.retrieve(self.config_name, "server_names", typus=List[str], direct_fallback=[])
+
+    @tasks.loop(minutes=4)
     async def check_server_online_loop(self):
         if self.ready is False:
             return
         log.info("updating Server Items")
-        await self.server_item_1.is_online()
-
-        await self.server_item_2.is_online()
-
-        await self.server_item_test_2.is_online()
-
-        await self.server_item_1.update_log_items()
-        await self.server_item_test_2.update_log_items()
-        await self.server_item_2.update_log_items()
+        await asyncio.gather(*[server.is_online() for server in self.server_items])
+        await asyncio.gather(*[server.gather_log_items() for server in self.server_items])
         log.info("Server Items updated")
 
     @ auto_meta_info_command()
@@ -184,27 +179,32 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
     @ auto_meta_info_command()
     async def check_mod_data(self, ctx: commands.Context):
-
-        data = await self.server_item_1.get_mod_files()
-        await ctx.send(file=data.html)
-        await ctx.send(file=data.image)
+        for server in self.server_items:
+            if await server.is_online() is ServerStatus.ON and server.show_in_server_command is True:
+                embed_data = await server.make_server_info_embed()
+                msg = await ctx.send(**embed_data)
+                await msg.add_reaction(self.bot.armahosts_emoji)
+                await ctx.send('-' * 50)
+        await ctx.send('-' * 50)
 
     @ auto_meta_info_command()
     async def check_server_item(self, ctx: commands.Context):
-        cur = 0
-        for item in self.server_item_1.log_items:
-            await ctx.send(CodeBlock(pformat(item.schema.dump(item)), 'json'))
-            cur += 1
-            if cur == 5:
-                break
 
-    @ auto_meta_info_command()
-    async def tell_server_online(self, ctx: commands.Context):
+        for server in self.server_items:
+            item = server.newest_log_item
+            await ctx.send(CodeBlock(pformat(item.schema.dumps(item)), 'json'))
+            await ctx.send('-' * 50)
+        await ctx.send('-' * 50)
 
-        for server in [self.server_item_1, self.server_item_2, self.server_item_test_2]:
-            status = await server.is_online()
-            text = f"{server}: {status.name}"
-            await ctx.send(text)
+    @auto_meta_info_command()
+    async def check_new_send_log(self, ctx: commands.Context, server_name: str = 'mainserver_1'):
+        server = {server_item.name.casefold(): server_item for server_item in self.server_items}.get(server_name.casefold())
+        with BytesIO() as bytefile:
+            async for chunk in server.newest_log_item.content_iter():
+                bytefile.write(chunk)
+            bytefile.seek(0)
+            discord_file = discord.File(bytefile, server.newest_log_item.name)
+            await ctx.send(file=discord_file)
 
     async def send_server_notification(self, server_item: ServerItem, changed_to: ServerStatus):
         text = f"{server_item.name} was switched ON" if changed_to is ServerStatus.ON else f"{server_item.name} was switched OFF"
@@ -220,6 +220,15 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         if ctx.author.id == 576522029470056450:
             return True
         return False
+
+    def load_server_items(self):
+        ServerItem.cog = self
+        ServerItem.status_switch_signal.connect(self.send_server_notification)
+        _out = []
+        for server_name in self.server_names:
+            server_adress = COGS_CONFIG.retrieve(self.config_name, f"{server_name.lower()}_address", typus=str, direct_fallback=None)
+            _out.append(ServerItem(server_name, server_adress, server_name))
+        return _out
 
 
 def setup(bot):

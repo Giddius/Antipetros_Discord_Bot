@@ -18,7 +18,7 @@ import re
 import random
 from asyncstdlib import map as async_map
 from typing import Union, Callable, TYPE_CHECKING, BinaryIO, Tuple
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from tempfile import TemporaryDirectory
 from functools import cached_property, wraps, total_ordering
 from contextlib import asynccontextmanager
@@ -116,9 +116,14 @@ class AbstractConnectSignal(ABC):
 
     def connect(self, target: Callable):
         self.targets.append(target)
+        self.targets = list(set(self.targets))
 
     @abstractmethod
     async def emit(self, *args, **kwargs):
+        # IDEA maybe as asyncio.task
+        await self._emit_to_targets(*args, **kwargs)
+
+    async def _emit_to_targets(self, *args, **kwargs):
         for target in self.targets:
             if asyncio.iscoroutinefunction(target):
                 await target(*args, **kwargs)
@@ -169,6 +174,7 @@ class LogParser:
         self.server = server_item
         self.current_log_item = None
         self.current_byte_position = 0
+        self.jinja_env = Environment(loader=BaseLoader)
 
     async def _parse_mod_data(self) -> list:
         _out = []
@@ -216,25 +222,40 @@ class LogParser:
             return discord.File(bytefile, f"{self.server.name}_mods.png")
 
     @property
-    def mod_html_template_string(self):
-        return readit(APPDATA["arma_required_mods.html.jinja"])
-
-    @property
     def mod_template(self):
-        return Environment(loader=BaseLoader).from_string(self.mod_html_template_string)
+        template_string = readit(APPDATA["arma_required_mods.html.jinja"])
+        return self.jinja_env.from_string(template_string)
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__
 
 
 class LogFileSchema(Schema):
+    server = fields.Nested("ServerSchema", exclude=('log_items',))
+
     class Meta:
         additional = ("path", "name", "info", "exists", 'size', 'size_pretty', 'created', 'modified', 'created_pretty', 'modified_pretty', 'is_over_threshold', 'etag', 'created_in_seconds')
 
 
+class ServerSchema(Schema):
+    log_items = fields.List(fields.Nested(LogFileSchema, exclude=('server',)))
+    previous_status = fields.String()
+    newest_log_item = fields.Nested(LogFileSchema, exclude=('server',))
+    server_address = fields.String()
+    log_parser = fields.String()
+
+    class Meta:
+        additional = ('name', 'log_folder', 'config_name', 'sub_log_folder_name', 'base_log_folder_name', 'log_folder_path', 'report_status_change')
+
+
 @total_ordering
 class LogFileItem:
-
+    config_name = None
     size_string_regex = re.compile(r"(?P<number>\d+)\s?(?P<unit>\w+)")
+    log_name_regex = re.compile(r"(?P<year>\d\d\d\d).(?P<month>\d+?).(?P<day>\d+).(?P<hour>[012\s]?\d).(?P<minute>[0123456]\d).(?P<second>[0123456]\d)")
     schema = LogFileSchema()
-    limit_semaphore = AioSemaphore(value=3)
+    limit_semaphore = AioSemaphore(value=5)
+    time_pretty_format = "%Y-%m-%d %H:%M:%S UTC"
 
     def __init__(self, resource_item: Resource, info: dict) -> None:
         self.path = fix_path(info.get('path'))
@@ -255,7 +276,7 @@ class LogFileItem:
     @classmethod
     @property
     def warning_size_threshold(cls) -> int:
-        limit = COGS_CONFIG.retrieve('antistasi_log_watcher', 'log_file_warning_size_threshold', typus=str, direct_fallback='200mb')
+        limit = COGS_CONFIG.retrieve(cls.config_name, 'log_file_warning_size_threshold', typus=str, direct_fallback='200mb')
         match_result = cls.size_string_regex.search(limit)
         relative_size = int(match_result.group('number'))
         unit = match_result.group('unit').casefold()
@@ -279,11 +300,11 @@ class LogFileItem:
 
     @cached_property
     def created_pretty(self) -> str:
-        return self.created.strftime("%Y-%m-%d %H:%M:%S UTC")
+        return self.created.strftime(self.time_pretty_format)
 
     @property
     def modified_pretty(self) -> str:
-        return self.modified.strftime("%Y-%m-%d %H:%M:%S UTC")
+        return self.modified.strftime(self.time_pretty_format)
 
     @property
     def is_over_threshold(self) -> bool:
@@ -292,13 +313,11 @@ class LogFileItem:
         return False
 
     def _date_time_from_name(self) -> datetime:
-        matched_data = LOG_NAME_DATE_TIME_REGEX.search(os.path.basename(self.path))
+        matched_data = self.log_name_regex.search(os.path.basename(self.path))
         if matched_data:
-            date_time_string = f"{matched_data.group('year')}-{matched_data.group('month')}-{matched_data.group('day')} {matched_data.group('hour')}:{matched_data.group('minute')}:{matched_data.group('second')}"
-            date_time = datetime.strptime(date_time_string, "%Y-%m-%d %H:%M:%S")
-            return date_time
+            return datetime(**{key: int(value) for key, value in matched_data.groupdict().items()}, microsecond=0, tzinfo=timezone.utc)
         else:
-            raise RuntimeError(f'unable to find date_time_string in {os.path.basename(self.path)}')
+            raise ValueError(f'unable to find date_time_string in {os.path.basename(self.path)}')
 
     async def content_iter(self):
         async for chunk in await self.resource_item.client.download_iter(self.path):
@@ -323,12 +342,39 @@ class LogFileItem:
             return o.created_in_seconds <= self.created_in_seconds
         return NotImplemented
 
-    def dump(self) -> dict:
+    async def dump(self) -> dict:
+        await self.collect_info()
         return self.schema.dump(self)
 
 
+class ServerAddress:
+
+    def __init__(self, full_address: str) -> None:
+        self.full_address = full_address
+        self.url = self.full_address.split(':')[0].strip()
+        self.port = int(self.full_address.split(':')[1].strip())
+
+    @property
+    def delta_query_port(self) -> int:
+        return BASE_CONFIG.retrieve("arma", "delta_query_port", typus=int, direct_fallback=1)
+
+    @property
+    def query_port(self):
+        return self.port + self.delta_query_port
+
+    @property
+    def query_address(self):
+        return (self.url, self.query_port)
+
+    def __str__(self) -> str:
+        return f"{self.url}:{self.port}:{self.query_port}"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.full_address})"
+
+
 class ServerItem:
-    timeout = 1
+    timeout = 3.0
     battle_metrics_mapping = {'mainserver_1': "https://www.battlemetrics.com/servers/arma3/10560386",
                               'mainserver_2': "https://www.battlemetrics.com/servers/arma3/10561000",
                               'testserver_1': "https://www.battlemetrics.com/servers/arma3/4789978",
@@ -341,23 +387,23 @@ class ServerItem:
 
     client = None
     status_switch_signal = StatusSwitchSignal()
+    schema = ServerSchema()
 
     def __init__(self, name: str, full_address: str, log_folder: str):
         if self.cog is None:
             raise NeededClassAttributeNotSet('cog', self.__class__.__name__)
-
         self.name = name
-        self.full_address = full_address
+        self.server_address = ServerAddress(full_address)
         self.log_folder = log_folder
         self.log_items = SortedList()
         self.previous_status = None
         self.log_parser = LogParser(self)
+        self.battle_metrics_url = self.battle_metrics_mapping.get(self.name.casefold(), None)
 
     @classmethod
-    async def async_init(cls, name: str, full_address: str, log_folder: str):
+    async def ensure_client(cls):
         if cls.client is None:
             cls.client = AioWebdavClient(**get_nextcloud_options())
-        return cls(name=name, full_address=full_address, log_folder=log_folder)
 
     async def get_mod_files(self):
         htmL_file = await self.log_parser.get_mod_data_html_file()
@@ -367,26 +413,6 @@ class ServerItem:
     @cached_property
     def config_name(self) -> str:
         return self.cog.config_name
-
-    @property
-    def address(self) -> str:
-        return self.full_address.split(':')[0]
-
-    @property
-    def port(self) -> int:
-        return int(self.full_address.split(':')[-1])
-
-    @property
-    def query_port(self) -> int:
-        return self.port + self.delta_query_port
-
-    @property
-    def query_full_address(self) -> Tuple[str, int]:
-        return (self.address, self.query_port)
-
-    @property
-    def delta_query_port(self) -> int:
-        return COGS_CONFIG.retrieve(self.config_name, "delta_query_port", typus=int, direct_fallback=1)
 
     @property
     def sub_log_folder_name(self) -> str:
@@ -404,20 +430,28 @@ class ServerItem:
     def newest_log_item(self) -> LogFileItem:
         return self.log_items[0]
 
-    async def list_items_on_server(self):
-        for info_item in await self.client.list(self.log_folder_path, get_info=True):
-            if info_item.get('isdir') is False:
-                resource_item = self.client.resource(fix_path(info_item.get('path')))
-                item = LogFileItem(resource_item=resource_item, info=info_item)
-                yield item
-                await asyncio.sleep(0)
+    @property
+    def report_status_change(self) -> bool:
+        return COGS_CONFIG.retrieve(self.config_name, f"{self.name.lower()}_report_status_change", typus=bool, direct_fallback=False)
+
+    @property
+    def show_in_server_command(self) -> bool:
+        return COGS_CONFIG.retrieve(self.config_name, f"{self.name.lower()}_show_in_server_command", typus=bool, direct_fallback=True)
+
+    async def list_log_items_on_server(self):
+        async with self.limit_lock:
+            for info_item in await self.client.list(self.log_folder_path, get_info=True):
+                if info_item.get('isdir') is False:
+                    resource_item = self.client.resource(fix_path(info_item.get('path')))
+                    item = LogFileItem(resource_item=resource_item, info=info_item)
+                    yield item
+                    await asyncio.sleep(0)
 
     async def gather_log_items(self) -> None:
         new_items = []
-        async for remote_log_item in self.list_items_on_server():
+        async for remote_log_item in self.list_log_items_on_server():
             new_items.append(remote_log_item)
 
-        # self.log_items = SortedList(new_items, key=lambda x: x.created_in_seconds)
         self.log_items.clear()
         self.log_items.update(new_items)
         log.info("Gathered %s Log_file_items for Server %s", len(self.log_items), self.name)
@@ -432,34 +466,70 @@ class ServerItem:
     @universal_log_profiler
     async def is_online(self) -> ServerStatus:
         try:
-            check_data = await a2s.ainfo(self.query_full_address, timeout=self.timeout)
+            check_data = await self.get_info()
             status = ServerStatus.ON
         except asyncio.exceptions.TimeoutError:
             status = ServerStatus.OFF
         log.info("Server %s is %s", self.name, status.name)
 
-        if self.previous_status is not None and self.previous_status is not status:
-            await self.status_switch_signal.emit(self, status)
+        if self.report_status_change is True:
+            if self.previous_status not in {None, status}:
+                await self.status_switch_signal.emit(self, status)
         self.previous_status = status
         return status
 
     async def get_info(self) -> a2s.SourceInfo:
-        return await a2s.ainfo(self.query_full_address, encoding=self.encoding)
+        return await a2s.ainfo(self.server_address.query_address, encoding=self.encoding)
 
     async def get_rules(self) -> dict:
-        return await a2s.arules(self.query_full_address)
+        return await a2s.arules(self.server_address.query_address
+                                )
 
     async def get_players(self) -> list:
-        return await a2s.aplayers(self.query_full_address, encoding=self.encoding)
+        return await a2s.aplayers(self.server_address.query_address, encoding=self.encoding)
+
+    async def make_server_info_embed(self, with_mods: bool = True):
+        if with_mods is True:
+            try:
+                mod_data = await self.get_mod_files()
+            except Exception as error:
+                log.error(error)
+                return await self.make_server_info_embed(with_mods=False)
+        info_data = await self.get_info()
+        ping = round(float(info_data.ping), ndigits=3)
+        password_needed = "YES 🔐" if info_data.password_protected is True else 'NO 🔓'
+        image = None if with_mods is False else mod_data.image
+        embed_data = await self.cog.bot.make_generic_embed(title=info_data.server_name,
+                                                           #    image=image,
+                                                           thumbnail=image,
+                                                           author="armahosts",
+                                                           footer="armahosts",
+                                                           color="blue",
+                                                           fields=[self.cog.bot.field_item(name="Server Address", value=self.server_address.url, inline=True),
+                                                                   self.cog.bot.field_item(name="Port", value=self.server_address.port, inline=True),
+                                                                   self.cog.bot.field_item(name="Teamspeak", value=f"38.65.5.151  {ZERO_WIDTH}  **OR**  {ZERO_WIDTH}  antistasi.armahosts.com"),
+                                                                   self.cog.bot.field_item(name="Game", value=info_data.game, inline=False),
+                                                                   self.cog.bot.field_item(name="Players", value=f"{info_data.player_count}/{info_data.max_players}", inline=True),
+                                                                   self.cog.bot.field_item(name="Ping", value=ping if ping is not None else "NA", inline=True),
+                                                                   self.cog.bot.field_item(name="Map", value=info_data.map_name, inline=True),
+                                                                   self.cog.bot.field_item(name="Password", value=f"{password_needed}", inline=True),
+                                                                   self.cog.bot.field_item(name='Battlemetrics', value=embed_hyperlink('link to Battlemetrics', self.battle_metrics_url), inline=True)],
+                                                           timestamp=self.newest_log_item.modified)
+        if with_mods is True:
+            embed_data['files'].append(mod_data.html)
+        return embed_data
+
+    async def dump(self):
+        return self.schema.dump(self)
 
     def __str__(self) -> str:
         return self.name
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.name}, full_address={self.full_address}, log_base_folder={self.log_base_folder})"
+        return f"{self.__class__.__name__}(name={self.name}, full_address={self.server_address}, log_folder={self.log_folder})"
 
     def __hash__(self):
-        return hash(self.full_address)
+        return hash(self.name)
 
     def __eq__(self, o: object) -> bool:
         if isinstance(o, ServerItem):
