@@ -58,10 +58,13 @@ class ChannelUsageResult:
         self.result_data.append(await asyncio.sleep(0, data))
 
     async def convert_data_to_channels(self, bot):
-        self.result_data = [bot.channel_from_id(data) for data in self.result_data]
+        temp = []
+        for data in self.result_data:
+            temp.append(await asyncio.sleep(0, bot.channel_from_id(data)))
+        self.result_data = temp
 
     async def get_as_counter(self) -> Counter:
-        return Counter(self.result_data)
+        return await asyncio.to_thread(Counter, self.result_data)
 
 
 class MemoryPerformanceItem:

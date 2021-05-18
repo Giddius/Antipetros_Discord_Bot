@@ -118,9 +118,12 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
 # region [Loops]
 
-    @tasks.loop(minutes=5)
+    @tasks.loop(minutes=30)
     async def cyclic_update_loop(self):
+        if await self.bot.running_longer_than(minutes=2) is False:
+            return
         log.info('cyclic update started')
+
         await self.send_update_signal(UpdateTypus.CYCLIC)
 
 

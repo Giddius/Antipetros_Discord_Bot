@@ -31,7 +31,7 @@ import gidlogger as glog
 from abc import ABC, ABCMeta, abstractmethod
 # * Local Imports -->
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
-from antipetros_discordbot.utility.misc import delete_message_if_text_channel
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel, split_camel_case_string
 from antipetros_discordbot.utility.checks import BaseAntiPetrosCheck
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -238,6 +238,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Properties]
 
+
     @property
     def message_delete_after(self):
         delete_after = BASE_CONFIG.retrieve(self.config_name, 'delete_after_seconds', typus=int, direct_fallback=0)
@@ -294,7 +295,6 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Commands]
 
-
     @auto_meta_info_group(categories=[CommandCategory.META], case_insensitive=False, invoke_without_command=True)
     async def help(self, ctx: commands.Context, *, in_object: Union[CommandConverter, CategoryConverter] = None):
         if in_object is None:
@@ -309,7 +309,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         else:
             await ctx.send(f"{in_object} seems to not match anything")
 
-    @help.command(name='command_list')
+    @help.command(name='command_list', aliases=['list', 'commands'])
     async def help_command_list(self, ctx: commands.Context, hidden: str = None):
         show_hidden = False
         if hidden is not None and hidden.casefold() == 'hidden':
@@ -317,7 +317,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         async for embed_data in self.command_list_embed(ctx, show_hidden=show_hidden):
             await self.send_help(ctx, embed_data)
 
-    @help.command(name='category_list')
+    @help.command(name='category_list', aliases=['categories'])
     async def help_category_list(self, ctx: commands.Context):
         async for embed_data in self.command_category_list_embed(ctx):
             await self.send_help(ctx, embed_data)
@@ -330,6 +330,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [DataStorage]
 
 # region [Embeds]
+
 
     async def general_help(self, ctx: commands.Context):
         builder = GeneralHelpEmbedBuilder(self.bot, ctx)
@@ -378,16 +379,15 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         color = 'GIDDIS_FAVOURITE'
         github_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/tree/development/antipetros_discordbot/cogs"
         github_wiki_url = self.base_wiki_link + '/commands'
-        fields = [self.bot.field_item(name='Github Link', value=embed_hyperlink('link 🔗', github_url), inline=True),
-                  self.bot.field_item(name='Wiki Link', value=embed_hyperlink('link 🔗', github_wiki_url), inline=True)]
+        fields = [self.bot.field_item(name='Wiki Link', value=embed_hyperlink('link 🔗', github_wiki_url), inline=True)]
         cog_dict = await self._get_command_list(ctx)
         for cog, cog_commands in cog_dict.items():
             if cog.name.casefold() != 'generaldebugcog':
                 if show_hidden is False:
                     cog_commands = [command for command in cog_commands if command.hidden is False]
                     if cog_commands:
-                        value = ListMarker.make_list([f"`{command}`\n> {command.brief}\n{ZERO_WIDTH}" for command in sorted(cog_commands, key=lambda x: frequ_dict.get(x.name, 0), reverse=True)])
-                        fields.append(self.bot.field_item(name=f"**{cog.name}**\n{ZERO_WIDTH}", value=value, inline=False))
+                        value = ListMarker.make_list([f"`{command.best_alias}` -> {command.brief}" for command in sorted(cog_commands, key=lambda x: frequ_dict.get(x.name, 0), reverse=True) if await self.filter_single_command(member, command) is True])
+                        fields.append(self.bot.field_item(name=f"**{split_camel_case_string(cog.name.removesuffix('Cog'))}**\n{ZERO_WIDTH}", value=value, inline=False))
         async for embed_data in self.bot.make_paginatedfields_generic_embed(title="Command List", description=description,
                                                                             thumbnail=thumbnail,
                                                                             color=color,

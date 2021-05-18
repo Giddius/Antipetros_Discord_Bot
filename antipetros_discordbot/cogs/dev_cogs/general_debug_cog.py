@@ -99,12 +99,10 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         self.antipetros_member = None
         self.edit_embed_message = None
         self.general_db = general_db
-        self.server_items = self.load_server_items()
 
         glog.class_init_notification(log, self)
 
     async def on_ready_setup(self):
-        await ServerItem.ensure_client()
 
         self.bob_user = await self.bot.fetch_antistasi_member(346595708180103170)
         for member in self.bot.antistasi_guild.members:
@@ -119,31 +117,12 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
                         break
         await generate_bot_data(self.bot, self.antipetros_member)
 
-        self.check_server_online_loop.start()
-        for server in self.server_items:
-            await server.is_online()
-        await asyncio.gather(*[server.gather_log_items() for server in self.server_items])
-
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        await ServerItem.ensure_client()
 
         log.debug('cog "%s" was updated', str(self))
-
-    @property
-    def server_names(self):
-        return COGS_CONFIG.retrieve(self.config_name, "server_names", typus=List[str], direct_fallback=[])
-
-    @tasks.loop(minutes=4)
-    async def check_server_online_loop(self):
-        if self.ready is False:
-            return
-        log.info("updating Server Items")
-        await asyncio.gather(*[server.is_online() for server in self.server_items])
-        await asyncio.gather(*[server.gather_log_items() for server in self.server_items])
-        log.info("Server Items updated")
 
     @ auto_meta_info_command()
     async def dump_bot(self, ctx: commands.Context):
@@ -167,50 +146,6 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         writejson(msg.content, str(message_id) + '.json')
         await ctx.send('done')
 
-    @ auto_meta_info_command()
-    async def check_send_server_log_new(self, ctx: commands.Context):
-        item = self.server_item_1.newest_log_item
-        with BytesIO() as bitey:
-            async for chunk in item.content_iter():
-                bitey.write(chunk)
-            bitey.seek(0)
-            file = discord.File(bitey, item.name)
-            await ctx.send(file=file)
-
-    @ auto_meta_info_command()
-    async def check_mod_data(self, ctx: commands.Context):
-        for server in self.server_items:
-            if await server.is_online() is ServerStatus.ON and server.show_in_server_command is True:
-                embed_data = await server.make_server_info_embed()
-                msg = await ctx.send(**embed_data)
-                await msg.add_reaction(self.bot.armahosts_emoji)
-                await ctx.send('-' * 50)
-        await ctx.send('-' * 50)
-
-    @ auto_meta_info_command()
-    async def check_server_item(self, ctx: commands.Context):
-
-        for server in self.server_items:
-            item = server.newest_log_item
-            await ctx.send(CodeBlock(pformat(item.schema.dumps(item)), 'json'))
-            await ctx.send('-' * 50)
-        await ctx.send('-' * 50)
-
-    @auto_meta_info_command()
-    async def check_new_send_log(self, ctx: commands.Context, server_name: str = 'mainserver_1'):
-        server = {server_item.name.casefold(): server_item for server_item in self.server_items}.get(server_name.casefold())
-        with BytesIO() as bytefile:
-            async for chunk in server.newest_log_item.content_iter():
-                bytefile.write(chunk)
-            bytefile.seek(0)
-            discord_file = discord.File(bytefile, server.newest_log_item.name)
-            await ctx.send(file=discord_file)
-
-    async def send_server_notification(self, server_item: ServerItem, changed_to: ServerStatus):
-        text = f"{server_item.name} was switched ON" if changed_to is ServerStatus.ON else f"{server_item.name} was switched OFF"
-        channel = self.bot.channel_from_id(645930607683174401)
-        await channel.send(text)
-
     @auto_meta_info_command()
     async def say_best_alias(self, ctx: commands.Context, command: CommandConverter):
         await ctx.send(command.best_alias)
@@ -224,15 +159,6 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         if ctx.author.id == 576522029470056450:
             return True
         return False
-
-    def load_server_items(self):
-        ServerItem.cog = self
-        ServerItem.status_switch_signal.connect(self.send_server_notification)
-        _out = []
-        for server_name in self.server_names:
-            server_adress = COGS_CONFIG.retrieve(self.config_name, f"{server_name.lower()}_address", typus=str, direct_fallback=None)
-            _out.append(ServerItem(server_name, server_adress, server_name))
-        return _out
 
 
 def setup(bot):

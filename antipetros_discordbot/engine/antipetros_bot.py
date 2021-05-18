@@ -483,10 +483,10 @@ class AntiPetrosBot(commands.Bot):
         all_tasks = []
         for cog_name, cog_object in self.cogs.items():
             if hasattr(cog_object, command):
-                task = asyncio.create_task(getattr(cog_object, command)(*args, **kwargs))
-                all_tasks.append(task)
+                all_tasks.append(getattr(cog_object, command)(*args, **kwargs))
+
         if all_tasks:
-            await asyncio.wait(all_tasks, return_when="ALL_COMPLETED", timeout=None)
+            await asyncio.gather(*all_tasks)
             log.info("All 'on_ready_setup' methods finished")
 
     @universal_log_profiler

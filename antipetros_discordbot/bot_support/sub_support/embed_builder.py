@@ -13,7 +13,7 @@ from random import randint
 from typing import List, Union
 from inspect import getmembers
 from datetime import datetime, timezone
-
+import asyncio
 # * Third Party Imports --------------------------------------------------------------------------------->
 import arrow
 import PIL.Image
@@ -153,7 +153,7 @@ class EmbedBuilder(SubSupportBase):
         else:
             raise TypeError("'timestamp' has to be either of type 'datetime', 'str' or 'int' not '{type(timestamp)}'")
 
-    def _validate_image(self, image):
+    async def _validate_image(self, image):
         if isinstance(image, str):
             if os.path.isfile(image):
                 file_name = os.path.basename(image).replace('_', '')
@@ -161,7 +161,7 @@ class EmbedBuilder(SubSupportBase):
                 file = File(fp=image, filename=file_name)
                 image = f"attachment://{file_name}"
                 return image, file
-            if image in self.standard_embed_symbols:
+            if image in set(self.standard_embed_symbols):
                 return self.standard_embed_symbols.get(image), None
 
             return image, None
@@ -169,7 +169,7 @@ class EmbedBuilder(SubSupportBase):
             log.debug('Image is a Pil image')
             with BytesIO() as image_binary:
                 image_format = 'PNG' if image.format is None else image.format
-                image.save(image_binary, image_format, optimize=True)
+                await asyncio.to_thread(image.save, image_binary, image_format, optimize=True)
                 image_binary.seek(0)
                 file_name = f"image{randint(*self.generic_image_name_range)}.{image_format.lower()}"
                 file = File(fp=image_binary, filename=file_name)
@@ -177,7 +177,7 @@ class EmbedBuilder(SubSupportBase):
                 return image, file
         elif isinstance(image, bytes):
             with BytesIO() as image_binary:
-                image_binary.write(image)
+                await asyncio.to_thread(image_binary.write, image)
                 image_binary.seek(0)
                 file_name = f"image{randint(*self.generic_image_name_range)}.png"
                 file = File(fp=image_binary, filename=file_name)
@@ -193,10 +193,10 @@ class EmbedBuilder(SubSupportBase):
             raise TypeError(f"'image' has to be of type 'str' or '{type(PIL.Image.Image)}' and not '{type(image)}'")
 
     async def _fix_field_item(self, field_item, ):
-        if field_item.name in [None, '']:
+        if field_item.name in {None, ''}:
             field_item = field_item._replace(name=str(self.default_field_name_num) + '.')
             self.default_field_name_num += 1
-        if field_item.value in [None, '']:
+        if field_item.value in {None, ''}:
             field_item = field_item._replace(value='None')
         if field_item.inline is None:
             field_item = field_item._replace(inline=self.default_inline_value)
@@ -235,7 +235,7 @@ class EmbedBuilder(SubSupportBase):
         embed, applied_fields = await self.handle_paginated_field(embed, fields.pop(0), applied_fields)
 
         while len(fields) > 0 and (len(embed) + self._size_of_field(fields[0])) < self.max_embed_size and applied_fields < self.max_embed_fields:
-            embed, applied_fields = self.handle_paginated_field(embed, fields.pop(0), applied_fields)
+            embed, applied_fields = await self.handle_paginated_field(embed, fields.pop(0), applied_fields)
 
         return embed, fields
 
@@ -273,9 +273,9 @@ class EmbedBuilder(SubSupportBase):
                               timestamp=self._validate_timestamp(kwargs.get('timestamp', self.default_timestamp)),
                               url=url)
 
-        image, image_file = self._validate_image(kwargs.get('image', None))
+        image, image_file = await self._validate_image(kwargs.get('image', None))
         files.append(image_file)
-        thumbnail, thumbnail_file = self._validate_image(kwargs.get('thumbnail', self.default_thumbnail)) if kwargs.get('thumbnail', self.default_thumbnail) != 'no_thumbnail' else (None, None)
+        thumbnail, thumbnail_file = await self._validate_image(kwargs.get('thumbnail', self.default_thumbnail)) if kwargs.get('thumbnail', self.default_thumbnail) != 'no_thumbnail' else (None, None)
         files.append(thumbnail_file)
 
         if author is not None:
@@ -306,7 +306,7 @@ class EmbedBuilder(SubSupportBase):
         #     _out["file"] = files[0]
         # elif len(files) > 1:
         _out['files'] = files
-        await self.save_image_and_thumbnail(generic_embed)
+        # await self.save_image_and_thumbnail(generic_embed)
         return _out
 
     async def save_image_and_thumbnail(self, embed):

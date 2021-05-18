@@ -33,6 +33,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from antipetros_discordbot.bot_support.sub_support.sub_support_helper.cooldown_dict import CoolDownDict
 from antipetros_discordbot.utility.enums import UpdateTypus
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -44,7 +45,7 @@ if TYPE_CHECKING:
 # TODO: rebuild whole error handling system
 # TODO: make it so that creating the embed also sends it, with more optional args
 
-# TODO: Handlers needed: discord.ext.commands.errors.DisabledCommand,ParameterError
+# TODO: Handlers needed: discord.ext.commands.errors.DisabledCommand,ParameterError,discord.ext.MissingRequiredArgument
 
 # endregion [TODO]
 
@@ -95,7 +96,8 @@ class ErrorHandler(SubSupportBase):
                                    ParseDiceLineError: self._handle_dice_line_error,
                                    NameInUseError: self._handle_name_in_use_error,
                                    CustomEmojiError: self._handle_custom_emoji_error,
-                                   commands.errors.BadUnionArgument: self._handle_bad_union_argument}
+                                   commands.errors.BadUnionArgument: self._handle_bad_union_argument,
+                                   commands.errors.MissingRequiredArgument: self._handle_missing_required_argument}
 
         self.cooldown_data = CoolDownDict()
 
@@ -163,6 +165,12 @@ class ErrorHandler(SubSupportBase):
 
     async def _handle_custom_emoji_error(self, ctx, error, error_traceback):
         await ctx.send(embed=await self.bot.make_error_embed(ctx, error), delete_after=60)
+
+    async def _handle_missing_required_argument(self, ctx: commands.Context, error, error_traceback):
+        await ctx.send(error, delete_after=60)
+        command = ctx.command
+        await ctx.send("Usage:\n" + str(CodeBlock(command.usage, 'css')), delete_after=60)
+        await ctx.send("Example:\n" + str(CodeBlock(command.example, 'css')), delete_after=60)
 
     async def _handle_command_not_found(self, ctx, error, error_traceback):
         wrong_command_name = ctx.invoked_with

@@ -75,6 +75,12 @@ class TimeKeeper(SubSupportBase):
     def uptime_pretty(self) -> str:
         return alt_seconds_to_pretty(self.uptime)
 
+    async def running_longer_than(self, minutes: int):
+        now = datetime.now(tz=timezone.utc)
+        if now > (self.start_time + timedelta(minutes=minutes)):
+            return True
+        return False
+
     async def on_ready_setup(self):
         log.debug("'%s' sub_support is READY", str(self))
 

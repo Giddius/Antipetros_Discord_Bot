@@ -14,17 +14,17 @@ from PIL import Image, ImageDraw, ImageFont
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role
-
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_faq_cog import FaqItem
-
-from typing import TYPE_CHECKING
+from pprint import pformat, pprint
+from typing import TYPE_CHECKING, Union
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command, auto_meta_info_group, RequiredFile
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
-
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -72,8 +72,9 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
     required_config_data = {'base_config': {},
                             'cogs_config': {"faq_channel_id": "673410398510383115",
                                             "numbers_background_image": "faq_num_background.png"}}
+    faq_name_data_file = pathmaker(APPDATA["json_data"], "faq_name_table.json")
     required_folder = []
-    required_files = []
+    required_files = [RequiredFile(faq_name_data_file, {}, RequiredFile.FileType.JSON)]
     q_emoji = "🇶"
     a_emoji = "🇦"
 
@@ -99,6 +100,10 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
     def faq_channel(self):
         channel_id = COGS_CONFIG.retrieve(self.config_name, 'faq_channel_id', typus=int, direct_fallback=673410398510383115)
         return self.bot.channel_from_id(channel_id)
+
+    @property
+    def faq_name_table(self) -> dict:
+        return loadjson(self.faq_name_data_file)
 
 
 # endregion [Properties]
@@ -164,10 +169,9 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [Commands]
 
-
-    @auto_meta_info_command(aliases=['faq'])
-    @commands.cooldown(1, 10, commands.BucketType.channel)
-    async def post_faq_by_number(self, ctx, faq_numbers: commands.Greedy[int]):
+    @auto_meta_info_group(aliases=['faq'], invoke_without_command=True, case_insensitive=True)
+    @commands.cooldown(1, 5, commands.BucketType.channel)
+    async def post_faq_by_number(self, ctx, faq_numbers: commands.Greedy[Union[int, str]]):
         """
         Posts an FAQ as an embed on request.
 
@@ -184,7 +188,12 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         """
 
         for faq_number in faq_numbers:
-
+            if isinstance(faq_number, str):
+                faq_number = faq_number.casefold()
+                if faq_number not in self.faq_name_table:
+                    await ctx.send(f'No FAQ Entry with the name {faq_number}')
+                    continue
+                faq_number = self.faq_name_table.get(faq_number)
             if faq_number not in self.faq_items:
                 await ctx.send(f'No FAQ Entry with the number {faq_number}')
                 continue
@@ -197,6 +206,57 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
                 await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
         await ctx.message.delete()
 
+    @post_faq_by_number.command()
+    @allowed_channel_and_allowed_role()
+    async def add_faq_name(self, ctx: commands.Context, faq_number: int, *, name: str):
+        """
+        Associates a name with an faq-number, so you can call the faq by name and not only by number.
+
+        Args:
+            faq_number (int): The faq-number you want to associate with the name.
+            name (str): The name to give the faq-number, numbers can have multiple names.!NO SPACES ALLOWED!. Some names are restricted and names can't be only numbers.
+
+
+        Example:
+            @AntiPetros faq add_faq_name 1 myname
+        """
+        parent_command = self.bot.get_command("post_faq_by_number")
+        name = name.casefold()
+        if faq_number not in self.faq_items:
+            await ctx.send(f'No FAQ Entry with the number {faq_number}')
+            return
+
+        if name in parent_command.aliases + [parent_command.name] or any(name in subcommand.aliases or name in subcommand.name for subcommand in parent_command.commands) or name.isnumeric() or ' ' in name:
+            await ctx.send(f"name `{name}` is not allowed")
+            return
+
+        if name in self.faq_name_table:
+            await ctx.send(f"name `{name}` is already assigned, please choose a different one")
+            return
+
+        faq_name_table_data = self.faq_name_table.copy()
+        faq_name_table_data[name] = faq_number
+        writejson(faq_name_table_data, self.faq_name_data_file)
+        await ctx.send(f"name `{name}` was assigned to faq number `{faq_number}` succesfully")
+
+    @post_faq_by_number.command()
+    @allowed_channel_and_allowed_role()
+    async def remove_faq_name(self, ctx: commands.Context, name_to_remove: str):
+        name_to_remove = name_to_remove.casefold()
+        if name_to_remove not in self.faq_name_table:
+            await ctx.send(f"name `{name_to_remove}` is not set to any faq item")
+            return
+        faq_name_table_data = self.faq_name_table.copy()
+        del faq_name_table_data[name_to_remove]
+        writejson(faq_name_table_data, self.faq_name_data_file)
+
+        await ctx.send(f"name `{name_to_remove}` was removed as name for an faq item")
+
+    @post_faq_by_number.command()
+    @allowed_channel_and_allowed_role()
+    async def list_faq_names(self, ctx: commands.Context):
+        text = '\n'.join([f"{key} -> {value}" for key, value in sorted(self.faq_name_table.items(), key=lambda x: x[1])])
+        await ctx.send(CodeBlock(text, 'fix'))
 
 # endregion [Commands]
 
@@ -212,7 +272,8 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [HelperMethods]
 
-    @universal_log_profiler
+
+    @ universal_log_profiler
     async def collect_raw_faq_data(self):
         channel = self.faq_channel
         self.faq_items = {}
@@ -235,6 +296,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

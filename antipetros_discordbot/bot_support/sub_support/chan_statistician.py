@@ -108,7 +108,7 @@ class ChannelStatistician(SubSupportBase):
         result_item = await self.general_db.get_channel_usage(arguments[0], arguments[1])
         await result_item.convert_data_to_channels(self.bot)
         counter = await result_item.get_as_counter()
-        return counter.most_common()
+        return await asyncio.to_thread(counter.most_common)
 
     async def insert_channels_into_db(self):
         category_channels_data = []

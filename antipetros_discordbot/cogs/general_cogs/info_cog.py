@@ -173,6 +173,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Listener]
 
+
     @commands.Cog.listener(name='on_member_join')
     @universal_log_profiler
     async def update_time_sorted_member_ids_join(self, member):
@@ -187,6 +188,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
@@ -248,7 +250,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             description = as_guild.description
             if description is None:
                 description = "This Guild has no description set"
-            log.debug('getting data')
+
             data = {
                 'Amount of Channels overall': (len([await asyncio.sleep(0, channel) for channel in as_guild.channels if channel.type is not discord.ChannelType.category and not channel.name.casefold().startswith('ticket-')]), True),
                 'Amount of Text Channels': (len([await asyncio.sleep(0, channel) for channel in as_guild.text_channels if channel.type is not discord.ChannelType.category and not channel.name.casefold().startswith('ticket-')]), True),
@@ -266,13 +268,11 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                 "Rules Channel": (as_guild.rules_channel.mention, False),
                 "Member for longest time": (await self._oldest_youngest_member(True), False),
                 "Member for shortest time": (await self._oldest_youngest_member(False), False),
-                "Most Used Channel": (await self.most_used_channel(), False)}
-
-            log.debug('adding fields')
+                "Most Used Channel": (await self.most_used_channel(), False)
+            }
 
             fields = [self.bot.field_item(name=key, value=str(value[0]), inline=value[1]) for key, value in data.items() if value[0]]
 
-            log.debug("making embed data")
             embed_data = await self.bot.make_generic_embed(title=as_guild.name, url="https://antistasi.de/", description=description, thumbnail=thumbnail, fields=fields, image=image)
         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
@@ -355,7 +355,6 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [Commands]
 
 # region [HelperMethods]
-
 
     @universal_log_profiler
     async def make_time_sorted_guild_member_list(self):

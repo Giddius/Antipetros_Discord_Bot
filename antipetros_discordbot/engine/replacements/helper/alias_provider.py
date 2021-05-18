@@ -126,16 +126,23 @@ class JsonAliasProvider:
         writejson(data, self.alias_data_file)
 
     def get_best_alias(self, command: commands.Command) -> str:
-        weighted_aliases = sorted(command.aliases, key=self._alias_weighting)
+        weighted_aliases = sorted(command.aliases + [command.name], key=self._alias_weighting)
         return weighted_aliases[0]
 
     def _alias_weighting(self, alias) -> int:
         alias_length = len(self.punctuation_regex.sub('', alias))
-        amount_punctuation = len(self.punctuation_regex.findall(alias)) + 1
-        return self._alias_weighting_calculation(alias_length, amount_punctuation)
+        punctuation_characters = self.punctuation_regex.findall(alias)
+        if not punctuation_characters:
+            punctuation_characters = ['']
+        amount_punctuation = len([char for char in punctuation_characters if char])
 
-    def _alias_weighting_calculation(self, alias_length: int, amount_punctuation: int) -> int:
-        return alias_length * amount_punctuation
+        return self._alias_weighting_calculation(alias_length, punctuation_characters, amount_punctuation)
+
+    def _alias_weighting_calculation(self, alias_length: int, punctuation_characters: List[str], amount_punctuation: int) -> int:
+
+        _out = alias_length + amount_punctuation
+
+        return _out
 
 
 # region[Main_Exec]

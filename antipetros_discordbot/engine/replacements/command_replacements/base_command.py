@@ -265,8 +265,8 @@ class AntiPetrosBaseCommand(commands.Command):
                     raise error
                 if '(' in key:
                     key = key.split('(')[0]
-
-                usage[f"<{key.strip()}>"] = value.strip()
+                if key.casefold().strip() != 'args':
+                    usage[f"<{key.strip()}>"] = value.strip()
 
         usage_line = "@AntiPetros "
         if self.parent is not None:
@@ -299,10 +299,7 @@ class AntiPetrosBaseCommand(commands.Command):
     def example(self):
         example = self.data_getters['meta_data']('example', 'NA')
 
-        if self.cog.bot.bot_member is not None:
-            return example.replace(self.bot_mention_placeholder, self.cog.bot.bot_member.mention)
-        else:
-            return example
+        return example
 
     @example.setter
     def example(self, value):

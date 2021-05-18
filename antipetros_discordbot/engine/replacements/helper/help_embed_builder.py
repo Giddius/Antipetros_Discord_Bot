@@ -321,9 +321,10 @@ class DefaultFieldsProvider(AbstractFieldProvider):
 
             else:
                 channel_member_permissions = channel.permissions_for(self.member)
-                if channel_member_permissions.administrator is True or channel_member_permissions.read_messages is True:
+                if channel_member_permissions.administrator is True or all(perms is True for perms in [channel_member_permissions.read_messages, channel_member_permissions.send_messages]):
                     _out.append(channel)
-        return _out
+
+        return set(_out)
 
     @ handler_method
     async def _handle_usage(self):
@@ -342,7 +343,7 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
-    @handler_method_only_commands
+    @ handler_method_only_commands
     async def _handle_allowed_members(self):
         attr_name = "allowed_members"
         name = await self.handle_name(attr_name)
@@ -358,7 +359,7 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         attr_name = "allowed_channels"
         name = await self.handle_name(attr_name)
         channels = sorted(getattr(self.in_object, attr_name), key=lambda x: x.position)
-        value = ListMarker.make_column_list([channel.mention for channel in channels], ListMarker.star, amount_columns=1)
+        value = ListMarker.make_column_list([channel.mention for channel in channels if channel in self.visible_channels], ListMarker.star, amount_columns=1)
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
@@ -379,13 +380,13 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
-    @ handler_method
-    async def _handle_github_link(self):
-        attr_name = "github_link"
-        name = await self.handle_name(attr_name)
-        value = embed_hyperlink('link 🔗', getattr(self.in_object, attr_name))
-        inline = True
-        return self.field_item(name=name, value=value, inline=inline)
+    # @ handler_method
+    # async def _handle_github_link(self):
+    #     attr_name = "github_link"
+    #     name = await self.handle_name(attr_name)
+    #     value = embed_hyperlink('link 🔗', getattr(self.in_object, attr_name))
+    #     inline = True
+    #     return self.field_item(name=name, value=value, inline=inline)
 
     @ handler_method
     async def _handle_github_wiki_link(self):
@@ -406,7 +407,7 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
-    @handler_method
+    @ handler_method
     async def _handle_example(self):
         attr_name = "example"
         name = await self.handle_name(attr_name)
@@ -414,7 +415,7 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
-    @handler_method_only_commands
+    @ handler_method_only_commands
     async def _handle_commands_co(self):
         attr_name = "commands"
         name = await self.handle_name('sub_commands')

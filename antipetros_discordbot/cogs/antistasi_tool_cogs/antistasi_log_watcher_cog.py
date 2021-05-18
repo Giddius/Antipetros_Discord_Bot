@@ -94,11 +94,8 @@ class AntistasiLogWatcherCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-        self.nextcloud_base_folder = "Antistasi_Community_Logs"
-        self.server = {}
+        self.server_items = {}
         self.ready = False
-        self.mod_lookup_data = loadjson(APPDATA['mod_lookup.json'])
-        self.jinja_env = Environment(loader=FileSystemLoader(APPDATA['templates']))
         self.meta_data_setter('docstring', self.docstring)
 
         glog.class_init_notification(log, self)
