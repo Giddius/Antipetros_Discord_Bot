@@ -152,7 +152,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
     def cog_unload(self):
         self.check_server_online_loop.stop()
-        self.bot.loop.create_task(ServerItem.client.close())
+
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     async def cog_check(self, ctx):

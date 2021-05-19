@@ -39,6 +39,7 @@ from datetime import datetime, timedelta, timezone
 from antipetros_discordbot.utility.emoji_handling import is_unicode_emoji
 from antipetros_discordbot.engine.replacements import CommandCategory, AntiPetrosBaseGroup
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
+from antipetros_discordbot.auxiliary_classes.server_item import ServerItem
 import signal
 import platform
 # endregion[Imports]
@@ -135,7 +136,7 @@ class AntiPetrosBot(commands.Bot):
                          self_bot=False,
                          command_prefix=when_mentioned_or_roles_or(),
                          intents=self._get_intents(),
-                         fetch_offline_members=True,
+                         chunk_guilds_at_startup=True,
                          member_cache_flags=discord.MemberCacheFlags.all(),
                          help_command=None,
                          strip_after_prefix=True,
@@ -189,7 +190,7 @@ class AntiPetrosBot(commands.Bot):
             await self.set_activity()
         log.info('%s has connected to Discord!', self.name)
         await self.to_all_as_tasks('on_ready_setup')
-        self._make_command_dict()
+        await self._make_command_dict()
 
         self.setup_finished = True
         if os.getenv('INFO_RUN') == "1":
@@ -242,8 +243,8 @@ class AntiPetrosBot(commands.Bot):
             setattr(self, name, meth)
 
     @universal_log_profiler
-    def _make_command_dict(self):
-        self._command_dict = CommandAutoDict(self, True)
+    async def _make_command_dict(self):
+        self._command_dict = await asyncio.to_thread(CommandAutoDict, self, True)
         update_item = self.ToUpdateItem(self._command_dict.update_commands, [UpdateTypus.COMMANDS, UpdateTypus.ALIAS, UpdateTypus.CONFIG, UpdateTypus.CYCLIC])
         if update_item not in self.to_update_methods:
             self.to_update_methods.append(update_item)
@@ -400,6 +401,7 @@ class AntiPetrosBot(commands.Bot):
 
 # region [Helper]
 
+
     @staticmethod
     @universal_log_profiler
     def _update_profiling_check():
@@ -431,6 +433,7 @@ class AntiPetrosBot(commands.Bot):
                 log.debug('startup message was already deleted')
 
 # endregion[Helper]
+
     @universal_log_profiler
     async def send_startup_message(self):
         await self._handle_previous_shutdown_msg()
@@ -473,7 +476,7 @@ class AntiPetrosBot(commands.Bot):
         all_target_objects = [cog_object for cog_object in self.cogs.values()] + [subsupport for subsupport in self.subsupports]
         for target_object in all_target_objects:
             if hasattr(target_object, command):
-                task = asyncio.create_task(getattr(target_object, command)(*args, **kwargs))
+                task = asyncio.create_task(getattr(target_object, command)(*args, **kwargs), name=f"{target_object}_{command}")
                 all_tasks.append(task)
         if all_tasks:
             await asyncio.wait(all_tasks, return_when="ALL_COMPLETED", timeout=None)
@@ -539,18 +542,6 @@ class AntiPetrosBot(commands.Bot):
             for command in cog_object.get_commands():
                 yield command
 
-        # file_name = f"{cog.config_name}_cog"
-        # for option in BASE_CONFIG.options('extensions'):
-        #     if option.split('.')[-1].casefold() == file_name.casefold():
-        #         import_path = self.cog_import_base_path + '.' + option
-        #         self.unload_extension(import_path)
-        #         self.load_extension(import_path)
-        #         for _cog_name, cog_object in self.cogs.items():
-        #             if _cog_name.casefold() == cog_name.casefold():
-        #                 await cog_object.on_ready_setup()
-        #                 break
-        #         break
-
     def add_update_method(self, meth: Callable, *typus: UpdateTypus):
         self.to_update_methods.append(self.ToUpdateItem(meth, list(typus)))
 
@@ -566,7 +557,8 @@ class AntiPetrosBot(commands.Bot):
             log.info("retiring troops")
             self.support.retire_subsupport()
             await self._close_sessions()
-
+            if ServerItem.client is not None:
+                await ServerItem.client.close()
             await self.wait_until_ready()
         except Exception as error:
             log.error(error, exc_info=True)

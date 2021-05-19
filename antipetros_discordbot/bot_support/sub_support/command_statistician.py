@@ -116,9 +116,9 @@ class CommandStatistician(SubSupportBase):
             if _command.name in ['shutdown', "get_command_stats", None, '']:
                 return
             if self.is_debug is False and str(_command.cog) not in ['GeneralDebugCog'] and ctx.channel.name.casefold() not in ['bot-testing']:
-                asyncio.create_task(self.general_db.insert_command_usage(_command))
+                asyncio.create_task(self.general_db.insert_command_usage(_command), name=f"enter_command_usage_{_command.name}")
             elif self.is_debug is True:
-                asyncio.create_task(self.general_db.insert_command_usage(_command))
+                asyncio.create_task(self.general_db.insert_command_usage(_command), name=f"debug_enter_command_usage_{_command.name}")
 
             log.debug("command invocations was recorded")
             await self.bot.commands_map.sort_commands(await self.get_command_frequency())

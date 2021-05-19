@@ -51,6 +51,7 @@ from aiodav.exceptions import NoConnection
 from sortedcontainers import SortedDict, SortedList
 from marshmallow import Schema, fields
 from abc import ABC, ABCMeta, abstractmethod
+from hashlib import blake2b
 import discord
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog
@@ -257,7 +258,8 @@ class LogFileItem:
     limit_semaphore = AioSemaphore(value=5)
     time_pretty_format = "%Y-%m-%d %H:%M:%S UTC"
 
-    def __init__(self, resource_item: Resource, info: dict) -> None:
+    def __init__(self, resource_item: Resource, info: dict, server_item: "ServerItem") -> None:
+        self.server_item = server_item
         self.path = fix_path(info.get('path'))
         self.name = os.path.basename(self.path)
         self.resource_item = resource_item
@@ -323,6 +325,27 @@ class LogFileItem:
         async for chunk in await self.resource_item.client.download_iter(self.path):
             yield chunk
 
+    async def content_embed(self):
+        await self.collect_info()
+        with BytesIO() as bytefile:
+            async for chunk in self.content_iter():
+                bytefile.write(chunk)
+                bytefile.seek(0)
+                hash = blake2b(bytefile.read()).hexdigest()
+                bytefile.seek(0)
+                file = discord.File(bytefile, self.name)
+        embed_data = await self.server_item.cog.bot.make_generic_embed(title=self.name, fields=[self.server_item.cog.bot.field_item(name='Server', value=self.server_item.pretty_name, inline=False),
+                                                                                                self.server_item.cog.bot.field_item(name='Size', value=self.size_pretty, inline=False),
+                                                                                                self.server_item.cog.bot.field_item(name='Created', value=self.created_pretty, inline=False),
+                                                                                                self.server_item.cog.bot.field_item(name='Last modified', value=self.modified_pretty, inline=False),
+                                                                                                self.server_item.cog.bot.field_item(name='Hash', value=hash, inline=False)],
+                                                                       timestamp=self.modified,
+                                                                       thumbnail=self.server_item.cog.server_logos.get(self.server_item.name.casefold(), 'no_thumbnail'),
+                                                                       footer={'text': 'Last modified in your timezone, see timestamp ->'})
+
+        embed_data['files'].append(file)
+        return embed_data
+
     def __str__(self) -> str:
         return f"{self.__class__.__name__} with path '{self.path}'"
 
@@ -374,6 +397,7 @@ class ServerAddress:
 
 
 class ServerItem:
+    pretty_name_regex = re.compile(r"(?P<name>\w+)(?P<server>server)\_?(?P<number>\d)?", re.IGNORECASE)
     timeout = 3.0
     battle_metrics_mapping = {'mainserver_1': "https://www.battlemetrics.com/servers/arma3/10560386",
                               'mainserver_2': "https://www.battlemetrics.com/servers/arma3/10561000",
@@ -438,12 +462,23 @@ class ServerItem:
     def show_in_server_command(self) -> bool:
         return COGS_CONFIG.retrieve(self.config_name, f"{self.name.lower()}_show_in_server_command", typus=bool, direct_fallback=True)
 
+    @property
+    def is_online_message_enabled(self) -> bool:
+        return COGS_CONFIG.retrieve(self.config_name, f"{self.name.lower()}_is_online_message_enabled", typus=bool, direct_fallback=True)
+
+    @property
+    def pretty_name(self):
+        name_match = self.pretty_name_regex.match(self.name)
+        if name_match:
+            return ' '.join([group for group in name_match.groups() if group]).title()
+        return self.name.replace('_', ' ').title()
+
     async def list_log_items_on_server(self):
         async with self.limit_lock:
             for info_item in await self.client.list(self.log_folder_path, get_info=True):
                 if info_item.get('isdir') is False:
                     resource_item = self.client.resource(fix_path(info_item.get('path')))
-                    item = LogFileItem(resource_item=resource_item, info=info_item)
+                    item = LogFileItem(resource_item=resource_item, info=info_item, server_item=self)
                     yield item
                     await asyncio.sleep(0)
 
@@ -500,7 +535,6 @@ class ServerItem:
         password_needed = "YES 🔐" if info_data.password_protected is True else 'NO 🔓'
         image = None if with_mods is False else mod_data.image
         embed_data = await self.cog.bot.make_generic_embed(title=info_data.server_name,
-                                                           #    image=image,
                                                            thumbnail=image,
                                                            author="armahosts",
                                                            footer="armahosts",

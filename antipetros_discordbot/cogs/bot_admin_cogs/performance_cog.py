@@ -127,8 +127,9 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         await asyncio.sleep(2)
         self.profile_info_from_logs.start()
         await asyncio.sleep(2)
-        await self.format_graph(10)
         plt.style.use('dark_background')
+        await self.format_graph(10)
+
         self.ready = True
 
     @universal_log_profiler

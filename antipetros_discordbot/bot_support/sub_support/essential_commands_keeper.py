@@ -9,7 +9,7 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import random
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import random
 from typing import TYPE_CHECKING, Union
 # * Third Party Imports --------------------------------------------------------------------------------->
@@ -112,7 +112,7 @@ class EssentialCommandsKeeper(SubSupportBase):
             started_at = self.support.start_time
 
             started_at_string = arrow.get(started_at).format('YYYY-MM-DD HH:mm:ss')
-            online_duration = naturaltime(datetime.utcnow() - started_at).replace(' ago', '')
+            online_duration = naturaltime(datetime.now(timezone.utc) - started_at).replace(' ago', '')
 
             embed = await self.bot.make_generic_embed(title=random.choice(loadjson(self.goodbye_quotes_file)),
                                                       description=f'{self.bot.display_name} is shutting down.',

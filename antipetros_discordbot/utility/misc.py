@@ -423,10 +423,10 @@ def is_even(number: int):
     return not number & 1
 
 
-async def delete_message_if_text_channel(ctx: commands.Context):
+async def delete_message_if_text_channel(ctx: commands.Context, delay: int = None):
     try:
         if ctx.channel.type is discord.ChannelType.text:
-            await ctx.message.delete()
+            await ctx.message.delete(delay=delay)
     except discord.errors.HTTPException as error:
         log.error(error.text)
 

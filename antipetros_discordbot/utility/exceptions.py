@@ -123,7 +123,7 @@ class NotAllowedChannelError(BaseExtendedCommandError):
         self.alias_used = ctx.invoked_with
         self.channel_name = self.ctx.channel.name
         self.allowed_channels = allowed_channels
-        self.msg = f"The command '{self.command_name}' (alias used: '{self.alias_used}') is not allowed in channel '{self.channel_name}'"
+        self.msg = f"Sorry {ctx.author.name} I can't let you do that.\n\nThe command '{self.command_name}' (alias used: '{self.alias_used}') is not allowed in channel '{self.channel_name}'"
         super().__init__(self.msg)
 
 

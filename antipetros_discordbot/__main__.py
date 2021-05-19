@@ -113,7 +113,8 @@ def configure_logger():
     _log = glog.main_logger(_log_file, log_level, other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata"], log_to=log_stdout, in_back_up=in_back_up)
 
     asyncio_logger = logging.getLogger('asyncio')
-    asyncio_logger.addFilter(filter_asyncio_call)
+    asyncio_logger.setLevel('WARNING')
+    # asyncio_logger.addFilter(filter_asyncio_call)
     old_record_factory = logging.getLogRecordFactory()
 
     def asyncio_mod_message_factory(*args, **kwargs):
@@ -131,7 +132,7 @@ def configure_logger():
 
         return record
 
-    logging.setLogRecordFactory(asyncio_mod_message_factory)
+    # logging.setLogRecordFactory(asyncio_mod_message_factory)
     if use_logging is False:
         logging.disable(logging.CRITICAL)
     if os.getenv('IS_DEV') == 'yes':

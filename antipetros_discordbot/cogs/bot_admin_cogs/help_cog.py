@@ -109,7 +109,7 @@ class GeneralHelpFieldsProviderBasic(AbstractGeneralHelpProvider):
     provides = 'fields'
     command_list_usage = '@AntiPetros help command-list'
     category_list_usage = '@AntiPetros help category-list'
-    general_usage = CodeBlock("@AntiPetros help <command-list, category-list or the name/alias of an command/category>", 'Less')
+    general_usage = CodeBlock("<prefix> help <command-list, category-list or the name/alias of an command/category>", 'Less')
     examples = CodeBlock(f"{command_list_usage}\n{category_list_usage}\n@Antipetros help flip\n@AntiPetros help roll_dice text\n@AntiPetros help server?", "Less")
 
     async def __call__(self):
@@ -134,9 +134,9 @@ class GeneralHelpDescriptionProvider(AbstractGeneralHelpProvider):
 
     async def __call__(self):
         # text = self.bot.description
-        text = f"{ZERO_WIDTH}\n" * 2 + f'**__TEXT DESCRIBING THE BOT AND ITS GENERAL USAGE NEEDED__**\n{ZERO_WIDTH}\n' + f"~~{self.bot.description}~~\n" + f"{ZERO_WIDTH}\n" * 2
+        text = f"{self.bot.description}\n" + f"{ZERO_WIDTH}\n" * 2
         text += '\n' + Seperators.make_line() + '\n'
-        text += f"{ZERO_WIDTH}\n" * 2 + '**__TEXT DESCRIBING THE HELP COMMAND AND ITS GENERAL USAGE NEEDED__**\n' + f"~~{self.in_builder.default_description}~~\n" + f"{ZERO_WIDTH}\n" * 2
+        text += f"{self.in_builder.default_description}\n" + f"{ZERO_WIDTH}\n" * 2
         # text += self.in_builder.default_description
         return text
 
@@ -164,7 +164,7 @@ class GeneralHelpEmbedBuilder:
 
     @property
     def default_url(self):
-        return self.bot.github_url
+        return self.bot.github_wiki_url
 
     @property
     def default_author(self):
@@ -176,8 +176,7 @@ class GeneralHelpEmbedBuilder:
 
     @property
     def default_fields(self):
-        return [self.field_item(name='Github Link', value=embed_hyperlink('link 🔗', self.bot.github_url), inline=True),
-                self.field_item(name="Wiki Link", value=embed_hyperlink('link 🔗', self.bot.github_wiki_url), inline=True)]
+        return [self.field_item(name="Wiki Link", value=embed_hyperlink('link 🔗', self.bot.github_wiki_url), inline=True)]
 
     async def to_dict(self):
         embed_dict = {}
@@ -238,7 +237,6 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Properties]
 
-
     @property
     def message_delete_after(self):
         delete_after = BASE_CONFIG.retrieve(self.config_name, 'delete_after_seconds', typus=int, direct_fallback=0)
@@ -295,6 +293,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Commands]
 
+
     @auto_meta_info_group(categories=[CommandCategory.META], case_insensitive=False, invoke_without_command=True)
     async def help(self, ctx: commands.Context, *, in_object: Union[CommandConverter, CategoryConverter] = None):
         if in_object is None:
@@ -330,7 +329,6 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [DataStorage]
 
 # region [Embeds]
-
 
     async def general_help(self, ctx: commands.Context):
         builder = GeneralHelpEmbedBuilder(self.bot, ctx)

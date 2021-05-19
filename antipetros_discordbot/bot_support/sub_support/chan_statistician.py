@@ -81,16 +81,16 @@ class ChannelStatistician(SubSupportBase):
 
         glog.class_init_notification(log, self)
 
-    async def record_channel_usage(self, msg):
+    async def record_channel_usage(self, msg: discord.Message):
         if self.ready is False:
             return
         if isinstance(msg.channel, discord.DMChannel):
             return
-        if msg.author.id == self.bot.id:
+        if msg.author.bot is True:
             return
         channel = msg.channel
         if channel.name.casefold() not in self.exclude_channels and channel.category.name.casefold() not in self.exclude_categories:
-            asyncio.create_task(self.general_db.insert_channel_use(channel))
+            asyncio.create_task(self.general_db.insert_channel_use(channel), name=f"channel_usage_recording_{channel.name}")
             log.info("channel usage recorded for channel '%s'", channel.name)
         await self.bot.process_commands(msg)
 
