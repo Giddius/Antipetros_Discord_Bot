@@ -97,7 +97,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
     # endregion [ClassAttributes]
 
     # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.ready = False
@@ -109,12 +109,10 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def registered_workshop_items(self):
         return [self.workshop_item(**item) for item in loadjson(self.registered_workshop_items_file)]
 
     @property
-    @universal_log_profiler
     def notify_members(self):
         members = [self.bot.creator]
         member_ids = COGS_CONFIG.retrieve(self.config_name, "notify_member_ids", typus=List[int], direct_fallback=[])
@@ -125,13 +123,11 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 
 # region [Setup]
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         self.check_for_updates.start()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -141,9 +137,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 
 # region [Loops]
 
-
     @tasks.loop(minutes=5, reconnect=True)
-    @universal_log_profiler
     async def check_for_updates(self):
         await self.bot.wait_until_ready()
         for item in self.registered_workshop_items:
@@ -164,7 +158,6 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
@@ -201,13 +194,12 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 # endregion [Commands]
 
 # region [HelperMethods]
-    @universal_log_profiler
+
     async def notify_update(self, old_item, new_item):
         log.info(f"{new_item.title} had an update")
         for member in self.notify_members:
             await member.send(f"{new_item.title} had an update")
 
-    @universal_log_profiler
     async def _add_item_to_registered_items(self, item):
         data = loadjson(self.registered_workshop_items_file)
         if item.id not in [existing_item.get('id') for existing_item in data]:
@@ -217,7 +209,6 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
         else:
             return False
 
-    @universal_log_profiler
     async def _remove_item_from_registered_items(self, item):
         data = loadjson(self.registered_workshop_items_file)
         if item.id in [existing_item.get('id') for existing_item in data]:
@@ -227,7 +218,6 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
         else:
             return False
 
-    @universal_log_profiler
     async def _update_item_in_registered_items(self, old_item, new_item):
         data = loadjson(self.registered_workshop_items_file)
         old_item_data = old_item._asdict()
@@ -235,7 +225,6 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
         data.append(new_item._asdict())
         writejson(data, self.registered_workshop_items_file)
 
-    @universal_log_profiler
     async def _parse_update_date(self, in_update_data: str):
         date, time = in_update_data.split('@')
         if ',' not in date:
@@ -254,17 +243,14 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
         update_datetime = datetime(year=int(year), month=int(month), day=int(day), hour=int(hours), minute=int(minutes))
         return update_datetime
 
-    @universal_log_profiler
     async def _get_title(self, in_soup: BeautifulSoup):
         title = in_soup.find_all("div", {"class": "workshopItemTitle"})[0]
         return title.text
 
-    @universal_log_profiler
     async def _get_updated(self, in_soup: BeautifulSoup):
         updated_data = in_soup.findAll("div", {"class": "detailsStatRight"})[2]
         return await self._parse_update_date(updated_data.text)
 
-    @universal_log_profiler
     async def _get_requirements(self, in_soup: BeautifulSoup):
         _out = []
         try:
@@ -277,19 +263,16 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
             pass
         return _out
 
-    @universal_log_profiler
     async def _get_image_link(self, in_soup: BeautifulSoup):
         image = in_soup.find_all('div', {'class': "workshopItemPreviewImageMain"})[0].find_all('a')[0].get('onclick')
         match = self.image_link_regex.search(image)
         if match:
             return match.group('image_link')
 
-    @universal_log_profiler
     async def _get_item_size(self, in_soup: BeautifulSoup):
         size = in_soup.findAll("div", {"class": "detailsStatRight"})[0]
         return size.text
 
-    @universal_log_profiler
     async def _get_fresh_item_data(self, item_id: int):
         item_url = f"{self.base_url}{item_id}"
         async with self.bot.aio_request_session.get(item_url) as response:
@@ -309,6 +292,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

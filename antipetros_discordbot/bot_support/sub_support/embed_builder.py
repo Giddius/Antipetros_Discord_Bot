@@ -36,7 +36,7 @@ from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 import re
-from icecream import ic
+
 # endregion[Imports]
 
 # region [TODO]
@@ -299,7 +299,7 @@ class EmbedBuilder(SubSupportBase):
         #     await self.save_embed_as_json(embed=generic_embed, save_name=kwargs.get('save_name', None))
         if self.is_debug is True:
             log.debug("Embed with title '%s' has a len of '%s'", kwargs.get('title', 'None'), str(len(generic_embed)))
-            log.debug(ic.format(generic_embed.image))
+
         _out = {"embed": generic_embed}
         files = [file_item for file_item in files if file_item is not None]
         # if len(files) == 1:

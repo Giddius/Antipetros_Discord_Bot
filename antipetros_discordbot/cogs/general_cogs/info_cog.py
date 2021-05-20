@@ -127,7 +127,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [ClassAttributes]
 
 # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.time_sorted_guild_member_list = []
@@ -140,7 +140,6 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def code_style(self):
         style_name = COGS_CONFIG.retrieve(self.config_name, 'code_style', typus=str, direct_fallback='dracula')
         style = self.code_style_map.get(style_name.casefold())
@@ -151,7 +150,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [Properties]
 
 # region [Setup]
-    @universal_log_profiler
+
     async def on_ready_setup(self):
         if self.bot.antistasi_guild.chunked is False:
             await self.bot.antistasi_guild.chunk(cache=True)
@@ -159,7 +158,6 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         await self.make_time_sorted_guild_member_list()
         log.debug('cog "%s" was updated', str(self))
@@ -173,14 +171,11 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_member_join')
-    @universal_log_profiler
     async def update_time_sorted_member_ids_join(self, member):
         await self.make_time_sorted_guild_member_list()
 
     @commands.Cog.listener(name='on_member_remove')
-    @universal_log_profiler
     async def update_time_sorted_member_ids_remove(self, member):
         await self.make_time_sorted_guild_member_list()
 
@@ -188,7 +183,6 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
@@ -203,7 +197,10 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         name = self.bot.name
         cleaned_prefixes = self.bot.all_prefixes
         insensitive_commands_emoji = '✅' if self.bot.case_insensitive is True else '❎'
-        most_used_command_name, most_used_command_amount = await self.bot.most_invoked_commands()
+        try:
+            most_used_command_name, most_used_command_amount = await self.bot.most_invoked_commands()
+        except IndexError:
+            most_used_command_name, most_used_command_amount = 'None', 0
 
         data = {"Usable Prefixes": (ListMarker.make_list(cleaned_prefixes, indent=1), False),
                 "Case-INsensitive?": (insensitive_commands_emoji, False),
@@ -356,7 +353,6 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [HelperMethods]
 
-    @universal_log_profiler
     async def make_time_sorted_guild_member_list(self):
         log.debug("Updating time_sorted_guild_member_id_list.")
         if self.bot.antistasi_guild.chunked is False:
@@ -365,14 +361,12 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
         log.debug("Finished updating make_time_sorted_guild_member_list.")
 
-    @universal_log_profiler
     async def _clean_bot_prefixes(self, ctx: commands.Context):
         raw_prefixes = await self.bot.get_prefix(ctx.message)
         cleaned_prefixes = list(set(map(lambda x: x.strip(), raw_prefixes)))
         cleaned_prefixes = [f"`{prefix}`" if not prefix.startswith('<') else prefix for prefix in cleaned_prefixes if '804194400611729459' not in prefix]
         return sorted(cleaned_prefixes, key=lambda x: x.startswith('<'), reverse=True)
 
-    @universal_log_profiler
     async def _oldest_youngest_member(self, get_oldest=True):
         if not self.time_sorted_guild_member_list:
             await self.make_time_sorted_guild_member_list()
@@ -387,13 +381,11 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
         return f'{member.mention} `{member.name}`, joined at {join_time.strftime("%H:%M:%S on %a the %Y.%b.%d")}'
 
-    @universal_log_profiler
     async def most_used_channel(self):
         stats = await self.bot.get_usage_stats('all')
         channel, amount = stats[0]
         return f"{channel.mention} recorded usages: {amount}"
 
-    @universal_log_profiler
     async def amount_commands(self, with_hidden: bool = False):
         all_commands = self.bot.commands
         if with_hidden is False:

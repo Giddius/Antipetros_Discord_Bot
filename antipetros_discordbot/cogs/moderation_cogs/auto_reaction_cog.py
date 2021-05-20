@@ -246,7 +246,6 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 # region [Init]
 
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         BaseReactionInstruction.bot = self.bot
@@ -259,7 +258,6 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def reaction_instructions_data(self):
         if os.path.isfile(self.reaction_instructions_data_file) is False:
             writejson([], self.reaction_instructions_data_file)
@@ -276,20 +274,18 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         return _out
 
     @property
-    @universal_log_profiler
     def antistasi_custom_emojis(self):
         return {emoji.name: emoji for emoji in self.bot.antistasi_guild.emojis}
 
 # endregion [Properties]
 
 # region [Setup]
-    @universal_log_profiler
+
     async def on_ready_setup(self):
 
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -303,8 +299,8 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # region [Listener]
 
+
     @commands.Cog.listener(name='on_message')
-    @universal_log_profiler
     async def add_reaction_to_message_sorter_listener(self, msg: discord.Message):
         if self.ready is False:
             return
@@ -320,6 +316,7 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command()
     @owner_or_admin(False)
@@ -423,7 +420,6 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # region [HelperMethods]
 
-    @universal_log_profiler
     async def _handle_exceptions_data(self, exception_data):
         if exception_data.casefold() == 'none':
             return None
@@ -434,7 +430,6 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
             _out.append((typus.strip(), int(value_id.strip())))
         return _out
 
-    @universal_log_profiler
     async def _handle_custom_emoji_input(self, emoji: str):
         emoji_match = self.custom_emoji_regex.match(emoji)
         if emoji_match:
@@ -444,20 +439,17 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
             return self.antistasi_custom_emojis.get(name)
         return emoji
 
-    @universal_log_profiler
     async def _modify_reaction_instruction_data(self, modified_item: BaseReactionInstruction):
         all_instructions = self.reaction_instructions
         all_instructions.remove(modified_item)
         all_instructions.append(modified_item)
         await self._save_to_reaction_instructions_data(all_instructions)
 
-    @universal_log_profiler
     async def _add_to_reaction_instruction_data(self, new_item: BaseReactionInstruction):
         all_instructions = self.reaction_instructions
         all_instructions.append(new_item)
         await self._save_to_reaction_instructions_data(all_instructions)
 
-    @universal_log_profiler
     async def _remove_from_reaction_instruction_data(self, item_to_remove: BaseReactionInstruction):
         all_instructions = self.reaction_instructions
         all_instructions.remove(item_to_remove)

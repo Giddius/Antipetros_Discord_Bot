@@ -85,7 +85,7 @@ def auto_meta_info_command(name=None, cls=None, **attrs):
 
     def decorator(func):
 
-        return cls(universal_log_profiler(func), name=name, **attrs)
+        return cls(func, name=name, **attrs)
 
     return decorator
 

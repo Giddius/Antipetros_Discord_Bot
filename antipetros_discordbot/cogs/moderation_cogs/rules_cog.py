@@ -98,7 +98,6 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
 # region [Init]
 
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.rules_messages = {}
@@ -111,20 +110,18 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def rules_channel(self):
         return self.bot.channel_from_id(self.rules_channel_id)
 
 # endregion [Properties]
 
 # region [Setup]
-    @universal_log_profiler
+
     async def on_ready_setup(self):
         asyncio.create_task(self.get_rules_messages())
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -138,9 +135,7 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
 
 # region [Listener]
 
-
     @commands.Cog.listener(name="on_raw_message_edit")
-    @universal_log_profiler
     async def update_rules(self, payload: discord.RawMessageUpdateEvent):
         if payload.channel_id != self.rules_channel_id:
             return
@@ -205,7 +200,6 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
 # region [HelperMethods]
 
 
-    @universal_log_profiler
     async def _make_rules_embed(self, rule_message: discord.Message):
         fields = await self.parse_rules(rule_message)
         fields.append(self.bot.field_item(name="Additional Rules Documents", value='\n'.join(await self.parse_links())))
@@ -220,7 +214,6 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
                                                        color='red')
         return embed_data
 
-    @universal_log_profiler
     async def get_rules_messages(self):
         self.rules_messages = {}
         async for message in self.rules_channel.history(limit=None):
@@ -235,7 +228,6 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
             elif first_line == 'a summary of currently known and reported exploits:':
                 self.rules_messages['exploits'] = message
 
-    @universal_log_profiler
     async def parse_rules(self, message: discord.Message) -> list:
         fields = []
         for line in message.content.splitlines():
@@ -252,7 +244,6 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
         fields.append(self.bot.field_item(name=Seperators.make_line('double', 10), value=ZERO_WIDTH))
         return fields
 
-    @universal_log_profiler
     async def parse_links(self) -> list:
         links = []
         for item_match in self.links_message_regex.finditer(self.rules_messages.get('links').content):
@@ -265,7 +256,6 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

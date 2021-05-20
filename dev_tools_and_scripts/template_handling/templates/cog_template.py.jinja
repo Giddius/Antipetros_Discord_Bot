@@ -120,7 +120,7 @@ class {{ cog_name }}(AntiPetrosBaseCog):
 # endregion [ClassAttributes]
 
 # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot:"AntiPetrosBot"):
         super().__init__(bot)
         self.ready = False
@@ -135,13 +135,13 @@ class {{ cog_name }}(AntiPetrosBaseCog):
 # endregion [Properties]
 
 # region [Setup]
-    @universal_log_profiler
+
     async def on_ready_setup(self):
         await asyncio.sleep(5)
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
+
     async def update(self, typus:UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))

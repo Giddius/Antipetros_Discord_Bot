@@ -94,7 +94,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
     # endregion [ClassAttributes]
 
     # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.dice_mapping = {
@@ -116,19 +116,17 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def youtube_links(self):
         return loadjson(self.music_data_file)
 
 # endregion [Properties]
 
 # region [Setup]
-    @universal_log_profiler
+
     async def on_ready_setup(self):
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -147,7 +145,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 # endregion [Listener]
 
 # region [Commands]
-
 
     @ auto_meta_info_command()
     @ allowed_channel_and_allowed_role()
@@ -283,7 +280,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         await ctx.message.delete()
 
     @staticmethod
-    @universal_log_profiler
     def paste_together(*images):
         amount = len(images)
         spacing = 25
@@ -304,7 +300,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
         return b_image
 
-    @universal_log_profiler
     async def parse_dice_line(self, dice_line: str) -> List[Tuple[int, str]]:
         """
         Parses the input string for the `roll_dice` command into a tuple of "amounts" and "type of dice".
@@ -329,7 +324,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         return _out
 
     @staticmethod
-    @universal_log_profiler
     async def _roll_the_dice(sides):
         """
         Roles the die via the `secrets` module.
@@ -337,7 +331,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         return secrets.randbelow(sides) + 1
 
     @staticmethod
-    @universal_log_profiler
     def _get_dice_images(result_image_file_paths):
         """
         Retrieves the images of the dice from the filesystem.
@@ -346,7 +339,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         return images
 
     @staticmethod
-    @universal_log_profiler
     def _sum_dice_results(in_result):
         """
         Calculates the sum of the dice.
@@ -588,6 +580,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

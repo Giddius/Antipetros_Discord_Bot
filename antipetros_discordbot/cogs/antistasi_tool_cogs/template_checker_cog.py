@@ -75,7 +75,7 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
 # endregion [ClassAttributes]
 
 # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.meta_data_setter('docstring', self.docstring)
@@ -91,12 +91,10 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
 # region [Setup]
 
 
-    @universal_log_profiler
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -116,7 +114,6 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
 # region [Commands]
 
 
-    @universal_log_profiler
     async def correct_template(self, template_content, item_data):
         new_content = template_content
         for item in item_data:

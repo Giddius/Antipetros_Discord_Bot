@@ -83,7 +83,6 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 
 # region [Init]
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.give_away_item.bot = self.bot
@@ -108,7 +107,6 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 
 # region [Setup]
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         await asyncio.sleep(5)
         self.check_give_away_ended_loop.start()
@@ -116,7 +114,6 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -125,6 +122,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 # endregion [Setup]
 
 # region [Loops]
+
 
     @tasks.loop(seconds=30, reconnect=True)
     async def check_give_away_ended_loop(self):
@@ -164,9 +162,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 
 # region [Listener]
 
-
     @commands.Cog.listener()
-    @universal_log_profiler
     async def on_raw_reaction_add(self, payload):
         if self.ready is False:
             return
@@ -186,7 +182,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 # endregion [Listener]
 
 # region [Commands]
-    @universal_log_profiler
+
     async def give_away_finished(self, event_item):
 
         users = []
@@ -219,7 +215,6 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
         await event_item.message.delete()
         await self.remove_give_away(event_item)
 
-    @universal_log_profiler
     async def notify_author(self, event_item, winners, amount_participants):
         embed_data = await self.bot.make_generic_embed(title=f'Give-Away "{event_item.title}" has finished', description=f'There were {amount_participants} participants',
                                                        fields=[self.bot.field_item(name=f"{index+1}. Winner", value=winner.name, inline=False) for index, winner in enumerate(winners)],
@@ -317,13 +312,11 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 # region [HelperMethods]
 
 
-    @universal_log_profiler
     async def add_give_away(self, give_away_event):
         data = loadjson(self.give_away_data_file)
         data.append(await give_away_event.to_dict())
         writejson(data, self.give_away_data_file)
 
-    @universal_log_profiler
     async def remove_give_away(self, give_away_event):
         data = loadjson(self.give_away_data_file)
         data.remove(await give_away_event.to_dict())

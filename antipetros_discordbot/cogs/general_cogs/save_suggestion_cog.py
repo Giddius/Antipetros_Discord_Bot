@@ -101,7 +101,6 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
 # region [Init]
 
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.data_storage_handler = AioSuggestionDataStorageSQLite()
@@ -117,7 +116,6 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
 # endregion [Init]
 # region [Setup]
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         self.command_emojis = await self.get_command_emojis()
         self.categories_emojis = await self.get_categories_emojis()
@@ -125,7 +123,6 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -134,57 +131,47 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
 # endregion[Setup]
 # region [Properties]
 
-    @universal_log_profiler
     async def get_command_emojis(self):
         _out = await self.data_storage_handler.get_save_emojis()
 
         return _out
 
-    @universal_log_profiler
     async def get_upvote_downvote_emojis(self):
         return {'upvote': normalize_emoji(COGS_CONFIG.get(self.config_name, 'upvote_emoji')),
                 'downvote': normalize_emoji(COGS_CONFIG.get(self.config_name, 'downvote_emoji'))}
 
-    @universal_log_profiler
     async def get_categories_emojis(self):
 
         categories_emojis = await self.data_storage_handler.category_emojis()
 
         return {normalize_emoji(key): value for key, value in categories_emojis.items()}
 
-    @universal_log_profiler
     async def get_category_name(self, emoji_name):
         data = await self.data_storage_handler.category_emojis()
         if emoji_name in data:
             return data.get(emoji_name)
 
     @ property
-    @universal_log_profiler
     def notify_contact_member(self):
         return COGS_CONFIG.get(self.config_name, 'notify_contact_member')
 
-    @universal_log_profiler
     async def messages_to_watch(self):
         return await self.data_storage_handler.get_all_non_discussed_message_ids()
 
-    @universal_log_profiler
     async def saved_messages(self):
         saved_messages = await self.data_storage_handler.get_all_message_ids()
         return saved_messages
 
     @ property
-    @universal_log_profiler
     def std_datetime_format(self):
         return self.bot.std_date_time_format
 
     @ property
-    @universal_log_profiler
     def auto_accept_user_dict(self):
         if os.path.isfile(self.auto_accept_user_file) is False:
             writejson({}, self.auto_accept_user_file)
         return loadjson(self.auto_accept_user_file)
 
-    @universal_log_profiler
     async def get_team_from_emoji(self, emoji_name):
         for key, value in self.command_emojis.items():
             if value == emoji_name:
@@ -194,7 +181,7 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
 # endregion [Properties]
 
 # region [Listener]
-    @universal_log_profiler
+
     async def _suggestion_listen_checks(self, payload):
         command_name = "suggestion_reaction_listener"
         if COGS_CONFIG.retrieve(self.config_name, command_name + "_enabled", typus=bool, direct_fallback=False) is False:
@@ -232,7 +219,6 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
         return True
 
     @ commands.Cog.listener(name="on_raw_reaction_add")
-    @universal_log_profiler
     async def suggestion_reaction_listener(self, payload):
         if self.ready is False:
             return
@@ -433,7 +419,7 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
 # endregion [Commands]
 
 # region [DataStorage]
-    @universal_log_profiler
+
     async def _add_suggestion(self, suggestion_item: SUGGESTION_DATA_ITEM, extra_data=None):
         if extra_data is not None:
             _path = pathmaker(APPDATA['suggestion_extra_data'], extra_data[0])
@@ -447,7 +433,6 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
             log.error(error)
             return False, suggestion_item
 
-    @universal_log_profiler
     async def _set_category(self, category, message_id):
         try:
             await self.data_storage_handler.update_category(category, message_id)
@@ -456,7 +441,6 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
             log.error(error)
             return False
 
-    @universal_log_profiler
     async def _clear_suggestions(self, ctx, answer):
         if answer.casefold() == 'yes':
             # TODO: make as embed
@@ -474,7 +458,6 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
 
 # region [Embeds]
 
-    @universal_log_profiler
     async def make_add_success_embed(self, suggestion_item: SUGGESTION_DATA_ITEM):
         _filtered_content = []
         if suggestion_item.name is not None:
@@ -501,7 +484,6 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
         embed.set_footer(text=DEFAULT_FOOTER)
         return embed
 
-    @universal_log_profiler
     async def make_changed_category_embed(self, message, category):
         embed = discord.Embed(title="**Updated Suggestion Category**", description="I updated the category an Suggestion\n\n", color=0xf2a44a)
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('update', None))
@@ -511,7 +493,6 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
 
         return embed
 
-    @universal_log_profiler
     async def make_already_saved_embed(self):
         embed = discord.Embed(title="**This Suggestion was already saved!**", description="I did not save the Suggestion as I have it already saved", color=0xe04d7e)
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('not_possible', None))
@@ -524,7 +505,6 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
 
 # region [HelperMethods]
 
-    @universal_log_profiler
     async def _collect_title(self, content):
         name_result = self.suggestion_name_regex.search(content)
         if name_result:
@@ -534,13 +514,11 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
             name = None
         return name
 
-    @universal_log_profiler
     async def specifc_reaction_from_message(self, message, target_reaction):
         for reaction in message.reactions:
             if normalize_emoji(reaction.emoji) == target_reaction:
                 return reaction
 
-    @universal_log_profiler
     async def _new_suggestion(self, channel, message, reaction_user, team):
         if message.id in await self.saved_messages():
             await channel.send(embed=await self.make_already_saved_embed())
@@ -565,7 +543,6 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
             await channel.send(embed=await self.make_add_success_embed(suggestion_item), delete_after=120)
         return True
 
-    @universal_log_profiler
     async def _remove_previous_categories(self, target_message, new_emoji_name):
         for reaction_emoji in self.categories_emojis:
             if reaction_emoji is not None and reaction_emoji != new_emoji_name:
@@ -573,7 +550,6 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
                 if other_reaction is not None:
                     await other_reaction.clear()
 
-    @universal_log_profiler
     async def _change_category(self, channel, message, emoji_name):
         category = await self.get_category_name(emoji_name)
         if category:
@@ -583,14 +559,12 @@ class SaveSuggestionCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categ
                 log.info("updated category for suggestion (id: %s) to category '%s'", message.id, category)
                 await self._remove_previous_categories(message, emoji_name)
 
-    @universal_log_profiler
     async def _change_votes(self, message, emoji_name):
         reaction = await self.specifc_reaction_from_message(message, emoji_name)
         _count = reaction.count
         await self.data_storage_handler.update_votes(emoji_name, _count, message.id)
         log.info("updated votecount for suggestion (id: %s) for type: '%s' to count: %s", message.id, emoji_name, _count)
 
-    @universal_log_profiler
     async def _row_to_json_user_data(self, data):
         _out = {}
         for row in data:

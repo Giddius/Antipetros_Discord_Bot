@@ -83,12 +83,3 @@ CREATE TABLE IF NOT EXISTS command_usage_tbl (
     "command_id" INTEGER NOT NULL REFERENCES "commands_tbl" ("id"),
     UNIQUE ("timestamp", "command_id")
 );
-CREATE INDEX IF NOT EXISTS command_usage_timestamp_index ON "command_usage_tbl" ("timestamp");
-CREATE TABLE IF NOT EXISTS profiling_data_tbl (
-    "id" INTEGER NOT NULL PRIMARY KEY,
-    "timestamp" DATETIME NOT NULL,
-    "module" TEXT NOT NULL,
-    "function" TEXT NOT NULL,
-    "time" INTEGER NOT NULL,
-    UNIQUE ("timestamp", "module", "function")
-);

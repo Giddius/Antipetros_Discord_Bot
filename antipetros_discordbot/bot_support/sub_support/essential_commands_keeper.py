@@ -129,7 +129,6 @@ class EssentialCommandsKeeper(SubSupportBase):
         finally:
             await self.bot.close()
 
-    @universal_log_profiler
     async def split_to_messages(self, ctx, message, split_on='\n', in_codeblock=False, syntax_highlighting='json'):
         _out = ''
         chunks = message.split(split_on)

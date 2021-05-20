@@ -83,7 +83,6 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [Init]
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.faq_items = {}
@@ -96,7 +95,6 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def faq_channel(self):
         channel_id = COGS_CONFIG.retrieve(self.config_name, 'faq_channel_id', typus=int, direct_fallback=673410398510383115)
         return self.bot.channel_from_id(channel_id)
@@ -110,7 +108,6 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [Setup]
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         FaqItem.bot = self.bot
         FaqItem.faq_channel = self.faq_channel
@@ -121,7 +118,6 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -136,9 +132,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_message')
-    @universal_log_profiler
     async def faq_message_added_listener(self, message):
         if self.ready is False:
             return
@@ -147,7 +141,6 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
             asyncio.create_task(self.collect_raw_faq_data())
 
     @commands.Cog.listener(name='on_raw_message_delete')
-    @universal_log_profiler
     async def faq_message_deleted_listener(self, payload):
         if self.ready is False:
             return
@@ -156,7 +149,6 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
             asyncio.create_task(self.collect_raw_faq_data())
 
     @commands.Cog.listener(name='on_raw_message_edit')
-    @universal_log_profiler
     async def faq_message_edited_listener(self, payload):
         if self.ready is False:
             return
@@ -168,6 +160,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_group(aliases=['faq'], invoke_without_command=True, case_insensitive=True)
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -272,7 +265,6 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [HelperMethods]
 
-
     @ universal_log_profiler
     async def collect_raw_faq_data(self):
         channel = self.faq_channel
@@ -296,7 +288,6 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

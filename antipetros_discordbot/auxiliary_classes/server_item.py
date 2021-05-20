@@ -498,7 +498,6 @@ class ServerItem:
             log.info("New log file %s for server %s", item.name, self.name)
         log.info("Updated log_items for server %s", self.name)
 
-    @universal_log_profiler
     async def is_online(self) -> ServerStatus:
         try:
             check_data = await self.get_info()

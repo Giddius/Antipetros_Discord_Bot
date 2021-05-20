@@ -85,7 +85,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Init]
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.latest_who_is_triggered_time = datetime.utcnow()
@@ -97,7 +96,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Init]
 
 # region [Setup]
-    @universal_log_profiler
+
     async def on_ready_setup(self):
         # self.garbage_clean_loop.start()
         reaction_remove_ids = [self.bot.id] + [_id for _id in self.bot.owner_ids]
@@ -106,7 +105,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         if UpdateTypus.CONFIG in typus:
             asyncio.create_task(self._update_listener_enabled())
@@ -117,8 +115,8 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Loops]
 
+
     @tasks.loop(hours=1)
-    @universal_log_profiler
     async def garbage_clean_loop(self):
         if self.ready is False:
             return
@@ -131,7 +129,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def alive_phrases(self):
         if os.path.isfile(self.alive_phrases_file) is False:
             writejson(['I am alive!'], self.alive_phrases_file)
@@ -142,9 +139,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_reaction_add')
-    @universal_log_profiler
     async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):
         if self.ready is False:
             return
@@ -159,7 +154,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Listener]
 
 # region[Commands]
-
 
     @auto_meta_info_command()
     @commands.is_owner()
@@ -375,7 +369,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Helper]
 
-    @universal_log_profiler
     async def _update_listener_enabled(self):
         for listener_name in self.listeners_enabled:
             self.listeners_enabled[listener_name] = COGS_CONFIG.retrieve(self.config_name, listener_name + '_enabled', typus=bool, direct_fallback=False)
@@ -384,6 +377,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Helper]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

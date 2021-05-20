@@ -70,7 +70,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 # endregion[ClassAttributes]
 
 # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.meta_data_setter('docstring', self.docstring)
@@ -81,12 +81,10 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 # region [Setup]
 
 
-    @universal_log_profiler
     async def on_ready_setup(self):
 
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -95,7 +93,6 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 # endregion [Setup]
 
 # region [Commands]
-
 
     @flags.add_flag("--and-giddi", '-gid', type=bool, default=False)
     @flags.add_flag("--number-of-messages", '-n', type=int, default=99999999999)

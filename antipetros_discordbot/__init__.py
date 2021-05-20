@@ -17,20 +17,6 @@ if os.path.islink(MAIN_DIR) is True:
 START_TIME = datetime.now(tz=timezone.utc)
 
 
-def add_profiling_log_level():
-    PROFILING_INTEGER = 7
-
-    def profile(self, msg, *args, **kwargs):
-        """
-        added log level for profiling messages
-        """
-        if self.isEnabledFor(PROFILING_INTEGER):
-            self._log(PROFILING_INTEGER, msg, args, **kwargs)
-
-    logging.addLevelName(PROFILING_INTEGER, "PROFILE")
-    logging.Logger.profile = profile
-
-
 def set_env():
     """
     Sets some enviroment variables to be available everywhere.
@@ -67,5 +53,4 @@ def set_env():
     os.environ['WIKI_BASE_URL'] = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki"
 
 
-add_profiling_log_level()
 set_env()

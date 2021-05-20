@@ -144,17 +144,14 @@ class AioGeneralStorageSQLite:
         self.db.vacuum()
         glog.class_init_notification(log, self)
 
-    @universal_log_profiler
     async def aio_vacuum(self):
         await self.db.aio_vacuum()
 
-    @universal_log_profiler
     async def insert_command_usage(self, command: Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
         timestamp = datetime.now(tz=timezone.utc)
         command_name = command.name
         await self.db.aio_write('insert_command_usage', (timestamp, command_name))
 
-    @universal_log_profiler
     async def insert_cogs_many(self, cogs: List[commands.Cog]):
         categories_data = []
         cogs_data = []
@@ -169,7 +166,6 @@ class AioGeneralStorageSQLite:
         await self.db.aio_write('insert_cog_category', categories_data)
         await self.db.aio_write('insert_cog', cogs_data)
 
-    @universal_log_profiler
     async def insert_cog(self, cog: commands.Cog):
         abs_path = getsourcefile(cog.__class__)
         rel_path = await antipetros_repo_rel_path(abs_path)
@@ -179,11 +175,9 @@ class AioGeneralStorageSQLite:
             await self.db.aio_write('insert_cog_category', (category, category))
             await self.db.aio_write('insert_cog', (str(cog), str(cog), cog.config_name, description, category, rel_path))
 
-    @universal_log_profiler
     async def insert_image(self, name: str, image_bytes: bytes):
         await self.db.aio_write('insert_image', (name, image_bytes))
 
-    @universal_log_profiler
     async def insert_commands_many(self, commands_list: List[commands.Command]):
         commands_data = []
         for command in commands_list:
@@ -204,7 +198,6 @@ class AioGeneralStorageSQLite:
 
         await self.db.aio_write('insert_command', commands_data)
 
-    @universal_log_profiler
     async def insert_command(self, command: Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
         name = command.name
         cog_name = str(command.cog)
@@ -222,13 +215,11 @@ class AioGeneralStorageSQLite:
         params = tuple(params)
         await self.db.aio_write('insert_command', params)
 
-    @universal_log_profiler
     async def insert_channel_use(self, text_channel: discord.TextChannel):
         channel_id = text_channel.id
         timestamp = datetime.now(tz=timezone.utc)
         await self.db.aio_write('insert_channel_use', (timestamp, channel_id))
 
-    @universal_log_profiler
     async def insert_text_channels(self, text_channels: List[discord.TextChannel]):
         text_channels_data = []
         for text_channel in text_channels:
@@ -242,7 +233,6 @@ class AioGeneralStorageSQLite:
             await asyncio.sleep(0)
         await self.db.aio_write("insert_text_channel", text_channels_data)
 
-    @universal_log_profiler
     async def insert_category_channels(self, category_channels: List[discord.CategoryChannel]):
         category_channels_data = []
         for category_channel in category_channels:
@@ -254,25 +244,20 @@ class AioGeneralStorageSQLite:
 
         await self.db.aio_write("insert_category_channel", category_channels_data)
 
-    @universal_log_profiler
     async def update_text_channel_deleted(self, text_channel_id: int):
         await self.db.aio_write("update_text_channel_deleted", (text_channel_id, True))
 
-    @universal_log_profiler
     async def update_category_channel_deleted(self, category_channel_id: int):
         await self.db.aio_write("updated_category_channels_deleted", (category_channel_id, True))
 
-    @universal_log_profiler
     async def get_category_channel_ids(self):
         result = await self.db.aio_query("get_all_category_channel_ids", row_factory=True)
         return [row['id'] for row in result]
 
-    @universal_log_profiler
     async def get_text_channel_ids(self):
         result = await self.db.aio_query("get_all_text_channel_ids", row_factory=True)
         return [row['id'] for row in result]
 
-    @universal_log_profiler
     async def get_cpu_data_last_24_hours(self):
         now = datetime.now(tz=timezone.utc)
         one_day_ago = now - timedelta(hours=24)
@@ -284,7 +269,6 @@ class AioGeneralStorageSQLite:
             all_items.append(CpuPerformanceItem(**row))
         return all_items
 
-    @universal_log_profiler
     async def get_latency_data_last_24_hours(self):
         now = datetime.now(tz=timezone.utc)
         one_day_ago = now - timedelta(hours=24)
@@ -296,7 +280,6 @@ class AioGeneralStorageSQLite:
             all_items.append(LatencyPerformanceItem(**row))
         return all_items
 
-    @universal_log_profiler
     async def get_memory_data_last_24_hours(self):
         now = datetime.now(tz=timezone.utc)
         one_day_ago = now - timedelta(hours=24)
@@ -308,7 +291,6 @@ class AioGeneralStorageSQLite:
             all_items.append(MemoryPerformanceItem(**row))
         return all_items
 
-    @universal_log_profiler
     async def get_channel_usage(self, from_datetime: datetime = None, to_datetime: datetime = None) -> ChannelUsageResult:
         script_name = "get_channel_usage"
         if from_datetime is None and to_datetime is None:
@@ -325,7 +307,6 @@ class AioGeneralStorageSQLite:
         result_item.result_data = [row['channel_id'] for row in result]
         return result_item
 
-    @universal_log_profiler
     async def get_command_usage(self, from_datetime: datetime = None, to_datetime: datetime = None, as_counter: bool = True):
         script_name = "get_command_usage"
         if from_datetime is None and to_datetime is None:
@@ -342,18 +323,12 @@ class AioGeneralStorageSQLite:
         else:
             return [row['name'] for row in result]
 
-    async def insert_profile_data(self, data: List[Tuple[datetime, str, str, int]]):
-        await self.db.aio_write('insert_profiling_data', data)
-
-    @universal_log_profiler
     async def insert_cpu_performance(self, timestamp: datetime, usage_percent: int, load_avg_1: int, load_avg_5: int, load_avg_15: int):
         await self.db.aio_write("insert_cpu_performance", (timestamp, usage_percent, load_avg_1, load_avg_5, load_avg_15))
 
-    @universal_log_profiler
     async def insert_latency_perfomance(self, timestamp: datetime, latency: int):
         await self.db.aio_write('insert_latency_performance', (timestamp, latency))
 
-    @universal_log_profiler
     async def insert_memory_perfomance(self, timestamp: datetime, memory_in_use: int):
         await self.db.aio_write('insert_memory_performance', (timestamp, memory_in_use))
 

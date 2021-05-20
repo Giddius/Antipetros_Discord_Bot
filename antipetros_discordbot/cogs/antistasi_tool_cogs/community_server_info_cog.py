@@ -29,7 +29,7 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.utility.misc import alt_seconds_to_pretty, delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, log_invoker
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, log_invoker, owner_or_admin
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
@@ -92,11 +92,12 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     required_files = [RequiredFile(already_notified_savefile, [], RequiredFile.FileType.JSON),
                       RequiredFile(is_online_messages_data_file, {}, RequiredFile.FileType.JSON),
                       RequiredFile(stored_reasons_data_file, {}, RequiredFile.FileType.JSON)]
-    server_logos = {'mainserver_1': "https://i.postimg.cc/xjm6vGkX/mainserver-1-logo.png"}
+    server_logos = {'mainserver_1': "https://i.postimg.cc/d0Y0krSc/mainserver-1-logo.png",
+                    "mainserver_2": "https://i.postimg.cc/BbL8csTr/mainserver-2-logo.png"}
 # endregion [ClassAttributes]
 
 # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
 
@@ -110,7 +111,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Init]
 
 # region [Properties]
-
 
     @property
     def server_message_remove_time(self) -> int:
@@ -148,7 +148,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Properties]
 
 # region [Setup]
-    @universal_log_profiler
+
     async def on_ready_setup(self):
 
         await ServerItem.ensure_client()
@@ -161,7 +161,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         self.ready = await asyncio.sleep(5, True)
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         await ServerItem.ensure_client()
         log.debug('cog "%s" was updated', str(self))
@@ -185,12 +184,14 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                     if log_item.is_over_threshold is True:
                         await member.send(f"{log_item.name} in server {server.name} is oversized at {log_item.size_pretty}")
                     if log_item is not server.newest_log_item:
-                        data = self.already_notified_log_items.add(log_item.path)
+                        data = self.already_notified_log_items + {log_item.path}
 
                         await asyncio.to_thread(writejson, list(data), self.already_notified_savefile)
                 await asyncio.sleep(0)
             if server.is_online_message_enabled is True:
-                await self._update_is_online_messages(server)
+                asyncio.create_task(self._update_is_online_messages(server), name=f"update_is_online_message_{server.name}")
+            else:
+                asyncio.create_task(self._delete_is_online_message(server), name=f"remove_is_online_message_{server.name}")
 
 
 # endregion [Loops]
@@ -202,7 +203,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [Commands]
 
-    @auto_meta_info_command(aliases=['server', 'servers', 'server?', 'servers?'], categories=CommandCategory.GENERAL)
+
+    @auto_meta_info_command(aliases=['server', 'servers', 'server?', 'servers?'], categories=[CommandCategory.GENERAL])
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 60, commands.BucketType.channel)
     async def current_online_server(self, ctx: commands.Context):
@@ -265,6 +267,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     #     await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command(categories=[CommandCategory.DEVTOOLS, CommandCategory.ADMINTOOLS])
+    @allowed_channel_and_allowed_role()
     async def community_server_log_file(self, ctx: commands.Context, amount: Optional[int] = 1, server_name: Optional[str] = 'mainserver_1'):
         if amount > 5:
             await ctx.send('You requested more files than the max allowed amount of 5, aborting!')
@@ -278,12 +281,13 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                 await ctx.send(**embed_data)
         await delete_message_if_text_channel(ctx, delay=15)
 
-    @auto_meta_info_command()
-    async def trigger_server_switch(self, ctx: commands.Context):
-        server = await self._get_server_by_name('mainserver_1')
-        await self.send_server_notification(server, ServerStatus.ON)
+    # @auto_meta_info_command()
+    # async def trigger_server_switch(self, ctx: commands.Context):
+    #     server = await self._get_server_by_name('mainserver_1')
+    #     await self.send_server_notification(server, ServerStatus.ON)
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(alias=['restart_reason'], categories=[CommandCategory.ADMINTOOLS])
+    @owner_or_admin()
     @log_invoker(log, "info")
     async def set_server_restart_reason(self, ctx: commands.Context, notification_msg_id: int, *, reason: str):
         if notification_msg_id not in set(self.stored_server_messages):
@@ -299,16 +303,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         await msg.edit(embed=embed, allowed_mentions=discord.AllowedMentions.none())
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command()
-    async def stupid_check(self, ctx: commands.Context):
-        server = await self._get_server_by_name('mainserver_1')
-        with BytesIO() as bytefile:
-            async for chunk in server.newest_log_item.content_iter():
-                bytefile.write(chunk)
-            bytefile.seek(0)
-            file = discord.File(bytefile, server.newest_log_item.name)
-        await ctx.send(file=file)
-        file.close()
 
 # endregion [Commands]
 
@@ -328,7 +322,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def send_server_notification(self, server_item: ServerItem, changed_to: ServerStatus):
         title = server_item.pretty_name
         description = f"{server_item.pretty_name} was switched ON" if changed_to is ServerStatus.ON else f"{server_item.pretty_name} was switched OFF"
-        thumbnail = self.server_logos.get(server_item.name.casefold(), 'no_thumbnail')
+        thumbnail = self.server_logos.get(server_item.name.casefold(), self.server_symbol)
         embed_data = await self.bot.make_generic_embed(title=title,
                                                        description=description,
                                                        timestamp=datetime.now(timezone.utc),
@@ -343,14 +337,24 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def _make_is_online_embed(self, server: ServerItem):
         description = 'is ONLINE' if server.previous_status is ServerStatus.ON else 'is OFFLINE'
         color = 'green' if server.previous_status is ServerStatus.ON else 'red'
+        thumbnail = self.server_logos.get(server.name.casefold(), self.server_symbol)
         embed_data = await self.bot.make_generic_embed(title=server.pretty_name,
                                                        description=description,
                                                        footer='armahosts',
-                                                       thumbnail=self.server_symbol,
+                                                       thumbnail=thumbnail,
                                                        url=self.bot.armahosts_url,
                                                        color=color,
                                                        timestamp=datetime.now(timezone.utc))
         return embed_data
+
+    async def _delete_is_online_message(self, server: ServerItem):
+        message_id = self.is_online_messages.get(server.name.casefold())
+        if message_id is not None:
+            msg = await self.is_online_messages_channel.fetch_message(message_id)
+            await msg.delete()
+            data = self.is_online_messages.copy()
+            del data[server.name.casefold()]
+            writejson(data, self.is_online_messages_data_file)
 
     async def _create_is_online_message(self, server: ServerItem):
         embed_data = await self._make_is_online_embed(server)
@@ -381,6 +385,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

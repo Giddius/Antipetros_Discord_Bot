@@ -96,7 +96,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 # endregion[ClassAttributes]
 
 # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
@@ -110,7 +110,6 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
 # region [Setup]
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         """
         standard setup async method.
@@ -120,7 +119,6 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -130,9 +128,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
 # region [Properties]
 
-
     @property
-    @universal_log_profiler
     def existing_configs(self):
         existing_configs = {}
         for file in os.scandir(self.config_dir):
@@ -141,22 +137,18 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         return existing_configs
 
     @property
-    @universal_log_profiler
     def notify_when_changed(self):
         return COGS_CONFIG.retrieve(self.config_name, 'notify_when_changed', typus=bool, direct_fallback=False)
 
     @property
-    @universal_log_profiler
     def notify_via(self):
         return COGS_CONFIG.retrieve(self.config_name, 'notify_via', typus=str, direct_fallback='bot-testing')
 
     @property
-    @universal_log_profiler
     def notify_role_names(self):
         return COGS_CONFIG.retrieve(self.config_name, 'notify_roles', typus=List[str], direct_fallback=['admin'])
 
     @property
-    @universal_log_profiler
     def all_alias_names(self):
         _out = []
         for key, value in self.aliases.items():
@@ -167,11 +159,9 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
 # region [HelperMethods]
 
-    @universal_log_profiler
     async def get_notify_roles(self):
         return [self.bot.role_from_string(role_name) for role_name in self.notify_role_names]
 
-    @universal_log_profiler
     async def send_config_file(self, ctx, config_name):
         config_path = self.existing_configs.get(config_name)
         modified = datetime.fromtimestamp(os.stat(config_path).st_mtime).astimezone(timezone.utc)
@@ -190,6 +180,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 # endregion [HelperMethods]
 
 # region [Commands]
+
 
     @auto_meta_info_group(case_insensitive=True, categories=[CommandCategory.META], invoke_without_command=False)
     @owner_or_admin()
@@ -323,14 +314,12 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
 # region [Helper]
 
-    @universal_log_profiler
     async def _report_profiling_enabled(self, ctx: commands.Context):
         status = os.getenv('ANTIPETROS_PROFILING')
         status = self.status_bool_string_map.get(status)
         await ctx.send(f"Profiling is currently {status}", delete_after=120)
         await delete_message_if_text_channel(ctx)
 
-    @universal_log_profiler
     async def _changed_profiling_enabled(self, ctx: commands.Context, new_status: str = None):
 
         current_status = os.getenv('ANTIPETROS_PROFILING')
@@ -353,7 +342,6 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         await delete_message_if_text_channel(ctx)
         return
 
-    @universal_log_profiler
     async def notify(self, event):
         roles = await self.get_notify_roles()
         embed_data = await event.as_embed_message()
@@ -370,6 +358,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 # endregion[Helper]
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"

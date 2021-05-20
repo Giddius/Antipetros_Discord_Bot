@@ -90,7 +90,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
 # region [Init]
 
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.stamp_location = APPDATA['stamps']
@@ -135,14 +134,12 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
 # region [Setup]
 
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         self._get_stamps()
         self._get_nato_symbol_parts()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         self._get_stamps()
         log.debug('cog "%s" was updated', str(self))
@@ -152,28 +149,23 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def target_stamp_fraction(self):
         return COGS_CONFIG.retrieve(self.config_name, 'stamp_fraction', typus=float, direct_fallback=0.2)
 
     @property
-    @universal_log_profiler
     def stamp_margin(self):
         return COGS_CONFIG.retrieve(self.config_name, 'stamps_margin', typus=int, direct_fallback=5)
 
     @property
-    @universal_log_profiler
     def avatar_stamp_fraction(self):
         return COGS_CONFIG.retrieve(self.config_name, 'avatar_stamp_fraction', typus=float, direct_fallback=0.3)
 
     @property
-    @universal_log_profiler
     def avatar_stamp(self):
         stamp_name = COGS_CONFIG.retrieve(self.config_name, 'avatar_stamp', typus=str, direct_fallback='ASLOGO1').upper()
         return self._get_stamp_image(stamp_name, 1)
 
     @property
-    @universal_log_profiler
     def fonts(self):
         fonts = {}
         for file in os.scandir(APPDATA['fonts']):
@@ -191,6 +183,7 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
 
 
 # region [Commands]
+
 
     @flags.add_flag("--stamp-image", "-si", type=str, default='ASLOGO')
     @flags.add_flag("--first-pos", '-fp', type=str, default="bottom")
@@ -438,7 +431,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
 
 # region [HelperMethods]
 
-    @universal_log_profiler
     def _get_nato_symbol_parts(self):
         self.nato_symbol_parts_images = {}
         for file in os.scandir(self.nato_symbol_parts_location):
@@ -446,7 +438,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
                 name = file.name.split('.')[0].replace(' ', '_').strip().upper()
                 self.nato_symbol_parts_images[name] = file.path
 
-    @universal_log_profiler
     def _get_stamps(self):
         self.stamps = {}
         for file in os.scandir(self.stamp_location):
@@ -454,7 +445,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
                 name = file.name.split('.')[0].replace(' ', '_').strip().upper()
                 self.stamps[name] = file.path
 
-    @universal_log_profiler
     def _get_stamp_image(self, stamp_name, stamp_opacity):
         stamp_name = stamp_name.upper()
         image = Image.open(self.stamps.get(stamp_name))
@@ -464,7 +454,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
         return image.copy()
 
     @staticmethod
-    @universal_log_profiler
     def _stamp_resize(input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
         input_image_width_fractioned = input_image_width * factor
@@ -474,7 +463,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
         transform_factor = (transform_factor_width + transform_factor_height) / 2
         return stamp_image.resize((round(stamp_image.size[0] * transform_factor), round(stamp_image.size[1] * transform_factor)), resample=Image.LANCZOS)
 
-    @universal_log_profiler
     def _to_bottom_right(self, input_image, stamp_image, factor):
         log.debug('pasting image to bottom_right')
         input_image_width, input_image_height = input_image.size
@@ -484,7 +472,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
                           _resized_stamp)
         return input_image
 
-    @universal_log_profiler
     def _to_top_right(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
         _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
@@ -493,7 +480,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
                           _resized_stamp)
         return input_image
 
-    @universal_log_profiler
     def _to_center_right(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
         _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
@@ -502,7 +488,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
                           _resized_stamp)
         return input_image
 
-    @universal_log_profiler
     def _to_bottom_left(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
         _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
@@ -511,7 +496,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
                           _resized_stamp)
         return input_image
 
-    @universal_log_profiler
     def _to_top_left(self, input_image, stamp_image, factor):
 
         _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
@@ -520,7 +504,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
                           _resized_stamp)
         return input_image
 
-    @universal_log_profiler
     def _to_center_left(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
         _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
@@ -529,7 +512,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
                           _resized_stamp)
         return input_image
 
-    @universal_log_profiler
     def _to_center_center(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
         _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
@@ -538,7 +520,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
                           _resized_stamp)
         return input_image
 
-    @universal_log_profiler
     def _to_top_center(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
         _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
@@ -547,7 +528,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
                           _resized_stamp)
         return input_image
 
-    @universal_log_profiler
     def _to_bottom_center(self, input_image, stamp_image, factor):
         input_image_width, input_image_height = input_image.size
         _resized_stamp = self._stamp_resize(input_image, stamp_image, factor)
@@ -556,7 +536,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
                           _resized_stamp)
         return input_image
 
-    @universal_log_profiler
     async def _send_image(self, ctx, image, name, message_title, message_text=None, image_format=None, delete_after=None):
         image_format = 'png' if image_format is None else image_format
         with BytesIO() as image_binary:
@@ -570,14 +549,12 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
                 embed.add_field(name='This Message will self destruct', value=f"in {alt_seconds_to_pretty(delete_after)}")
             await ctx.send(embed=embed, file=file, delete_after=delete_after)
 
-    @universal_log_profiler
     async def _member_avatar_helper(self, user: discord.Member, placement: callable, opacity: float):
         avatar_image = await self.get_avatar_from_user(user)
         stamp = self._get_stamp_image('ASLOGO', opacity)
         modified_avatar = await asyncio.to_thread(placement, avatar_image, stamp, self.avatar_stamp_fraction)
         return modified_avatar
 
-    @universal_log_profiler
     async def _normalize_pos(self, pos: str):
         pos = pos.casefold()
         if pos not in self.position_normalization_table:
@@ -586,7 +563,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
                     return key
         raise ParameterError('image_position', pos)
 
-    @universal_log_profiler
     async def get_avatar_from_user(self, user):
         avatar = user.avatar_url
         temp_dir = TemporaryDirectory()
@@ -599,7 +575,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
         temp_dir.cleanup()
         return avatar_image
 
-    @universal_log_profiler
     def map_image_handling(self, base_image, marker_name, color, bytes_out):
         log.debug("creating changed map, changed_location: '%s', changed_color: '%s'", marker_name, color)
         marker_image = self.outpost_overlay.get(marker_name)
@@ -611,7 +586,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
         bytes_out.seek(0)
         return base_image, bytes_out
 
-    @universal_log_profiler
     def draw_text_line(self, image: Image, text_line: str, top_space: int, in_font: ImageFont.FreeTypeFont):
         width, height = image.size
         pfont = in_font
@@ -621,7 +595,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
 
         return image, top_space + h + (height // 20)
 
-    @universal_log_profiler
     def draw_text_center(self, image: Image, text: str, in_font: ImageFont.FreeTypeFont):
         width, height = image.size
         pfont = in_font
@@ -635,6 +608,7 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
 
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

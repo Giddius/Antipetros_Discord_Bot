@@ -85,7 +85,7 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 # endregion [ClassAttributes]
 
 # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.ready = False
@@ -102,12 +102,10 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 # region [Setup]
 
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -126,9 +124,7 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 
 # region [Commands]
 
-
     @ipc.server.route()
-    @universal_log_profiler
     async def shut_down(self, data):
         member = await self.bot.fetch_antistasi_member(data.member_id)
         admin_role = {role.name.casefold(): role for role in self.bot.antistasi_guild.roles}.get('admin')
@@ -140,7 +136,6 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
         return {"success": False}
 
     @ipc.server.route()
-    @universal_log_profiler
     async def get_appdata_accessor_kwargs(self, data):
         return APPDATA.accessor_necessary_kwargs
 
@@ -154,6 +149,7 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 
 # region [HelperMethods]
 
+
     async def execute_shutdown(self):
         await asyncio.sleep(5)
         await self.bot.shutdown_mechanic()
@@ -162,6 +158,7 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

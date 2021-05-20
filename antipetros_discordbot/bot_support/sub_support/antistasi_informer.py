@@ -70,7 +70,6 @@ class AntistasiInformer(SubSupportBase):
 
         glog.class_init_notification(log, self)
 
-    @universal_log_profiler
     async def _make_stored_dicts(self):
         if self.antistasi_guild.chunked is False:
             await self.antistasi_guild.chunk(cache=True)

@@ -96,7 +96,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Init]
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.start_time = datetime.utcnow()
@@ -116,7 +115,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Setup]
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         _ = psutil.cpu_percent(interval=None)
         self.latency_measure_loop.start()
@@ -125,14 +123,12 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         await asyncio.sleep(2)
         self.cpu_measure_loop.start()
         await asyncio.sleep(2)
-        self.profile_info_from_logs.start()
-        await asyncio.sleep(2)
+
         plt.style.use('dark_background')
         await self.format_graph(10)
 
         self.ready = True
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -141,16 +137,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Loops]
 
-    @tasks.loop(minutes=2, reconnect=True)
-    async def profile_info_from_logs(self):
-        if self.ready is False:
-            return
-        if os.getenv("ANTIPETROS_PROFILING") == "1":
-            asyncio.create_task(self.general_db.insert_profile_data(await self.parse_logs_for_profile()))
-            log.info("Inserted Profile Data into Database")
-
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
-    @universal_log_profiler
     async def cpu_measure_loop(self):
         if self.ready is False:
             return
@@ -162,7 +149,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         await self.general_db.insert_cpu_performance(now, cpu_percent, cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15)
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
-    @universal_log_profiler
     async def latency_measure_loop(self):
         if self.ready is False:
             return
@@ -184,7 +170,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
             log.warning("latency measure loop was restarted")
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
-    @universal_log_profiler
     async def memory_measure_loop(self):
         if self.ready is False:
             return
@@ -312,36 +297,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Helper]
 
-
-    async def parse_logs_for_profile(self):
-        log_folder = APPDATA.log_folder
-        old_logs_folder = pathmaker(log_folder, 'old_logs')
-        logs = [pathmaker(file.path) for file in os.scandir(log_folder) if file.is_file() and file.name.endswith('.log')] + [pathmaker(file.path) for file in os.scandir(old_logs_folder) if file.is_file() and file.name.endswith('.log')]
-        data = []
-        for file in logs:
-            data += await self.parse_profile_info_from_log_file(file)
-        return data
-
-    async def parse_profile_info_from_log_file(self, log_file):
-        DATE_TIME_GROUP_NAMES = ["year", "month", "day", "hour", "minute", "second"]
-        _out = []
-        with open(log_file, 'r') as f:
-            for line in f:
-                line = line.strip('\n')
-                log_match = LOG_SCRAPE_REGEX.search(line)
-                if log_match and log_match.group('level') == 'PROFILE':
-                    profiling_match = PROFILING_REGEX.search(log_match.group('message'))
-                    if profiling_match:
-                        date_time = datetime(**{key: int(value) for key, value in log_match.groupdict().items() if key in DATE_TIME_GROUP_NAMES}, microsecond=int(log_match.group('microsecond') + '000'), tzinfo=timezone.utc)
-                        module = profiling_match.group('module').strip()
-                        function = profiling_match.group('function').strip()
-                        time_taken = int(profiling_match.group('time_taken'))
-                        _out.append((date_time, module, function, time_taken))
-                await asyncio.sleep(0)
-
-        return _out
-
-    @universal_log_profiler
     async def format_graph(self, amount_data: int):
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
         if amount_data <= 3600 // DATA_COLLECT_INTERVALL:
@@ -450,7 +405,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [SpecialMethods]
 
-
     def __str__(self) -> str:
         return self.qualified_name
 
@@ -459,7 +413,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         self.latency_measure_loop.stop()
         self.memory_measure_loop.stop()
         self.report_data_loop.stop()
-        self.profile_info_from_logs.stop()
+
         log.debug("Cog '%s' UNLOADED!", str(self))
 
 # endregion[SpecialMethods]

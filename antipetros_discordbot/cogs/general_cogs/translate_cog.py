@@ -118,7 +118,6 @@ class TranslateCog(AntiPetrosBaseCog):
 
 # region [Init]
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.translator = Translator()
@@ -136,12 +135,10 @@ class TranslateCog(AntiPetrosBaseCog):
 
 # region [Setup]
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -155,7 +152,6 @@ class TranslateCog(AntiPetrosBaseCog):
 
 # region [Listener]
 
-    @universal_log_profiler
     async def _emoji_translate_checks(self, payload):
         if self.ready is False:
             return
@@ -207,7 +203,6 @@ class TranslateCog(AntiPetrosBaseCog):
         # TODO: Make embed with Hyperlink
         await payload.member.send(f"{message.jump_url}\n**in {LANGUAGES.get(country_code)}:**\n {translated.text.strip('.')}", allowed_mentions=AllowedMentions.none())
 
-    @universal_log_profiler
     async def translate_embed(self, member, channel, message, embed, country_code):
         embed_dict = embed.to_dict()
         if "author" in embed_dict:
@@ -226,7 +221,6 @@ class TranslateCog(AntiPetrosBaseCog):
         embed_dict['fields'] = _new_fields
         await member.send(embed=discord.Embed.from_dict(embed_dict), allowed_mentions=AllowedMentions.none())
 
-    @universal_log_profiler
     async def _translate_text(self, text: str, country_code: str):
         try:
             return self.translator.translate(text=text, dest=country_code, src='auto').text.strip('.')
@@ -285,7 +279,6 @@ class TranslateCog(AntiPetrosBaseCog):
 # region [HelperMethods]
 
     @staticmethod
-    @universal_log_profiler
     def get_emoji_name(s):
         return s.encode('ascii', 'namereplace').decode('utf-8', 'namereplace')
 
@@ -293,7 +286,6 @@ class TranslateCog(AntiPetrosBaseCog):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

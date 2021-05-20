@@ -98,7 +98,6 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 # region [Init]
 
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.ready = False
@@ -110,7 +109,6 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def soon_thumbnails(self):
         if os.path.isfile(self.soon_thumbnails_file) is False:
             writejson([""], self.soon_thumbnails_file)
@@ -122,12 +120,10 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 # region [Setup]
 
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -145,7 +141,6 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command(aliases=['eta', "update"])
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
@@ -202,7 +197,6 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 # region [HelperMethods]
 
 
-    @universal_log_profiler
     async def _spread_out_text(self, text: str):
         return f"\n{ZERO_WIDTH}\n".join(line for line in text.splitlines() if line != '')
 
@@ -210,6 +204,7 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

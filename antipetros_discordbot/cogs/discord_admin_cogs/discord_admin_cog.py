@@ -76,7 +76,6 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 
 # region [Init]
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
 
@@ -89,12 +88,10 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 
 # region [Setup]
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -112,7 +109,6 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 # endregion[Loops]
 
 # region [Commands]
-
 
     @ auto_meta_info_command()
     @owner_or_admin()
@@ -261,7 +257,6 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 # endregion[Helper]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

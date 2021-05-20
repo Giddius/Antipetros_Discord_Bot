@@ -109,7 +109,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # endregion [ClassAttributes]
 
 # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.github_access = Github(os.getenv('GITHUB_TOKEN'))
@@ -125,12 +125,10 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def branches(self):
         return [branch.name for branch in self.antistasi_repo.get_branches()]
 
     @property
-    @universal_log_profiler
     def code_style(self):
         style_name = COGS_CONFIG.retrieve(self.config_name, 'code_style', typus=str, direct_fallback='dracula')
         style = self.code_style_map.get(style_name.casefold())
@@ -141,14 +139,13 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # endregion [Properties]
 
 # region [Setup]
-    @universal_log_profiler
+
     async def on_ready_setup(self):
         self.check_github_update_loop.start()
         await self._load_all_repo_files()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -177,6 +174,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command()
     async def get_file(self, ctx: commands.Context, file_name: str):
@@ -258,13 +256,11 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # region [HelperMethods]
 
 
-    @universal_log_profiler
     async def _find_comments(self, file_content: str):
         parsed_content = sqf_parse(file_content)
         all_comments = (str(var) for var in parsed_content.get_all_tokens() if isinstance(var, Comment))
         return all_comments
 
-    @universal_log_profiler
     async def _find_function_calls(self, file_content: str):
         parsed_content = sqf_parse(file_content)
         all_variables = list(set(str(var) for var in parsed_content.get_all_tokens() if isinstance(var, Variable)))
@@ -293,13 +289,11 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
             image_binary.seek(0)
             yield image_binary
 
-    @universal_log_profiler
     async def download_to_string(self, file):
         async with self.bot.aio_request_session.get(file.download_url) as _response:
             if RequestStatus(_response.status) is RequestStatus.Ok:
                 return await _response.text('utf-8', 'ignore')
 
-    @universal_log_profiler
     async def all_repo_files(self, branch_name: str = 'unstable', folder: str = ""):
         for item in await asyncio.to_thread(self.antistasi_repo.get_contents, folder, branch_name):
             if 'jeroenarsenal' not in item.path.casefold() and 'upsmon' not in item.path.casefold():
@@ -318,7 +312,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
             log.error(error, exc_info=True)
         log.debug("finished loading github branch  files")
 
-    @universal_log_profiler
     async def _load_all_repo_files(self):
         self._all_repo_files = {}
 
