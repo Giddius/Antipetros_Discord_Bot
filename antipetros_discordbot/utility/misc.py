@@ -3,6 +3,7 @@
 import os
 import sys
 import asyncio
+
 from io import BytesIO
 from asyncio import get_event_loop
 from datetime import datetime
@@ -17,7 +18,7 @@ from typing import Awaitable, Iterable, Mapping, Tuple, TypeVar
 from validator_collection import validators
 import validator_collection
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from aiohttp.client_exceptions import ClientConnectionError
 from colormap.colors import hex2rgb, rgb2hsv
 
@@ -627,3 +628,13 @@ def help_to_file(in_object, out_file=None):
 
         # Don't forget to reset stdout!
         sys.stdout = stdout
+
+
+def loop_starter(task_loop: tasks.Loop):
+    if task_loop.is_running() is False:
+        task_loop.start()
+
+
+def loop_stopper(task_loop: tasks.Loop):
+    if task_loop.is_running() is True:
+        task_loop.stop()

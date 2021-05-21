@@ -27,7 +27,7 @@ from antipetros_discordbot.auxiliary_classes.for_cogs.aux_give_away_cog import G
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosFlagCommand, CommandCategory, RequiredFile, auto_meta_info_command
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
-
+from antipetros_discordbot.utility.misc import loop_starter
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
@@ -109,8 +109,9 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 
     async def on_ready_setup(self):
         await asyncio.sleep(5)
-        self.check_give_away_ended_loop.start()
-        self.clean_emojis_from_reaction.start()
+        loop_starter(self.check_give_away_ended_loop)
+        loop_starter(self.clean_emojis_from_reaction)
+
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 

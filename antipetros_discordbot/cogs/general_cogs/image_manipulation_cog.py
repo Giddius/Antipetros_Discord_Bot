@@ -124,6 +124,7 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
         #                         'volcano': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_volcano_marker.png"),
         #                         'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
         self.old_map_message = None
+        self.color = "blue"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)

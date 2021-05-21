@@ -11,7 +11,7 @@ import gc
 
 import asyncio
 import unicodedata
-
+import discord
 from enum import Enum, auto, unique
 import os
 import re
@@ -51,8 +51,7 @@ from aiodav.exceptions import NoConnection
 from sortedcontainers import SortedDict, SortedList
 from marshmallow import Schema, fields
 from abc import ABC, ABCMeta, abstractmethod
-from hashlib import blake2b
-import discord
+from hashlib import blake2b, blake2s, sha3_256, sha256, sha512, shake_256, sha1
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog
 
@@ -180,7 +179,7 @@ class LogParser:
     async def _parse_mod_data(self) -> list:
         _out = []
         current_content_bytes = []
-        async for chunk in self.server.newest_log_item.content_iter():
+        async for chunk in await self.server.newest_log_item.content_iter():
             current_content_bytes.append(chunk)
         current_content = b''.join(current_content_bytes).decode('utf-8', errors='ignore')
         split_match = LOG_SPLIT_REGEX.search(current_content)
@@ -257,6 +256,7 @@ class LogFileItem:
     schema = LogFileSchema()
     limit_semaphore = AioSemaphore(value=5)
     time_pretty_format = "%Y-%m-%d %H:%M:%S UTC"
+    hashfunc = shake_256
 
     def __init__(self, resource_item: Resource, info: dict, server_item: "ServerItem") -> None:
         self.server_item = server_item
@@ -322,23 +322,23 @@ class LogFileItem:
             raise ValueError(f'unable to find date_time_string in {os.path.basename(self.path)}')
 
     async def content_iter(self):
-        async for chunk in await self.resource_item.client.download_iter(self.path):
-            yield chunk
+        return await self.resource_item.client.download_iter(self.path)
 
     async def content_embed(self):
         await self.collect_info()
+
         with BytesIO() as bytefile:
-            async for chunk in self.content_iter():
+            async for chunk in await self.content_iter():
                 bytefile.write(chunk)
-                bytefile.seek(0)
-                hash = blake2b(bytefile.read()).hexdigest()
-                bytefile.seek(0)
-                file = discord.File(bytefile, self.name)
+            bytefile.seek(0)
+            _hash = self.hashfunc(bytefile.read()).hexdigest(8)
+            bytefile.seek(0)
+            file = discord.File(bytefile, self.name)
         embed_data = await self.server_item.cog.bot.make_generic_embed(title=self.name, fields=[self.server_item.cog.bot.field_item(name='Server', value=self.server_item.pretty_name, inline=False),
                                                                                                 self.server_item.cog.bot.field_item(name='Size', value=self.size_pretty, inline=False),
                                                                                                 self.server_item.cog.bot.field_item(name='Created', value=self.created_pretty, inline=False),
                                                                                                 self.server_item.cog.bot.field_item(name='Last modified', value=self.modified_pretty, inline=False),
-                                                                                                self.server_item.cog.bot.field_item(name='Hash', value=hash, inline=False)],
+                                                                                                self.server_item.cog.bot.field_item(name='Hash', value=_hash, inline=False)],
                                                                        timestamp=self.modified,
                                                                        thumbnail=self.server_item.cog.server_logos.get(self.server_item.name.casefold(), 'no_thumbnail'),
                                                                        footer={'text': 'Last modified in your timezone, see timestamp ->'})

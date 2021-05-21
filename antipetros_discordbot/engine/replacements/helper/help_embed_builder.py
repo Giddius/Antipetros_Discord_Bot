@@ -267,7 +267,9 @@ class DefaulThumbnailProvider(AbstractProvider):
     provides = "thumbnail"
 
     async def __call__(self):
-        return None
+
+        if hasattr(self.in_object, 'gif') and self.in_object.gif is not None:
+            return self.in_object.gif
 
 
 class DefaulImageProvider(AbstractProvider):
@@ -423,11 +425,21 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
+    @handler_method_only_commands
+    async def _handle_hidden(self):
+        attr_name = "hidden"
+        name = await self.handle_name(attr_name)
+        value = self.bool_symbol_map.get(getattr(self.in_object, attr_name))
+        inline = True
+        return self.field_item(name=name, value=value, inline=inline)
+
 
 class DefaultColorProvider(AbstractProvider):
     provides = 'color'
 
     async def __call__(self):
+        if isinstance(self.in_object, commands.Command):
+            return self.in_object.cog.color
         return 'GIDDIS_FAVOURITE'
 
 
@@ -483,8 +495,7 @@ class HelpEmbedBuilder:
                                                        timestamp=await self.timestamp_provider())
 
         yield embed_data
-        if hasattr(self.in_object, "gif") and self.in_object.gif is not None:
-            yield {"file": discord.File(self.in_object.gif)}
+
 
 # region[Main_Exec]
 

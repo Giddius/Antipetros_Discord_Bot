@@ -58,6 +58,28 @@ class AntistasiInformer(SubSupportBase):
     general_data_file = pathmaker(APPDATA['fixed_data'], 'general_data.json')
     everyone_role_id = 449481990513754112
     all_item = AllItem()
+    color_emoji_id_map = {'default': 839782169303449640,
+                          'black': 844965636861067295,
+                          'blue': 844965636585422889,
+                          'brown': 844965636811784192,
+                          'cyan': 844965636711251979,
+                          'dark_orange': 845066731545952266,
+                          'firebrick': 845066731327979522,
+                          'gold': 845066731558928384,
+                          'gray': 844965636920442890,
+                          'green': 844965636920573953,
+                          'honeydew': 845066731550277652,
+                          'light_blue': 845066731567185970,
+                          'olive': 844965636944691221,
+                          'orange': 844965636911530074,
+                          'pink': 844965636849008660,
+                          'purple': 844965636895014963,
+                          'red': 844965637058461696,
+                          'tan': 845066731562205244,
+                          'violet': 844965636895277097,
+                          'white': 844965636958715914,
+                          'yellow': 844965637160042496,
+                          'yellowgreen': 845066731624857610}
 
     def __init__(self, bot, support):
         self.bot = bot
@@ -86,6 +108,10 @@ class AntistasiInformer(SubSupportBase):
     @property
     def bertha_emoji(self) -> discord.Emoji:
         return discord.utils.get(self.antistasi_guild.emojis, id=829666475035197470)
+
+    @property
+    def bot_emoji(self) -> discord.Emoji:
+        return discord.utils.get(self.bot_testing_guild.emojis, id=839782169303449640)
 
     @property
     def antistasi_invite_url(self) -> str:
@@ -117,14 +143,25 @@ class AntistasiInformer(SubSupportBase):
 
     @ property
     def antistasi_guild(self) -> discord.Guild:
-        guild_id = self.bot.get_guild(BASE_CONFIG.retrieve('general_settings', 'guild_id', typus=int, direct_fallback=None))
+        guild_id = BASE_CONFIG.retrieve('general_settings', 'guild_id', typus=int, direct_fallback=None)
+
         if guild_id is None:
             raise ValueError('You need to set "guild_id" under the section "general_settings" in the config file "base_config.ini"')
-        return guild_id
+        guild = self.bot.get_guild(guild_id)
+        return guild
+
+    @property
+    def bot_testing_guild(self) -> discord.Guild:
+        guild = self.bot.get_guild(837389179025096764)
+        return guild
 
     @ property
     def blacklisted_users(self) -> list:
         return loadjson(APPDATA['blacklist.json'])
+
+    async def get_color_emoji(self, color_name: str):
+        color_emoji_id = self.color_emoji_id_map.get(color_name.casefold(), 839782169303449640)
+        return discord.utils.get(self.bot_testing_guild.emojis, id=color_emoji_id)
 
     async def get_antistasi_emoji(self, name):
         for _emoji in self.antistasi_guild.emojis:

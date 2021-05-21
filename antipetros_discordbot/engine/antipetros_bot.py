@@ -157,7 +157,6 @@ class AntiPetrosBot(commands.Bot):
 # region [Setup]
 
     def _setup(self):
-
         CommandCategory.bot = self
         self.support = BotSupporter(self)
         self.support.recruit_subsupports()
@@ -169,9 +168,11 @@ class AntiPetrosBot(commands.Bot):
 
     async def on_resumed(self):
         log.critical("Bot was reconnected and has resumed the session!")
-        await self.on_ready()
+        await self._check_if_all_cogs_ready()
 
     async def on_ready(self):
+        log.info('%s has connected to Discord!', self.name)
+        self.setup_finished = False
         self.connect_counter += 1
         await self._ensure_guild_is_chunked()
         if self.connect_counter == 1:
@@ -184,8 +185,9 @@ class AntiPetrosBot(commands.Bot):
             await self.send_startup_message()
             await self._start_watchers()
             await self.set_activity()
-        log.info('%s has connected to Discord!', self.name)
-        await self.to_all_as_tasks('on_ready_setup')
+            await self.to_all_as_tasks('on_ready_setup')
+            await self._check_if_all_cogs_ready()
+
         await self._make_command_dict()
 
         self.setup_finished = True
@@ -455,6 +457,11 @@ class AntiPetrosBot(commands.Bot):
         if all_tasks:
             await asyncio.gather(*all_tasks)
             log.info("All '%s' methods finished", command)
+
+    async def _check_if_all_cogs_ready(self):
+        for cog_name, cog_object in self.cogs.items():
+            if cog_object.ready is False:
+                raise RuntimeError(f"cog {cog_name} never finished on_ready_setup")
 
     def _get_initial_cogs(self):
         """

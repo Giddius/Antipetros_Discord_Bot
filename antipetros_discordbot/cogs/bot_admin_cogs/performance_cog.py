@@ -155,12 +155,16 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
         log.info("measuring latency")
         now = datetime.now(tz=timezone.utc)
-        raw_latency = self.bot.latency * 1000
-        latency = round(raw_latency)
-        if latency > self.latency_thresholds.get('warning'):
-            log.warning("high latency: %s ms", str(latency))
-            await self.bot.message_creator(embed=await make_basic_embed(title='LATENCY WARNING!', text='Latency is very high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'latency': str(latency) + ' ms'}))
-        await self.general_db.insert_latency_perfomance(now, raw_latency)
+        try:
+
+            raw_latency = self.bot.latency * 1000
+            latency = round(raw_latency)
+            if latency > self.latency_thresholds.get('warning'):
+                log.warning("high latency: %s ms", str(latency))
+                await self.bot.message_creator(embed=await make_basic_embed(title='LATENCY WARNING!', text='Latency is very high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'latency': str(latency) + ' ms'}))
+            await self.general_db.insert_latency_perfomance(now, raw_latency)
+        except OverflowError:
+            await self.bot.message_creator(embed=await make_basic_embed(title='LATENCY WARNING!', text='Latency is very high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'latency': 'infinite'}))
 
     @latency_measure_loop.error
     async def latency_measure_loop_error_handler(self, error):

@@ -225,7 +225,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-
+        self.color = "cyan"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
 
@@ -304,13 +304,13 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
         else:
             await ctx.send(f"{in_object} seems to not match anything")
+        if self.message_delete_invoking is True:
+            await delete_message_if_text_channel(ctx, delay=self.message_delete_after)
 
     @help.command(name='command_list', aliases=['list', 'commands'])
-    async def help_command_list(self, ctx: commands.Context, hidden: str = None):
-        show_hidden = False
-        if hidden is not None and hidden.casefold() == 'hidden':
-            show_hidden = True
-        async for embed_data in self.command_list_embed(ctx, show_hidden=show_hidden):
+    async def help_command_list(self, ctx: commands.Context):
+
+        async for embed_data in self.command_list_embed(ctx):
             await self.send_help(ctx, embed_data)
 
     @help.command(name='category_list', aliases=['categories'])
@@ -365,7 +365,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                                                                             author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url}):
             yield embed_data
 
-    async def command_list_embed(self, ctx: commands.Context, show_hidden: bool):
+    async def command_list_embed(self, ctx: commands.Context, show_hidden: bool = True):
         member = self.bot.get_antistasi_member(ctx.author.id) if isinstance(ctx.author, discord.User) else ctx.author
 
         frequ_dict = await self.bot.get_command_frequency()
@@ -379,11 +379,10 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         cog_dict = await self._get_command_list(ctx)
         for cog, cog_commands in cog_dict.items():
             if cog.name.casefold() != 'generaldebugcog':
-                if show_hidden is False:
-                    cog_commands = [command for command in cog_commands if command.hidden is False]
-                    if cog_commands:
-                        value = ListMarker.make_list([f"`{command.best_alias}` -> {command.brief}" for command in sorted(cog_commands, key=lambda x: frequ_dict.get(x.name, 0), reverse=True) if await self.filter_single_command(member, command) is True])
-                        fields.append(self.bot.field_item(name=f"**{split_camel_case_string(cog.name.removesuffix('Cog'))}**\n{ZERO_WIDTH}", value=value, inline=False))
+                cog_commands = [command for command in cog_commands if command.hidden is False] if show_hidden is False else cog_commands
+                if cog_commands:
+                    value = ListMarker.make_list([f"`{command.best_alias}` | {command.brief}" for command in sorted(cog_commands, key=lambda x: frequ_dict.get(x.name, 0), reverse=True) if await self.filter_single_command(member, command) is True])
+                    fields.append(self.bot.field_item(name=f"{await self.bot.get_color_emoji(cog.color)} **{split_camel_case_string(cog.name.removesuffix('Cog'))}**\n{ZERO_WIDTH}", value=value, inline=False))
         async for embed_data in self.bot.make_paginatedfields_generic_embed(title="Command List", description=description,
                                                                             thumbnail=thumbnail,
                                                                             color=color,

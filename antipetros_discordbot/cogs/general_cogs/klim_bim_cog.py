@@ -106,6 +106,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
             'd20': {'sides': 20},
             'd100': {'sides': 100}
         }
+        self.color = 'green'
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
 

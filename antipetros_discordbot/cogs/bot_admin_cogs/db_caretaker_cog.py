@@ -88,6 +88,7 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.db = general_db
+        self.color = "gray"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)

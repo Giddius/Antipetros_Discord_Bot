@@ -94,12 +94,14 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
     image_link_regex = re.compile(r"(?<=\')(?P<image_link>.*)(?=\')")
     workshop_item = namedtuple("WorkshopItem", ['title', 'updated', 'requirements', 'url', "image_link", "size", "id"])
     date_time_format = "%Y-%m-%d %H:%M"
+
     # endregion [ClassAttributes]
 
     # region [Init]
 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
+        self.color = "white"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)

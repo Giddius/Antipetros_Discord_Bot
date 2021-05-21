@@ -101,6 +101,7 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.rules_messages = {}
+        self.color = "gold"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)

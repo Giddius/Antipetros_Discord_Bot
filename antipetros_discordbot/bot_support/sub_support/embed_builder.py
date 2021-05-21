@@ -459,7 +459,7 @@ class EmbedBuilder(SubSupportBase):
 
         self.special_footers = await asyncio.sleep(0, {'feature_request_footer': {'text': "For feature suggestions and feature request, contact @Giddi".title(), "icon_url": self.bot.creator.avatar_url},
                                                        'default_footer': self.default_footer,
-                                                       'armahosts': {'text': self.bot.armahosts_footer_text + '\n' + self.bot.armahosts_url + '\n' + ZERO_WIDTH}})
+                                                       'armahosts': {'text': self.bot.armahosts_footer_text + '\n' + self.bot.armahosts_url + '\n' + ZERO_WIDTH, "icon_url": self.bot.armahosts_icon}})
 
         self.replacement_map = await asyncio.sleep(0, {"$BOT_NAME$": self.bot.display_name})
 

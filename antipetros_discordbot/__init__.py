@@ -30,10 +30,10 @@ def set_env():
     if os.path.isfile(dev_indicator_env_path):
         load_dotenv(dev_indicator_env_path)
         os.environ['IS_DEV'] = 'true'
-        os.environ['PYTHONASYNCIODEBUG'] = "1"
 
     else:
         os.environ['IS_DEV'] = 'false'
+    os.environ['PYTHONASYNCIODEBUG'] = "1"
     os.environ['ANTIPETRO_START_TIME'] = START_TIME.isoformat()
     os.environ['APP_NAME'] = metadata(__name__).get('name')
     os.environ['AUTHOR_NAME'] = metadata(__name__).get('author')

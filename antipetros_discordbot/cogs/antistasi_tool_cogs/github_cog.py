@@ -116,6 +116,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         self.antistasi_repo = self.github_access.get_repo(self.antistasi_repo_identifier)
         self._all_repo_files = {}
         self.last_updated_files = None
+        self.color = 'black'
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)

@@ -28,7 +28,7 @@ from fuzzywuzzy import process as fuzzprocess
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.misc import alt_seconds_to_pretty, delete_message_if_text_channel
+from antipetros_discordbot.utility.misc import alt_seconds_to_pretty, delete_message_if_text_channel, loop_starter, loop_stopper
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, log_invoker, owner_or_admin
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -103,7 +103,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
         self.server_items = self.load_server_items()
         self.stored_server_messages = []
+        self.color = 'yellow'
         self.ready = False
+
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
@@ -111,6 +113,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Init]
 
 # region [Properties]
+
 
     @property
     def server_message_remove_time(self) -> int:
@@ -152,8 +155,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def on_ready_setup(self):
 
         await ServerItem.ensure_client()
+        for loop_object in self.loops.values():
+            loop_starter(loop_object)
 
-        self.check_server_online_loop.start()
         for server in self.server_items:
             await server.is_online()
         await asyncio.gather(*[server.gather_log_items() for server in self.server_items])
@@ -169,9 +173,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [Loops]
 
-    @tasks.loop(minutes=3)
+    @tasks.loop(minutes=5, reconnect=True)
     async def check_server_online_loop(self):
-        if self.ready is False:
+        if self.ready is False or self.bot.setup_finished is False:
             return
         log.info("updating Server Items")
         await asyncio.gather(*[server.is_online() for server in self.server_items])
@@ -184,16 +188,21 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                     if log_item.is_over_threshold is True:
                         await member.send(f"{log_item.name} in server {server.name} is oversized at {log_item.size_pretty}")
                     if log_item is not server.newest_log_item:
-                        data = self.already_notified_log_items + {log_item.path}
+                        data = list(self.already_notified_log_items) + [log_item.path]
 
-                        await asyncio.to_thread(writejson, list(data), self.already_notified_savefile)
+                        await asyncio.to_thread(writejson, data, self.already_notified_savefile)
                 await asyncio.sleep(0)
+
+    @tasks.loop(minutes=2, reconnect=True)
+    async def is_online_message_loop(self):
+        if self.ready is False or self.bot.setup_finished is False:
+            return
+        for server in self.server_items:
             if server.is_online_message_enabled is True:
                 asyncio.create_task(self._update_is_online_messages(server), name=f"update_is_online_message_{server.name}")
             else:
                 asyncio.create_task(self._delete_is_online_message(server), name=f"remove_is_online_message_{server.name}")
-
-
+        log.info("Updated 'is_online_messages'")
 # endregion [Loops]
 
 # region [Listener]
@@ -202,7 +211,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command(aliases=['server', 'servers', 'server?', 'servers?'], categories=[CommandCategory.GENERAL])
     @allowed_channel_and_allowed_role()
@@ -303,6 +311,11 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         await msg.edit(embed=embed, allowed_mentions=discord.AllowedMentions.none())
         await delete_message_if_text_channel(ctx)
 
+    @auto_meta_info_command()
+    async def clear_all_is_online_messages(self, ctx: commands.Context):
+        for server in self.server_items:
+            await self._delete_is_online_message(server)
+        await delete_message_if_text_channel(ctx)
 
 # endregion [Commands]
 
@@ -386,7 +399,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [SpecialMethods]
 
-
     def cog_check(self, ctx):
         return True
 
@@ -400,7 +412,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         pass
 
     def cog_unload(self):
-        self.check_server_online_loop.stop()
+        for loop_object in self.loops.values():
+            loop_stopper(loop_object)
 
         log.debug("Cog '%s' UNLOADED!", str(self))
 

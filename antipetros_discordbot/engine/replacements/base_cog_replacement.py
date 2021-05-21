@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING, Union
 from inspect import getdoc, getsource, getsourcefile, getsourcelines, getfile
 from textwrap import dedent
 import discord
+import inspect
+from pprint import pprint
 from discord.ext import commands, tasks
 import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -131,6 +133,7 @@ class AntiPetrosBaseCog(commands.Cog):
                             'cogs_config': {}}
     required_folder = []
     required_files = []
+    color = 'default'
     schema = AntiPetrosBaseCogSchema()
 
     def __init__(self, bot: "AntiPetrosBot") -> None:
@@ -144,6 +147,7 @@ class AntiPetrosBaseCog(commands.Cog):
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         self.meta_data_getter = self.meta_data_provider.get_auto_provider(self)
         self.meta_data_setter = self.meta_data_provider.set_auto_provider(self)
+        self.loops = self.get_loops()
         self.meta_data_setter('docstring', self.docstring)
         self._ensure_config_data()
 
@@ -167,6 +171,9 @@ class AntiPetrosBaseCog(commands.Cog):
         if not _out:
             _out = self.docstring
         return _out
+
+    def get_loops(self):
+        return {name: loop_object for name, loop_object in inspect.getmembers(self) if isinstance(loop_object, tasks.Loop)}
 
     @property
     def long_description(self):

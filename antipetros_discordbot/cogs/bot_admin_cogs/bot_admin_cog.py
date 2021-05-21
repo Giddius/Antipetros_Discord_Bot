@@ -89,6 +89,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         super().__init__(bot)
         self.latest_who_is_triggered_time = datetime.utcnow()
         self.reaction_remove_ids = []
+        self.color = "olive"
         self.ready = False
         self.listeners_enabled = {'stop_the_reaction_petros_listener': False}
         self.meta_data_setter('docstring', self.docstring)

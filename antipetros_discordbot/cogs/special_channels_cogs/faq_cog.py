@@ -86,6 +86,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.faq_items = {}
+        self.color = "honeydew"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)

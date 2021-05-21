@@ -131,6 +131,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.time_sorted_guild_member_list = []
+        self.color = "red"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)

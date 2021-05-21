@@ -53,6 +53,7 @@ from antipetros_discordbot.engine.replacements.helper.help_embed_builder import 
 from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
 from antipetros_discordbot.auxiliary_classes.server_item import ServerItem, ServerStatus
 import ftfy
+import inspect
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion [Imports]
@@ -124,6 +125,10 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
         log.debug('cog "%s" was updated', str(self))
 
+    @tasks.loop(minutes=10)
+    async def something(self):
+        print('something')
+
     @ auto_meta_info_command()
     async def dump_bot(self, ctx: commands.Context):
         schema = AntiPetrosBotSchema()
@@ -147,8 +152,46 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         await ctx.send('done')
 
     @auto_meta_info_command()
+    async def say_bot_emoji(self, ctx: commands.Context):
+        for name in self.bot.color_emoji_id_map:
+            await ctx.send(await self.bot.get_color_emoji(name))
+
+    @auto_meta_info_command()
+    async def force_reconnect(self, ctx: commands.Context, seconds: int, times: int = 2):
+        import time
+        for i in range(times):
+            time.sleep(seconds)
+            await ctx.send(f"slept blocking for {seconds} seconds")
+
+    @auto_meta_info_command()
     async def say_best_alias(self, ctx: commands.Context, command: CommandConverter):
         await ctx.send(command.best_alias)
+
+    @auto_meta_info_command()
+    async def taken_colors(self, ctx: commands.Context):
+        taken = []
+        for cog_name, cog_object in sorted(self.bot.cogs.items(), key=lambda x: (x[1].color != 'default', x[1].color)):
+            await ctx.send(f"{cog_name} | {await self.bot.get_color_emoji(cog_object.color)} | {cog_object.color}")
+            if cog_object.color in taken and cog_object.color != 'default':
+                await ctx.send(f"duplicate color {cog_object.color}")
+            taken.append(cog_object.color)
+        not_taken = []
+        taken = set(taken)
+        for color in self.bot.color_emoji_id_map:
+            if color not in taken:
+                not_taken.append(color)
+        await ctx.send('\n'.join(not_taken))
+
+    @auto_meta_info_command()
+    async def other_guild_emojis(self, ctx: commands.Context):
+        x = {}
+        for _emoji in self.bot.bot_testing_guild.emojis:
+            name = _emoji.name.casefold()
+            if name not in {'antidevtros', 'link_emoji'}:
+                x[_emoji.name.casefold()] = _emoji.id
+        x['default'] = 839782169303449640
+        x = {key: value for key, value in sorted(x.items(), key=lambda x: (x[0] != 'default', x[0]))}
+        await ctx.send(CodeBlock(pformat(x, sort_dicts=False), "python"))
 
     def cog_unload(self):
         self.check_server_online_loop.stop()

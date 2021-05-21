@@ -78,6 +78,8 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
+        self.color = "pink"
+        self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
@@ -90,9 +92,8 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
-
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
@@ -112,7 +113,6 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
 # endregion [Listener]
 
 # region [Commands]
-
 
     async def correct_template(self, template_content, item_data):
         new_content = template_content
