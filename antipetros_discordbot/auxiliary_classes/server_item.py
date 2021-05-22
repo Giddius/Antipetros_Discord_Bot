@@ -54,7 +54,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from hashlib import blake2b, blake2s, sha3_256, sha256, sha512, shake_256, sha1
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog
-
+from zipfile import ZipFile, ZIP_LZMA
 # endregion[Imports]
 
 # region [TODO]
@@ -328,12 +328,21 @@ class LogFileItem:
         await self.collect_info()
 
         with BytesIO() as bytefile:
-            async for chunk in await self.content_iter():
-                bytefile.write(chunk)
+            name = self.name.split('.')[0] + '.zip'
+            if self.size > self.server_item.cog.bot.filesize_limit:
+                with ZipFile(bytefile, 'w', ZIP_LZMA) as zippy:
+                    content_bytes = b''
+                    async for chunk in await self.content_iter():
+                        content_bytes += chunk
+                    zippy.writestr(self.name, content_bytes.decode('utf-8', 'ignore'))
+            else:
+                name = self.name
+                async for chunk in await self.content_iter():
+                    bytefile.write(chunk)
             bytefile.seek(0)
             _hash = self.hashfunc(bytefile.read()).hexdigest(8)
             bytefile.seek(0)
-            file = discord.File(bytefile, self.name)
+            file = discord.File(bytefile, name)
         embed_data = await self.server_item.cog.bot.make_generic_embed(title=self.name, fields=[self.server_item.cog.bot.field_item(name='Server', value=self.server_item.pretty_name, inline=False),
                                                                                                 self.server_item.cog.bot.field_item(name='Size', value=self.size_pretty, inline=False),
                                                                                                 self.server_item.cog.bot.field_item(name='Created', value=self.created_pretty, inline=False),
@@ -397,13 +406,23 @@ class ServerAddress:
 
 
 class ServerItem:
-    pretty_name_regex = re.compile(r"(?P<name>\w+)(?P<server>server)\_?(?P<number>\d)?", re.IGNORECASE)
+    pretty_name_regex = re.compile(r"(?P<name>\w+)\_?(?P<server>server)\_?(?P<number>\d)?", re.IGNORECASE)
     timeout = 3.0
     battle_metrics_mapping = {'mainserver_1': "https://www.battlemetrics.com/servers/arma3/10560386",
                               'mainserver_2': "https://www.battlemetrics.com/servers/arma3/10561000",
                               'testserver_1': "https://www.battlemetrics.com/servers/arma3/4789978",
                               'testserver_2': "https://www.battlemetrics.com/servers/arma3/9851037",
-                              'eventserver': "https://www.battlemetrics.com/servers/arma3/9552734"}
+                              'eventserver': "https://www.battlemetrics.com/servers/arma3/9552734",
+                              'sog_server_1': "https://www.battlemetrics.com/servers/arma3/11406516",
+                              'sog_server_2': "https://www.battlemetrics.com/servers/arma3/11406517"}
+
+    server_priority_map = {"mainserver_1": 1,
+                           "mainserver_2": 2,
+                           "sog_server_1": 3,
+                           "sog_server_2": 4,
+                           "eventserver": 5,
+                           "testserver_1": 6,
+                           "testserver_2": 7}
 
     cog: "AntiPetrosBaseCog" = None
     encoding = 'utf-8'
@@ -423,6 +442,7 @@ class ServerItem:
         self.previous_status = None
         self.log_parser = LogParser(self)
         self.battle_metrics_url = self.battle_metrics_mapping.get(self.name.casefold(), None)
+        self.priority = self.server_priority_map.get(self.name.casefold(), 0)
 
     @classmethod
     async def ensure_client(cls):
@@ -483,6 +503,8 @@ class ServerItem:
                     await asyncio.sleep(0)
 
     async def gather_log_items(self) -> None:
+        if self.log_folder is None:
+            return
         new_items = []
         async for remote_log_item in self.list_log_items_on_server():
             new_items.append(remote_log_item)
@@ -516,8 +538,7 @@ class ServerItem:
         return await a2s.ainfo(self.server_address.query_address, encoding=self.encoding)
 
     async def get_rules(self) -> dict:
-        return await a2s.arules(self.server_address.query_address
-                                )
+        return await a2s.arules(self.server_address.query_address)
 
     async def get_players(self) -> list:
         return await a2s.aplayers(self.server_address.query_address, encoding=self.encoding)
@@ -532,7 +553,7 @@ class ServerItem:
         info_data = await self.get_info()
         ping = round(float(info_data.ping), ndigits=3)
         password_needed = "YES 🔐" if info_data.password_protected is True else 'NO 🔓'
-        image = None if with_mods is False else mod_data.image
+        image = self.cog.server_symbol if with_mods is False else mod_data.image
         embed_data = await self.cog.bot.make_generic_embed(title=info_data.server_name,
                                                            thumbnail=image,
                                                            author="armahosts",
@@ -547,7 +568,7 @@ class ServerItem:
                                                                    self.cog.bot.field_item(name="Map", value=info_data.map_name, inline=True),
                                                                    self.cog.bot.field_item(name="Password", value=f"{password_needed}", inline=True),
                                                                    self.cog.bot.field_item(name='Battlemetrics', value=embed_hyperlink('link to Battlemetrics', self.battle_metrics_url), inline=True)],
-                                                           timestamp=self.newest_log_item.modified)
+                                                           timestamp=self.newest_log_item.modified if self.log_folder is not None else datetime.now(timezone.utc))
         if with_mods is True:
             embed_data['files'].append(mod_data.html)
         return embed_data

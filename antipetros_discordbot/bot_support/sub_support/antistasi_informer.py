@@ -114,6 +114,10 @@ class AntistasiInformer(SubSupportBase):
         return discord.utils.get(self.bot_testing_guild.emojis, id=839782169303449640)
 
     @property
+    def server_emoji(self) -> discord.Emoji:
+        return discord.utils.get(self.bot_testing_guild.emojis, id=845740762900856838)
+
+    @property
     def antistasi_invite_url(self) -> str:
         return BASE_CONFIG.retrieve('links', 'antistasi_discord_invite', typus=str, direct_fallback='')
 

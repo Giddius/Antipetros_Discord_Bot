@@ -33,7 +33,7 @@ import aiohttp
 import discord
 from discord.ext import tasks, commands, flags
 from async_property import async_property
-
+import re
 # * Gid Imports -->
 import gidlogger as glog
 
@@ -45,6 +45,7 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, Command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle
 from github import Github
+import github
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -106,6 +107,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
     meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.CRASHING | CogMetaStatus.DOCUMENTATION_MISSING
     required_config_data = {'cogs_config': {'code_style': 'dracula'},
                             'base_config': {}}
+    issue_regex = re.compile(r"(?P<issue_id>(?<=\#\#)\d+)")
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -114,7 +116,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         super().__init__(bot)
         self.github_access = Github(os.getenv('GITHUB_TOKEN'))
         self.antistasi_repo = self.github_access.get_repo(self.antistasi_repo_identifier)
-        self._all_repo_files = {}
         self.last_updated_files = None
         self.color = 'black'
         self.ready = False
@@ -142,8 +143,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # region [Setup]
 
     async def on_ready_setup(self):
-        self.check_github_update_loop.start()
-        await self._load_all_repo_files()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -155,80 +154,34 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [Loops]
 
-    @tasks.loop(minutes=10, reconnect=True)
-    async def check_github_update_loop(self):
-        if self.ready is False:
-            return
-        if self.last_updated_files is None:
-            return
-        if self.antistasi_repo.updated_at > self.last_updated_files:
-            log.debug(ic.format(self.antistasi_repo.updated_at))
-            log.debug(ic.format(self.last_updated_files))
-            await self._load_all_repo_files()
-
 
 # endregion [Loops]
 
 # region [Listener]
 
 
+    @commands.Cog.listener(name='on_message')
+    async def send_issue_link(self, msg: discord.Message):
+        issue_match = await asyncio.to_thread(self.issue_regex.search, msg.content)
+        if issue_match:
+            issue_id = issue_match.group('issue_id')
+            if issue_id:
+                try:
+                    issue = self.antistasi_repo.get_issue(number=int(issue_id))
+                    channel = msg.channel
+                    embed_data = await self.make_issue_embed(issue)
+                    await channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none(), reference=msg)
+                except github.GithubException:
+                    log.info(f'gihub issue number {issue_id} not found')
+
 # endregion [Listener]
 
 # region [Commands]
 
-
-    @auto_meta_info_command()
-    async def get_file(self, ctx: commands.Context, file_name: str):
-        async with ctx.typing():
-
-            found_file = self._all_repo_files.get(file_name.casefold(), None)
-            if found_file is None:
-                await ctx.send(f"no file named `{file_name}` in branch `unstable`")
-                return
-            content = await self.download_to_string(found_file)
-            function_calls = await self._find_function_calls(content)
-
-            a3a_function_calls_value = '\n'.join(f"`{item}`" for item in function_calls.get('a3a'))
-            if len(a3a_function_calls_value) >= 950:
-                a3a_function_calls_value = a3a_function_calls_value[:950].rstrip('`') + '...`'
-            if not a3a_function_calls_value:
-                a3a_function_calls_value = 'None'
-
-            bis_function_calls_value = '\n'.join(f"`{item}`" for item in function_calls.get('bis'))
-            if len(bis_function_calls_value) >= 95:
-                bis_function_calls_value = bis_function_calls_value[:950].rstrip('`') + '...`'
-            if not bis_function_calls_value:
-                bis_function_calls_value = 'None'
-
-            comments = list(await self._find_comments(content))
-            comments_value = comments[0] if 'params:' in comments[0].casefold() else ''
-            if len(comments_value) >= 950:
-                comments_value = comments_value[:950] + '...'
-            if not comments_value:
-                comments_value = 'None'
-            else:
-                comments_value = '\n'.join(line.strip('/*') for line in comments_value.splitlines())
-                comments_value = "```fix\n" + dedent(comments_value) + '\n```'
-
-            async with self._make_other_source_code_images(content) as source_image_binary:
-
-                embed_data = await self.bot.make_generic_embed(title=file_name,
-                                                               url=found_file.html_url,
-                                                               description=embed_hyperlink("link to file", found_file.html_url),
-                                                               thumbnail=discord.File(source_image_binary, filename=file_name.split(".")[0] + '.png'),
-                                                               fields=[self.bot.field_item(name='A3A Function Calls', value=a3a_function_calls_value),
-                                                                       self.bot.field_item(name='BIS Function Calls', value=bis_function_calls_value),
-                                                                       self.bot.field_item(name='Comments', value=comments_value)])
-                with StringIO() as content_file:
-                    content_file.write(content)
-                    content_file.seek(0)
-                    file = discord.File(content_file, file_name)
-                    await ctx.send(file=file)
-                await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
     async def github_referals(self, ctx: commands.Context):
+
         fields = []
         for referal in self.antistasi_repo.get_top_referrers():
             fields.append(self.bot.field_item(name=referal.referrer, value=f"Amount: {referal.count}\nUnique: {referal.uniques}", inline=False))
@@ -256,6 +209,18 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [HelperMethods]
 
+
+    async def make_issue_embed(self, issue: github.Issue.Issue):
+        title = issue.title
+        description = issue.body
+        if len(description) > 1024:
+            description = description[1020:] + '...'
+        url = issue.html_url
+        timestamp = issue.created_at
+        thumbnail = "https://avatars0.githubusercontent.com/u/53788409?s=200&v=4"
+        fields = [self.bot.field_item(name='Created', value=issue.created_at.strftime(self.bot.std_date_time_format), inline=False),
+                  self.bot.field_item(name='State', value=issue.state, inline=False)]
+        return await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail, url=url, timestamp=timestamp, fields=fields)
 
     async def _find_comments(self, file_content: str):
         parsed_content = sqf_parse(file_content)
@@ -295,33 +260,11 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
             if RequestStatus(_response.status) is RequestStatus.Ok:
                 return await _response.text('utf-8', 'ignore')
 
-    async def all_repo_files(self, branch_name: str = 'unstable', folder: str = ""):
-        for item in await asyncio.to_thread(self.antistasi_repo.get_contents, folder, branch_name):
-            if 'jeroenarsenal' not in item.path.casefold() and 'upsmon' not in item.path.casefold():
-                if item.type == 'dir':
-                    async for file in self.all_repo_files(branch_name=branch_name, folder=item.path):
-                        yield file
-                else:
-                    yield await asyncio.sleep(0, item)
-
-    async def _load_all_files_from_branch(self):
-
-        try:
-            async for file in self.all_repo_files():
-                self._all_repo_files[file.name.casefold()] = file
-        except Exception as error:
-            log.error(error, exc_info=True)
-        log.debug("finished loading github branch  files")
-
-    async def _load_all_repo_files(self):
-        self._all_repo_files = {}
-
-        asyncio.create_task(self._load_all_files_from_branch())
-        self.last_updated_files = datetime.now()
 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True
@@ -336,7 +279,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         pass
 
     def cog_unload(self):
-        self.check_github_update_loop.stop()
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):

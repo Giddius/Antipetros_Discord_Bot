@@ -354,6 +354,8 @@ class AntiPetrosBot(commands.Bot):
     @property
     def cog_list(self):
         return list(self.cogs.values())
+
+
 # endregion[Properties]
 
 # region [Loops]

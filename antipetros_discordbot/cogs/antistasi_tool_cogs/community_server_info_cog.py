@@ -83,7 +83,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # region [ClassAttributes]
     public = True
     server_symbol = "https://i.postimg.cc/dJgyvGH7/server-symbol.png"
-
+    server_symbol_off = "https://i.postimg.cc/NfY8CqFL/server-symbol-off.png"
     meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
     already_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
     is_online_messages_data_file = pathmaker(APPDATA["json_data"], "is_online_messages.json")
@@ -167,6 +167,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
     async def update(self, typus: UpdateTypus):
         await ServerItem.ensure_client()
+        if UpdateTypus.CONFIG in typus:
+            self.server_items = self.load_server_items()
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
@@ -178,7 +180,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         if self.ready is False or self.bot.setup_finished is False:
             return
         log.info("updating Server Items")
-        await asyncio.gather(*[server.is_online() for server in self.server_items])
         await asyncio.gather(*[server.gather_log_items() for server in self.server_items])
         log.info("Server Items updated")
         member = self.oversize_notification_user
@@ -197,16 +198,41 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def is_online_message_loop(self):
         if self.ready is False or self.bot.setup_finished is False:
             return
+        await asyncio.gather(*[server.is_online() for server in self.server_items])
         for server in self.server_items:
             if server.is_online_message_enabled is True:
-                asyncio.create_task(self._update_is_online_messages(server), name=f"update_is_online_message_{server.name}")
+                await self._update_is_online_messages(server)
             else:
-                asyncio.create_task(self._delete_is_online_message(server), name=f"remove_is_online_message_{server.name}")
+                await self._delete_is_online_message(server)
         log.info("Updated 'is_online_messages'")
 # endregion [Loops]
 
 # region [Listener]
 
+    @commands.Cog.listener(name='on_raw_reaction_add')
+    async def subscription_reaction(self, payload: discord.RawReactionActionEvent):
+        reaction_member = payload.member
+        channel = self.bot.get_channel(payload.channel_id)
+        if channel is not self.is_online_messages_channel:
+            return
+        if reaction_member.bot is True:
+            return
+
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except discord.errors.NotFound:
+            return
+        if payload.emoji != self.bot.server_emoji:
+            asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))
+            return
+        if message.id not in set(self.is_online_messages.values()):
+            return
+        server_item = await self._server_from_is_online_message_id(message.id)
+        if server_item.previous_status is ServerStatus.OFF or server_item.log_folder is None:
+            asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))
+            return
+        asyncio.create_task(self._send_to_dm(reaction_member, server_item))
+        asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))
 
 # endregion [Listener]
 
@@ -325,6 +351,16 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [HelperMethods]
 
+    async def _send_to_dm(self, member: discord.Member, server: ServerItem):
+        embed_data = await server.make_server_info_embed()
+        embed_data['embed'].clear_fields()
+        msg = await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        await msg.add_reaction(self.bot.armahosts_emoji)
+
+    async def _server_from_is_online_message_id(self, message_id: int) -> ServerItem:
+        server_name = {str(value): key for key, value in self.is_online_messages.items()}.get(str(message_id))
+        return {item.name.casefold(): item for item in self.server_items}.get(server_name.casefold())
+
     async def _get_server_by_name(self, server_name: str):
         server = {server_item.name.casefold(): server_item for server_item in self.server_items}.get(server_name.casefold(), None)
         if server is None:
@@ -350,14 +386,25 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def _make_is_online_embed(self, server: ServerItem):
         description = 'is ONLINE' if server.previous_status is ServerStatus.ON else 'is OFFLINE'
         color = 'green' if server.previous_status is ServerStatus.ON else 'red'
-        thumbnail = self.server_logos.get(server.name.casefold(), self.server_symbol)
+        thumbnail = self.server_logos.get(server.name.casefold(), self.server_symbol) if server.previous_status is ServerStatus.ON else self.server_symbol_off
+        fields = []
+        if server.previous_status is ServerStatus.ON:
+            info_data = await server.get_info()
+
+            fields.append(self.bot.field_item(name="Server Address", value=server.server_address.url, inline=True))
+            fields.append(self.bot.field_item(name="Port", value=server.server_address.port, inline=True))
+            fields.append(self.bot.field_item(name='Players', value=f"{info_data.player_count}/{info_data.max_players}", inline=False))
+            fields.append(self.bot.field_item(name="Game", value=info_data.game, inline=False))
+            fields.append(self.bot.field_item(name="Map", value=info_data.map_name, inline=True))
         embed_data = await self.bot.make_generic_embed(title=server.pretty_name,
                                                        description=description,
                                                        footer='armahosts',
                                                        thumbnail=thumbnail,
-                                                       url=self.bot.armahosts_url,
+                                                       url=server.battle_metrics_url,
                                                        color=color,
-                                                       timestamp=datetime.now(timezone.utc))
+                                                       timestamp=datetime.now(timezone.utc),
+                                                       fields=fields)
+
         return embed_data
 
     async def _delete_is_online_message(self, server: ServerItem):
@@ -372,6 +419,10 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def _create_is_online_message(self, server: ServerItem):
         embed_data = await self._make_is_online_embed(server)
         msg = await self.is_online_messages_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        if server.log_folder is not None or server.previous_status is ServerStatus.ON:
+            await msg.add_reaction(self.bot.server_emoji)
+        if server.log_folder is None or server.previous_status is ServerStatus.OFF:
+            await msg.clear_reactions()
         is_online_data = self.is_online_messages
         is_online_data[server.name.casefold()] = msg.id
         writejson(is_online_data, self.is_online_messages_data_file)
@@ -391,8 +442,11 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         _out = []
         for server_name in self.server_names:
             server_adress = COGS_CONFIG.retrieve(self.config_name, f"{server_name.lower()}_address", typus=str, direct_fallback=None)
-            _out.append(ServerItem(server_name, server_adress, server_name))
-        return _out
+            log_folder = server_name
+            if COGS_CONFIG.retrieve(self.config_name, f"{server_name.lower()}_exclude_logs", typus=bool, direct_fallback=False) is True:
+                log_folder = None
+            _out.append(ServerItem(server_name, server_adress, log_folder))
+        return sorted(_out, key=lambda x: x.priority)
 
 
 # endregion [HelperMethods]
