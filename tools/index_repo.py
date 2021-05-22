@@ -63,7 +63,7 @@ def bytes2human(n, annotate=False):
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 ANTISTASI_FOLDER_PATH = os.path.join(THIS_FILE_DIR, '..')
-ANTISTASI_FOLDER_PATH = os.path.join(r"D:\Dropbox\hobby\Modding\Programs\Github\Foreign_Repos\A3-Antistasi")
+
 # FILE_TO_EXCLUDE = set(map(lambda x: x.casefold(), ['.gitattributes', '.gitignore', '.travis.yml']))
 # FOLDER_TO_EXCLUDE = set(map(lambda x: x.casefold(), ['.git', 'upsmon']))
 OUTPUT_NAME = 'repo_file_index.json'
