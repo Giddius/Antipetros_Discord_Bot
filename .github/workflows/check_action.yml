@@ -28,7 +28,7 @@ jobs:
                   python-version: "3.9.4" # install the python version needed
 
             - name: execute py script
-              run: python actions_check.py
+              run: python tools/index_repo.py
 
             - name: commit files
               run: |
