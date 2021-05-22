@@ -44,7 +44,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 ANTISTASI_FOLDER_PATH = os.path.join(THIS_FILE_DIR, '..')
 OUTPUT_NAME = 'repo_file_index.json'
-OUTPUT_FILE = OUTPUT_NAME
+OUTPUT_FILE = os.path.join(THIS_FILE_DIR, OUTPUT_NAME)
 
 
 class AntistasiFileSchema(Schema):
