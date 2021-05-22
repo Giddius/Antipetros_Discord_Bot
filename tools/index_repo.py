@@ -62,18 +62,19 @@ def bytes2human(n, annotate=False):
 
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-ANTISTASI_FOLDER_PATH = pathmaker(THIS_FILE_DIR, '..')
-FILE_TO_EXCLUDE = set(map(lambda x: x.casefold(), ['.gitattributes', '.gitignore', '.travis.yml']))
-FOLDER_TO_EXCLUDE = set(map(lambda x: x.casefold(), ['.git', 'upsmon']))
+ANTISTASI_FOLDER_PATH = os.path.join(THIS_FILE_DIR, '..')
+ANTISTASI_FOLDER_PATH = os.path.join(r"D:\Dropbox\hobby\Modding\Programs\Github\Foreign_Repos\A3-Antistasi")
+# FILE_TO_EXCLUDE = set(map(lambda x: x.casefold(), ['.gitattributes', '.gitignore', '.travis.yml']))
+# FOLDER_TO_EXCLUDE = set(map(lambda x: x.casefold(), ['.git', 'upsmon']))
 OUTPUT_NAME = 'repo_file_index.json'
-OUTPUT_FILE = pathmaker(THIS_FILE_DIR, OUTPUT_NAME)
+OUTPUT_FILE = os.path.join(THIS_FILE_DIR, OUTPUT_NAME)
 
 
 class AntistasiFile:
 
     def __init__(self, file_path: Union[str, PathLike]) -> None:
-        self.full_path = pathmaker(file_path)
-        self.path = pathmaker(os.path.relpath(self.full_path, ANTISTASI_FOLDER_PATH))
+        self.full_path = file_path
+        self.path = os.path.relpath(self.full_path, ANTISTASI_FOLDER_PATH)
         self.full_name = os.path.basename(self.full_path)
         self.name, self.extension = os.path.splitext(self.full_name)
 
@@ -94,17 +95,18 @@ class AntistasiFile:
         for name, _object in getmembers(self):
 
             if all([not name.startswith('_'), not name.endswith('_'), name not in {'dump', 'stat_object', 'full_path'}]):
-                _out[name] = _object
+                _out[name] = _object if _object else None
         return _out
 
 
 def walk_files():
     for dirname, folderlist, filelist in os.walk(ANTISTASI_FOLDER_PATH, topdown=True):
-        if all(excl not in dirname.casefold() for excl in FOLDER_TO_EXCLUDE):
-            for file in filelist:
-                if file.casefold() not in FILE_TO_EXCLUDE and ' ' not in file:
-                    path = pathmaker(dirname, file)
-                    yield AntistasiFile(path)
+
+        if '.git' in folderlist:
+            folderlist.remove('.git')
+        for file in filelist:
+            path = os.path.join(dirname, file)
+            yield AntistasiFile(path)
 
 
 def main():
