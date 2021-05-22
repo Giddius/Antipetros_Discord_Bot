@@ -1,0 +1,12 @@
+{
+    "Cairo": {
+        "url": "https://www.cairographics.org/",
+        "unix": "sudo apt-get install -y libcairo2-dev",
+        "windows": "follow these instructions `https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer`"
+    },
+    "Pango": {
+        "url": "https://pango.gnome.org/",
+        "unix": "sudo apt-get install -y libsdl-pango-dev",
+        "windows": "Follow this `https://github.com/ImageMagick/pango`"
+    }
+}

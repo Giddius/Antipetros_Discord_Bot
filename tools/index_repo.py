@@ -67,7 +67,7 @@ ANTISTASI_FOLDER_PATH = os.path.join(r"D:\Dropbox\hobby\Modding\Programs\Github\
 # FILE_TO_EXCLUDE = set(map(lambda x: x.casefold(), ['.gitattributes', '.gitignore', '.travis.yml']))
 # FOLDER_TO_EXCLUDE = set(map(lambda x: x.casefold(), ['.git', 'upsmon']))
 OUTPUT_NAME = 'repo_file_index.json'
-OUTPUT_FILE = os.path.join(THIS_FILE_DIR, OUTPUT_NAME)
+OUTPUT_FILE = OUTPUT_NAME
 
 
 class AntistasiFile:

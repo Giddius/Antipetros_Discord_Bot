@@ -1,0 +1,3833 @@
+{
+    "AdministrationCog": {
+        "commands": {
+            "delete_msg": {
+                "aliases": [
+                    "deletemsg",
+                    "delete+msg",
+                    "delete-msg",
+                    "delete.msg"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7B87853A0>",
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "msgs"
+                ],
+                "qualified_name": "delete_msg",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "make_embed": {
+                "aliases": [
+                    "make+embed",
+                    "make.embed",
+                    "makeembed",
+                    "make-embed"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7B8785E50>",
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "Creates a simple embed message in the specified channel.\n\nNo support for embed fields, as input would be to complicated.\n\nArgs:\n    channel (discord.TextChannel): either channel name or channel id (prefered), where the message should be posted.\n    --title (str):\n    --description (str):\n    --url (str):\n    --thumbnail (str):\n    --image (str):\n    --timestamp (str):\n    --author-name (str):\n    --author-url (str):\n    --author-icon (str):\n    --footer-text (str):\n    --footer-icon (str):\n    --thumbnail (str):\n    --image (str):\n    --disable-mentions (bool):\n    --delete-after (int):",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "channel",
+                    "flags"
+                ],
+                "qualified_name": "make_embed",
+                "short_doc": "Creates a simple embed message in the specified channel.",
+                "signature": "NA [--delete_after DELETE_AFTER] [--disable_mentions DISABLE_MENTIONS=True] [--footer_icon FOOTER_ICON=Embed.Empty] [--footer_text FOOTER_TEXT] [--author_icon AUTHOR_ICON=Embed.Empty] [--author_url AUTHOR_URL=Embed.Empty] [--author_name AUTHOR_NAME] [--timestamp TIMESTAMP=2021-04-12 12:35:42.185523] [--image IMAGE] [--thumbnail THUMBNAIL] [--url URL=Embed.Empty] [--description DESCRIPTION=\u200b] [--title TITLE=\u200b]",
+                "usage": "NA"
+            },
+            "the_bots_new_clothes": {
+                "aliases": [
+                    "clr-scrn",
+                    "thebotsnewclothes",
+                    "the-bots-new-clothes",
+                    "the.bots.new.clothes",
+                    "the+bots+new+clothes"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7B8785280>",
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "Sends about a page worth of empty message to a channel, looks like channel got purged.\n\nOptional deletes the empty message after specified seconds (defaults to not deleting)\n\nArgs:\n    delete_after (int, optional): time in seconds after which to delete the empty message. Defaults to None which means that it does not delete the empty message.",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "delete_after"
+                ],
+                "qualified_name": "the_bots_new_clothes",
+                "short_doc": "Sends about a page worth of empty message to a channel, looks like channel got purged.",
+                "signature": null,
+                "usage": "NA"
+            },
+            "write_message": {
+                "aliases": [
+                    "write.message",
+                    "write+message",
+                    "writemessage",
+                    "write-message"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7B8785160>",
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "channel",
+                    "message"
+                ],
+                "qualified_name": "write_message",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "administration",
+        "description": "Commands and methods that help in Administrate the Discord Server.",
+        "file_path": "antipetros_discordbot/cogs/discord_admin_cogs/discord_admin_cog.py",
+        "state": [
+            "DOCUMENTATION_MISSING",
+            "OUTDATED",
+            "NEEDS_REFRACTORING",
+            "FEATURE_MISSING",
+            "UNTESTED",
+            "OPEN_TODOS"
+        ]
+    },
+    "AntistasiLogWatcherCog": {
+        "commands": {
+            "get_newest_logs": {
+                "aliases": [
+                    "get-newest-logs",
+                    "get.newest.logs",
+                    "get+newest+logs",
+                    "getnewestlogs"
+                ],
+                "brief": null,
+                "checks": [
+                    "allowed_channel_and_allowed_role"
+                ],
+                "description": "",
+                "gif": null,
+                "help": "Gets the newest log files from the Dev Drive.\n\nIf the log file is bigger than current file size limit, it will provide it zipped.\n\nTries to fuzzy match both server and sub-folder.\n\nArgs:\n    server (str): Name of the Server\n    sub_folder (str): Name of the sub-folder e.g. Server, HC_0, HC_1,...\n    amount (int, optional): The amount of log files to get. standard max is 5 . Defaults to 1.",
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [
+                    "server",
+                    "sub_folder",
+                    "amount"
+                ],
+                "qualified_name": "get_newest_logs",
+                "short_doc": "Gets the newest log files from the Dev Drive.",
+                "signature": "@AntiPetros get_newest_logs mainserver_1 server",
+                "usage": "@AntiPetros get_newest_logs mainserver_1 server"
+            },
+            "get_newest_mod_data": {
+                "aliases": [
+                    "get+newest+mod+data",
+                    "getnewestmoddata",
+                    "get.newest.mod.data",
+                    "get-newest-mod-data"
+                ],
+                "brief": null,
+                "checks": [
+                    "allowed_channel_and_allowed_role"
+                ],
+                "description": "",
+                "gif": null,
+                "help": "Gets the required mods for the Server.\n\nProvides the list as embed and Arma3 importable html file.\n\nArgs:\n    server (str): Name of the Antistasi Community Server to retrieve the mod list.",
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [
+                    "server"
+                ],
+                "qualified_name": "get_newest_mod_data",
+                "short_doc": "Gets the required mods for the Server.",
+                "signature": "@AntiPetros get_newest_mod_data mainserver_1",
+                "usage": "@AntiPetros get_newest_mod_data mainserver_1"
+            }
+        },
+        "config_name": "antistasi_log_watcher",
+        "description": "soon",
+        "file_path": "antipetros_discordbot/cogs/antistasi_tool_cogs/antistasi_log_watcher_cog.py",
+        "state": [
+            "DOCUMENTATION_MISSING",
+            "FEATURE_MISSING",
+            "UNTESTED",
+            "WORKING"
+        ]
+    },
+    "AutoReactionCog": {
+        "commands": {
+            "add_channel_reaction_instruction": {
+                "aliases": [
+                    "add+channel+reaction+instruction",
+                    "add.channel.reaction.instruction",
+                    "addchannelreactioninstruction",
+                    "add-channel-reaction-instruction"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "name",
+                    "channel",
+                    "emojis"
+                ],
+                "qualified_name": "add_channel_reaction_instruction",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "add_exception_to_word_reaction_instruction": {
+                "aliases": [
+                    "addexceptiontowordreactioninstruction",
+                    "add.exception.to.word.reaction.instruction",
+                    "add+exception+to+word+reaction+instruction",
+                    "add-exception-to-word-reaction-instruction"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "instruction_name",
+                    "typus",
+                    "in_id"
+                ],
+                "qualified_name": "add_exception_to_word_reaction_instruction",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "add_word_reaction_instruction": {
+                "aliases": [
+                    "add-word-reaction-instruction",
+                    "add+word+reaction+instruction",
+                    "add.word.reaction.instruction",
+                    "new-word-emoji",
+                    "addwordreactioninstruction"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "name",
+                    "word",
+                    "exceptions",
+                    "emojis"
+                ],
+                "qualified_name": "add_word_reaction_instruction",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "change_word_reaction_instruction_option": {
+                "aliases": [
+                    "change+word+reaction+instruction+option",
+                    "change.word.reaction.instruction.option",
+                    "changewordreactioninstructionoption",
+                    "change-word-reaction-instruction-option"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "instruction_name",
+                    "option_name",
+                    "option_value"
+                ],
+                "qualified_name": "change_word_reaction_instruction_option",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "list_all_reaction_instructions": {
+                "aliases": [
+                    "list+all+reaction+instructions",
+                    "list.all.reaction.instructions",
+                    "list-all-reaction-instructions",
+                    "listallreactioninstructions"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "list_all_reaction_instructions",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "remove_reaction_instruction": {
+                "aliases": [
+                    "remove.reaction.instruction",
+                    "remove-reaction-instruction",
+                    "removereactioninstruction",
+                    "remove+reaction+instruction"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "instruction_name"
+                ],
+                "qualified_name": "remove_reaction_instruction",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "auto_reaction",
+        "description": "WiP",
+        "file_path": "antipetros_discordbot/cogs/moderation_cogs/auto_reaction_cog.py",
+        "state": [
+            "EMPTY",
+            "DOCUMENTATION_MISSING",
+            "CRASHING",
+            "OUTDATED",
+            "FEATURE_MISSING",
+            "UNTESTED"
+        ]
+    },
+    "BotAdminCog": {
+        "commands": {
+            "add_to_blacklist": {
+                "aliases": [
+                    "add+to+blacklist",
+                    "addtoblacklist",
+                    "add.to.blacklist",
+                    "add-to-blacklist"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7DB7B5790>",
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "user"
+                ],
+                "qualified_name": "add_to_blacklist",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "add_who_is_phrase": {
+                "aliases": [
+                    "add-who-is-phrase",
+                    "addwhoisphrase",
+                    "add.who.is.phrase",
+                    "add+who+is+phrase"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7DB7B5700>",
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "phrase"
+                ],
+                "qualified_name": "add_who_is_phrase",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "all_aliases": {
+                "aliases": [
+                    "all+aliases",
+                    "allaliases",
+                    "all-aliases",
+                    "all.aliases"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function is_owner.<locals>.predicate at 0x000001C7DB682280>"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "all_aliases",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "current_cogs": {
+                "aliases": [
+                    "current.cogs",
+                    "current-cogs",
+                    "current+cogs",
+                    "currentcogs"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "current_cogs",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "disable_cog": {
+                "aliases": [
+                    "disable-cog",
+                    "disable.cog",
+                    "disable+cog",
+                    "disablecog"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "cog"
+                ],
+                "qualified_name": "disable_cog",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "invocation_prefixes": {
+                "aliases": [
+                    "invocationprefixes",
+                    "invocation.prefixes",
+                    "invocation-prefixes",
+                    "invocation+prefixes"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function is_owner.<locals>.predicate at 0x000001C7DB7B5D30>"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "invocation_prefixes",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "life_check": {
+                "aliases": [
+                    "lifecheck",
+                    "life-check",
+                    "you_dead?",
+                    "are-you-there",
+                    "life+check",
+                    "life.check",
+                    "poke-with-stick"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "life_check",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "remove_from_blacklist": {
+                "aliases": [
+                    "remove-from-blacklist",
+                    "remove+from+blacklist",
+                    "remove.from.blacklist",
+                    "removefromblacklist"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7DB7B55E0>",
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "user"
+                ],
+                "qualified_name": "remove_from_blacklist",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "send_log_file": {
+                "aliases": [
+                    "send+log+file",
+                    "sendlogfile",
+                    "send-log-file",
+                    "send.log.file"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function is_owner.<locals>.predicate at 0x000001C7DB7B5C10>"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "Gets the log files of the bot and post it as a file to discord.\n\nYou can choose to only get the newest or all logs.\n\nArgs:\n    which_logs (str, optional): [description]. Defaults to 'newest'. other options = 'all'",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "which_logs"
+                ],
+                "qualified_name": "send_log_file",
+                "short_doc": "Gets the log files of the bot and post it as a file to discord.",
+                "signature": null,
+                "usage": "NA"
+            },
+            "send_loop_info": {
+                "aliases": [
+                    "send.loop.info",
+                    "send+loop+info",
+                    "sendloopinfo",
+                    "send-loop-info"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "OnlyGiddiCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "loop_attr"
+                ],
+                "qualified_name": "send_loop_info",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "tell_uptime": {
+                "aliases": [
+                    "tell-uptime",
+                    "telluptime",
+                    "tell+uptime",
+                    "tell.uptime"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "tell_uptime",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "tell_version": {
+                "aliases": [
+                    "tell-version",
+                    "tell+version",
+                    "tellversion",
+                    "tell.version"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "tell_version",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "bot_admin",
+        "description": "Commands and methods that are needed to Administrate the Bot itself.",
+        "file_path": "antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py",
+        "state": [
+            "DOCUMENTATION_MISSING",
+            "FEATURE_MISSING"
+        ]
+    },
+    "BotFeedbackCog": {
+        "commands": {},
+        "config_name": "bot_feedback",
+        "description": "WiP",
+        "file_path": "antipetros_discordbot/cogs/bot_admin_cogs/bot_feedback_cog.py",
+        "state": [
+            "EMPTY",
+            "DOCUMENTATION_MISSING",
+            "CRASHING",
+            "OUTDATED",
+            "FEATURE_MISSING",
+            "UNTESTED"
+        ]
+    },
+    "CommunityServerInfoCog": {
+        "commands": {
+            "current_online_server": {
+                "aliases": [
+                    "current-online-server",
+                    "servers",
+                    "currentonlineserver",
+                    "current+online+server",
+                    "server?",
+                    "server",
+                    "current.online.server"
+                ],
+                "brief": null,
+                "checks": [
+                    "allowed_channel_and_allowed_role"
+                ],
+                "description": "",
+                "gif": null,
+                "help": "Shows all server of the Antistasi Community, that are currently online.\n\nTestserver_3 and Eventserver are excluded as they usually are password guarded.",
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "current_online_server",
+                "short_doc": "Shows all server of the Antistasi Community, that are currently online.",
+                "signature": "@AntiPetros current_online_server",
+                "usage": "@AntiPetros current_online_server"
+            },
+            "current_players": {
+                "aliases": [
+                    "currentplayers",
+                    "current-players",
+                    "current+players",
+                    "current.players"
+                ],
+                "brief": null,
+                "checks": [
+                    "allowed_channel_and_allowed_role"
+                ],
+                "description": "",
+                "gif": null,
+                "help": "Show all players that are currently online on one of the Antistasi Community Server.\n\nShows Player Name, Player Score and Time Played on that Server.\n\nArgs:\n    server (str): Name of the Server, case insensitive.",
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [
+                    "server"
+                ],
+                "qualified_name": "current_players",
+                "short_doc": "Show all players that are currently online on one of the Antistasi Community Server.",
+                "signature": "@AntiPetros current_players mainserver_1",
+                "usage": "@AntiPetros current_players mainserver_1"
+            },
+            "exclude_from_server_status_notification": {
+                "aliases": [
+                    "exclude-from-server-status-notification",
+                    "exclude+from+server+status+notification",
+                    "excludefromserverstatusnotification",
+                    "exclude.from.server.status.notification"
+                ],
+                "brief": null,
+                "checks": [
+                    "log_invoker",
+                    "allowed_channel_and_allowed_role"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [
+                    "server_name"
+                ],
+                "qualified_name": "exclude_from_server_status_notification",
+                "short_doc": "",
+                "signature": "<server_name>",
+                "usage": null
+            },
+            "undo_exclude_from_server_status_notification": {
+                "aliases": [
+                    "undoexcludefromserverstatusnotification",
+                    "undo+exclude+from+server+status+notification",
+                    "undo-exclude-from-server-status-notification",
+                    "undo.exclude.from.server.status.notification"
+                ],
+                "brief": null,
+                "checks": [
+                    "log_invoker",
+                    "allowed_channel_and_allowed_role"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [
+                    "server_name"
+                ],
+                "qualified_name": "undo_exclude_from_server_status_notification",
+                "short_doc": "",
+                "signature": "<server_name>",
+                "usage": null
+            }
+        },
+        "config_name": "community_server_info",
+        "description": "soon",
+        "file_path": "antipetros_discordbot/cogs/antistasi_tool_cogs/community_server_info_cog.py",
+        "state": [
+            "EMPTY",
+            "DOCUMENTATION_MISSING",
+            "CRASHING",
+            "OUTDATED",
+            "FEATURE_MISSING",
+            "UNTESTED"
+        ]
+    },
+    "ConfigCog": {
+        "commands": {
+            "add_alias": {
+                "aliases": [
+                    "add.alias",
+                    "addalias",
+                    "add-alias",
+                    "add+alias"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7DB4E54C0>",
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "Adds an alias for a command.\n\nAlias has to be unique and not spaces.\n\nArgs:\n    command_name (str): name of the command\n    alias (str): the new alias.",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "command",
+                    "new_alias"
+                ],
+                "qualified_name": "add_alias",
+                "short_doc": "Adds an alias for a command.",
+                "signature": null,
+                "usage": "NA"
+            },
+            "change_setting_to": {
+                "aliases": [
+                    "change.setting.to",
+                    "changesettingto",
+                    "change-setting-to",
+                    "change+setting+to"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function is_owner.<locals>.predicate at 0x000001C7DBEF51F0>"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NOT IMPLEMENTED",
+                "is_enabled": false,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "config",
+                    "section",
+                    "option",
+                    "value"
+                ],
+                "qualified_name": "change_setting_to",
+                "short_doc": "NOT IMPLEMENTED",
+                "signature": null,
+                "usage": "NA"
+            },
+            "config_request": {
+                "aliases": [
+                    "configrequest",
+                    "config.request",
+                    "config-request",
+                    "config+request"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "Returns a Config file as and attachment, with additional info in an embed.\n\nArgs:\n    config_name (str, optional): Name of the config, or 'all' for all configs. Defaults to 'all'.",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "config_name"
+                ],
+                "qualified_name": "config_request",
+                "short_doc": "Returns a Config file as and attachment, with additional info in an embed.",
+                "signature": null,
+                "usage": "NA"
+            },
+            "list_configs": {
+                "aliases": [
+                    "list+configs",
+                    "list-configs",
+                    "list.configs",
+                    "listconfigs"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7DBFB1C10>",
+                    "<function is_owner.<locals>.predicate at 0x000001C7DBFB1AF0>"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "Provides a list of all existing configs-files.\n\nThe names are without the extension, and show up like they are needed as input for other config commands.",
+                "is_enabled": false,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "list_configs",
+                "short_doc": "Provides a list of all existing configs-files.",
+                "signature": null,
+                "usage": "NA"
+            },
+            "overwrite_config_from_file": {
+                "aliases": [
+                    "overwrite-config-from-file",
+                    "overwrite+config+from+file",
+                    "overwriteconfigfromfile",
+                    "overwrite.config.from.file"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7DBFB1B80>",
+                    "<function is_owner.<locals>.predicate at 0x000001C7DBEF5310>"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NOT IMPLEMENTED",
+                "is_enabled": false,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "overwrite_config_from_file",
+                "short_doc": "NOT IMPLEMENTED",
+                "signature": null,
+                "usage": "NA"
+            },
+            "show_config_content": {
+                "aliases": [
+                    "show-config-content",
+                    "show+config+content",
+                    "show.config.content",
+                    "showconfigcontent"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function is_owner.<locals>.predicate at 0x000001C7DBFB1A60>"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NOT IMPLEMENTED",
+                "is_enabled": false,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "config_name"
+                ],
+                "qualified_name": "show_config_content",
+                "short_doc": "NOT IMPLEMENTED",
+                "signature": null,
+                "usage": "NA"
+            },
+            "show_config_content_raw": {
+                "aliases": [
+                    "showconfigcontentraw",
+                    "show.config.content.raw",
+                    "show+config+content+raw",
+                    "show-config-content-raw"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function is_owner.<locals>.predicate at 0x000001C7DBFB1EE0>"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NOT IMPLEMENTED",
+                "is_enabled": false,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "config_name"
+                ],
+                "qualified_name": "show_config_content_raw",
+                "short_doc": "NOT IMPLEMENTED",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "config",
+        "description": "Cog with commands to access and manipulate config files, also for changing command aliases.\nAlmost all are only available in DM's\n\ncommands are hidden from the help command.",
+        "file_path": "antipetros_discordbot/cogs/bot_admin_cogs/config_cog.py",
+        "state": [
+            "NEEDS_REFRACTORING",
+            "FEATURE_MISSING",
+            "OPEN_TODOS"
+        ]
+    },
+    "FaqCog": {
+        "commands": {
+            "post_faq_by_number": {
+                "aliases": [
+                    "post.faq.by.number",
+                    "post-faq-by-number",
+                    "postfaqbynumber",
+                    "post+faq+by+number"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "Posts an FAQ as an embed on request.\n\nEither as an normal message or as an reply, if the invoking message was also an reply.\n\nDeletes invoking message\n\nArgs:\n    faq_numbers (commands.Greedy[int]): minimum one faq number to request, maximum as many as you want seperated by one space (i.e. 14 12 3)",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "faq_numbers"
+                ],
+                "qualified_name": "post_faq_by_number",
+                "short_doc": "Posts an FAQ as an embed on request.",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "faq",
+        "description": "Creates Embed FAQ items.",
+        "file_path": "antipetros_discordbot/cogs/special_channels_cogs/faq_cog.py",
+        "state": [
+            "DOCUMENTATION_MISSING",
+            "FEATURE_MISSING",
+            "UNTESTED",
+            "WORKING"
+        ]
+    },
+    "FixedAnswerCog": {
+        "commands": {
+            "bob_streaming": {
+                "aliases": [
+                    "bob.streaming",
+                    "bob+streaming",
+                    "bobstreaming",
+                    "bobdev",
+                    "bob-streaming"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "OnlyBobMurphyCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "extra_msg"
+                ],
+                "qualified_name": "bob_streaming",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "new_version_eta": {
+                "aliases": [
+                    "new+version+eta",
+                    "newversioneta",
+                    "new-version-eta",
+                    "new.version.eta",
+                    "update",
+                    "eta"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "new_version_eta",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "fixed_answer",
+        "description": "WiP",
+        "file_path": "antipetros_discordbot/cogs/moderation_cogs/fixed_answer_cog.py",
+        "state": [
+            "EMPTY",
+            "DOCUMENTATION_MISSING",
+            "CRASHING",
+            "OUTDATED",
+            "FEATURE_MISSING",
+            "UNTESTED"
+        ]
+    },
+    "GeneralDebugCog": {
+        "commands": {
+            "all_channel_permissions": {
+                "aliases": [
+                    "all-channel-permissions",
+                    "all+channel+permissions",
+                    "all.channel.permissions",
+                    "allchannelpermissions"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "member",
+                    "display_mode",
+                    "filter_category"
+                ],
+                "qualified_name": "all_channel_permissions",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "change_edit_embed_check": {
+                "aliases": [
+                    "changeeditembedcheck",
+                    "change.edit.embed.check",
+                    "change-edit-embed-check",
+                    "change+edit+embed+check"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "change_edit_embed_check",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "check_bot_channel_permissions": {
+                "aliases": [
+                    "checkbotchannelpermissions",
+                    "check-bot-channel-permissions",
+                    "check+bot+channel+permissions",
+                    "check.bot.channel.permissions",
+                    "channel_permissions"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "channel",
+                    "member",
+                    "display_mode",
+                    "json_file"
+                ],
+                "qualified_name": "check_bot_channel_permissions",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "check_cog_commands_dunder": {
+                "aliases": [
+                    "check.cog.commands.dunder",
+                    "check-cog-commands-dunder",
+                    "check+cog+commands+dunder",
+                    "checkcogcommandsdunder"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "cog"
+                ],
+                "qualified_name": "check_cog_commands_dunder",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "check_embed_gif": {
+                "aliases": [
+                    "check.embed.gif",
+                    "checkembedgif",
+                    "check+embed+gif",
+                    "check-embed-gif"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "check_embed_gif",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "check_emoji_stuff": {
+                "aliases": [
+                    "check-emoji-stuff",
+                    "check+emoji+stuff",
+                    "checkemojistuff",
+                    "check.emoji.stuff"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function has_attachments.<locals>.predicate at 0x000001C7B8B07310>"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "check_emoji_stuff",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "check_message_mention": {
+                "aliases": [
+                    "check.message.mention",
+                    "checkmessagemention",
+                    "check-message-mention",
+                    "check+message+mention"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "message"
+                ],
+                "qualified_name": "check_message_mention",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "check_not_allowed_channel": {
+                "aliases": [
+                    "check.not.allowed.channel",
+                    "checknotallowedchannel",
+                    "check-not-allowed-channel",
+                    "check+not+allowed+channel"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "check_not_allowed_channel",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "check_performance_data_db": {
+                "aliases": [
+                    "check.performance.data.db",
+                    "checkperformancedatadb",
+                    "check-performance-data-db",
+                    "check+performance+data+db"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "check_performance_data_db",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "check_reload_mech": {
+                "aliases": [
+                    "check.reload.mech",
+                    "check+reload+mech",
+                    "checkreloadmech",
+                    "check-reload-mech"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "check_reload_mech",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "color_embed_check": {
+                "aliases": [
+                    "color-embed-check",
+                    "colorembedcheck",
+                    "color.embed.check",
+                    "color+embed+check"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "hex_color"
+                ],
+                "qualified_name": "color_embed_check",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "create_role_by_name_and_assign_to_all": {
+                "aliases": [
+                    "create.role.by.name.and.assign.to.all",
+                    "create-role-by-name-and-assign-to-all",
+                    "createrolebynameandassigntoall",
+                    "create+role+by+name+and+assign+to+all"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "role_name",
+                    "reason"
+                ],
+                "qualified_name": "create_role_by_name_and_assign_to_all",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "dump_permissions": {
+                "aliases": [
+                    "dump-permissions",
+                    "dumppermissions",
+                    "dump+permissions",
+                    "dump.permissions"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "dump_permissions",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "dump_to_meta_db": {
+                "aliases": [
+                    "dump.to.meta.db",
+                    "dump-to-meta-db",
+                    "dump+to+meta+db",
+                    "dumptometadb"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "dump_to_meta_db",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "get_all_attachments": {
+                "aliases": [
+                    "get-all-attachments",
+                    "get+all+attachments",
+                    "getallattachments",
+                    "get.all.attachments"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "channel",
+                    "amount_to_scan"
+                ],
+                "qualified_name": "get_all_attachments",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "get_all_from_embed_user": {
+                "aliases": [
+                    "get-all-from-embed-user",
+                    "getallfromembeduser",
+                    "get+all+from+embed+user",
+                    "get.all.from.embed.user"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "OnlyGiddiCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "get_all_from_embed_user",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "get_antistasi_youtube_videos": {
+                "aliases": [
+                    "get+antistasi+youtube+videos",
+                    "get.antistasi.youtube.videos",
+                    "get-antistasi-youtube-videos",
+                    "getantistasiyoutubevideos"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "get_antistasi_youtube_videos",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "get_cog_info": {
+                "aliases": [
+                    "get.cog.info",
+                    "get-cog-info",
+                    "get+cog+info",
+                    "getcoginfo"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "cog_name"
+                ],
+                "qualified_name": "get_cog_info",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "get_prefixes": {
+                "aliases": [
+                    "get-prefixes",
+                    "get+prefixes",
+                    "getprefixes",
+                    "get.prefixes"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "get_prefixes",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "get_roles": {
+                "aliases": [
+                    "get+roles",
+                    "get.roles",
+                    "getroles",
+                    "get-roles"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "get_roles",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "init_edit_embed_check": {
+                "aliases": [
+                    "init.edit.embed.check",
+                    "init-edit-embed-check",
+                    "init+edit+embed+check",
+                    "initeditembedcheck"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "init_edit_embed_check",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "mention_nomas": {
+                "aliases": [
+                    "mentionnomas",
+                    "mention+nomas",
+                    "mention-nomas",
+                    "mention.nomas"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "mention_nomas",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "mock_subscribe_thing": {
+                "aliases": [
+                    "mock.subscribe.thing",
+                    "mock+subscribe+thing",
+                    "mocksubscribething",
+                    "mock-subscribe-thing"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "topics"
+                ],
+                "qualified_name": "mock_subscribe_thing",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "new_command_info_check": {
+                "aliases": [
+                    "newcommandinfocheck",
+                    "new+command+info+check",
+                    "new-command-info-check",
+                    "new.command.info.check"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "command",
+                    "subcommand"
+                ],
+                "qualified_name": "new_command_info_check",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "pin_message": {
+                "aliases": [
+                    "pin-message",
+                    "pin+message",
+                    "pin.message",
+                    "pin",
+                    "pinmessage"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "reason"
+                ],
+                "qualified_name": "pin_message",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "pin_multiple_messages": {
+                "aliases": [
+                    "pin-multiple-messages",
+                    "pin+multiple+messages",
+                    "pinmultiplemessages",
+                    "pin.multiple.messages"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "reason",
+                    "messages"
+                ],
+                "qualified_name": "pin_multiple_messages",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "post_role_call": {
+                "aliases": [
+                    "post.role.call",
+                    "postrolecall",
+                    "post-role-call",
+                    "post+role+call"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "post_role_call",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "pr_log_entries": {
+                "aliases": [
+                    "pr+log+entries",
+                    "prlogentries",
+                    "pr-log-entries",
+                    "pr.log.entries"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "pr_log_entries",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "quick_latency": {
+                "aliases": [
+                    "quick.latency",
+                    "quick-latency",
+                    "quick+latency",
+                    "quicklatency"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "quick_latency",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "request_server_restart": {
+                "aliases": [
+                    "request-server-restart",
+                    "request+server+restart",
+                    "request.server.restart",
+                    "requestserverrestart"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "request_server_restart",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "roll_blocking": {
+                "aliases": [
+                    "rollblocking",
+                    "roll.blocking",
+                    "roll+blocking",
+                    "roll-blocking"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "target_time"
+                ],
+                "qualified_name": "roll_blocking",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "save_embed": {
+                "aliases": [
+                    "save.embed",
+                    "save-embed",
+                    "saveembed",
+                    "save+embed"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "message"
+                ],
+                "qualified_name": "save_embed",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "save_message": {
+                "aliases": [
+                    "save-message",
+                    "save+message",
+                    "savemessage",
+                    "save.message"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "channel_id",
+                    "message_id",
+                    "file_format"
+                ],
+                "qualified_name": "save_message",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "show_command_names": {
+                "aliases": [
+                    "show-command-names",
+                    "show+command+names",
+                    "show.command.names",
+                    "showcommandnames"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "show_command_names",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "unpin_message": {
+                "aliases": [
+                    "unpin+message",
+                    "unpinmessage",
+                    "unpin-message",
+                    "unpin.message",
+                    "unpin"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "reason"
+                ],
+                "qualified_name": "unpin_message",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "write_data": {
+                "aliases": [
+                    "write+data",
+                    "write.data",
+                    "writedata",
+                    "write-data"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "write_data",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "general_debug",
+        "description": "Cog for debug or test commands, should not be enabled fo normal Bot operations.",
+        "file_path": "antipetros_discordbot/cogs/dev_cogs/general_debug_cog.py",
+        "state": [
+            "FOR_DEBUG",
+            "DOCUMENTATION_MISSING",
+            "NEEDS_REFRACTORING",
+            "FEATURE_MISSING",
+            "UNTESTED",
+            "OPEN_TODOS",
+            "WORKING"
+        ]
+    },
+    "GithubCog": {
+        "commands": {
+            "get_file": {
+                "aliases": [
+                    "get+file",
+                    "get-file",
+                    "get.file",
+                    "getfile"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "file_name",
+                    "branch"
+                ],
+                "qualified_name": "get_file",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "github_referals": {
+                "aliases": [
+                    "github+referals",
+                    "githubreferals",
+                    "github.referals",
+                    "github-referals"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "github_referals",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "github_traffic": {
+                "aliases": [
+                    "github-traffic",
+                    "githubtraffic",
+                    "github.traffic",
+                    "github+traffic"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "github_traffic",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "github",
+        "description": "WiP",
+        "file_path": "antipetros_discordbot/cogs/antistasi_tool_cogs/github_cog.py",
+        "state": [
+            "EMPTY",
+            "DOCUMENTATION_MISSING",
+            "CRASHING",
+            "OUTDATED",
+            "FEATURE_MISSING",
+            "UNTESTED"
+        ]
+    },
+    "GiveAwayCog": {
+        "commands": {
+            "abort_give_away": {
+                "aliases": [
+                    "abort-give-away",
+                    "abort.give.away",
+                    "abortgiveaway",
+                    "abort+give+away"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7B8BB34C0>",
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NOT IMPLEMENTED",
+                "is_enabled": false,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "abort_give_away",
+                "short_doc": "NOT IMPLEMENTED",
+                "signature": null,
+                "usage": "NA"
+            },
+            "create_giveaway": {
+                "aliases": [
+                    "create-giveaway",
+                    "creategiveaway",
+                    "create+giveaway",
+                    "create.giveaway"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7B8BB38B0>",
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "flags"
+                ],
+                "qualified_name": "create_giveaway",
+                "short_doc": "NA",
+                "signature": "NA [--enter_emoji ENTER_EMOJI=\ud83c\udf81] [--start_message START_MESSAGE] [--end_message END_MESSAGE=Give away has finished!] [--num_winners NUM_WINNERS=1] [--end_date END_DATE=24 hours] [--title TITLE=Antistasi Give-Away]",
+                "usage": "NA"
+            },
+            "finish_give_away": {
+                "aliases": [
+                    "finish.give.away",
+                    "finish+give+away",
+                    "finish-give-away",
+                    "finishgiveaway"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7B8B078B0>",
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NOT IMPLEMENTED",
+                "is_enabled": false,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "finish_give_away",
+                "short_doc": "NOT IMPLEMENTED",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "give_away",
+        "description": "Soon",
+        "file_path": "antipetros_discordbot/cogs/community_events_cogs/give_away_cog.py",
+        "state": [
+            "DOCUMENTATION_MISSING",
+            "FEATURE_MISSING"
+        ]
+    },
+    "ImageManipulatorCog": {
+        "commands": {
+            "add_font": {
+                "aliases": [
+                    "addfont",
+                    "add+font",
+                    "add.font",
+                    "add-font"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function has_attachments.<locals>.predicate at 0x000001C7B9686A60>",
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "add_font",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "add_stamp": {
+                "aliases": [
+                    "add-stamp",
+                    "add_image",
+                    "add.stamp",
+                    "addstamp",
+                    "add+stamp"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function log_invoker.<locals>.predicate at 0x000001C7B96863A0>",
+                    "<function has_attachments.<locals>.predicate at 0x000001C7B9686280>",
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "Adds a new stamp image to the available stamps.\n\nThis command needs to have the image as an attachment.",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "add_stamp",
+                "short_doc": "Adds a new stamp image to the available stamps.",
+                "signature": null,
+                "usage": "NA"
+            },
+            "available_stamps": {
+                "aliases": [
+                    "availablestamps",
+                    "available.stamps",
+                    "available-stamps",
+                    "available+stamps"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": "art/finished/gifs/available_stamps_command.gif",
+                "help": "Posts all available stamps.\n\nRemoves them after 2min to keep channel clean.",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "available_stamps",
+                "short_doc": "Posts all available stamps.",
+                "signature": null,
+                "usage": "NA"
+            },
+            "get_stamp_image": {
+                "aliases": [
+                    "getstampimage",
+                    "get_image",
+                    "get+stamp+image",
+                    "get-stamp-image",
+                    "get.stamp.image"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "image_name"
+                ],
+                "qualified_name": "get_stamp_image",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "list_fonts": {
+                "aliases": [
+                    "listfonts",
+                    "list.fonts",
+                    "list-fonts",
+                    "list+fonts"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "list_fonts",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "member_avatar": {
+                "aliases": [
+                    "memberavatar",
+                    "member+avatar",
+                    "member.avatar",
+                    "member-avatar"
+                ],
+                "brief": "NA",
+                "checks": [],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "Stamps the avatar of a Member with the Antistasi Crest.\n\nReturns the new stamped avatar as a .PNG image that the Member can save and replace his orginal avatar with.",
+                "is_enabled": true,
+                "is_group": true,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "member_avatar",
+                "short_doc": "Stamps the avatar of a Member with the Antistasi Crest.",
+                "signature": null,
+                "subcommands": {
+                    "by_num": {
+                        "aliases": [
+                            "bynum",
+                            "by+num",
+                            "by.num",
+                            "by-num"
+                        ],
+                        "brief": "NA",
+                        "checks": [],
+                        "description": "NA",
+                        "example": "NA",
+                        "gif": null,
+                        "help": "NA",
+                        "is_enabled": true,
+                        "is_hidden": false,
+                        "parameter": [
+                            "numberpad"
+                        ],
+                        "qualified_name": "member_avatar by_num",
+                        "short_doc": "NA",
+                        "signature": null,
+                        "usage": "NA"
+                    },
+                    "by_place": {
+                        "aliases": [
+                            "by-place",
+                            "by.place",
+                            "byplace",
+                            "by+place"
+                        ],
+                        "brief": "NA",
+                        "checks": [],
+                        "description": "NA",
+                        "example": "NA",
+                        "gif": null,
+                        "help": "NA",
+                        "is_enabled": true,
+                        "is_hidden": false,
+                        "parameter": [
+                            "first_pos",
+                            "second_pos"
+                        ],
+                        "qualified_name": "member_avatar by_place",
+                        "short_doc": "NA",
+                        "signature": null,
+                        "usage": "NA"
+                    },
+                    "for_discord": {
+                        "aliases": [
+                            "for.discord",
+                            "for+discord",
+                            "fordiscord",
+                            "for-discord"
+                        ],
+                        "brief": "NA",
+                        "checks": [
+                            "AllowedChannelAndAllowedRoleCheck"
+                        ],
+                        "description": "NA",
+                        "example": "NA",
+                        "gif": null,
+                        "help": "NA",
+                        "is_enabled": true,
+                        "is_hidden": false,
+                        "parameter": [],
+                        "qualified_name": "member_avatar for_discord",
+                        "short_doc": "NA",
+                        "signature": null,
+                        "usage": "NA"
+                    },
+                    "for_github": {
+                        "aliases": [
+                            "for-github",
+                            "for+github",
+                            "forgithub",
+                            "for.github"
+                        ],
+                        "brief": "NA",
+                        "checks": [],
+                        "description": "NA",
+                        "example": "NA",
+                        "gif": null,
+                        "help": "NA",
+                        "is_enabled": true,
+                        "is_hidden": false,
+                        "parameter": [],
+                        "qualified_name": "member_avatar for_github",
+                        "short_doc": "NA",
+                        "signature": null,
+                        "usage": "NA"
+                    }
+                },
+                "usage": "NA"
+            },
+            "stamp_image": {
+                "aliases": [
+                    "stamp+image",
+                    "stampimage",
+                    "stamp-image",
+                    "stamp.image"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "Stamps an image with a small image from the available stamps.\n\nNeeds to have the to stamp image as an attachment on the invoking message.\n\nUsefull for watermarking images.\n\nGet all available stamps with '@AntiPetros available_stamps'",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "flags"
+                ],
+                "qualified_name": "stamp_image",
+                "short_doc": "Stamps an image with a small image from the available stamps.",
+                "signature": "NA [--factor FACTOR] [--stamp_opacity STAMP_OPACITY=1.0] [--second_pos SECOND_POS=right] [--first_pos FIRST_POS=bottom] [--stamp_image STAMP_IMAGE=ASLOGO]",
+                "usage": "NA"
+            },
+            "text_to_image": {
+                "aliases": [
+                    "text.to.image",
+                    "text+to+image",
+                    "text-to-image",
+                    "texttoimage"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function has_attachments.<locals>.predicate at 0x000001C7B9686160>",
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "font",
+                    "text"
+                ],
+                "qualified_name": "text_to_image",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "image_manipulation",
+        "description": "Commands that manipulate or generate images.",
+        "file_path": "antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py",
+        "state": [
+            "NEEDS_REFRACTORING",
+            "FEATURE_MISSING",
+            "OPEN_TODOS",
+            "WORKING"
+        ]
+    },
+    "InfoCog": {
+        "commands": {
+            "code_file_to_image": {
+                "aliases": [
+                    "code.file.to.image",
+                    "code-file-to-image",
+                    "code+file+to+image",
+                    "codefiletoimage"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function has_attachments.<locals>.predicate at 0x000001C7B9727670>"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "as_codeblock"
+                ],
+                "qualified_name": "code_file_to_image",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "info_bot": {
+                "aliases": [
+                    "infobot",
+                    "info+bot",
+                    "info.bot",
+                    "info-bot"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "info_bot",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "info_command": {
+                "aliases": [
+                    "infocommand",
+                    "info-command",
+                    "info+command",
+                    "info.command"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "command",
+                    "as_codeblock"
+                ],
+                "qualified_name": "info_command",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "info_guild": {
+                "aliases": [
+                    "infoguild",
+                    "info+guild",
+                    "info-guild",
+                    "info.guild"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "Shows some attributes of the current Guild.",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "info_guild",
+                "short_doc": "Shows some attributes of the current Guild.",
+                "signature": null,
+                "usage": "NA"
+            },
+            "info_me": {
+                "aliases": [
+                    "info-me",
+                    "infome",
+                    "info.me",
+                    "info+me"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "info_me",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "info_other": {
+                "aliases": [
+                    "info+other",
+                    "info-other",
+                    "infoother",
+                    "info.other"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "member_id"
+                ],
+                "qualified_name": "info_other",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "info",
+        "description": "WiP",
+        "file_path": "antipetros_discordbot/cogs/general_cogs/info_cog.py",
+        "state": [
+            "EMPTY",
+            "DOCUMENTATION_MISSING",
+            "CRASHING",
+            "OUTDATED",
+            "FEATURE_MISSING",
+            "UNTESTED"
+        ]
+    },
+    "IpcCog": {
+        "commands": {},
+        "config_name": "ipc",
+        "description": "WiP",
+        "file_path": "antipetros_discordbot/cogs/bot_admin_cogs/ipc_cog.py",
+        "state": [
+            "EMPTY",
+            "DOCUMENTATION_MISSING",
+            "CRASHING",
+            "OUTDATED",
+            "FEATURE_MISSING",
+            "UNTESTED"
+        ]
+    },
+    "KlimBimCog": {
+        "commands": {
+            "choose_random": {
+                "aliases": [
+                    "choose+random",
+                    "choose.random",
+                    "choose-random",
+                    "chooserandom"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": "art/finished/gifs/choose_random_command.gif",
+                "help": "Selects random items from a semi-colon(`;`) seperated list. No limit on how many items the list can have, except for Discord character limit.\n\nAmount of item to select can be set by specifying a number before the list. Defaults to selecting only 1 item. Max amount is 25.\n\nArgs:\n\n    choices (str): input list as semi-colon seperated list.\n    select_amount (Optional[int], optional): How many items to select. Defaults to 1.",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "select_amount",
+                    "choices"
+                ],
+                "qualified_name": "choose_random",
+                "short_doc": "Selects random items from a semi-colon(`;`) seperated list. No limit on how many items the list can have, except for Discord character limit.",
+                "signature": null,
+                "usage": "NA"
+            },
+            "flip_coin": {
+                "aliases": [
+                    "flipcoin",
+                    "coinflip",
+                    "flip-coin",
+                    "flip+coin",
+                    "flip",
+                    "flip.coin"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": "art/finished/gifs/flip_coin_command.gif",
+                "help": "Simulates a coin flip and posts the result as an image of a Petros Dollar.",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "only_text"
+                ],
+                "qualified_name": "flip_coin",
+                "short_doc": "Simulates a coin flip and posts the result as an image of a Petros Dollar.",
+                "signature": null,
+                "usage": "NA"
+            },
+            "make_figlet": {
+                "aliases": [
+                    "makefiglet",
+                    "make.figlet",
+                    "make+figlet",
+                    "make-figlet"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": "art/finished/gifs/make_figlet_command.gif",
+                "help": "Posts an ASCII Art version of the input text.\n\n**Warning, your invoking message gets deleted!**\n\nArgs:\n    text (str): text you want to see as ASCII Art.",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "text"
+                ],
+                "qualified_name": "make_figlet",
+                "short_doc": "Posts an ASCII Art version of the input text.",
+                "signature": null,
+                "usage": "NA"
+            },
+            "roll_dice": {
+                "aliases": [
+                    "roll+dice",
+                    "dice",
+                    "roll-dice",
+                    "rolldice",
+                    "roll.dice"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": "art/finished/gifs/roll_dice_command.gif",
+                "help": "Roll Dice and get the result also as Image.\n\nAll standard DnD Dice are available, d4, d6, d8, d10, d12, d20, d100.\n\nArgs:\n    dice_line (str): the dice you want to roll in the format `2d6`, first number is amount. Multiple different dice can be rolled, just seperate them by a space `2d6 4d20 1d4`.",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "dice_line"
+                ],
+                "qualified_name": "roll_dice",
+                "short_doc": "Roll Dice and get the result also as Image.",
+                "signature": null,
+                "usage": "NA"
+            },
+            "the_dragon": {
+                "aliases": [
+                    "thedragon",
+                    "the+dragon",
+                    "the-dragon",
+                    "the.dragon"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": "art/finished/gifs/the_dragon_command.gif",
+                "help": "Posts and awesome ASCII Art Dragon!",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "the_dragon",
+                "short_doc": "Posts and awesome ASCII Art Dragon!",
+                "signature": null,
+                "usage": "NA"
+            },
+            "urban_dictionary": {
+                "aliases": [
+                    "urbandictionary",
+                    "urban-dictionary",
+                    "urban+dictionary",
+                    "urban.dictionary"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": "art/finished/gifs/urban_dictionary_command.gif",
+                "help": "Searches Urbandictionary for the search term and post the answer as embed\n\nArgs:\n\n    term (str): the search term\n    entries (int, optional): How many UD entries for that term it should post, max is 5. Defaults to 1.",
+                "is_enabled": false,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "term",
+                    "entries"
+                ],
+                "qualified_name": "urban_dictionary",
+                "short_doc": "Searches Urbandictionary for the search term and post the answer as embed",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "klim_bim",
+        "description": "Collection of small commands that either don't fit anywhere else or are just for fun.",
+        "file_path": "antipetros_discordbot/cogs/general_cogs/klim_bim_cog.py",
+        "state": [
+            "WORKING"
+        ]
+    },
+    "PerformanceCog": {
+        "commands": {
+            "cpu_info": {
+                "aliases": [
+                    "cpu-info",
+                    "cpuinfo",
+                    "cpu+info",
+                    "cpu.info"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "cpu_info",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "get_command_stats": {
+                "aliases": [
+                    "getcommandstats",
+                    "get.command.stats",
+                    "get-command-stats",
+                    "get+command+stats"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "get_command_stats",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "initial_memory_use": {
+                "aliases": [
+                    "initial-memory-use",
+                    "initial.memory.use",
+                    "initialmemoryuse",
+                    "initial+memory+use"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "initial_memory_use",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "report": {
+                "aliases": [],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "Reports both current latency and memory usage as Graph.",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "report",
+                "short_doc": "Reports both current latency and memory usage as Graph.",
+                "signature": null,
+                "usage": "NA"
+            },
+            "report_cpu": {
+                "aliases": [
+                    "report+cpu",
+                    "report.cpu",
+                    "reportcpu",
+                    "report-cpu"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "with_graph"
+                ],
+                "qualified_name": "report_cpu",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "report_latency": {
+                "aliases": [
+                    "report-latency",
+                    "report.latency",
+                    "report+latency",
+                    "reportlatency"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "with_graph"
+                ],
+                "qualified_name": "report_latency",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "report_memory": {
+                "aliases": [
+                    "report.memory",
+                    "reportmemory",
+                    "report-memory",
+                    "report+memory"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "with_graph",
+                    "since_last_hours"
+                ],
+                "qualified_name": "report_memory",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "socket_info": {
+                "aliases": [
+                    "socketinfo",
+                    "socket+info",
+                    "socket-info",
+                    "socket.info"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AdminOrAdminLeadCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "socket_info",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "performance",
+        "description": "Collects Latency data and memory usage every 10min and posts every 24h a report of the last 24h as graphs.",
+        "file_path": "antipetros_discordbot/cogs/bot_admin_cogs/performance_cog.py",
+        "state": [
+            "DOCUMENTATION_MISSING",
+            "NEEDS_REFRACTORING",
+            "FEATURE_MISSING",
+            "OPEN_TODOS"
+        ]
+    },
+    "PurgeMessagesCog": {
+        "commands": {
+            "purge_antipetros": {
+                "aliases": [
+                    "purge.antipetros",
+                    "purge-antipetros",
+                    "purge+antipetros",
+                    "purgeantipetros"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function in_allowed_channels.<locals>.predicate at 0x000001C7B87F30D0>",
+                    "<function is_owner.<locals>.predicate at 0x000001C7DBFBEB80>"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": true,
+                "parameter": [
+                    "command_flags"
+                ],
+                "qualified_name": "purge_antipetros",
+                "short_doc": "NA",
+                "signature": "NA [--number_of_messages NUMBER_OF_MESSAGES=99999999999] [--and_giddi AND_GIDDI=False]",
+                "usage": "NA"
+            }
+        },
+        "config_name": "purge_messages",
+        "description": "Soon",
+        "file_path": "antipetros_discordbot/cogs/discord_admin_cogs/purge_messages_cog.py",
+        "state": [
+            "DOCUMENTATION_MISSING",
+            "FEATURE_MISSING"
+        ]
+    },
+    "RulesCog": {
+        "commands": {
+            "all_rules": {
+                "aliases": [
+                    "allrules",
+                    "all.rules",
+                    "all-rules",
+                    "all+rules"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "all_rules",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "better_rules": {
+                "aliases": [
+                    "better+rules",
+                    "betterrules",
+                    "better.rules",
+                    "better-rules"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "better_rules",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "community_rules": {
+                "aliases": [
+                    "communityrules",
+                    "community+rules",
+                    "community.rules",
+                    "community-rules"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "community_rules",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "exploits_rules": {
+                "aliases": [
+                    "exploits-rules",
+                    "exploits+rules",
+                    "exploitsrules",
+                    "exploits.rules"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "exploits_rules",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "server_rules": {
+                "aliases": [
+                    "server.rules",
+                    "server+rules",
+                    "server-rules",
+                    "serverrules"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "server_rules",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "rules",
+        "description": "WiP",
+        "file_path": "antipetros_discordbot/cogs/moderation_cogs/rules_cog.py",
+        "state": [
+            "EMPTY",
+            "DOCUMENTATION_MISSING",
+            "CRASHING",
+            "OUTDATED",
+            "FEATURE_MISSING",
+            "UNTESTED"
+        ]
+    },
+    "SaveSuggestionCog": {
+        "commands": {
+            "auto_accept_suggestions": {
+                "aliases": [],
+                "brief": null,
+                "checks": [
+                    "dm_only"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "auto_accept_suggestions",
+                "short_doc": "",
+                "signature": "",
+                "usage": null
+            },
+            "clear_all_suggestions": {
+                "aliases": [],
+                "brief": null,
+                "checks": [
+                    "owner_or_admin"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [
+                    "sure"
+                ],
+                "qualified_name": "clear_all_suggestions",
+                "short_doc": "",
+                "signature": "[sure=False]",
+                "usage": null
+            },
+            "get_all_suggestions": {
+                "aliases": [],
+                "brief": null,
+                "checks": [
+                    "allowed_channel_and_allowed_role"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [
+                    "report_template"
+                ],
+                "qualified_name": "get_all_suggestions",
+                "short_doc": "",
+                "signature": "[report_template=basic_report.html.jinja]",
+                "usage": null
+            },
+            "mark_discussed": {
+                "aliases": [],
+                "brief": null,
+                "checks": [
+                    "allowed_channel_and_allowed_role"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [
+                    "suggestion_ids"
+                ],
+                "qualified_name": "mark_discussed",
+                "short_doc": "",
+                "signature": "[suggestion_ids...]",
+                "usage": null
+            },
+            "remove_all_userdata": {
+                "aliases": [],
+                "brief": null,
+                "checks": [
+                    "dm_only"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "remove_all_userdata",
+                "short_doc": "",
+                "signature": "",
+                "usage": null
+            },
+            "request_my_data": {
+                "aliases": [],
+                "brief": null,
+                "checks": [
+                    "dm_only"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "request_my_data",
+                "short_doc": "",
+                "signature": "",
+                "usage": null
+            },
+            "unsave_suggestion": {
+                "aliases": [],
+                "brief": null,
+                "checks": [
+                    "dm_only"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [
+                    "suggestion_id"
+                ],
+                "qualified_name": "unsave_suggestion",
+                "short_doc": "",
+                "signature": "<suggestion_id>",
+                "usage": null
+            }
+        },
+        "config_name": "save_suggestion",
+        "description": "Provides functionality for each Antistasi Team to save suggestions by reacting with emojis.",
+        "file_path": "antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py",
+        "state": [
+            "DOCUMENTATION_MISSING",
+            "NEEDS_REFRACTORING",
+            "FEATURE_MISSING",
+            "UNTESTED",
+            "OPEN_TODOS",
+            "WORKING"
+        ]
+    },
+    "SubscriptionCog": {
+        "commands": {
+            "create_subscription_channel_header": {
+                "aliases": [
+                    "create.subscription.channel.header",
+                    "createsubscriptionchannelheader",
+                    "create+subscription+channel+header",
+                    "create-subscription-channel-header"
+                ],
+                "brief": null,
+                "checks": [
+                    "is_owner"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "create_subscription_channel_header",
+                "short_doc": "",
+                "signature": "",
+                "usage": null
+            },
+            "modify_topic_embed": {
+                "aliases": [
+                    "modify-topic-embed",
+                    "modify.topic.embed",
+                    "modify+topic+embed",
+                    "modifytopicembed"
+                ],
+                "brief": null,
+                "checks": [
+                    "has_attachments",
+                    "is_owner"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [
+                    "topic_name",
+                    "setting",
+                    "value"
+                ],
+                "qualified_name": "modify_topic_embed",
+                "short_doc": "",
+                "signature": "<topic_name> <setting> <value>",
+                "usage": null
+            },
+            "new_topic": {
+                "aliases": [
+                    "newtopic",
+                    "new.topic",
+                    "new+topic",
+                    "new-topic"
+                ],
+                "brief": null,
+                "checks": [
+                    "has_attachments",
+                    "is_owner"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [
+                    "topic_creator_id"
+                ],
+                "qualified_name": "new_topic",
+                "short_doc": "",
+                "signature": "[topic_creator_id]",
+                "usage": null
+            },
+            "remove_topic": {
+                "aliases": [
+                    "removetopic",
+                    "remove-topic",
+                    "remove+topic",
+                    "remove.topic"
+                ],
+                "brief": null,
+                "checks": [
+                    "is_owner"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [
+                    "topic_name"
+                ],
+                "qualified_name": "remove_topic",
+                "short_doc": "",
+                "signature": "<topic_name>",
+                "usage": null
+            },
+            "topic_template": {
+                "aliases": [
+                    "topictemplate",
+                    "topic-template",
+                    "topic.template",
+                    "topic+template"
+                ],
+                "brief": null,
+                "checks": [
+                    "owner_or_admin"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [
+                    "with_example"
+                ],
+                "qualified_name": "topic_template",
+                "short_doc": "",
+                "signature": "[with_example]",
+                "usage": null
+            },
+            "unsubscribe": {
+                "aliases": [],
+                "brief": null,
+                "checks": [
+                    "dm_only"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [
+                    "topic_name"
+                ],
+                "qualified_name": "unsubscribe",
+                "short_doc": "",
+                "signature": "<topic_name>",
+                "usage": null
+            },
+            "update_subscription_channel_header": {
+                "aliases": [
+                    "update.subscription.channel.header",
+                    "update-subscription-channel-header",
+                    "updatesubscriptionchannelheader",
+                    "update+subscription+channel+header"
+                ],
+                "brief": null,
+                "checks": [
+                    "is_owner"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": true,
+                "parameter": [],
+                "qualified_name": "update_subscription_channel_header",
+                "short_doc": "",
+                "signature": "",
+                "usage": null
+            }
+        },
+        "config_name": "subscription",
+        "description": "Organizes Topic so they can be subscribed and mentioned selectively.",
+        "file_path": "antipetros_discordbot/cogs/special_channels_cogs/subscription_cog.py",
+        "state": [
+            "DOCUMENTATION_MISSING",
+            "FEATURE_MISSING"
+        ]
+    },
+    "TeamRosterCog": {
+        "commands": {
+            "delete_and_redo_team_roster": {
+                "aliases": [
+                    "delete-and-redo-team-roster",
+                    "delete+and+redo+team+roster",
+                    "deleteandredoteamroster",
+                    "delete.and.redo.team.roster"
+                ],
+                "brief": null,
+                "checks": [
+                    "log_invoker",
+                    "is_owner"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [
+                    "channel"
+                ],
+                "qualified_name": "delete_and_redo_team_roster",
+                "short_doc": "",
+                "signature": "<channel>",
+                "usage": null
+            },
+            "force_update_team_roster": {
+                "aliases": [
+                    "force+update+team+roster",
+                    "forceupdateteamroster",
+                    "force.update.team.roster",
+                    "force-update-team-roster"
+                ],
+                "brief": null,
+                "checks": [
+                    "log_invoker",
+                    "is_owner"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "force_update_team_roster",
+                "short_doc": "",
+                "signature": "",
+                "usage": null
+            },
+            "initialize_team_roster": {
+                "aliases": [
+                    "initialize-team-roster",
+                    "initialize.team.roster",
+                    "initializeteamroster",
+                    "initialize+team+roster"
+                ],
+                "brief": null,
+                "checks": [
+                    "log_invoker",
+                    "is_owner"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [
+                    "channel"
+                ],
+                "qualified_name": "initialize_team_roster",
+                "short_doc": "",
+                "signature": "<channel>",
+                "usage": null
+            },
+            "team_roster_change_description": {
+                "aliases": [
+                    "team-roster-change-description",
+                    "team+roster+change+description",
+                    "team.roster.change.description",
+                    "teamrosterchangedescription"
+                ],
+                "brief": null,
+                "checks": [
+                    "log_invoker"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [
+                    "team",
+                    "new_description"
+                ],
+                "qualified_name": "team_roster_change_description",
+                "short_doc": "",
+                "signature": "<team> <new_description>",
+                "usage": null
+            },
+            "team_roster_change_extra_role": {
+                "aliases": [
+                    "teamrosterchangeextrarole",
+                    "team.roster.change.extra.role",
+                    "team+roster+change+extra+role",
+                    "team-roster-change-extra-role"
+                ],
+                "brief": null,
+                "checks": [
+                    "log_invoker"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [
+                    "team",
+                    "extra_role_name"
+                ],
+                "qualified_name": "team_roster_change_extra_role",
+                "short_doc": "",
+                "signature": "<team> <extra_role_name>",
+                "usage": null
+            },
+            "team_roster_change_image": {
+                "aliases": [
+                    "teamrosterchangeimage",
+                    "team-roster-change-image",
+                    "team.roster.change.image",
+                    "team+roster+change+image"
+                ],
+                "brief": null,
+                "checks": [
+                    "log_invoker"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [
+                    "team",
+                    "image_url"
+                ],
+                "qualified_name": "team_roster_change_image",
+                "short_doc": "",
+                "signature": "<team> <image_url>",
+                "usage": null
+            },
+            "team_roster_change_join_description": {
+                "aliases": [
+                    "team+roster+change+join+description",
+                    "team.roster.change.join.description",
+                    "team-roster-change-join-description",
+                    "teamrosterchangejoindescription"
+                ],
+                "brief": null,
+                "checks": [
+                    "log_invoker"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [
+                    "team",
+                    "new_join_description"
+                ],
+                "qualified_name": "team_roster_change_join_description",
+                "short_doc": "",
+                "signature": "<team> <new_join_description>",
+                "usage": null
+            }
+        },
+        "config_name": "team_roster",
+        "description": "WiP",
+        "file_path": "antipetros_discordbot/cogs/special_channels_cogs/team_roster_cog.py",
+        "state": [
+            "EMPTY",
+            "DOCUMENTATION_MISSING",
+            "CRASHING",
+            "OUTDATED",
+            "FEATURE_MISSING",
+            "UNTESTED"
+        ]
+    },
+    "TemplateCheckerCog": {
+        "commands": {
+            "check_template": {
+                "aliases": [
+                    "check.template",
+                    "check+template",
+                    "check-template",
+                    "checktemplate"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "<function has_attachments.<locals>.predicate at 0x000001C7BB7E5C10>",
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "Checks all Classnames inside a provided template.\n\nNeeds to have the tempalte as attachment to the invoking message.\n\nReturns the list of classnames it can't find in the config along with possible correction.\n\nReturns also a corrected version of the template file.\n\nArgs:\n    all_items_file (bool, optional): if it should also provide a file that lists all used classes. Defaults to True.\n    case_insensitive (bool, optional): if it should check Case insentive. Defaults to False.",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "all_items_file",
+                    "case_insensitive"
+                ],
+                "qualified_name": "check_template",
+                "short_doc": "Checks all Classnames inside a provided template.",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "template_checker",
+        "description": "soon",
+        "file_path": "antipetros_discordbot/cogs/antistasi_tool_cogs/template_checker_cog.py",
+        "state": [
+            "EMPTY",
+            "DOCUMENTATION_MISSING",
+            "CRASHING",
+            "OUTDATED",
+            "FEATURE_MISSING",
+            "UNTESTED"
+        ]
+    },
+    "TranslateCog": {
+        "commands": {
+            "available_languages": {
+                "aliases": [
+                    "available+languages",
+                    "available.languages",
+                    "available-languages",
+                    "availablelanguages"
+                ],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": null,
+                "help": "NA",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [],
+                "qualified_name": "available_languages",
+                "short_doc": "NA",
+                "signature": null,
+                "usage": "NA"
+            },
+            "translate": {
+                "aliases": [],
+                "brief": "NA",
+                "checks": [
+                    "AllowedChannelAndAllowedRoleCheck"
+                ],
+                "description": "NA",
+                "example": "NA",
+                "gif": "art/finished/gifs/translate_command.gif",
+                "help": "Translates text into multiple different languages.\n\nTries to auto-guess input language.\n\n**Warning, your invoking message gets deleted!**\n\nArgs:\n    text_to_translate (str): the text to translate, quotes are optional\n    to_language_id (Optional[LanguageConverter], optional): either can be the name of the language or an language code (iso639-1 language codes). Defaults to \"english\".",
+                "is_enabled": true,
+                "is_group": false,
+                "is_hidden": false,
+                "parameter": [
+                    "to_language_id",
+                    "text_to_translate"
+                ],
+                "qualified_name": "translate",
+                "short_doc": "Translates text into multiple different languages.",
+                "signature": null,
+                "usage": "NA"
+            }
+        },
+        "config_name": "translate",
+        "description": "Collection of commands that help in translating text to different Languages.",
+        "file_path": "antipetros_discordbot/cogs/general_cogs/translate_cog.py",
+        "state": [
+            "WORKING"
+        ]
+    },
+    "VoteCog": {
+        "commands": {
+            "create_vote": {
+                "aliases": [
+                    "create-vote",
+                    "create+vote",
+                    "create.vote",
+                    "createvote"
+                ],
+                "brief": null,
+                "checks": [
+                    "log_invoker",
+                    "allowed_channel_and_allowed_role"
+                ],
+                "description": "",
+                "gif": null,
+                "help": null,
+                "is_enabled": true,
+                "is_hidden": false,
+                "parameter": [
+                    "title",
+                    "description",
+                    "run_for",
+                    "options"
+                ],
+                "qualified_name": "create_vote",
+                "short_doc": "",
+                "signature": "<title> <description> <run_for> [options...]",
+                "usage": null
+            }
+        },
+        "config_name": "vote",
+        "description": "WiP",
+        "file_path": "antipetros_discordbot/cogs/discord_admin_cogs/vote_cog.py",
+        "state": [
+            "EMPTY",
+            "DOCUMENTATION_MISSING",
+            "CRASHING",
+            "OUTDATED",
+            "FEATURE_MISSING",
+            "UNTESTED"
+        ]
+    }
+}

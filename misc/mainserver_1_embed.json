@@ -1,0 +1,64 @@
+{
+    "author": {
+        "icon_url": "https://pictures.alignable.com/eyJidWNrZXQiOiJhbGlnbmFibGV3ZWItcHJvZHVjdGlvbiIsImtleSI6ImJ1c2luZXNzZXMvbG9nb3Mvb3JpZ2luYWwvNzEwMzQ1MC9BUk1BSE9TVFMtV29ybGRzLUJsdWVJY29uTGFyZ2UucG5nIiwiZWRpdHMiOnsiZXh0cmFjdCI6eyJsZWZ0IjowLCJ0b3AiOjE0Miwid2lkdGgiOjIwNDgsImhlaWdodCI6MjA0OH0sInJlc2l6ZSI6eyJ3aWR0aCI6MTgyLCJoZWlnaHQiOjE4Mn0sImV4dGVuZCI6eyJ0b3AiOjAsImJvdHRvbSI6MCwibGVmdCI6MCwicmlnaHQiOjAsImJhY2tncm91bmQiOnsiciI6MjU1LCJnIjoyNTUsImIiOjI1NSwiYWxwaGEiOjF9fX19",
+        "name": "Server Provided by ARMAHOSTS",
+        "url": "https://www.armahosts.com/"
+    },
+    "color": 8421376,
+    "fields": [
+        {
+            "inline": false,
+            "name": "__**Server Address**__",
+            "value": "\n```fix\nnae-ugs1.armahosts.com\n```"
+        },
+        {
+            "inline": true,
+            "name": "__**Port**__",
+            "value": "\n```fix\n2312\n```"
+        },
+        {
+            "inline": false,
+            "name": "Teamspeak",
+            "value": "\n`38.65.5.151`\n\n__**OR**__\n\n`antistasi.armahosts.com`"
+        },
+        {
+            "inline": false,
+            "name": "\ud83d\uddfa\ufe0f **Current Map**",
+            "value": "vt7"
+        },
+        {
+            "inline": true,
+            "name": "<:4_5:812510145393328139> **Players**",
+            "value": "15/40"
+        },
+        {
+            "inline": true,
+            "name": "**Ping**",
+            "value": "0.109"
+        },
+        {
+            "inline": true,
+            "name": "**Game**",
+            "value": "Antistasi - Liberation of Virolahti"
+        },
+        {
+            "inline": true,
+            "name": "**Password Required**",
+            "value": "NO \ud83d\udd13"
+        },
+        {
+            "inline": true,
+            "name": "Battlemetrics",
+            "value": "\ud83d\udd17 [link to Battlemetrics](https://www.battlemetrics.com/servers/arma3/10560386)"
+        }
+    ],
+    "footer": {
+        "text": "\u200b\nWe thank ARMAHOSTS for providing the Servers"
+    },
+    "thumbnail": {
+        "url": "https://i.postimg.cc/dJgyvGH7/server-symbol.png"
+    },
+    "timestamp": "2021-03-12T07:45:44.406632+00:00",
+    "title": "Antistasi Community Server 1",
+    "type": "rich"
+}

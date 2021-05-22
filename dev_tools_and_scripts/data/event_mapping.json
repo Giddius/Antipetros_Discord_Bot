@@ -1,0 +1,128 @@
+{
+    "on_bulk_message_delete": [["messages", "List[discord.Message]"]],
+    "on_connect": [],
+    "on_disconnect": [],
+    "on_group_join": [
+        ["channel", "discord.GroupChannel"],
+        ["user", "discord.User"]
+    ],
+    "on_group_remove": [
+        ["channel", "discord.GroupChannel"],
+        ["user", "discord.User"]
+    ],
+    "on_guild_available": [["guild", "discord.Guild"]],
+    "on_guild_channel_create": [["channel", "discord.abc.GuildChannel"]],
+    "on_guild_channel_delete": [["channel", "discord.abc.GuildChannel"]],
+    "on_guild_channel_pins_update": [
+        ["channel", "discord.abc.GuildChannel"],
+        ["last_pin", "datetime"]
+    ],
+    "on_guild_channel_update": [
+        ["before", "discord.abc.GuildChannel"],
+        ["after", "discord.abc.GuildChannel"]
+    ],
+    "on_guild_emojis_update": [
+        ["guild", "discord.Guild"],
+        ["before", "Sequence[discord.Emoji]"],
+        ["after", "Sequence[discord.Emoji]"]
+    ],
+    "on_guild_integrations_update": [["guild", "discord.Guild"]],
+    "on_guild_join": [["guild", "discord.Guild"]],
+    "on_guild_remove": [["guild", "discord.Guild"]],
+    "on_guild_role_create": [["role", "discord.Role"]],
+    "on_guild_role_delete": [["role", "discord.Role"]],
+    "on_guild_role_update": [
+        ["role", "discord.Role"],
+        ["role", "discord.Role"]
+    ],
+    "on_guild_unavailable": [["guild", "discord.Guild"]],
+    "on_guild_update": [
+        ["guild", "discord.Guild"],
+        ["guild", "discord.Guild"]
+    ],
+    "on_invite_create": [["invite", "discord.Invite"]],
+    "on_invite_delete": [["invite", "discord.Invite"]],
+    "on_member_ban": [
+        ["guild", "discord.Guild"],
+        ["user", "Union[discord.User,discord.Member]"]
+    ],
+    "on_member_join": [["member", "discord.Member"]],
+    "on_member_remove": [["member", "discord.Member"]],
+    "on_member_unban": [
+        ["guild", "discord.Guild"],
+        ["user", "discord.User"]
+    ],
+    "on_member_update": [
+        ["before", "discord.Member"],
+        ["after", "discord.Member"]
+    ],
+    "on_message": [["mesage", "discord.Message"]],
+    "on_message_delete": [["mesage", "discord.Message"]],
+    "on_message_edit": [
+        ["before", "discord.Message"],
+        ["after", "discord.Message"]
+    ],
+    "on_private_channel_create": [["channel", "discord.abc.PrivateChannel"]],
+    "on_private_channel_delete": [["channel", "discord.abc.PrivateChannel"]],
+    "on_private_channel_pins_update": [
+        ["channel", "discord.GroupChannel"],
+        ["last_pin", "datetime"]
+    ],
+    "on_private_channel_update": [
+        ["before", "discord.GroupChannel"],
+        ["after", "discord.GroupChannel"]
+    ],
+    "on_raw_bulk_message_delete": [
+        ["payload", "discord.RawMessageDeleteEvent"]
+    ],
+    "on_raw_message_delete": [["payload", "discord.RawMessageDeleteEvent"]],
+    "on_raw_message_edit": [["payload", "discord.RawMessageUpdateEvent"]],
+    "on_raw_reaction_add": [["payload", "discord.RawReactionActionEvent"]],
+    "on_raw_reaction_clear": [["payload", "discord.RawReactionClearEvent"]],
+    "on_raw_reaction_clear_emoji": [
+        ["payload", "discord.RawReactionClearEmojiEvent"]
+    ],
+    "on_raw_reaction_remove": [["payload", "discord.RawReactionActionEvent"]],
+    "on_reaction_add": [
+        ["reaction", "discord.Reaction"],
+        ["user", "Union[discord.User, discord.Member]"]
+    ],
+    "on_reaction_clear": [
+        ["message", "discord.Message"],
+        ["reactions", "List[discord.Reaction]"]
+    ],
+    "on_reaction_clear_emoji": [["reaction", "discord.Reaction"]],
+    "on_reaction_remove": [
+        ["reaction", "discord.Reaction"],
+        ["user", "Union[discord.User, discord.Member]"]
+    ],
+    "on_ready": [],
+    "on_relationship_add": [["relationship", "discord.Relationship"]],
+    "on_relationship_remove": [["relationship", "discord.Relationship"]],
+    "on_relationship_update": [
+        ["before", "discord.Relationship"],
+        ["after", "discord.Relationship"]
+    ],
+    "on_resumed": [],
+    "on_shard_connect": [["shard_id", "int"]],
+    "on_shard_disconnect": [["shard_id", "int"]],
+    "on_shard_ready": [["shard_id", "int"]],
+    "on_shard_resumed": [["shard_id", "int"]],
+    "on_socket_raw_receive": [["msg", "Union[bytes, str]"]],
+    "on_socket_raw_send": [["payload", "Union[bytes, str]"]],
+    "on_typing": [
+        ["channel", "abc.Messageable"],
+        ["user", "Union[discord.User, discord.Member]"],
+        ["when", "datetime"]
+    ],
+    "on_user_update": [
+        ["before", "discord.User"],
+        ["after", "discord.User"]
+    ],
+    "on_voice_state_update": [
+        ["member", "discord.Member"],
+        ["before", "discord.VoiceState"],
+        ["after", "discord.VoiceState"]
+    ],
+    "on_webhooks_update": [["channel", "discord.abc.GuildChannel"]]
+}
