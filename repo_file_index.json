@@ -1,0 +1,4146 @@
+[
+    {
+        "extension": null,
+        "full_name": ".gitignore",
+        "name": ".gitignore",
+        "path": ".gitignore",
+        "size": 10851
+    },
+    {
+        "extension": ".md",
+        "full_name": "README.md",
+        "name": "README",
+        "path": "README.md",
+        "size": 46865
+    },
+    {
+        "extension": null,
+        "full_name": ".editorconfig",
+        "name": ".editorconfig",
+        "path": ".editorconfig",
+        "size": 197
+    },
+    {
+        "extension": ".py",
+        "full_name": "tasks.py",
+        "name": "tasks",
+        "path": "tasks.py",
+        "size": 42943
+    },
+    {
+        "extension": ".py",
+        "full_name": "actions_check.py",
+        "name": "actions_check",
+        "path": "actions_check.py",
+        "size": 279
+    },
+    {
+        "extension": null,
+        "full_name": ".gitattributes",
+        "name": ".gitattributes",
+        "path": ".gitattributes",
+        "size": 66
+    },
+    {
+        "extension": ".md",
+        "full_name": "glossary.md",
+        "name": "glossary",
+        "path": "glossary.md",
+        "size": 2616
+    },
+    {
+        "extension": null,
+        "full_name": ".pydeps",
+        "name": ".pydeps",
+        "path": ".pydeps",
+        "size": 129
+    },
+    {
+        "extension": ".toml",
+        "full_name": "pyproject.toml",
+        "name": "pyproject",
+        "path": "pyproject.toml",
+        "size": 3697
+    },
+    {
+        "extension": null,
+        "full_name": "LICENSE",
+        "name": "LICENSE",
+        "path": "LICENSE",
+        "size": 1064
+    },
+    {
+        "extension": ".md",
+        "full_name": "giveaway_description.md",
+        "name": "giveaway_description",
+        "path": "docs/long_descriptions/giveaway_description.md",
+        "size": 2724
+    },
+    {
+        "extension": ".png",
+        "full_name": "config_retrieval.png",
+        "name": "config_retrieval",
+        "path": "docs/resources/diagramms/config_retrieval.png",
+        "size": 34594
+    },
+    {
+        "extension": ".drawio",
+        "full_name": "config_retrieval.drawio",
+        "name": "config_retrieval",
+        "path": "docs/resources/diagramms/config_retrieval.drawio",
+        "size": 2038
+    },
+    {
+        "extension": ".txt",
+        "full_name": "embed.txt",
+        "name": "embed",
+        "path": "docs/resources/diagramms/embed.txt",
+        "size": 1442
+    },
+    {
+        "extension": ".json",
+        "full_name": "acknowledgments_data.json",
+        "name": "acknowledgments_data",
+        "path": "docs/resources/data/acknowledgments_data.json",
+        "size": 2
+    },
+    {
+        "extension": ".json",
+        "full_name": "external_dependencies.json",
+        "name": "external_dependencies",
+        "path": "docs/resources/data/external_dependencies.json",
+        "size": 450
+    },
+    {
+        "extension": ".json",
+        "full_name": "help_needed_data.json",
+        "name": "help_needed_data",
+        "path": "docs/resources/data/help_needed_data.json",
+        "size": 2
+    },
+    {
+        "extension": ".json",
+        "full_name": "bot_info.json",
+        "name": "bot_info",
+        "path": "docs/resources/data/bot_info.json",
+        "size": 966
+    },
+    {
+        "extension": ".json",
+        "full_name": "graphviz_colors.json",
+        "name": "graphviz_colors",
+        "path": "docs/resources/data/graphviz_colors.json",
+        "size": 7812
+    },
+    {
+        "extension": ".json",
+        "full_name": "command_data.json",
+        "name": "command_data",
+        "path": "docs/resources/data/command_data.json",
+        "size": 137296
+    },
+    {
+        "extension": ".json",
+        "full_name": "links_data.json",
+        "name": "links_data",
+        "path": "docs/resources/data/links_data.json",
+        "size": 165
+    },
+    {
+        "extension": ".json",
+        "full_name": "channel_shit.json",
+        "name": "channel_shit",
+        "path": "docs/resources/data/channel_shit.json",
+        "size": 7136
+    },
+    {
+        "extension": ".txt",
+        "full_name": "cogs_misc.txt",
+        "name": "cogs_misc",
+        "path": "docs/resources/raw_text/cogs_misc.txt",
+        "size": null
+    },
+    {
+        "extension": ".txt",
+        "full_name": "raw_glossary_items.txt",
+        "name": "raw_glossary_items",
+        "path": "docs/resources/raw_text/raw_glossary_items.txt",
+        "size": 1834
+    },
+    {
+        "extension": ".txt",
+        "full_name": "future_plans.txt",
+        "name": "future_plans",
+        "path": "docs/resources/raw_text/future_plans.txt",
+        "size": 543
+    },
+    {
+        "extension": ".md",
+        "full_name": "saved_message.md",
+        "name": "saved_message",
+        "path": "docs/resources/raw_text/saved_messages/saved_message.md",
+        "size": 1549
+    },
+    {
+        "extension": ".md",
+        "full_name": "documentation_attributes.md",
+        "name": "documentation_attributes",
+        "path": "docs/resources/general_design_rules/documentation_attributes.md",
+        "size": 316
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "readme_github_vers_3.md.jinja",
+        "name": "readme_github_vers_3.md",
+        "path": "docs/resources/templates/readme_github_vers_3.md.jinja",
+        "size": 2386
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "base_cogs_info_template.md.jinja",
+        "name": "base_cogs_info_template.md",
+        "path": "docs/resources/templates/base_cogs_info_template.md.jinja",
+        "size": 305
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "readme_template_exp.md.jinja",
+        "name": "readme_template_exp.md",
+        "path": "docs/resources/templates/readme_template_exp.md.jinja",
+        "size": 2448
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "tocs_template.md.jinja",
+        "name": "tocs_template.md",
+        "path": "docs/resources/templates/tocs_template.md.jinja",
+        "size": 678
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "base_readme_template.md.jinja",
+        "name": "base_readme_template.md",
+        "path": "docs/resources/templates/base_readme_template.md.jinja",
+        "size": 627
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "readme_template.md.jinja",
+        "name": "readme_template.md",
+        "path": "docs/resources/templates/readme_template.md.jinja",
+        "size": 3481
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "glossary_template.md.jinja",
+        "name": "glossary_template.md",
+        "path": "docs/resources/templates/glossary_template.md.jinja",
+        "size": 329
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "readme_github_vers_1.md.jinja",
+        "name": "readme_github_vers_1.md",
+        "path": "docs/resources/templates/readme_github_vers_1.md.jinja",
+        "size": 3107
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "readme_github_vers_2[dynamic].md.jinja",
+        "name": "readme_github_vers_2[dynamic].md",
+        "path": "docs/resources/templates/readme_github_vers_2[dynamic].md.jinja",
+        "size": 173
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "cogs_info_template_vers_1.md.jinja",
+        "name": "cogs_info_template_vers_1.md",
+        "path": "docs/resources/templates/cogs_info_template_vers_1.md.jinja",
+        "size": 1816
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "brief_description_block.md.jinja",
+        "name": "brief_description_block.md",
+        "path": "docs/resources/templates/dynamic_blocks/brief_description_block.md.jinja",
+        "size": 103
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "development_block.md.jinja",
+        "name": "development_block.md",
+        "path": "docs/resources/templates/dynamic_blocks/development_block.md.jinja",
+        "size": 174
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "see_also_block.md.jinja",
+        "name": "see_also_block.md",
+        "path": "docs/resources/templates/dynamic_blocks/see_also_block.md.jinja",
+        "size": 107
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "description_block.md.jinja",
+        "name": "description_block.md",
+        "path": "docs/resources/templates/dynamic_blocks/description_block.md.jinja",
+        "size": 22
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "main_image_block.md.jinja",
+        "name": "main_image_block.md",
+        "path": "docs/resources/templates/dynamic_blocks/main_image_block.md.jinja",
+        "size": 98
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "dependencies_block.md.jinja",
+        "name": "dependencies_block.md",
+        "path": "docs/resources/templates/dynamic_blocks/dependencies_block.md.jinja",
+        "size": 479
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "features_block.md.jinja",
+        "name": "features_block.md",
+        "path": "docs/resources/templates/dynamic_blocks/features_block.md.jinja",
+        "size": null
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "installation_block.md.jinja",
+        "name": "installation_block.md",
+        "path": "docs/resources/templates/dynamic_blocks/installation_block.md.jinja",
+        "size": 78
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "toc_block.md.jinja",
+        "name": "toc_block.md",
+        "path": "docs/resources/templates/dynamic_blocks/toc_block.md.jinja",
+        "size": 10
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "usage_block.md.jinja",
+        "name": "usage_block.md",
+        "path": "docs/resources/templates/dynamic_blocks/usage_block.md.jinja",
+        "size": 156
+    },
+    {
+        "extension": ".md",
+        "full_name": "base_readme_template_variables.md",
+        "name": "base_readme_template_variables",
+        "path": "docs/resources/templates/template_variables_data/base_readme_template_variables.md",
+        "size": 24
+    },
+    {
+        "extension": ".md",
+        "full_name": "readme_github_vers_1_variables.md",
+        "name": "readme_github_vers_1_variables",
+        "path": "docs/resources/templates/template_variables_data/readme_github_vers_1_variables.md",
+        "size": 484
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "glossary_item.md.jinja",
+        "name": "glossary_item.md",
+        "path": "docs/resources/templates/macros/glossary_item.md.jinja",
+        "size": 963
+    },
+    {
+        "extension": ".ini",
+        "full_name": "standard_cogs_config.ini",
+        "name": "standard_cogs_config",
+        "path": "docs/resources/prototype_files/standard_cogs_config.ini",
+        "size": 27052
+    },
+    {
+        "extension": ".md",
+        "full_name": "updated_list_for_version_2.md",
+        "name": "updated_list_for_version_2",
+        "path": "docs/notes/updated_list_for_version_2.md",
+        "size": 563
+    },
+    {
+        "extension": ".md",
+        "full_name": "polling.md",
+        "name": "polling",
+        "path": "docs/proposals/polling.md",
+        "size": 1175
+    },
+    {
+        "extension": ".md",
+        "full_name": "subscription.md",
+        "name": "subscription",
+        "path": "docs/proposals/subscription.md",
+        "size": 5269
+    },
+    {
+        "extension": ".json",
+        "full_name": "permission_request.json",
+        "name": "permission_request",
+        "path": "docs/proposals/permission_request.json",
+        "size": 194391
+    },
+    {
+        "extension": ".py",
+        "full_name": "make_glossary.py",
+        "name": "make_glossary",
+        "path": "docs/scripts/make_glossary.py",
+        "size": 5065
+    },
+    {
+        "extension": ".gif",
+        "full_name": "available_stamps_command.gif",
+        "name": "available_stamps_command",
+        "path": "art/finished/gifs/available_stamps_command.gif",
+        "size": 526100
+    },
+    {
+        "extension": ".gif",
+        "full_name": "make_figlet_command.gif",
+        "name": "make_figlet_command",
+        "path": "art/finished/gifs/make_figlet_command.gif",
+        "size": 158676
+    },
+    {
+        "extension": ".gif",
+        "full_name": "flip_coin_command.gif",
+        "name": "flip_coin_command",
+        "path": "art/finished/gifs/flip_coin_command.gif",
+        "size": 149450
+    },
+    {
+        "extension": ".gif",
+        "full_name": "the_dragon_command.gif",
+        "name": "the_dragon_command",
+        "path": "art/finished/gifs/the_dragon_command.gif",
+        "size": 236843
+    },
+    {
+        "extension": ".gif",
+        "full_name": "roll_dice_command.gif",
+        "name": "roll_dice_command",
+        "path": "art/finished/gifs/roll_dice_command.gif",
+        "size": 195862
+    },
+    {
+        "extension": ".gif",
+        "full_name": "translate_command.gif",
+        "name": "translate_command",
+        "path": "art/finished/gifs/translate_command.gif",
+        "size": 235242
+    },
+    {
+        "extension": ".gif",
+        "full_name": "choose_random_command.gif",
+        "name": "choose_random_command",
+        "path": "art/finished/gifs/choose_random_command.gif",
+        "size": 303068
+    },
+    {
+        "extension": ".gif",
+        "full_name": "urban_dictionary_command.gif",
+        "name": "urban_dictionary_command",
+        "path": "art/finished/gifs/urban_dictionary_command.gif",
+        "size": 210871
+    },
+    {
+        "extension": ".png",
+        "full_name": "soon_6.png",
+        "name": "soon_6",
+        "path": "art/finished/images/soon_6.png",
+        "size": 446003
+    },
+    {
+        "extension": ".png",
+        "full_name": "soon_3.png",
+        "name": "soon_3",
+        "path": "art/finished/images/soon_3.png",
+        "size": 147006
+    },
+    {
+        "extension": ".png",
+        "full_name": "soon_4.png",
+        "name": "soon_4",
+        "path": "art/finished/images/soon_4.png",
+        "size": 310926
+    },
+    {
+        "extension": ".png",
+        "full_name": "soon_5.png",
+        "name": "soon_5",
+        "path": "art/finished/images/soon_5.png",
+        "size": 295133
+    },
+    {
+        "extension": ".png",
+        "full_name": "soon_1.png",
+        "name": "soon_1",
+        "path": "art/finished/images/soon_1.png",
+        "size": 241945
+    },
+    {
+        "extension": ".png",
+        "full_name": "AntiPetros.png",
+        "name": "AntiPetros",
+        "path": "art/finished/images/AntiPetros.png",
+        "size": 1298930
+    },
+    {
+        "extension": ".png",
+        "full_name": "AntiDEVtros.png",
+        "name": "AntiDEVtros",
+        "path": "art/finished/images/AntiDEVtros.png",
+        "size": 2089909
+    },
+    {
+        "extension": ".png",
+        "full_name": "cog_icon.png",
+        "name": "cog_icon",
+        "path": "art/finished/images/cog_icon.png",
+        "size": 143843
+    },
+    {
+        "extension": ".png",
+        "full_name": "soon_10.png",
+        "name": "soon_10",
+        "path": "art/finished/images/soon_10.png",
+        "size": 388600
+    },
+    {
+        "extension": ".png",
+        "full_name": "soon_8.png",
+        "name": "soon_8",
+        "path": "art/finished/images/soon_8.png",
+        "size": 206518
+    },
+    {
+        "extension": ".png",
+        "full_name": "bot_announcement.png",
+        "name": "bot_announcement",
+        "path": "art/finished/images/bot_announcement.png",
+        "size": 2527478
+    },
+    {
+        "extension": ".png",
+        "full_name": "placeholder_image.png",
+        "name": "placeholder_image",
+        "path": "art/finished/images/placeholder_image.png",
+        "size": 103118
+    },
+    {
+        "extension": ".png",
+        "full_name": "AntiPetros_for_readme.png",
+        "name": "AntiPetros_for_readme",
+        "path": "art/finished/images/AntiPetros_for_readme.png",
+        "size": 1303041
+    },
+    {
+        "extension": ".png",
+        "full_name": "soon_2.png",
+        "name": "soon_2",
+        "path": "art/finished/images/soon_2.png",
+        "size": 206518
+    },
+    {
+        "extension": ".png",
+        "full_name": "soon_9.png",
+        "name": "soon_9",
+        "path": "art/finished/images/soon_9.png",
+        "size": 360566
+    },
+    {
+        "extension": ".png",
+        "full_name": "soon_11.png",
+        "name": "soon_11",
+        "path": "art/finished/images/soon_11.png",
+        "size": 306828
+    },
+    {
+        "extension": ".ui",
+        "full_name": "discord_code_builder_cog_builder.ui",
+        "name": "discord_code_builder_cog_builder",
+        "path": "designer_files/discord_code_builder_cog_builder.ui",
+        "size": 5089
+    },
+    {
+        "extension": ".ui",
+        "full_name": "discord_code_builder_mainwindow.ui",
+        "name": "discord_code_builder_mainwindow",
+        "path": "designer_files/discord_code_builder_mainwindow.ui",
+        "size": 2219
+    },
+    {
+        "extension": ".ui",
+        "full_name": "discord_code_builder_main_selection_screen.ui",
+        "name": "discord_code_builder_main_selection_screen",
+        "path": "designer_files/discord_code_builder_main_selection_screen.ui",
+        "size": 1017
+    },
+    {
+        "extension": ".json",
+        "full_name": "credentials.json",
+        "name": "credentials",
+        "path": "misc/credentials.json",
+        "size": 429
+    },
+    {
+        "extension": ".py",
+        "full_name": "main.py",
+        "name": "main",
+        "path": "misc/main.py",
+        "size": 4515
+    },
+    {
+        "extension": ".json",
+        "full_name": "cog_dump.json",
+        "name": "cog_dump",
+        "path": "misc/cog_dump.json",
+        "size": 223212
+    },
+    {
+        "extension": ".json",
+        "full_name": "mainserver_2_embed.json",
+        "name": "mainserver_2_embed",
+        "path": "misc/mainserver_2_embed.json",
+        "size": 2257
+    },
+    {
+        "extension": ".json",
+        "full_name": "mainserver_1_embed.json",
+        "name": "mainserver_1_embed",
+        "path": "misc/mainserver_1_embed.json",
+        "size": 2246
+    },
+    {
+        "extension": ".md",
+        "full_name": "README.md",
+        "name": "README",
+        "path": "antipetros_discordbot/README.md",
+        "size": 3093
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/__init__.py",
+        "size": 2102
+    },
+    {
+        "extension": ".py",
+        "full_name": "__main__.py",
+        "name": "__main__",
+        "path": "antipetros_discordbot/__main__.py",
+        "size": 12540
+    },
+    {
+        "extension": ".md",
+        "full_name": "README.md",
+        "name": "README",
+        "path": "antipetros_discordbot/engine/README.md",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/engine/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "global_checks.py",
+        "name": "global_checks",
+        "path": "antipetros_discordbot/engine/global_checks.py",
+        "size": 1843
+    },
+    {
+        "extension": ".py",
+        "full_name": "special_prefix.py",
+        "name": "special_prefix",
+        "path": "antipetros_discordbot/engine/special_prefix.py",
+        "size": 2384
+    },
+    {
+        "extension": ".py",
+        "full_name": "antipetros_bot.py",
+        "name": "antipetros_bot",
+        "path": "antipetros_discordbot/engine/antipetros_bot.py",
+        "size": 23266
+    },
+    {
+        "extension": ".py",
+        "full_name": "context_replacement.py",
+        "name": "context_replacement",
+        "path": "antipetros_discordbot/engine/replacements/context_replacement.py",
+        "size": 1549
+    },
+    {
+        "extension": ".md",
+        "full_name": "README.md",
+        "name": "README",
+        "path": "antipetros_discordbot/engine/replacements/README.md",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/engine/replacements/__init__.py",
+        "size": 349
+    },
+    {
+        "extension": ".py",
+        "full_name": "help_replacement.py",
+        "name": "help_replacement",
+        "path": "antipetros_discordbot/engine/replacements/help_replacement.py",
+        "size": 448
+    },
+    {
+        "extension": ".py",
+        "full_name": "base_cog_replacement.py",
+        "name": "base_cog_replacement",
+        "path": "antipetros_discordbot/engine/replacements/base_cog_replacement.py",
+        "size": 8670
+    },
+    {
+        "extension": ".py",
+        "full_name": "creation_decorators.py",
+        "name": "creation_decorators",
+        "path": "antipetros_discordbot/engine/replacements/command_replacements/creation_decorators.py",
+        "size": 2740
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/engine/replacements/command_replacements/__init__.py",
+        "size": 264
+    },
+    {
+        "extension": ".py",
+        "full_name": "base_command.py",
+        "name": "base_command",
+        "path": "antipetros_discordbot/engine/replacements/command_replacements/base_command.py",
+        "size": 13403
+    },
+    {
+        "extension": ".py",
+        "full_name": "command_category.py",
+        "name": "command_category",
+        "path": "antipetros_discordbot/engine/replacements/command_replacements/command_category.py",
+        "size": 11104
+    },
+    {
+        "extension": ".py",
+        "full_name": "base_group.py",
+        "name": "base_group",
+        "path": "antipetros_discordbot/engine/replacements/command_replacements/base_group.py",
+        "size": 4905
+    },
+    {
+        "extension": ".py",
+        "full_name": "flag_command.py",
+        "name": "flag_command",
+        "path": "antipetros_discordbot/engine/replacements/command_replacements/flag_command.py",
+        "size": 912
+    },
+    {
+        "extension": ".py",
+        "full_name": "meta_data_provider.py",
+        "name": "meta_data_provider",
+        "path": "antipetros_discordbot/engine/replacements/helper/meta_data_provider.py",
+        "size": 3263
+    },
+    {
+        "extension": ".py",
+        "full_name": "source_code_provider.py",
+        "name": "source_code_provider",
+        "path": "antipetros_discordbot/engine/replacements/helper/source_code_provider.py",
+        "size": 4272
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/engine/replacements/helper/__init__.py",
+        "size": 133
+    },
+    {
+        "extension": ".py",
+        "full_name": "help_embed_builder.py",
+        "name": "help_embed_builder",
+        "path": "antipetros_discordbot/engine/replacements/helper/help_embed_builder.py",
+        "size": 18748
+    },
+    {
+        "extension": ".py",
+        "full_name": "category_provider.py",
+        "name": "category_provider",
+        "path": "antipetros_discordbot/engine/replacements/helper/category_provider.py",
+        "size": 3277
+    },
+    {
+        "extension": ".py",
+        "full_name": "alias_provider.py",
+        "name": "alias_provider",
+        "path": "antipetros_discordbot/engine/replacements/helper/alias_provider.py",
+        "size": 5105
+    },
+    {
+        "extension": ".md",
+        "full_name": "README.md",
+        "name": "README",
+        "path": "antipetros_discordbot/cogs/README.md",
+        "size": 41518
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/cogs/__init__.py",
+        "size": 3128
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/cogs/community_events_cogs/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "give_away_cog.py",
+        "name": "give_away_cog",
+        "path": "antipetros_discordbot/cogs/community_events_cogs/give_away_cog.py",
+        "size": 16762
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/cogs/dev_cogs/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "general_debug_cog.py",
+        "name": "general_debug_cog",
+        "path": "antipetros_discordbot/cogs/dev_cogs/general_debug_cog.py",
+        "size": 8698
+    },
+    {
+        "extension": ".py",
+        "full_name": "ipc_cog.py",
+        "name": "ipc_cog",
+        "path": "antipetros_discordbot/cogs/bot_admin_cogs/ipc_cog.py",
+        "size": 4750
+    },
+    {
+        "extension": ".py",
+        "full_name": "config_cog.py",
+        "name": "config_cog",
+        "path": "antipetros_discordbot/cogs/bot_admin_cogs/config_cog.py",
+        "size": 15033
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/cogs/bot_admin_cogs/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "bot_admin_cog.py",
+        "name": "bot_admin_cog",
+        "path": "antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py",
+        "size": 16261
+    },
+    {
+        "extension": ".py",
+        "full_name": "updater_cog.py",
+        "name": "updater_cog",
+        "path": "antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py",
+        "size": 9121
+    },
+    {
+        "extension": ".py",
+        "full_name": "performance_cog.py",
+        "name": "performance_cog",
+        "path": "antipetros_discordbot/cogs/bot_admin_cogs/performance_cog.py",
+        "size": 18161
+    },
+    {
+        "extension": ".py",
+        "full_name": "db_caretaker_cog.py",
+        "name": "db_caretaker_cog",
+        "path": "antipetros_discordbot/cogs/bot_admin_cogs/db_caretaker_cog.py",
+        "size": 5651
+    },
+    {
+        "extension": ".py",
+        "full_name": "help_cog.py",
+        "name": "help_cog",
+        "path": "antipetros_discordbot/cogs/bot_admin_cogs/help_cog.py",
+        "size": 20287
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/cogs/special_channels_cogs/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "subscription_cog.py",
+        "name": "subscription_cog",
+        "path": "antipetros_discordbot/cogs/special_channels_cogs/subscription_cog.py",
+        "size": 32263
+    },
+    {
+        "extension": ".py",
+        "full_name": "faq_cog.py",
+        "name": "faq_cog",
+        "path": "antipetros_discordbot/cogs/special_channels_cogs/faq_cog.py",
+        "size": 11336
+    },
+    {
+        "extension": ".py",
+        "full_name": "team_roster_cog.py",
+        "name": "team_roster_cog",
+        "path": "antipetros_discordbot/cogs/special_channels_cogs/team_roster_cog.py",
+        "size": 27081
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/cogs/antistasi_tool_cogs/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "template_checker_cog.py",
+        "name": "template_checker_cog",
+        "path": "antipetros_discordbot/cogs/antistasi_tool_cogs/template_checker_cog.py",
+        "size": 10144
+    },
+    {
+        "extension": ".py",
+        "full_name": "github_cog.py",
+        "name": "github_cog",
+        "path": "antipetros_discordbot/cogs/antistasi_tool_cogs/github_cog.py",
+        "size": 11237
+    },
+    {
+        "extension": ".py",
+        "full_name": "community_server_info_cog.py",
+        "name": "community_server_info_cog",
+        "path": "antipetros_discordbot/cogs/antistasi_tool_cogs/community_server_info_cog.py",
+        "size": 22699
+    },
+    {
+        "extension": ".py",
+        "full_name": "steam_cog.py",
+        "name": "steam_cog",
+        "path": "antipetros_discordbot/cogs/antistasi_tool_cogs/steam_cog.py",
+        "size": 12493
+    },
+    {
+        "extension": ".py",
+        "full_name": "rules_cog.py",
+        "name": "rules_cog",
+        "path": "antipetros_discordbot/cogs/moderation_cogs/rules_cog.py",
+        "size": 10252
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/cogs/moderation_cogs/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "fixed_answer_cog.py",
+        "name": "fixed_answer_cog",
+        "path": "antipetros_discordbot/cogs/moderation_cogs/fixed_answer_cog.py",
+        "size": 8249
+    },
+    {
+        "extension": ".py",
+        "full_name": "auto_reaction_cog.py",
+        "name": "auto_reaction_cog",
+        "path": "antipetros_discordbot/cogs/moderation_cogs/auto_reaction_cog.py",
+        "size": 22103
+    },
+    {
+        "extension": ".py",
+        "full_name": "translate_cog.py",
+        "name": "translate_cog",
+        "path": "antipetros_discordbot/cogs/general_cogs/translate_cog.py",
+        "size": 11509
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/cogs/general_cogs/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "save_suggestion_cog.py",
+        "name": "save_suggestion_cog",
+        "path": "antipetros_discordbot/cogs/general_cogs/save_suggestion_cog.py",
+        "size": 27603
+    },
+    {
+        "extension": ".py",
+        "full_name": "image_manipulation_cog.py",
+        "name": "image_manipulation_cog",
+        "path": "antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py",
+        "size": 31030
+    },
+    {
+        "extension": ".py",
+        "full_name": "klim_bim_cog.py",
+        "name": "klim_bim_cog",
+        "path": "antipetros_discordbot/cogs/general_cogs/klim_bim_cog.py",
+        "size": 25200
+    },
+    {
+        "extension": ".py",
+        "full_name": "info_cog.py",
+        "name": "info_cog",
+        "path": "antipetros_discordbot/cogs/general_cogs/info_cog.py",
+        "size": 18790
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/cogs/discord_admin_cogs/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "discord_admin_cog.py",
+        "name": "discord_admin_cog",
+        "path": "antipetros_discordbot/cogs/discord_admin_cogs/discord_admin_cog.py",
+        "size": 10424
+    },
+    {
+        "extension": ".py",
+        "full_name": "purge_messages_cog.py",
+        "name": "purge_messages_cog",
+        "path": "antipetros_discordbot/cogs/discord_admin_cogs/purge_messages_cog.py",
+        "size": 4301
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/bot_support/__init__.py",
+        "size": 356
+    },
+    {
+        "extension": ".py",
+        "full_name": "bot_supporter.py",
+        "name": "bot_supporter",
+        "path": "antipetros_discordbot/bot_support/bot_supporter.py",
+        "size": 3238
+    },
+    {
+        "extension": ".py",
+        "full_name": "antistasi_informer.py",
+        "name": "antistasi_informer",
+        "path": "antipetros_discordbot/bot_support/sub_support/antistasi_informer.py",
+        "size": 10218
+    },
+    {
+        "extension": ".py",
+        "full_name": "chan_statistician.py",
+        "name": "chan_statistician",
+        "path": "antipetros_discordbot/bot_support/sub_support/chan_statistician.py",
+        "size": 6181
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/bot_support/sub_support/__init__.py",
+        "size": 1647
+    },
+    {
+        "extension": ".py",
+        "full_name": "time_keeper.py",
+        "name": "time_keeper",
+        "path": "antipetros_discordbot/bot_support/sub_support/time_keeper.py",
+        "size": 2587
+    },
+    {
+        "extension": ".py",
+        "full_name": "essential_commands_keeper.py",
+        "name": "essential_commands_keeper",
+        "path": "antipetros_discordbot/bot_support/sub_support/essential_commands_keeper.py",
+        "size": 6526
+    },
+    {
+        "extension": ".py",
+        "full_name": "regex_keeper.py",
+        "name": "regex_keeper",
+        "path": "antipetros_discordbot/bot_support/sub_support/regex_keeper.py",
+        "size": 2918
+    },
+    {
+        "extension": ".py",
+        "full_name": "command_statistician.py",
+        "name": "command_statistician",
+        "path": "antipetros_discordbot/bot_support/sub_support/command_statistician.py",
+        "size": 4640
+    },
+    {
+        "extension": ".py",
+        "full_name": "error_handler.py",
+        "name": "error_handler",
+        "path": "antipetros_discordbot/bot_support/sub_support/error_handler.py",
+        "size": 20905
+    },
+    {
+        "extension": ".py",
+        "full_name": "color_keeper.py",
+        "name": "color_keeper",
+        "path": "antipetros_discordbot/bot_support/sub_support/color_keeper.py",
+        "size": 5691
+    },
+    {
+        "extension": ".py",
+        "full_name": "blacklist_warden.py",
+        "name": "blacklist_warden",
+        "path": "antipetros_discordbot/bot_support/sub_support/blacklist_warden.py",
+        "size": 5002
+    },
+    {
+        "extension": ".py",
+        "full_name": "embed_builder.py",
+        "name": "embed_builder",
+        "path": "antipetros_discordbot/bot_support/sub_support/embed_builder.py",
+        "size": 19537
+    },
+    {
+        "extension": ".py",
+        "full_name": "blacklisted_user_item.py",
+        "name": "blacklisted_user_item",
+        "path": "antipetros_discordbot/bot_support/sub_support/sub_support_helper/blacklisted_user_item.py",
+        "size": 2202
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/bot_support/sub_support/sub_support_helper/__init__.py",
+        "size": 569
+    },
+    {
+        "extension": ".py",
+        "full_name": "command_stats_dict.py",
+        "name": "command_stats_dict",
+        "path": "antipetros_discordbot/bot_support/sub_support/sub_support_helper/command_stats_dict.py",
+        "size": 4124
+    },
+    {
+        "extension": ".py",
+        "full_name": "embed_schema.py",
+        "name": "embed_schema",
+        "path": "antipetros_discordbot/bot_support/sub_support/sub_support_helper/embed_schema.py",
+        "size": 1785
+    },
+    {
+        "extension": ".py",
+        "full_name": "embed_item.py",
+        "name": "embed_item",
+        "path": "antipetros_discordbot/bot_support/sub_support/sub_support_helper/embed_item.py",
+        "size": 1117
+    },
+    {
+        "extension": ".py",
+        "full_name": "cooldown_dict.py",
+        "name": "cooldown_dict",
+        "path": "antipetros_discordbot/bot_support/sub_support/sub_support_helper/cooldown_dict.py",
+        "size": 1712
+    },
+    {
+        "extension": ".py",
+        "full_name": "embed_factory.py",
+        "name": "embed_factory",
+        "path": "antipetros_discordbot/bot_support/sub_support/sub_support_helper/embed_factory.py",
+        "size": 1070
+    },
+    {
+        "extension": ".env",
+        "full_name": "construction_info.env",
+        "name": "construction_info",
+        "path": "antipetros_discordbot/init_userdata/construction_info.env",
+        "size": 82
+    },
+    {
+        "extension": ".md",
+        "full_name": "README.md",
+        "name": "README",
+        "path": "antipetros_discordbot/init_userdata/README.md",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/init_userdata/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".trigger",
+        "full_name": "dev.trigger",
+        "name": "dev",
+        "path": "antipetros_discordbot/init_userdata/dev.trigger",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "user_data_setup.py",
+        "name": "user_data_setup",
+        "path": "antipetros_discordbot/init_userdata/user_data_setup.py",
+        "size": 1682
+    },
+    {
+        "extension": ".py",
+        "full_name": "bin_data.py",
+        "name": "bin_data",
+        "path": "antipetros_discordbot/init_userdata/bin_data.py",
+        "size": 36154860
+    },
+    {
+        "extension": ".sql",
+        "full_name": "mark_discussed.sql",
+        "name": "mark_discussed",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/mark_discussed.sql",
+        "size": 52
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_suggestion_by_id.sql",
+        "name": "get_suggestion_by_id",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/get_suggestion_by_id.sql",
+        "size": 391
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_all_message_ids.sql",
+        "name": "get_all_message_ids",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/get_all_message_ids.sql",
+        "size": 45
+    },
+    {
+        "extension": ".sql",
+        "full_name": "setup_save_suggestion.sql",
+        "name": "setup_save_suggestion",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/setup_save_suggestion.sql",
+        "size": 3089
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_all_save_emojis.sql",
+        "name": "get_all_save_emojis",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/get_all_save_emojis.sql",
+        "size": 43
+    },
+    {
+        "extension": ".sql",
+        "full_name": "remove_suggestion_by_id.sql",
+        "name": "remove_suggestion_by_id",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/remove_suggestion_by_id.sql",
+        "size": 59
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_suggestion_with_data.sql",
+        "name": "insert_suggestion_with_data",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/insert_suggestion_with_data.sql",
+        "size": 799
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_suggestions_not_discussed.sql",
+        "name": "get_suggestions_not_discussed",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/get_suggestions_not_discussed.sql",
+        "size": 530
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_data_id_by_message_id.sql",
+        "name": "get_data_id_by_message_id",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/get_data_id_by_message_id.sql",
+        "size": 75
+    },
+    {
+        "extension": ".sql",
+        "full_name": "update_upvotes.sql",
+        "name": "update_upvotes",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/update_upvotes.sql",
+        "size": 70
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_author.sql",
+        "name": "insert_author",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/insert_author.sql",
+        "size": 148
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_all_messages_not_discussed.sql",
+        "name": "get_all_messages_not_discussed",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/get_all_messages_not_discussed.sql",
+        "size": 65
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_suggestions_by_author.sql",
+        "name": "get_suggestions_by_author",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/get_suggestions_by_author.sql",
+        "size": 410
+    },
+    {
+        "extension": ".sql",
+        "full_name": "update_downvotes.sql",
+        "name": "update_downvotes",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/update_downvotes.sql",
+        "size": 72
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_category.sql",
+        "name": "insert_category",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/insert_category.sql",
+        "size": 72
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_suggestion.sql",
+        "name": "insert_suggestion",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/insert_suggestion.sql",
+        "size": 654
+    },
+    {
+        "extension": ".sql",
+        "full_name": "update_category.sql",
+        "name": "update_category",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/update_category.sql",
+        "size": 151
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_extra_data.sql",
+        "name": "insert_extra_data",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/insert_extra_data.sql",
+        "size": 77
+    },
+    {
+        "extension": ".sql",
+        "full_name": "remove_extra_data_by_id.sql",
+        "name": "remove_extra_data_by_id",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/remove_extra_data_by_id.sql",
+        "size": 43
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_emojis.sql",
+        "name": "insert_emojis",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/save_suggestion_sql/insert_emojis.sql",
+        "size": 86
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_channel_usage_only_from.sql",
+        "name": "get_channel_usage_only_from",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/get_channel_usage_only_from.sql",
+        "size": 67
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_channel_usage_only_to.sql",
+        "name": "get_channel_usage_only_to",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/get_channel_usage_only_to.sql",
+        "size": 67
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_command_usage_all.sql",
+        "name": "get_command_usage_all",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/get_command_usage_all.sql",
+        "size": 114
+    },
+    {
+        "extension": ".sql",
+        "full_name": "setup_meta_db.sql",
+        "name": "setup_meta_db",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/setup_meta_db.sql",
+        "size": 3097
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_all_category_channel_ids.sql",
+        "name": "get_all_category_channel_ids",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/get_all_category_channel_ids.sql",
+        "size": 40
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_cog_category.sql",
+        "name": "insert_cog_category",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/insert_cog_category.sql",
+        "size": 199
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_cpu_performance.sql",
+        "name": "insert_cpu_performance",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/insert_cpu_performance.sql",
+        "size": 188
+    },
+    {
+        "extension": ".sql",
+        "full_name": "updated_category_channels_deleted.sql",
+        "name": "updated_category_channels_deleted",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/updated_category_channels_deleted.sql",
+        "size": 63
+    },
+    {
+        "extension": ".sql",
+        "full_name": "update_text_channel_deleted.sql",
+        "name": "update_text_channel_deleted",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/update_text_channel_deleted.sql",
+        "size": 59
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_image.sql",
+        "name": "insert_image",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/insert_image.sql",
+        "size": 69
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_channel_usage_all.sql",
+        "name": "get_channel_usage_all",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/get_channel_usage_all.sql",
+        "size": 44
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_channel_use.sql",
+        "name": "insert_channel_use",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/insert_channel_use.sql",
+        "size": 109
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_cpu_performance.sql",
+        "name": "get_cpu_performance",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/get_cpu_performance.sql",
+        "size": 167
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_channel_usage.sql",
+        "name": "get_channel_usage",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/get_channel_usage.sql",
+        "size": 78
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_cog.sql",
+        "name": "insert_cog",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/insert_cog.sql",
+        "size": 444
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_command.sql",
+        "name": "insert_command",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/insert_command.sql",
+        "size": 753
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_latency_performance.sql",
+        "name": "get_latency_performance",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/get_latency_performance.sql",
+        "size": 98
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_memory_performance.sql",
+        "name": "get_memory_performance",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/get_memory_performance.sql",
+        "size": 103
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_latency_performance.sql",
+        "name": "insert_latency_performance",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/insert_latency_performance.sql",
+        "size": 76
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_text_channel.sql",
+        "name": "insert_text_channel",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/insert_text_channel.sql",
+        "size": 213
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_command_usage.sql",
+        "name": "insert_command_usage",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/insert_command_usage.sql",
+        "size": 226
+    },
+    {
+        "extension": ".sql",
+        "full_name": "get_all_text_channel_ids.sql",
+        "name": "get_all_text_channel_ids",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/get_all_text_channel_ids.sql",
+        "size": 36
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_memory_performance.sql",
+        "name": "insert_memory_performance",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/insert_memory_performance.sql",
+        "size": 81
+    },
+    {
+        "extension": ".sql",
+        "full_name": "insert_category_channel.sql",
+        "name": "insert_category_channel",
+        "path": "antipetros_discordbot/init_userdata/data_pack/database/sql_procedures/general_db_sql/insert_category_channel.sql",
+        "size": 171
+    },
+    {
+        "extension": ".txt",
+        "full_name": "regexes_stored.txt",
+        "name": "regexes_stored",
+        "path": "antipetros_discordbot/init_userdata/data_pack/fixed_data/regexes_stored.txt",
+        "size": 142
+    },
+    {
+        "extension": ".md",
+        "full_name": "bot_description.md",
+        "name": "bot_description",
+        "path": "antipetros_discordbot/init_userdata/data_pack/fixed_data/documentation/bot_description.md",
+        "size": 141
+    },
+    {
+        "extension": ".md",
+        "full_name": "general_help_description.md",
+        "name": "general_help_description",
+        "path": "antipetros_discordbot/init_userdata/data_pack/fixed_data/documentation/help_data/general_help_description.md",
+        "size": 3
+    },
+    {
+        "extension": ".css",
+        "full_name": "experiment_css_1.css",
+        "name": "experiment_css_1",
+        "path": "antipetros_discordbot/init_userdata/data_pack/fixed_data/css/experiment_css_1.css",
+        "size": 7210
+    },
+    {
+        "extension": ".css",
+        "full_name": "style.css",
+        "name": "style",
+        "path": "antipetros_discordbot/init_userdata/data_pack/fixed_data/css/style.css",
+        "size": 11680
+    },
+    {
+        "extension": ".css",
+        "full_name": "experiment_3.css",
+        "name": "experiment_3",
+        "path": "antipetros_discordbot/init_userdata/data_pack/fixed_data/css/experiment_3.css",
+        "size": 34879
+    },
+    {
+        "extension": ".css",
+        "full_name": "basic_report_style.css",
+        "name": "basic_report_style",
+        "path": "antipetros_discordbot/init_userdata/data_pack/fixed_data/css/basic_report_style.css",
+        "size": 11025
+    },
+    {
+        "extension": ".ini",
+        "full_name": "default_cogs_config.ini",
+        "name": "default_cogs_config",
+        "path": "antipetros_discordbot/init_userdata/data_pack/fixed_data/default_configs/default_cogs_config.ini",
+        "size": 40207
+    },
+    {
+        "extension": ".ini",
+        "full_name": "default_base_config.ini",
+        "name": "default_base_config",
+        "path": "antipetros_discordbot/init_userdata/data_pack/fixed_data/default_configs/default_base_config.ini",
+        "size": 26266
+    },
+    {
+        "extension": ".ini",
+        "full_name": "db_config.ini",
+        "name": "db_config",
+        "path": "antipetros_discordbot/init_userdata/data_pack/config/db_config.ini",
+        "size": 95
+    },
+    {
+        "extension": ".ini",
+        "full_name": "cogs_config.ini",
+        "name": "cogs_config",
+        "path": "antipetros_discordbot/init_userdata/data_pack/config/cogs_config.ini",
+        "size": 66196
+    },
+    {
+        "extension": ".ini",
+        "full_name": "base_config.ini",
+        "name": "base_config",
+        "path": "antipetros_discordbot/init_userdata/data_pack/config/base_config.ini",
+        "size": 35119
+    },
+    {
+        "extension": ".txt",
+        "full_name": "topic_template.txt",
+        "name": "topic_template",
+        "path": "antipetros_discordbot/init_userdata/data_pack/templates/topic_template.txt",
+        "size": 49
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "arma_required_mods.html.jinja",
+        "name": "arma_required_mods.html",
+        "path": "antipetros_discordbot/init_userdata/data_pack/templates/arma_required_mods.html.jinja",
+        "size": 2062
+    },
+    {
+        "extension": ".txt",
+        "full_name": "topic_example.txt",
+        "name": "topic_example",
+        "path": "antipetros_discordbot/init_userdata/data_pack/templates/topic_example.txt",
+        "size": 372
+    },
+    {
+        "extension": ".placeholder",
+        "full_name": "reports.placeholder",
+        "name": "reports",
+        "path": "antipetros_discordbot/init_userdata/data_pack/templates/report_templates/reports.placeholder",
+        "size": null
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "basic_report.html.jinja",
+        "name": "basic_report.html",
+        "path": "antipetros_discordbot/init_userdata/data_pack/templates/report_templates/basic_report.html.jinja",
+        "size": 2044
+    },
+    {
+        "extension": ".ttf",
+        "full_name": "stencilla.ttf",
+        "name": "stencilla",
+        "path": "antipetros_discordbot/init_userdata/data_pack/fonts/stencilla.ttf",
+        "size": 52196
+    },
+    {
+        "extension": ".ttf",
+        "full_name": "JerseyM54-aLX9.ttf",
+        "name": "JerseyM54-aLX9",
+        "path": "antipetros_discordbot/init_userdata/data_pack/fonts/JerseyM54-aLX9.ttf",
+        "size": 7168
+    },
+    {
+        "extension": ".png",
+        "full_name": "faq_num_background.png",
+        "name": "faq_num_background",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/other_images/faq_num_background.png",
+        "size": 115344
+    },
+    {
+        "extension": ".png",
+        "full_name": "bertha.png",
+        "name": "bertha",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/other_images/bertha.png",
+        "size": 984470
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_63.png",
+        "name": "d100_63",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_63.png",
+        "size": 41384
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_15.png",
+        "name": "d20_15",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_15.png",
+        "size": 36822
+    },
+    {
+        "extension": ".png",
+        "full_name": "d10_9.png",
+        "name": "d10_9",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d10_9.png",
+        "size": 36376
+    },
+    {
+        "extension": ".png",
+        "full_name": "d12_2.png",
+        "name": "d12_2",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d12_2.png",
+        "size": 34378
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_27.png",
+        "name": "d100_27",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_27.png",
+        "size": 42135
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_20.png",
+        "name": "d100_20",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_20.png",
+        "size": 41024
+    },
+    {
+        "extension": ".png",
+        "full_name": "d6_1.png",
+        "name": "d6_1",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d6_1.png",
+        "size": 22857
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_69.png",
+        "name": "d100_69",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_69.png",
+        "size": 41300
+    },
+    {
+        "extension": ".png",
+        "full_name": "d8_4.png",
+        "name": "d8_4",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d8_4.png",
+        "size": 36383
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_67.png",
+        "name": "d100_67",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_67.png",
+        "size": 42126
+    },
+    {
+        "extension": ".png",
+        "full_name": "d12.png",
+        "name": "d12",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d12.png",
+        "size": 24391
+    },
+    {
+        "extension": ".png",
+        "full_name": "d12_3.png",
+        "name": "d12_3",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d12_3.png",
+        "size": 34700
+    },
+    {
+        "extension": ".png",
+        "full_name": "d6.png",
+        "name": "d6",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d6.png",
+        "size": 18732
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_59.png",
+        "name": "d100_59",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_59.png",
+        "size": 41224
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_11.png",
+        "name": "d20_11",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_11.png",
+        "size": 36075
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_31.png",
+        "name": "d100_31",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_31.png",
+        "size": 42240
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_3.png",
+        "name": "d100_3",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_3.png",
+        "size": 43270
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_58.png",
+        "name": "d100_58",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_58.png",
+        "size": 41401
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_25.png",
+        "name": "d100_25",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_25.png",
+        "size": 41196
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_32.png",
+        "name": "d100_32",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_32.png",
+        "size": 41512
+    },
+    {
+        "extension": ".png",
+        "full_name": "d12_10.png",
+        "name": "d12_10",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d12_10.png",
+        "size": 34005
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_88.png",
+        "name": "d100_88",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_88.png",
+        "size": 41173
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_1.png",
+        "name": "d20_1",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_1.png",
+        "size": 36001
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_35.png",
+        "name": "d100_35",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_35.png",
+        "size": 41562
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_68.png",
+        "name": "d100_68",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_68.png",
+        "size": 41294
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_91.png",
+        "name": "d100_91",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_91.png",
+        "size": 41973
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_62.png",
+        "name": "d100_62",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_62.png",
+        "size": 41236
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_73.png",
+        "name": "d100_73",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_73.png",
+        "size": 42587
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_45.png",
+        "name": "d100_45",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_45.png",
+        "size": 41991
+    },
+    {
+        "extension": ".png",
+        "full_name": "d4_1.png",
+        "name": "d4_1",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d4_1.png",
+        "size": 63365
+    },
+    {
+        "extension": ".png",
+        "full_name": "d6_6.png",
+        "name": "d6_6",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d6_6.png",
+        "size": 23274
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_84.png",
+        "name": "d100_84",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_84.png",
+        "size": 42087
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_96.png",
+        "name": "d100_96",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_96.png",
+        "size": 41380
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_36.png",
+        "name": "d100_36",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_36.png",
+        "size": 41618
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_76.png",
+        "name": "d100_76",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_76.png",
+        "size": 42338
+    },
+    {
+        "extension": ".png",
+        "full_name": "d12_11.png",
+        "name": "d12_11",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d12_11.png",
+        "size": 33742
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_56.png",
+        "name": "d100_56",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_56.png",
+        "size": 41303
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_48.png",
+        "name": "d100_48",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_48.png",
+        "size": 42344
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_9.png",
+        "name": "d20_9",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_9.png",
+        "size": 36936
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_16.png",
+        "name": "d20_16",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_16.png",
+        "size": 36967
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_95.png",
+        "name": "d100_95",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_95.png",
+        "size": 41285
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_44.png",
+        "name": "d100_44",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_44.png",
+        "size": 42378
+    },
+    {
+        "extension": ".png",
+        "full_name": "d6_3.png",
+        "name": "d6_3",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d6_3.png",
+        "size": 23514
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_86.png",
+        "name": "d100_86",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_86.png",
+        "size": 41428
+    },
+    {
+        "extension": ".png",
+        "full_name": "d12_7.png",
+        "name": "d12_7",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d12_7.png",
+        "size": 34754
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_51.png",
+        "name": "d100_51",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_51.png",
+        "size": 41816
+    },
+    {
+        "extension": ".png",
+        "full_name": "d10_3.png",
+        "name": "d10_3",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d10_3.png",
+        "size": 36593
+    },
+    {
+        "extension": ".png",
+        "full_name": "d10_7.png",
+        "name": "d10_7",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d10_7.png",
+        "size": 36561
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_18.png",
+        "name": "d20_18",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_18.png",
+        "size": 37033
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_89.png",
+        "name": "d100_89",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_89.png",
+        "size": 41419
+    },
+    {
+        "extension": ".png",
+        "full_name": "d4_3.png",
+        "name": "d4_3",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d4_3.png",
+        "size": 64109
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_53.png",
+        "name": "d100_53",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_53.png",
+        "size": 41400
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_75.png",
+        "name": "d100_75",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_75.png",
+        "size": 42212
+    },
+    {
+        "extension": ".png",
+        "full_name": "d8_1.png",
+        "name": "d8_1",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d8_1.png",
+        "size": 35576
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_34.png",
+        "name": "d100_34",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_34.png",
+        "size": 42255
+    },
+    {
+        "extension": ".png",
+        "full_name": "d8_5.png",
+        "name": "d8_5",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d8_5.png",
+        "size": 36394
+    },
+    {
+        "extension": ".png",
+        "full_name": "d4_4.png",
+        "name": "d4_4",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d4_4.png",
+        "size": 64054
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_57.png",
+        "name": "d100_57",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_57.png",
+        "size": 41951
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_64.png",
+        "name": "d100_64",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_64.png",
+        "size": 42007
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_11.png",
+        "name": "d100_11",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_11.png",
+        "size": 42466
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_90.png",
+        "name": "d100_90",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_90.png",
+        "size": 41218
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_71.png",
+        "name": "d100_71",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_71.png",
+        "size": 43010
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_14.png",
+        "name": "d20_14",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_14.png",
+        "size": 36893
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_66.png",
+        "name": "d100_66",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_66.png",
+        "size": 41011
+    },
+    {
+        "extension": ".png",
+        "full_name": "d6_5.png",
+        "name": "d6_5",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d6_5.png",
+        "size": 23276
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_100.png",
+        "name": "d100_100",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_100.png",
+        "size": 39707
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_29.png",
+        "name": "d100_29",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_29.png",
+        "size": 41277
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_18.png",
+        "name": "d100_18",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_18.png",
+        "size": 42231
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_8.png",
+        "name": "d20_8",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_8.png",
+        "size": 37005
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_4.png",
+        "name": "d100_4",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_4.png",
+        "size": 43893
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_1.png",
+        "name": "d100_1",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_1.png",
+        "size": 43793
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_37.png",
+        "name": "d100_37",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_37.png",
+        "size": 42425
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_3.png",
+        "name": "d20_3",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_3.png",
+        "size": 37113
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_79.png",
+        "name": "d100_79",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_79.png",
+        "size": 42305
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_77.png",
+        "name": "d100_77",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_77.png",
+        "size": 42778
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_81.png",
+        "name": "d100_81",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_81.png",
+        "size": 42074
+    },
+    {
+        "extension": ".png",
+        "full_name": "d6_2.png",
+        "name": "d6_2",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d6_2.png",
+        "size": 23009
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_55.png",
+        "name": "d100_55",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_55.png",
+        "size": 40728
+    },
+    {
+        "extension": ".png",
+        "full_name": "d12_6.png",
+        "name": "d12_6",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d12_6.png",
+        "size": 34504
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_92.png",
+        "name": "d100_92",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_92.png",
+        "size": 41301
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_5.png",
+        "name": "d20_5",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_5.png",
+        "size": 36927
+    },
+    {
+        "extension": ".png",
+        "full_name": "d10_4.png",
+        "name": "d10_4",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d10_4.png",
+        "size": 36429
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_19.png",
+        "name": "d100_19",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_19.png",
+        "size": 42034
+    },
+    {
+        "extension": ".png",
+        "full_name": "d4_2.png",
+        "name": "d4_2",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d4_2.png",
+        "size": 63709
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_94.png",
+        "name": "d100_94",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_94.png",
+        "size": 41999
+    },
+    {
+        "extension": ".png",
+        "full_name": "d10_8.png",
+        "name": "d10_8",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d10_8.png",
+        "size": 36494
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_82.png",
+        "name": "d100_82",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_82.png",
+        "size": 41407
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_23.png",
+        "name": "d100_23",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_23.png",
+        "size": 41375
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_47.png",
+        "name": "d100_47",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_47.png",
+        "size": 43078
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_33.png",
+        "name": "d100_33",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_33.png",
+        "size": 41396
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_22.png",
+        "name": "d100_22",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_22.png",
+        "size": 40830
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_7.png",
+        "name": "d20_7",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_7.png",
+        "size": 37144
+    },
+    {
+        "extension": ".png",
+        "full_name": "d10_10.png",
+        "name": "d10_10",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d10_10.png",
+        "size": 35821
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_49.png",
+        "name": "d100_49",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_49.png",
+        "size": 42162
+    },
+    {
+        "extension": ".png",
+        "full_name": "d8_6.png",
+        "name": "d8_6",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d8_6.png",
+        "size": 36388
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_39.png",
+        "name": "d100_39",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_39.png",
+        "size": 41531
+    },
+    {
+        "extension": ".png",
+        "full_name": "d12_1.png",
+        "name": "d12_1",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d12_1.png",
+        "size": 33876
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_40.png",
+        "name": "d100_40",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_40.png",
+        "size": 41941
+    },
+    {
+        "extension": ".png",
+        "full_name": "d12_9.png",
+        "name": "d12_9",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d12_9.png",
+        "size": 34522
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_80.png",
+        "name": "d100_80",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_80.png",
+        "size": 41385
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_13.png",
+        "name": "d100_13",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_13.png",
+        "size": 42159
+    },
+    {
+        "extension": ".png",
+        "full_name": "d8_8.png",
+        "name": "d8_8",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d8_8.png",
+        "size": 36528
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_61.png",
+        "name": "d100_61",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_61.png",
+        "size": 41820
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_99.png",
+        "name": "d100_99",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_99.png",
+        "size": 41007
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_43.png",
+        "name": "d100_43",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_43.png",
+        "size": 42426
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100.png",
+        "name": "d100",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100.png",
+        "size": 33160
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_85.png",
+        "name": "d100_85",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_85.png",
+        "size": 41372
+    },
+    {
+        "extension": ".png",
+        "full_name": "d10_1.png",
+        "name": "d10_1",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d10_1.png",
+        "size": 35713
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_7.png",
+        "name": "d100_7",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_7.png",
+        "size": 43979
+    },
+    {
+        "extension": ".png",
+        "full_name": "d12_8.png",
+        "name": "d12_8",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d12_8.png",
+        "size": 34623
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_6.png",
+        "name": "d20_6",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_6.png",
+        "size": 36891
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_17.png",
+        "name": "d100_17",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_17.png",
+        "size": 42718
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_42.png",
+        "name": "d100_42",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_42.png",
+        "size": 42072
+    },
+    {
+        "extension": ".png",
+        "full_name": "d10_5.png",
+        "name": "d10_5",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d10_5.png",
+        "size": 36268
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_26.png",
+        "name": "d100_26",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_26.png",
+        "size": 41184
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_14.png",
+        "name": "d100_14",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_14.png",
+        "size": 42629
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_10.png",
+        "name": "d100_10",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_10.png",
+        "size": 41883
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_6.png",
+        "name": "d100_6",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_6.png",
+        "size": 42904
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_70.png",
+        "name": "d100_70",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_70.png",
+        "size": 42097
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_2.png",
+        "name": "d100_2",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_2.png",
+        "size": 42856
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_28.png",
+        "name": "d100_28",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_28.png",
+        "size": 41313
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_21.png",
+        "name": "d100_21",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_21.png",
+        "size": 41776
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_38.png",
+        "name": "d100_38",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_38.png",
+        "size": 41631
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_30.png",
+        "name": "d100_30",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_30.png",
+        "size": 41530
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_50.png",
+        "name": "d100_50",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_50.png",
+        "size": 41052
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_65.png",
+        "name": "d100_65",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_65.png",
+        "size": 41148
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_74.png",
+        "name": "d100_74",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_74.png",
+        "size": 43192
+    },
+    {
+        "extension": ".png",
+        "full_name": "d8_3.png",
+        "name": "d8_3",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d8_3.png",
+        "size": 36580
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_97.png",
+        "name": "d100_97",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_97.png",
+        "size": 42165
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_87.png",
+        "name": "d100_87",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_87.png",
+        "size": 42278
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_41.png",
+        "name": "d100_41",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_41.png",
+        "size": 42777
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_8.png",
+        "name": "d100_8",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_8.png",
+        "size": 43153
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_83.png",
+        "name": "d100_83",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_83.png",
+        "size": 41490
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_72.png",
+        "name": "d100_72",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_72.png",
+        "size": 42209
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_93.png",
+        "name": "d100_93",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_93.png",
+        "size": 41478
+    },
+    {
+        "extension": ".png",
+        "full_name": "d12_5.png",
+        "name": "d12_5",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d12_5.png",
+        "size": 34491
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_98.png",
+        "name": "d100_98",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_98.png",
+        "size": 41506
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_52.png",
+        "name": "d100_52",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_52.png",
+        "size": 41146
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_20.png",
+        "name": "d20_20",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_20.png",
+        "size": 36307
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_2.png",
+        "name": "d20_2",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_2.png",
+        "size": 36857
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_19.png",
+        "name": "d20_19",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_19.png",
+        "size": 36904
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_12.png",
+        "name": "d20_12",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_12.png",
+        "size": 36718
+    },
+    {
+        "extension": ".png",
+        "full_name": "d8_2.png",
+        "name": "d8_2",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d8_2.png",
+        "size": 36239
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_60.png",
+        "name": "d100_60",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_60.png",
+        "size": 41170
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_78.png",
+        "name": "d100_78",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_78.png",
+        "size": 42452
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_13.png",
+        "name": "d20_13",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_13.png",
+        "size": 37017
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_16.png",
+        "name": "d100_16",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_16.png",
+        "size": 42075
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_5.png",
+        "name": "d100_5",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_5.png",
+        "size": 42968
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_24.png",
+        "name": "d100_24",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_24.png",
+        "size": 41783
+    },
+    {
+        "extension": ".png",
+        "full_name": "d10_6.png",
+        "name": "d10_6",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d10_6.png",
+        "size": 36363
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_4.png",
+        "name": "d20_4",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_4.png",
+        "size": 36867
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_54.png",
+        "name": "d100_54",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_54.png",
+        "size": 41964
+    },
+    {
+        "extension": ".png",
+        "full_name": "d12_12.png",
+        "name": "d12_12",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d12_12.png",
+        "size": 34063
+    },
+    {
+        "extension": ".png",
+        "full_name": "d4.png",
+        "name": "d4",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d4.png",
+        "size": 1065533
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_46.png",
+        "name": "d100_46",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_46.png",
+        "size": 42249
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_12.png",
+        "name": "d100_12",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_12.png",
+        "size": 41901
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20.png",
+        "name": "d20",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20.png",
+        "size": 69010
+    },
+    {
+        "extension": ".png",
+        "full_name": "d8_7.png",
+        "name": "d8_7",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d8_7.png",
+        "size": 36623
+    },
+    {
+        "extension": ".png",
+        "full_name": "d6_4.png",
+        "name": "d6_4",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d6_4.png",
+        "size": 23618
+    },
+    {
+        "extension": ".png",
+        "full_name": "d10.png",
+        "name": "d10",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d10.png",
+        "size": 25418
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_9.png",
+        "name": "d100_9",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_9.png",
+        "size": 42991
+    },
+    {
+        "extension": ".png",
+        "full_name": "d12_4.png",
+        "name": "d12_4",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d12_4.png",
+        "size": 34608
+    },
+    {
+        "extension": ".png",
+        "full_name": "d10_2.png",
+        "name": "d10_2",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d10_2.png",
+        "size": 36269
+    },
+    {
+        "extension": ".png",
+        "full_name": "d8.png",
+        "name": "d8",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d8.png",
+        "size": 24837
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_17.png",
+        "name": "d20_17",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_17.png",
+        "size": 37327
+    },
+    {
+        "extension": ".png",
+        "full_name": "d20_10.png",
+        "name": "d20_10",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d20_10.png",
+        "size": 36650
+    },
+    {
+        "extension": ".png",
+        "full_name": "d100_15.png",
+        "name": "d100_15",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/dice_images/d100_15.png",
+        "size": 41859
+    },
+    {
+        "extension": ".gif",
+        "full_name": "make_figlet_command.gif",
+        "name": "make_figlet_command",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/gifs/make_figlet_command.gif",
+        "size": 158676
+    },
+    {
+        "extension": ".gif",
+        "full_name": "flip_coin_command.gif",
+        "name": "flip_coin_command",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/gifs/flip_coin_command.gif",
+        "size": 149450
+    },
+    {
+        "extension": ".gif",
+        "full_name": "the_dragon_command.gif",
+        "name": "the_dragon_command",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/gifs/the_dragon_command.gif",
+        "size": 236843
+    },
+    {
+        "extension": ".gif",
+        "full_name": "urban_dictionary_command.gif",
+        "name": "urban_dictionary_command",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/gifs/urban_dictionary_command.gif",
+        "size": 210871
+    },
+    {
+        "extension": ".png",
+        "full_name": "ASlogo.png",
+        "name": "ASlogo",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/stamps/ASlogo.png",
+        "size": 625239
+    },
+    {
+        "extension": ".png",
+        "full_name": "dirtyflag.png",
+        "name": "dirtyflag",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/stamps/dirtyflag.png",
+        "size": 1745606
+    },
+    {
+        "extension": ".png",
+        "full_name": "stupidpatch.png",
+        "name": "stupidpatch",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/stamps/stupidpatch.png",
+        "size": 1613258
+    },
+    {
+        "extension": ".png",
+        "full_name": "futuristicflag.png",
+        "name": "futuristicflag",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/stamps/futuristicflag.png",
+        "size": 244766
+    },
+    {
+        "extension": ".png",
+        "full_name": "Antistasi_Logo_Gun_4.png",
+        "name": "Antistasi_Logo_Gun_4",
+        "path": "antipetros_discordbot/init_userdata/data_pack/image_files/stamps/Antistasi_Logo_Gun_4.png",
+        "size": 600069
+    },
+    {
+        "extension": ".mp3",
+        "full_name": "Congratulations.mp3",
+        "name": "Congratulations",
+        "path": "antipetros_discordbot/init_userdata/data_pack/sound_files/Congratulations.mp3",
+        "size": 240789
+    },
+    {
+        "extension": ".mp3",
+        "full_name": "announcement.mp3",
+        "name": "announcement",
+        "path": "antipetros_discordbot/init_userdata/data_pack/sound_files/announcement.mp3",
+        "size": 2978342
+    },
+    {
+        "extension": ".py",
+        "full_name": "file_system_walk.py",
+        "name": "file_system_walk",
+        "path": "antipetros_discordbot/utility/file_system_walk.py",
+        "size": 6475
+    },
+    {
+        "extension": ".py",
+        "full_name": "regexes.py",
+        "name": "regexes",
+        "path": "antipetros_discordbot/utility/regexes.py",
+        "size": 3718
+    },
+    {
+        "extension": ".md",
+        "full_name": "README.md",
+        "name": "README",
+        "path": "antipetros_discordbot/utility/README.md",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/utility/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "enums.py",
+        "name": "enums",
+        "path": "antipetros_discordbot/utility/enums.py",
+        "size": 4021
+    },
+    {
+        "extension": ".py",
+        "full_name": "nextcloud.py",
+        "name": "nextcloud",
+        "path": "antipetros_discordbot/utility/nextcloud.py",
+        "size": 734
+    },
+    {
+        "extension": ".py",
+        "full_name": "data_gathering.py",
+        "name": "data_gathering",
+        "path": "antipetros_discordbot/utility/data_gathering.py",
+        "size": 12167
+    },
+    {
+        "extension": ".py",
+        "full_name": "debug_helper.py",
+        "name": "debug_helper",
+        "path": "antipetros_discordbot/utility/debug_helper.py",
+        "size": 316
+    },
+    {
+        "extension": ".py",
+        "full_name": "gidtools_functions.py",
+        "name": "gidtools_functions",
+        "path": "antipetros_discordbot/utility/gidtools_functions.py",
+        "size": 21414
+    },
+    {
+        "extension": ".py",
+        "full_name": "emoji_handling.py",
+        "name": "emoji_handling",
+        "path": "antipetros_discordbot/utility/emoji_handling.py",
+        "size": 833
+    },
+    {
+        "extension": ".py",
+        "full_name": "before_after_invoke.py",
+        "name": "before_after_invoke",
+        "path": "antipetros_discordbot/utility/before_after_invoke.py",
+        "size": 1683
+    },
+    {
+        "extension": ".py",
+        "full_name": "sqldata_storager.py",
+        "name": "sqldata_storager",
+        "path": "antipetros_discordbot/utility/sqldata_storager.py",
+        "size": 21090
+    },
+    {
+        "extension": ".py",
+        "full_name": "named_tuples.py",
+        "name": "named_tuples",
+        "path": "antipetros_discordbot/utility/named_tuples.py",
+        "size": 2444
+    },
+    {
+        "extension": ".py",
+        "full_name": "general_decorator.py",
+        "name": "general_decorator",
+        "path": "antipetros_discordbot/utility/general_decorator.py",
+        "size": 5090
+    },
+    {
+        "extension": ".py",
+        "full_name": "converters.py",
+        "name": "converters",
+        "path": "antipetros_discordbot/utility/converters.py",
+        "size": 10153
+    },
+    {
+        "extension": ".py",
+        "full_name": "checks.py",
+        "name": "checks",
+        "path": "antipetros_discordbot/utility/checks.py",
+        "size": 11525
+    },
+    {
+        "extension": ".py",
+        "full_name": "misc.py",
+        "name": "misc",
+        "path": "antipetros_discordbot/utility/misc.py",
+        "size": 24462
+    },
+    {
+        "extension": ".py",
+        "full_name": "embed_helpers.py",
+        "name": "embed_helpers",
+        "path": "antipetros_discordbot/utility/embed_helpers.py",
+        "size": 3673
+    },
+    {
+        "extension": ".py",
+        "full_name": "locations.py",
+        "name": "locations",
+        "path": "antipetros_discordbot/utility/locations.py",
+        "size": 1233
+    },
+    {
+        "extension": ".py",
+        "full_name": "crypt.py",
+        "name": "crypt",
+        "path": "antipetros_discordbot/utility/crypt.py",
+        "size": 3849
+    },
+    {
+        "extension": ".py",
+        "full_name": "image_manipulation.py",
+        "name": "image_manipulation",
+        "path": "antipetros_discordbot/utility/image_manipulation.py",
+        "size": 2822
+    },
+    {
+        "extension": ".py",
+        "full_name": "exceptions.py",
+        "name": "exceptions",
+        "path": "antipetros_discordbot/utility/exceptions.py",
+        "size": 8105
+    },
+    {
+        "extension": ".py",
+        "full_name": "parsing.py",
+        "name": "parsing",
+        "path": "antipetros_discordbot/utility/parsing.py",
+        "size": 621
+    },
+    {
+        "extension": ".py",
+        "full_name": "event_data.py",
+        "name": "event_data",
+        "path": "antipetros_discordbot/utility/event_data.py",
+        "size": 13503
+    },
+    {
+        "extension": ".py",
+        "full_name": "data.py",
+        "name": "data",
+        "path": "antipetros_discordbot/utility/data.py",
+        "size": 1875
+    },
+    {
+        "extension": ".md",
+        "full_name": "README.md",
+        "name": "README",
+        "path": "antipetros_discordbot/utility/discord_markdown_helper/README.md",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/utility/discord_markdown_helper/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "special_characters.py",
+        "name": "special_characters",
+        "path": "antipetros_discordbot/utility/discord_markdown_helper/special_characters.py",
+        "size": 1747
+    },
+    {
+        "extension": ".py",
+        "full_name": "general_markdown_helper.py",
+        "name": "general_markdown_helper",
+        "path": "antipetros_discordbot/utility/discord_markdown_helper/general_markdown_helper.py",
+        "size": 3038
+    },
+    {
+        "extension": ".py",
+        "full_name": "the_dragon.py",
+        "name": "the_dragon",
+        "path": "antipetros_discordbot/utility/discord_markdown_helper/the_dragon.py",
+        "size": 1871
+    },
+    {
+        "extension": ".py",
+        "full_name": "discord_formating_helper.py",
+        "name": "discord_formating_helper",
+        "path": "antipetros_discordbot/utility/discord_markdown_helper/discord_formating_helper.py",
+        "size": 1132
+    },
+    {
+        "extension": ".py",
+        "full_name": "builder.py",
+        "name": "builder",
+        "path": "antipetros_discordbot/utility/gidsql/builder.py",
+        "size": 454
+    },
+    {
+        "extension": ".py",
+        "full_name": "sql_phraser.py",
+        "name": "sql_phraser",
+        "path": "antipetros_discordbot/utility/gidsql/sql_phraser.py",
+        "size": 751
+    },
+    {
+        "extension": ".md",
+        "full_name": "README.md",
+        "name": "README",
+        "path": "antipetros_discordbot/utility/gidsql/README.md",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/utility/gidsql/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".archive",
+        "full_name": "_utils.archive",
+        "name": "_utils",
+        "path": "antipetros_discordbot/utility/gidsql/_utils.archive",
+        "size": 375
+    },
+    {
+        "extension": ".py",
+        "full_name": "db_writer.py",
+        "name": "db_writer",
+        "path": "antipetros_discordbot/utility/gidsql/db_writer.py",
+        "size": 7084
+    },
+    {
+        "extension": ".py",
+        "full_name": "facade.py",
+        "name": "facade",
+        "path": "antipetros_discordbot/utility/gidsql/facade.py",
+        "size": 5216
+    },
+    {
+        "extension": ".py",
+        "full_name": "phrasers.py",
+        "name": "phrasers",
+        "path": "antipetros_discordbot/utility/gidsql/phrasers.py",
+        "size": 2152
+    },
+    {
+        "extension": ".py",
+        "full_name": "db_reader.py",
+        "name": "db_reader",
+        "path": "antipetros_discordbot/utility/gidsql/db_reader.py",
+        "size": 5194
+    },
+    {
+        "extension": ".py",
+        "full_name": "db_action_base.py",
+        "name": "db_action_base",
+        "path": "antipetros_discordbot/utility/gidsql/db_action_base.py",
+        "size": 3328
+    },
+    {
+        "extension": ".py",
+        "full_name": "exceptions.py",
+        "name": "exceptions",
+        "path": "antipetros_discordbot/utility/gidsql/exceptions.py",
+        "size": 976
+    },
+    {
+        "extension": ".py",
+        "full_name": "script_handling.py",
+        "name": "script_handling",
+        "path": "antipetros_discordbot/utility/gidsql/script_handling.py",
+        "size": 2513
+    },
+    {
+        "extension": ".py",
+        "full_name": "base_sql_schema.py",
+        "name": "base_sql_schema",
+        "path": "antipetros_discordbot/utility/gidsql/creators/base_sql_schema.py",
+        "size": 1282
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/utility/gidsql/creators/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "_sql_templates.py",
+        "name": "_sql_templates",
+        "path": "antipetros_discordbot/utility/gidsql/creators/_sql_templates.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "tomorrow.py",
+        "name": "tomorrow",
+        "path": "antipetros_discordbot/utility/pygment_styles/tomorrow.py",
+        "size": 5467
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/utility/pygment_styles/__init__.py",
+        "size": 322
+    },
+    {
+        "extension": ".py",
+        "full_name": "tomorrownight.py",
+        "name": "tomorrownight",
+        "path": "antipetros_discordbot/utility/pygment_styles/tomorrownight.py",
+        "size": 5490
+    },
+    {
+        "extension": ".py",
+        "full_name": "tomorrownightblue.py",
+        "name": "tomorrownightblue",
+        "path": "antipetros_discordbot/utility/pygment_styles/tomorrownightblue.py",
+        "size": 5509
+    },
+    {
+        "extension": ".py",
+        "full_name": "github.py",
+        "name": "github",
+        "path": "antipetros_discordbot/utility/pygment_styles/github.py",
+        "size": 2721
+    },
+    {
+        "extension": ".py",
+        "full_name": "tomorrownightbright.py",
+        "name": "tomorrownightbright",
+        "path": "antipetros_discordbot/utility/pygment_styles/tomorrownightbright.py",
+        "size": 5517
+    },
+    {
+        "extension": ".py",
+        "full_name": "dracula.py",
+        "name": "dracula",
+        "path": "antipetros_discordbot/utility/pygment_styles/dracula.py",
+        "size": 3080
+    },
+    {
+        "extension": ".py",
+        "full_name": "tomorrownighteighties.py",
+        "name": "tomorrownighteighties",
+        "path": "antipetros_discordbot/utility/pygment_styles/tomorrownighteighties.py",
+        "size": 5525
+    },
+    {
+        "extension": ".py",
+        "full_name": "subsupport_abstract.py",
+        "name": "subsupport_abstract",
+        "path": "antipetros_discordbot/abstracts/subsupport_abstract.py",
+        "size": 1062
+    },
+    {
+        "extension": ".md",
+        "full_name": "README.md",
+        "name": "README",
+        "path": "antipetros_discordbot/abstracts/README.md",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/abstracts/__init__.py",
+        "size": 80
+    },
+    {
+        "extension": ".py",
+        "full_name": "reaction_instruction_abstract.py",
+        "name": "reaction_instruction_abstract",
+        "path": "antipetros_discordbot/abstracts/reaction_instruction_abstract.py",
+        "size": 2365
+    },
+    {
+        "extension": ".py",
+        "full_name": "cog_schema.py",
+        "name": "cog_schema",
+        "path": "antipetros_discordbot/schemas/cog_schema.py",
+        "size": 1456
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/schemas/__init__.py",
+        "size": 163
+    },
+    {
+        "extension": ".py",
+        "full_name": "command_schema.py",
+        "name": "command_schema",
+        "path": "antipetros_discordbot/schemas/command_schema.py",
+        "size": 1942
+    },
+    {
+        "extension": ".py",
+        "full_name": "bot_schema.py",
+        "name": "bot_schema",
+        "path": "antipetros_discordbot/schemas/bot_schema.py",
+        "size": 2210
+    },
+    {
+        "extension": ".py",
+        "full_name": "command_category_schema.py",
+        "name": "command_category_schema",
+        "path": "antipetros_discordbot/schemas/command_category_schema.py",
+        "size": 1605
+    },
+    {
+        "extension": ".py",
+        "full_name": "listener_schema.py",
+        "name": "listener_schema",
+        "path": "antipetros_discordbot/schemas/extra_schemas/listener_schema.py",
+        "size": 933
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/schemas/extra_schemas/__init__.py",
+        "size": 119
+    },
+    {
+        "extension": ".py",
+        "full_name": "appinfo_schema.py",
+        "name": "appinfo_schema",
+        "path": "antipetros_discordbot/schemas/extra_schemas/appinfo_schema.py",
+        "size": 1084
+    },
+    {
+        "extension": ".py",
+        "full_name": "required_item_schema.py",
+        "name": "required_item_schema",
+        "path": "antipetros_discordbot/schemas/extra_schemas/required_item_schema.py",
+        "size": 986
+    },
+    {
+        "extension": ".md",
+        "full_name": "README.md",
+        "name": "README",
+        "path": "antipetros_discordbot/auxiliary_classes/README.md",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/auxiliary_classes/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "all_item.py",
+        "name": "all_item",
+        "path": "antipetros_discordbot/auxiliary_classes/all_item.py",
+        "size": 5284
+    },
+    {
+        "extension": ".py",
+        "full_name": "json_lists.py",
+        "name": "json_lists",
+        "path": "antipetros_discordbot/auxiliary_classes/json_lists.py",
+        "size": 5736
+    },
+    {
+        "extension": ".py",
+        "full_name": "version_item.py",
+        "name": "version_item",
+        "path": "antipetros_discordbot/auxiliary_classes/version_item.py",
+        "size": 633
+    },
+    {
+        "extension": ".py",
+        "full_name": "listener_object.py",
+        "name": "listener_object",
+        "path": "antipetros_discordbot/auxiliary_classes/listener_object.py",
+        "size": 2784
+    },
+    {
+        "extension": ".py",
+        "full_name": "server_item.py",
+        "name": "server_item",
+        "path": "antipetros_discordbot/auxiliary_classes/server_item.py",
+        "size": 24769
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_discordbot/auxiliary_classes/for_cogs/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "aux_give_away_cog.py",
+        "name": "aux_give_away_cog",
+        "path": "antipetros_discordbot/auxiliary_classes/for_cogs/aux_give_away_cog.py",
+        "size": 6298
+    },
+    {
+        "extension": ".py",
+        "full_name": "aux_antistasi_log_watcher_cog.py",
+        "name": "aux_antistasi_log_watcher_cog",
+        "path": "antipetros_discordbot/auxiliary_classes/for_cogs/aux_antistasi_log_watcher_cog.py",
+        "size": 14490
+    },
+    {
+        "extension": ".py",
+        "full_name": "aux_faq_cog.py",
+        "name": "aux_faq_cog",
+        "path": "antipetros_discordbot/auxiliary_classes/for_cogs/aux_faq_cog.py",
+        "size": 6885
+    },
+    {
+        "extension": ".py",
+        "full_name": "aux_config_cog.py",
+        "name": "aux_config_cog",
+        "path": "antipetros_discordbot/auxiliary_classes/for_cogs/aux_config_cog.py",
+        "size": 4271
+    },
+    {
+        "extension": ".py",
+        "full_name": "aux_bot_development_organization_cog.py",
+        "name": "aux_bot_development_organization_cog",
+        "path": "antipetros_discordbot/auxiliary_classes/for_cogs/aux_bot_development_organization_cog.py",
+        "size": 3727
+    },
+    {
+        "extension": ".py",
+        "full_name": "aux_community_server_info_cog.py",
+        "name": "aux_community_server_info_cog",
+        "path": "antipetros_discordbot/auxiliary_classes/for_cogs/aux_community_server_info_cog.py",
+        "size": 10259
+    },
+    {
+        "extension": ".py",
+        "full_name": "main.py",
+        "name": "main",
+        "path": "antipetros_website/main.py",
+        "size": 1811
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_website/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_website/static/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_website/static/images/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".png",
+        "full_name": "AntiPetros.png",
+        "name": "AntiPetros",
+        "path": "antipetros_website/static/images/AntiPetros.png",
+        "size": 1298930
+    },
+    {
+        "extension": ".html",
+        "full_name": "home.html",
+        "name": "home",
+        "path": "antipetros_website/templates/home.html",
+        "size": 346
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_website/templates/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".html",
+        "full_name": "command_list.html",
+        "name": "command_list",
+        "path": "antipetros_website/templates/command_list.html",
+        "size": 1821
+    },
+    {
+        "extension": ".html",
+        "full_name": "base_template.html",
+        "name": "base_template",
+        "path": "antipetros_website/templates/base_template.html",
+        "size": 428
+    },
+    {
+        "extension": ".html",
+        "full_name": "base_makros.html",
+        "name": "base_makros",
+        "path": "antipetros_website/templates/makros/base_makros.html",
+        "size": 318
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "antipetros_website/templates/makros/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "pipreqs_create_requirements.cmd",
+        "name": "pipreqs_create_requirements",
+        "path": "tools/pipreqs_create_requirements.cmd",
+        "size": 872
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "nuitka_it.cmd",
+        "name": "nuitka_it",
+        "path": "tools/nuitka_it.cmd",
+        "size": 1066
+    },
+    {
+        "extension": ".bat",
+        "full_name": "quick_pyinstaller_noconsole.bat",
+        "name": "quick_pyinstaller_noconsole",
+        "path": "tools/quick_pyinstaller_noconsole.bat",
+        "size": 814
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "profiling_to_graph.cmd",
+        "name": "profiling_to_graph",
+        "path": "tools/profiling_to_graph.cmd",
+        "size": 1159
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "install_into_venv.cmd",
+        "name": "install_into_venv",
+        "path": "tools/install_into_venv.cmd",
+        "size": 209
+    },
+    {
+        "extension": ".py",
+        "full_name": "prepare_venv_settings.py",
+        "name": "prepare_venv_settings",
+        "path": "tools/prepare_venv_settings.py",
+        "size": 1919
+    },
+    {
+        "extension": ".py",
+        "full_name": "remove_connect_by_name.py",
+        "name": "remove_connect_by_name",
+        "path": "tools/remove_connect_by_name.py",
+        "size": 1920
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "autoflake_all.cmd",
+        "name": "autoflake_all",
+        "path": "tools/autoflake_all.cmd",
+        "size": 1515
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "memory_profiling_time.cmd",
+        "name": "memory_profiling_time",
+        "path": "tools/memory_profiling_time.cmd",
+        "size": 986
+    },
+    {
+        "extension": ".py",
+        "full_name": "index_repo.py",
+        "name": "index_repo",
+        "path": "tools/index_repo.py",
+        "size": 3367
+    },
+    {
+        "extension": ".py",
+        "full_name": "clean_workspace.py",
+        "name": "clean_workspace",
+        "path": "tools/clean_workspace.py",
+        "size": 10230
+    },
+    {
+        "extension": ".exe",
+        "full_name": "sqlite3_analyzer.exe",
+        "name": "sqlite3_analyzer",
+        "path": "tools/sqlite3_analyzer.exe",
+        "size": 2032640
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "create_only_project.cmd",
+        "name": "create_only_project",
+        "path": "tools/create_only_project.cmd",
+        "size": 5607
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "idle_from_venv.cmd",
+        "name": "idle_from_venv",
+        "path": "tools/idle_from_venv.cmd",
+        "size": 68
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "create_venv.cmd",
+        "name": "create_venv",
+        "path": "tools/create_venv.cmd",
+        "size": 11015
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "profiling_to_graph__main__.cmd",
+        "name": "profiling_to_graph__main__",
+        "path": "tools/profiling_to_graph__main__.cmd",
+        "size": 158
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "make_readme.cmd",
+        "name": "make_readme",
+        "path": "tools/make_readme.cmd",
+        "size": 867
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "memory_profiling_time__main__.cmd",
+        "name": "memory_profiling_time__main__",
+        "path": "tools/memory_profiling_time__main__.cmd",
+        "size": 162
+    },
+    {
+        "extension": ".ps1",
+        "full_name": "pygraphviz.ps1",
+        "name": "pygraphviz",
+        "path": "tools/pygraphviz.ps1",
+        "size": 213
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "bin_data_pack.cmd",
+        "name": "bin_data_pack",
+        "path": "tools/bin_data_pack.cmd",
+        "size": 1128
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "profiling_to_text.cmd",
+        "name": "profiling_to_text",
+        "path": "tools/profiling_to_text.cmd",
+        "size": 888
+    },
+    {
+        "extension": ".json",
+        "full_name": "faq_data.json",
+        "name": "faq_data",
+        "path": "tools/faq_data.json",
+        "size": 13794
+    },
+    {
+        "extension": ".exe",
+        "full_name": "convert_ui.exe",
+        "name": "convert_ui",
+        "path": "tools/convert_ui.exe",
+        "size": 7071691
+    },
+    {
+        "extension": ".cmd",
+        "full_name": "log_pipe_create_venv.cmd",
+        "name": "log_pipe_create_venv",
+        "path": "tools/log_pipe_create_venv.cmd",
+        "size": 1028
+    },
+    {
+        "extension": ".py",
+        "full_name": "create_venv_extra_envvars.py",
+        "name": "create_venv_extra_envvars",
+        "path": "tools/create_venv_extra_envvars.py",
+        "size": 2154
+    },
+    {
+        "extension": ".md",
+        "full_name": "autoflake_help.md",
+        "name": "autoflake_help",
+        "path": "tools/autoflake_help.md",
+        "size": 1938
+    },
+    {
+        "extension": ".txt",
+        "full_name": "required_qt.txt",
+        "name": "required_qt",
+        "path": "tools/venv_setup_settings/required_qt.txt",
+        "size": 13
+    },
+    {
+        "extension": ".txt",
+        "full_name": "required_test.txt",
+        "name": "required_test",
+        "path": "tools/venv_setup_settings/required_test.txt",
+        "size": 150
+    },
+    {
+        "extension": ".txt",
+        "full_name": "required_production.txt",
+        "name": "required_production",
+        "path": "tools/venv_setup_settings/required_production.txt",
+        "size": 729
+    },
+    {
+        "extension": ".txt",
+        "full_name": "required_misc.txt",
+        "name": "required_misc",
+        "path": "tools/venv_setup_settings/required_misc.txt",
+        "size": 872
+    },
+    {
+        "extension": ".txt",
+        "full_name": "post_setup_scripts.txt",
+        "name": "post_setup_scripts",
+        "path": "tools/venv_setup_settings/post_setup_scripts.txt",
+        "size": 79
+    },
+    {
+        "extension": ".txt",
+        "full_name": "required_dev.txt",
+        "name": "required_dev",
+        "path": "tools/venv_setup_settings/required_dev.txt",
+        "size": 698
+    },
+    {
+        "extension": ".txt",
+        "full_name": "required_from_github.txt",
+        "name": "required_from_github",
+        "path": "tools/venv_setup_settings/required_from_github.txt",
+        "size": 85
+    },
+    {
+        "extension": ".txt",
+        "full_name": "required_experimental.txt",
+        "name": "required_experimental",
+        "path": "tools/venv_setup_settings/required_experimental.txt",
+        "size": 475
+    },
+    {
+        "extension": ".txt",
+        "full_name": "required_personal_packages.txt",
+        "name": "required_personal_packages",
+        "path": "tools/venv_setup_settings/required_personal_packages.txt",
+        "size": null
+    },
+    {
+        "extension": ".txt",
+        "full_name": "pre_setup_scripts.txt",
+        "name": "pre_setup_scripts",
+        "path": "tools/venv_setup_settings/pre_setup_scripts.txt",
+        "size": 81
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "tests/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "tests/auxiliary_classes_tests/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "test_json_list.py",
+        "name": "test_json_list",
+        "path": "tests/auxiliary_classes_tests/test_json_list.py",
+        "size": 1344
+    },
+    {
+        "extension": ".py",
+        "full_name": "conftest.py",
+        "name": "conftest",
+        "path": "tests/auxiliary_classes_tests/conftest.py",
+        "size": 326
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "tests/discord_markdown_helper_tests/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "test_general_markdown_helper.py",
+        "name": "test_general_markdown_helper",
+        "path": "tests/discord_markdown_helper_tests/test_general_markdown_helper.py",
+        "size": 1533
+    },
+    {
+        "extension": ".py",
+        "full_name": "conftest.py",
+        "name": "conftest",
+        "path": "tests/discord_markdown_helper_tests/conftest.py",
+        "size": null
+    },
+    {
+        "extension": ".yml",
+        "full_name": "check_action.yml",
+        "name": "check_action",
+        "path": ".github/workflows/check_action.yml",
+        "size": 1435
+    },
+    {
+        "extension": ".md",
+        "full_name": "README.md",
+        "name": "README",
+        "path": "dev_tools_and_scripts/README.md",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "dev_tools_and_scripts/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "render_new_cog_file.py",
+        "name": "render_new_cog_file",
+        "path": "dev_tools_and_scripts/render_new_cog_file.py",
+        "size": 2614
+    },
+    {
+        "extension": ".py",
+        "full_name": "discord_code_builder_main_window.py",
+        "name": "discord_code_builder_main_window",
+        "path": "dev_tools_and_scripts/gui/discord_code_builder_main_window.py",
+        "size": 5683
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "dev_tools_and_scripts/gui/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "discord_code_builder_ressources_rc.py",
+        "name": "discord_code_builder_ressources_rc",
+        "path": "dev_tools_and_scripts/gui/ressources/discord_code_builder_ressources_rc.py",
+        "size": 1279428
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "dev_tools_and_scripts/gui/ressources/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".qrc",
+        "full_name": "discord_code_builder_ressources.qrc",
+        "name": "discord_code_builder_ressources",
+        "path": "dev_tools_and_scripts/gui/ressources/discord_code_builder_ressources.qrc",
+        "size": 136
+    },
+    {
+        "extension": ".png",
+        "full_name": "AntiPetrosBaseImage.png",
+        "name": "AntiPetrosBaseImage",
+        "path": "dev_tools_and_scripts/gui/ressources/images/AntiPetrosBaseImage.png",
+        "size": 309720
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "dev_tools_and_scripts/gui/converted_designer_files/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "Ui_discord_code_builder_main_selection_screen.py",
+        "name": "Ui_discord_code_builder_main_selection_screen",
+        "path": "dev_tools_and_scripts/gui/converted_designer_files/Ui_discord_code_builder_main_selection_screen.py",
+        "size": 1843
+    },
+    {
+        "extension": ".py",
+        "full_name": "Ui_discord_code_builder_cog_builder.py",
+        "name": "Ui_discord_code_builder_cog_builder",
+        "path": "dev_tools_and_scripts/gui/converted_designer_files/Ui_discord_code_builder_cog_builder.py",
+        "size": 6720
+    },
+    {
+        "extension": ".py",
+        "full_name": "Ui_discord_code_builder_mainwindow.py",
+        "name": "Ui_discord_code_builder_mainwindow",
+        "path": "dev_tools_and_scripts/gui/converted_designer_files/Ui_discord_code_builder_mainwindow.py",
+        "size": 3969
+    },
+    {
+        "extension": ".json",
+        "full_name": "tanoa_resources_coords.json",
+        "name": "tanoa_resources_coords",
+        "path": "dev_tools_and_scripts/data/tanoa_resources_coords.json",
+        "size": 155
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "dev_tools_and_scripts/data/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "new_map.py",
+        "name": "new_map",
+        "path": "dev_tools_and_scripts/data/new_map.py",
+        "size": 4690
+    },
+    {
+        "extension": ".json",
+        "full_name": "event_mapping.json",
+        "name": "event_mapping",
+        "path": "dev_tools_and_scripts/data/event_mapping.json",
+        "size": 4833
+    },
+    {
+        "extension": ".json",
+        "full_name": "tanoa_outposts_coords.json",
+        "name": "tanoa_outposts_coords",
+        "path": "dev_tools_and_scripts/data/tanoa_outposts_coords.json",
+        "size": 314
+    },
+    {
+        "extension": ".json",
+        "full_name": "tanoa_seaports_coords.json",
+        "name": "tanoa_seaports_coords",
+        "path": "dev_tools_and_scripts/data/tanoa_seaports_coords.json",
+        "size": 121
+    },
+    {
+        "extension": ".json",
+        "full_name": "tanoa_cities_coords.json",
+        "name": "tanoa_cities_coords",
+        "path": "dev_tools_and_scripts/data/tanoa_cities_coords.json",
+        "size": 1108
+    },
+    {
+        "extension": ".json",
+        "full_name": "tanoa_airports_coords.json",
+        "name": "tanoa_airports_coords",
+        "path": "dev_tools_and_scripts/data/tanoa_airports_coords.json",
+        "size": 99
+    },
+    {
+        "extension": ".json",
+        "full_name": "tanoa_factories_coord.json",
+        "name": "tanoa_factories_coord",
+        "path": "dev_tools_and_scripts/data/tanoa_factories_coord.json",
+        "size": 100
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "dev_tools_and_scripts/cli/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "gen_sub_supporter.py",
+        "name": "gen_sub_supporter",
+        "path": "dev_tools_and_scripts/cli/gen_sub_supporter.py",
+        "size": 2024
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "dev_tools_and_scripts/template_handling/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "cog_template_item.py",
+        "name": "cog_template_item",
+        "path": "dev_tools_and_scripts/template_handling/cog_template_item.py",
+        "size": 7068
+    },
+    {
+        "extension": ".py",
+        "full_name": "sub_supporter_template_item.py",
+        "name": "sub_supporter_template_item",
+        "path": "dev_tools_and_scripts/template_handling/sub_supporter_template_item.py",
+        "size": 6272
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "sub_supporter_template.py.jinja",
+        "name": "sub_supporter_template.py",
+        "path": "dev_tools_and_scripts/template_handling/templates/sub_supporter_template.py.jinja",
+        "size": 4669
+    },
+    {
+        "extension": ".jinja",
+        "full_name": "cog_template.py.jinja",
+        "name": "cog_template.py",
+        "path": "dev_tools_and_scripts/template_handling/templates/cog_template.py.jinja",
+        "size": 5974
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "dev_tools_and_scripts/template_handling/templates/__init__.py",
+        "size": 3241
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "dev_tools_and_scripts/snippets/__init__.py",
+        "size": 319
+    },
+    {
+        "extension": ".md",
+        "full_name": "random_text.md",
+        "name": "random_text",
+        "path": "dev_tools_and_scripts/snippets/random_text.md",
+        "size": 158
+    },
+    {
+        "extension": ".json",
+        "full_name": "snippets.json",
+        "name": "snippets",
+        "path": "dev_tools_and_scripts/snippets/snippets.json",
+        "size": 3
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "dev_tools_and_scripts/snippets/snippet_templates/__init__.py",
+        "size": 359
+    },
+    {
+        "extension": ".py",
+        "full_name": "__init__.py",
+        "name": "__init__",
+        "path": "dev_tools_and_scripts/scripts/__init__.py",
+        "size": null
+    },
+    {
+        "extension": ".py",
+        "full_name": "launch_in_server.py",
+        "name": "launch_in_server",
+        "path": "dev_tools_and_scripts/scripts/launch_in_server.py",
+        "size": 5770
+    },
+    {
+        "extension": ".md",
+        "full_name": "automate_bash_script_creation.md",
+        "name": "automate_bash_script_creation",
+        "path": "dev_tools_and_scripts/scripts/automate_bash_script_creation.md",
+        "size": 196
+    },
+    {
+        "extension": ".sh",
+        "full_name": "install_python_3_9_deadsnake.sh",
+        "name": "install_python_3_9_deadsnake",
+        "path": "dev_tools_and_scripts/scripts/install_python_3_9_deadsnake.sh",
+        "size": 647
+    }
+]
