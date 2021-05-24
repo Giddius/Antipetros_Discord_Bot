@@ -32,6 +32,7 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, Command
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
+from antipetros_discordbot.utility.misc import loop_starter, loop_stopper
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -93,6 +94,8 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
 # region [Setup]
 
     async def on_ready_setup(self):
+        for loop_object in self.loops.values():
+            loop_starter(loop_object)
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -235,7 +238,8 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
         pass
 
     def cog_unload(self):
-
+        for loop_object in self.loops.values():
+            loop_stopper(loop_object)
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):

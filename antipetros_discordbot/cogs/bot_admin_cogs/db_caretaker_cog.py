@@ -30,7 +30,7 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-
+from antipetros_discordbot.utility.misc import loop_starter, loop_stopper
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
@@ -102,9 +102,9 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
-        self.scheduled_vacuum.start()
+        for loop in self.loops.values():
+            loop_starter(loop)
         self.ready = await asyncio.sleep(5, True)
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -168,7 +168,6 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [SpecialMethods]
 
-
     def cog_check(self, ctx):
         return True
 
@@ -182,7 +181,8 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         pass
 
     def cog_unload(self):
-        self.scheduled_vacuum.stop()
+        for loop in self.loops.values():
+            loop_stopper(loop)
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):

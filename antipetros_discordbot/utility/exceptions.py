@@ -1,6 +1,7 @@
 # * Third Party Imports -->
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands.errors import CommandError
+from datetime import datetime
 
 
 class AntiPetrosBaseError(Exception):
@@ -209,4 +210,11 @@ class NameInUseError(BaseExtendedCommandError):
         self.name = name
         self.typus = typus
         self.msg = f"The Name {self.name} is already in use for {self.typus} items"
+        super().__init__(self.msg)
+
+
+class GithubRateLimitUsedUp(BaseExtendedCommandError):
+    def __init__(self, reset_time: datetime):
+        self.reset_time = reset_time
+        self.msg = "Rate Limit for github is used up, this action is not usable until " + self.reset_time.strftime("%Y-%m-%d %H:%M:%S UTC") + ", as the rate-limit resets at that time!"
         super().__init__(self.msg)

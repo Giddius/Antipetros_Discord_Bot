@@ -297,8 +297,6 @@ class EmbedBuilder(SubSupportBase):
         self.default_field_name_num = 1
         # if self.bot.is_debug:
         #     await self.save_embed_as_json(embed=generic_embed, save_name=kwargs.get('save_name', None))
-        if self.is_debug is True:
-            log.debug("Embed with title '%s' has a len of '%s'", kwargs.get('title', 'None'), str(len(generic_embed)))
 
         _out = {"embed": generic_embed}
         files = [file_item for file_item in files if file_item is not None]

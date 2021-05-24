@@ -82,17 +82,31 @@ class ChannelStatistician(SubSupportBase):
         glog.class_init_notification(log, self)
 
     async def record_channel_usage(self, msg: discord.Message):
+        # if self.bot.setup_finished is False:
+        #     return
+        # if isinstance(msg.channel, discord.DMChannel):
+        #     return
+        # if msg.author.bot is True:
+        #     log.debug("channel usage author is Bot")
+        #     return
+        asyncio.create_task(self._channel_usage_to_db(msg))
+        await self.bot.process_commands(msg)
+
+    async def _channel_usage_to_db(self, msg: discord.Message):
+        channel = msg.channel
         if self.bot.setup_finished is False:
-            return
-        if isinstance(msg.channel, discord.DMChannel):
             return
         if msg.author.bot is True:
             return
-        channel = msg.channel
-        if channel.name.casefold() not in self.exclude_channels and channel.category.name.casefold() not in self.exclude_categories:
-            asyncio.create_task(self.general_db.insert_channel_use(channel), name=f"insert_channel_usage_{channel.name}")
-            log.info("channel usage recorded for channel '%s'", channel.name)
-        await self.bot.process_commands(msg)
+        if isinstance(msg.channel, discord.DMChannel) is True:
+            return
+        if channel.name.casefold() in self.exclude_channels:
+            return
+        if channel.category.name.casefold() in self.exclude_categories:
+            return
+
+        await self.general_db.insert_channel_use(channel)
+        log.info("channel usage recorded for channel '%s'", channel.name)
 
     async def make_heat_map(self):
         pass

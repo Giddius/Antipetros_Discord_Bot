@@ -23,7 +23,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 
-from antipetros_discordbot.utility.misc import delete_message_if_text_channel
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel, loop_starter, loop_stopper
 from antipetros_discordbot.utility.enums import DataSize, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.checks import owner_or_admin
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, make_basic_embed_inline
@@ -117,12 +117,8 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     async def on_ready_setup(self):
         _ = psutil.cpu_percent(interval=None)
-        self.latency_measure_loop.start()
-        await asyncio.sleep(2)
-        self.memory_measure_loop.start()
-        await asyncio.sleep(2)
-        self.cpu_measure_loop.start()
-        await asyncio.sleep(2)
+        for loop in self.loops.values():
+            loop_starter(loop)
 
         plt.style.use('dark_background')
         await self.format_graph(10)
@@ -139,7 +135,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def cpu_measure_loop(self):
-        if self.ready is False:
+        if self.ready is False or self.bot.setup_finished is False:
             return
         log.info("measuring cpu")
         now = datetime.now(tz=timezone.utc)
@@ -150,7 +146,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def latency_measure_loop(self):
-        if self.ready is False:
+        if self.ready is False or self.bot.setup_finished is False:
             return
 
         log.info("measuring latency")
@@ -175,7 +171,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def memory_measure_loop(self):
-        if self.ready is False:
+        if self.ready is False or self.bot.setup_finished is False:
             return
         log.info("measuring memory usage")
         now = datetime.now(tz=timezone.utc)
@@ -413,10 +409,8 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         return self.qualified_name
 
     def cog_unload(self):
-        self.cpu_measure_loop.stop()
-        self.latency_measure_loop.stop()
-        self.memory_measure_loop.stop()
-        self.report_data_loop.stop()
+        for loop in self.loops.values():
+            loop_stopper(loop)
 
         log.debug("Cog '%s' UNLOADED!", str(self))
 

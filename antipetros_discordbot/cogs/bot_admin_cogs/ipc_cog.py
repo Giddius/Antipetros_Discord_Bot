@@ -29,7 +29,7 @@ import gidlogger as glog
 
 # * Local Imports -->
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel, split_camel_case_string, loop_starter, loop_stopper
 
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory
@@ -103,6 +103,8 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
 
 
     async def on_ready_setup(self):
+        for loop in self.loops.values():
+            loop_starter(loop)
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -173,6 +175,8 @@ class IpcCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Com
         pass
 
     def cog_unload(self):
+        for loop in self.loops.values():
+            loop_stopper(loop)
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):

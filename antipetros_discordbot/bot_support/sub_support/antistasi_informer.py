@@ -106,6 +106,10 @@ class AntistasiInformer(SubSupportBase):
         return self.get_antistasi_role(self.everyone_role_id)
 
     @property
+    def antistasi_image(self):
+        return "https://avatars0.githubusercontent.com/u/53788409?s=200&v=4"
+
+    @property
     def bertha_emoji(self) -> discord.Emoji:
         return discord.utils.get(self.antistasi_guild.emojis, id=829666475035197470)
 

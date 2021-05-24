@@ -31,7 +31,7 @@ import gidlogger as glog
 from abc import ABC, ABCMeta, abstractmethod
 # * Local Imports -->
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
-from antipetros_discordbot.utility.misc import delete_message_if_text_channel, split_camel_case_string
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel, split_camel_case_string, loop_starter, loop_stopper
 from antipetros_discordbot.utility.checks import BaseAntiPetrosCheck
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writeit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -271,7 +271,8 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # region [Setup]
 
     async def on_ready_setup(self):
-
+        for loop in self.loops.values():
+            loop_starter(loop)
         self.ready = await asyncio.sleep(5, True)
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -469,7 +470,8 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         pass
 
     def cog_unload(self):
-
+        for loop in self.loops.values():
+            loop_stopper(loop)
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):

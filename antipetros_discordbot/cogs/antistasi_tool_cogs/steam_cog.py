@@ -17,7 +17,7 @@ import gidlogger as glog
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.utility.misc import loop_starter, loop_stopper
 
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
@@ -126,7 +126,8 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 # region [Setup]
 
     async def on_ready_setup(self):
-        self.check_for_updates.start()
+        for loop_object in self.loops.values():
+            loop_starter(loop_object)
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -138,6 +139,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 # endregion [Setup]
 
 # region [Loops]
+
 
     @tasks.loop(minutes=5, reconnect=True)
     async def check_for_updates(self):
@@ -160,6 +162,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
@@ -295,7 +298,6 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 
 # region [SpecialMethods]
 
-
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
 
@@ -303,7 +305,8 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
         return self.qualified_name
 
     def cog_unload(self):
-        self.check_for_updates.stop()
+        for loop_object in self.loops.values():
+            loop_stopper(loop_object)
         log.debug("Cog '%s' UNLOADED!", str(self))
 
 

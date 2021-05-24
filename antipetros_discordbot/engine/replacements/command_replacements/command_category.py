@@ -7,46 +7,19 @@
 # region [Imports]
 
 # * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
-import gc
 import os
 import re
-import unicodedata
-
 from typing import List, Set, TYPE_CHECKING, Union
 from inspect import getdoc
 
-
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
 import discord
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-# from discord import Embed, File
-
 from discord.ext import commands, tasks
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
 import inspect
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
-import gidlogger as glog
 from inspect import getdoc, getfile, getsourcefile, getsource, getsourcelines
+
+# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
+import gidlogger as glog
 from antipetros_discordbot.schemas import CommandCategorySchema
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
@@ -341,20 +314,20 @@ class MetaCommandCategory(CommandCategory):
         return set(_out)
 
 
-# class NotImplementedCommandCategory(CommandCategory):
-#     """
-#     NOT YET IMPLEMENTED!
-#     """
-#     commands = []
+class NotImplementedCommandCategory(CommandCategory):
+    """
+    NOT YET IMPLEMENTED!
+    """
+    commands = []
 
-#     @classmethod
-#     @property
-#     def allowed_roles(cls) -> Set[str]:
-#         return set()
+    @classmethod
+    @property
+    def allowed_roles(cls) -> Set[str]:
+        return set()
 
-#     @classmethod
-#     def visibility_check(cls, in_member: discord.Member):
-#         return False
+    @classmethod
+    def visibility_check(cls, in_member: discord.Member):
+        return False
 
 
 # region[Main_Exec]

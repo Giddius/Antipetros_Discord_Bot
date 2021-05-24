@@ -125,10 +125,6 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
         log.debug('cog "%s" was updated', str(self))
 
-    @tasks.loop(minutes=10)
-    async def something(self):
-        print('something')
-
     @ auto_meta_info_command()
     async def dump_bot(self, ctx: commands.Context):
         schema = AntiPetrosBotSchema()
@@ -194,7 +190,6 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         await ctx.send(CodeBlock(pformat(x, sort_dicts=False), "python"))
 
     def cog_unload(self):
-        self.check_server_online_loop.stop()
 
         log.debug("Cog '%s' UNLOADED!", str(self))
 

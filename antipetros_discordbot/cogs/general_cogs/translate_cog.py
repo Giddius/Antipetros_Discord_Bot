@@ -154,8 +154,8 @@ class TranslateCog(AntiPetrosBaseCog):
 # region [Listener]
 
     async def _emoji_translate_checks(self, payload):
-        if self.ready is False:
-            return
+        if self.ready is False or self.bot.setup_finished is False:
+            return False
         command_name = "emoji_translate_listener"
         channel = self.bot.get_channel(payload.channel_id)
         if channel.type is not discord.ChannelType.text:
@@ -192,7 +192,10 @@ class TranslateCog(AntiPetrosBaseCog):
         if await self._emoji_translate_checks(payload) is False:
             return
         channel = self.bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except discord.errors.NotFound:
+            return
         country_code = self.language_emoji_map.get(normalize_emoji(payload.emoji.name))
 
         if message.embeds != []:

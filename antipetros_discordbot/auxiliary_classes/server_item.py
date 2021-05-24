@@ -8,7 +8,7 @@
 
 
 import gc
-
+from copy import deepcopy, copy
 import asyncio
 import unicodedata
 import discord
@@ -29,7 +29,7 @@ from aiodav import Client as AioWebdavClient
 from aiodav.client import Resource
 import gidlogger as glog
 from asyncio import Semaphore as AioSemaphore, Lock as AioLock
-
+from asyncstdlib import lru_cache as async_lru_cache
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, readit, writejson, loadjson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.regexes import LOG_NAME_DATE_TIME_REGEX, LOG_SPLIT_REGEX, MOD_TABLE_START_REGEX, MOD_TABLE_END_REGEX, MOD_TABLE_LINE_REGEX
@@ -55,6 +55,7 @@ from hashlib import blake2b, blake2s, sha3_256, sha256, sha512, shake_256, sha1
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog
 from zipfile import ZipFile, ZIP_LZMA
+from antipetros_discordbot.abstracts.connect_signal import AbstractConnectSignal
 # endregion[Imports]
 
 # region [TODO]
@@ -109,28 +110,6 @@ class AntistasiSide(Enum):
     CIV = auto()
 
 
-class AbstractConnectSignal(ABC):
-
-    def __init__(self) -> None:
-        self.targets = []
-
-    def connect(self, target: Callable):
-        self.targets.append(target)
-        self.targets = list(set(self.targets))
-
-    @abstractmethod
-    async def emit(self, *args, **kwargs):
-        # IDEA maybe as asyncio.task
-        await self._emit_to_targets(*args, **kwargs)
-
-    async def _emit_to_targets(self, *args, **kwargs):
-        for target in self.targets:
-            if asyncio.iscoroutinefunction(target):
-                await target(*args, **kwargs)
-            else:
-                target(*args, **kwargs)
-
-
 class StatusSwitchSignal(AbstractConnectSignal):
 
     async def emit(self, server: "ServerItem", switched_to: ServerStatus):
@@ -175,26 +154,32 @@ class LogParser:
         self.current_log_item = None
         self.current_byte_position = 0
         self.jinja_env = Environment(loader=BaseLoader)
+        self._parsed_data = None
+
+    def reset(self):
+        self._parsed_data = None
 
     async def _parse_mod_data(self) -> list:
-        _out = []
-        current_content_bytes = []
-        async for chunk in await self.server.newest_log_item.content_iter():
-            current_content_bytes.append(chunk)
-        current_content = b''.join(current_content_bytes).decode('utf-8', errors='ignore')
-        split_match = LOG_SPLIT_REGEX.search(current_content)
-        if split_match:
-            pre_content = current_content[:split_match.end()]
-            cleaned_lower = MOD_TABLE_START_REGEX.split(pre_content)[-1]
-            mod_table = MOD_TABLE_END_REGEX.split(cleaned_lower)[0]
-            for line in mod_table.splitlines():
-                if line != '':
-                    line_match = MOD_TABLE_LINE_REGEX.search(line)
-                    _out.append({key: value.strip() for key, value in line_match.groupdict().items()})
-                await asyncio.sleep(0)
+        if self._parsed_data is None:
+            _out = []
+            current_content_bytes = []
+            async for chunk in await self.server.newest_log_item.content_iter():
+                current_content_bytes.append(chunk)
+            current_content = b''.join(current_content_bytes).decode('utf-8', errors='ignore')
+            split_match = LOG_SPLIT_REGEX.search(current_content)
+            if split_match:
+                pre_content = current_content[:split_match.end()]
+                cleaned_lower = MOD_TABLE_START_REGEX.split(pre_content)[-1]
+                mod_table = MOD_TABLE_END_REGEX.split(cleaned_lower)[0]
+                for line in mod_table.splitlines():
+                    if line != '':
+                        line_match = MOD_TABLE_LINE_REGEX.search(line)
+                        _out.append({key: value.strip() for key, value in line_match.groupdict().items()})
+                    await asyncio.sleep(0)
 
-            items = [item.get('mod_dir') for item in _out if item.get('official') == 'false' and item.get("mod_name") not in ["@members", "@TaskForceEnforcer", "@utility"]]
-            return sorted(items)
+                items = [item.get('mod_dir') for item in _out if item.get('official') == 'false' and item.get("mod_name") not in ["@members", "@TaskForceEnforcer", "@utility"]]
+                self._parsed_data = sorted(items)
+        return self._parsed_data
 
     async def _render_mod_data(self) -> str:
         mod_data = await self._parse_mod_data()
@@ -406,7 +391,7 @@ class ServerAddress:
 
 
 class ServerItem:
-    pretty_name_regex = re.compile(r"(?P<name>\w+)\_?(?P<server>server)\_?(?P<number>\d)?", re.IGNORECASE)
+    pretty_name_regex = re.compile(r"(?P<name>[a-z]+)\_?(?P<server>server)\_?(?P<number>\d)?", re.IGNORECASE)
     timeout = 3.0
     battle_metrics_mapping = {'mainserver_1': "https://www.battlemetrics.com/servers/arma3/10560386",
                               'mainserver_2': "https://www.battlemetrics.com/servers/arma3/10561000",
@@ -436,6 +421,7 @@ class ServerItem:
         if self.cog is None:
             raise NeededClassAttributeNotSet('cog', self.__class__.__name__)
         self.name = name
+        self.official_name = None
         self.server_address = ServerAddress(full_address)
         self.log_folder = log_folder
         self.log_items = SortedList()
@@ -450,9 +436,9 @@ class ServerItem:
             cls.client = AioWebdavClient(**get_nextcloud_options())
 
     async def get_mod_files(self):
-        htmL_file = await self.log_parser.get_mod_data_html_file()
+        html_file = await self.log_parser.get_mod_data_html_file()
         image_file = await self.log_parser.get_mod_data_image_file()
-        return ModFileItem(html=htmL_file, image=image_file)
+        return ModFileItem(html=html_file, image=image_file)
 
     @cached_property
     def config_name(self) -> str:
@@ -490,7 +476,7 @@ class ServerItem:
     def pretty_name(self):
         name_match = self.pretty_name_regex.match(self.name)
         if name_match:
-            return ' '.join([group for group in name_match.groups() if group]).title()
+            return ' '.join([group.title() if any(not char.isupper() for char in group) else group for group in name_match.groups() if group])
         return self.name.replace('_', ' ').title()
 
     async def list_log_items_on_server(self):
@@ -511,19 +497,26 @@ class ServerItem:
 
         self.log_items.clear()
         self.log_items.update(new_items)
+
         log.info("Gathered %s Log_file_items for Server %s", len(self.log_items), self.name)
 
     async def update_log_items(self) -> None:
+        old_newest_log_item = deepcopy(self.newest_log_item)
         old_items = set(self.log_items)
         await self.gather_log_items()
         for item in set(self.log_items).difference(old_items):
             log.info("New log file %s for server %s", item.name, self.name)
+        if old_newest_log_item is not self.newest_log_item:
+            self.log_parser.reset()
+            log.debug("invalidating parser cache of %s", self.name)
+            _ = await self.get_mod_files()
         log.info("Updated log_items for server %s", self.name)
 
     async def is_online(self) -> ServerStatus:
         try:
             check_data = await self.get_info()
             status = ServerStatus.ON
+            self.official_name = check_data.server_name
         except asyncio.exceptions.TimeoutError:
             status = ServerStatus.OFF
         log.info("Server %s is %s", self.name, status.name)

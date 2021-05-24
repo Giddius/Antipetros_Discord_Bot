@@ -104,6 +104,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         self.server_items = self.load_server_items()
         self.stored_server_messages = []
         self.color = 'yellow'
+        self.latest_sever_notification_msg_id = None
         self.ready = False
 
         self.meta_data_setter('docstring', self.docstring)
@@ -113,7 +114,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Init]
 
 # region [Properties]
-
 
     @property
     def server_message_remove_time(self) -> int:
@@ -161,7 +161,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         for server in self.server_items:
             await server.is_online()
         await asyncio.gather(*[server.gather_log_items() for server in self.server_items])
-
+        for server in self.server_items:
+            if server.log_folder is not None:
+                _ = await server.get_mod_files()
         self.ready = await asyncio.sleep(5, True)
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -203,7 +205,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             if server.is_online_message_enabled is True:
                 await self._update_is_online_messages(server)
             else:
-                await self._delete_is_online_message(server)
+                asyncio.create_task(self._delete_is_online_message(server))
         log.info("Updated 'is_online_messages'")
 # endregion [Loops]
 
@@ -211,28 +213,36 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
     @commands.Cog.listener(name='on_raw_reaction_add')
     async def subscription_reaction(self, payload: discord.RawReactionActionEvent):
+        if self.ready is False or self.bot.setup_finished is False:
+            return
         reaction_member = payload.member
-        channel = self.bot.get_channel(payload.channel_id)
-        if channel is not self.is_online_messages_channel:
+
+        if payload.channel_id != self.is_online_messages_channel.id:
+            return
+        if payload.message_id not in set(self.is_online_messages.values()):
             return
         if reaction_member.bot is True:
             return
 
         try:
-            message = await channel.fetch_message(payload.message_id)
+            channel = self.bot.get_channel(payload.channel_id)
+            message = channel.get_partial_message(payload.message_id)
         except discord.errors.NotFound:
             return
+
         if payload.emoji != self.bot.server_emoji:
             asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))
+            asyncio.create_task(self.clear_emojis_from_is_online_message())
             return
-        if message.id not in set(self.is_online_messages.values()):
-            return
+
         server_item = await self._server_from_is_online_message_id(message.id)
         if server_item.previous_status is ServerStatus.OFF or server_item.log_folder is None:
             asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))
             return
+
         asyncio.create_task(self._send_to_dm(reaction_member, server_item))
         asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))
+        asyncio.create_task(self.clear_emojis_from_is_online_message())
 
 # endregion [Listener]
 
@@ -323,8 +333,10 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     @auto_meta_info_command(alias=['restart_reason'], categories=[CommandCategory.ADMINTOOLS])
     @owner_or_admin()
     @log_invoker(log, "info")
-    async def set_server_restart_reason(self, ctx: commands.Context, notification_msg_id: int, *, reason: str):
-        if notification_msg_id not in set(self.stored_server_messages):
+    async def set_server_restart_reason(self, ctx: commands.Context, notification_msg_id: Optional[int] = None, *, reason: str):
+        if notification_msg_id is None:
+            notification_msg_id = self.latest_sever_notification_msg_id
+        if notification_msg_id not in set(self.stored_server_messages) or notification_msg_id is None:
             await ctx.send('This message is either to old or not an server change message!')
             return
         if reason.casefold() in self.stored_reasons:
@@ -352,8 +364,14 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # region [HelperMethods]
 
     async def _send_to_dm(self, member: discord.Member, server: ServerItem):
-        embed_data = await server.make_server_info_embed()
-        embed_data['embed'].clear_fields()
+        mod_data = await server.get_mod_files()
+        embed_data = await self.bot.make_generic_embed(title=server.official_name,
+                                                       description=ZERO_WIDTH,
+                                                       thumbnail=mod_data.image,
+                                                       author="armahosts",
+                                                       footer="armahosts",
+                                                       color="blue")
+        embed_data['files'].append(mod_data.html)
         msg = await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
         await msg.add_reaction(self.bot.armahosts_emoji)
 
@@ -382,21 +400,26 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         msg = await channel.send(**embed_data)
         await msg.add_reaction(self.bot.armahosts_emoji)
         self.stored_server_messages.append(msg.id)
+        self.latest_sever_notification_msg_id = msg.id
 
     async def _make_is_online_embed(self, server: ServerItem):
-        description = 'is ONLINE' if server.previous_status is ServerStatus.ON else 'is OFFLINE'
+        description = ZERO_WIDTH
+        if server.previous_status is ServerStatus.OFF:
+            description = 'is ***OFFLINE***'
+        elif server.log_folder is not None:
+            description = f"Click the {self.bot.server_emoji} emoji to get the current Mod List"
+
         color = 'green' if server.previous_status is ServerStatus.ON else 'red'
         thumbnail = self.server_logos.get(server.name.casefold(), self.server_symbol) if server.previous_status is ServerStatus.ON else self.server_symbol_off
         fields = []
         if server.previous_status is ServerStatus.ON:
             info_data = await server.get_info()
-
+            fields.append(self.bot.field_item(name='ON', value="☑️", inline=True))
             fields.append(self.bot.field_item(name="Server Address", value=server.server_address.url, inline=True))
             fields.append(self.bot.field_item(name="Port", value=server.server_address.port, inline=True))
-            fields.append(self.bot.field_item(name='Players', value=f"{info_data.player_count}/{info_data.max_players}", inline=False))
-            fields.append(self.bot.field_item(name="Game", value=info_data.game, inline=False))
+            fields.append(self.bot.field_item(name='Players', value=f"{info_data.player_count}/{info_data.max_players}", inline=True))
             fields.append(self.bot.field_item(name="Map", value=info_data.map_name, inline=True))
-        embed_data = await self.bot.make_generic_embed(title=server.pretty_name,
+        embed_data = await self.bot.make_generic_embed(title=server.official_name if server.official_name is not None else server.pretty_name,
                                                        description=description,
                                                        footer='armahosts',
                                                        thumbnail=thumbnail,
@@ -434,7 +457,19 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             return
         msg = await self.is_online_messages_channel.fetch_message(message_id)
         embed_data = await self._make_is_online_embed(server)
-        await msg.edit(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        asyncio.create_task(msg.edit(**embed_data, allowed_mentions=discord.AllowedMentions.none()))
+        asyncio.create_task(self.clear_emojis_from_is_online_message())
+
+    async def clear_emojis_from_is_online_message(self):
+        for key, msg_id in self.is_online_messages.items():
+            await self._clear_emoji_from_msg(msg_id)
+
+    async def _clear_emoji_from_msg(self, msg_id: int):
+        msg = await self.is_online_messages_channel.fetch_message(msg_id)
+        for reaction in msg.reactions:
+            async for user in reaction.users():
+                if user.id != self.bot.id:
+                    await reaction.remove(user)
 
     def load_server_items(self):
         ServerItem.cog = self
@@ -452,6 +487,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

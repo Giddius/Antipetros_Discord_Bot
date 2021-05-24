@@ -17,7 +17,7 @@ from functools import partial
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import delete_message_if_text_channel, make_other_source_code_images
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel, make_other_source_code_images, loop_starter, loop_stopper
 from antipetros_discordbot.utility.checks import log_invoker, owner_or_admin
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -116,7 +116,8 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         standard setup async method.
         The Bot calls this method on all cogs when he has succesfully connected.
         """
-
+        for loop in self.loops.values():
+            loop_starter(loop)
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -368,6 +369,8 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         return self.__class__.__name__
 
     def cog_unload(self):
+        for loop in self.loops.values():
+            loop_stopper(loop)
         log.debug("Cog '%s' UNLOADED!", str(self))
 # endregion [SpecialMethods]
 

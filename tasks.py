@@ -767,13 +767,13 @@ def build(c, typus='patch', description=None):
     NOTIFIER.show_toast(title=f"Finished Building {PROJECT_NAME}", icon_path=r"art/finished/icons/pip.ico", duration=15, msg=f"Published {PROJECT_NAME}, Version {get_package_version()} to PyPi")
 
 
-def get_alternative_name(name, number=0):
+def get_alternative_name(name, number=0, extension='.py'):
     if number == 0:
         mod_name = name
     else:
         mod_name = f"{name}_{number}"
 
-    if mod_name.casefold() in {file.name.split('.')[0].casefold() for file in os.scandir(FOLDER.get('scratches')) if file.is_file() and file.name.endswith('.py')}:
+    if mod_name.casefold() in {file.name.split('.')[0].casefold() for file in os.scandir(FOLDER.get('scratches')) if file.is_file() and file.name.endswith(extension)}:
         return get_alternative_name(name, number + 1)
     return mod_name
 
@@ -789,6 +789,17 @@ def new_scratch(c, prefix=None):
         f.write(SCRATCH_BOILER + '\n\n\n\n')
         f.write("if __name__ == '__main__':\n")
         f.write("\tpass\n")
+
+
+@task
+def new_notebook(c, name):
+    if os.path.isdir(FOLDER.get('scratches')) is False:
+        os.makedirs(FOLDER.get('scratches'))
+    name = name.casefold()
+    file_name = get_alternative_name(name, extension='.ipynb') + '.ipynb'
+    full_path = pathmaker(FOLDER.get('scratches'), file_name)
+    with open(full_path, 'w') as f:
+        f.write("")
 
 
 def extend_content_table(archive_name, file_paths):

@@ -30,7 +30,7 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel, split_camel_case_string, loop_starter, loop_stopper
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
@@ -102,7 +102,8 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
 
     async def on_ready_setup(self):
-        self.cyclic_update_loop.start()
+        for loop in self.loops.values():
+            loop_starter(loop)
         self.ready = await asyncio.sleep(0, True)
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -118,7 +119,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
     @tasks.loop(minutes=30)
     async def cyclic_update_loop(self):
-        if await self.bot.running_longer_than(minutes=2) is False:
+        if await self.bot.running_longer_than(minutes=5) is False:
             return
         log.info('cyclic update started')
 
@@ -246,7 +247,8 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         pass
 
     def cog_unload(self):
-        self.cyclic_update_loop.stop()
+        for loop in self.loops.values():
+            loop_stopper(loop)
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):

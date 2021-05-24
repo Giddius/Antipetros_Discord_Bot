@@ -206,7 +206,7 @@ class AntiPetrosBot(commands.Bot):
         self.sessions = {}
         if self.sessions.get('aio_request_session', None) is None or self.sessions.get('aio_request_session', None).closed is True:
             self.sessions['aio_request_session'] = aiohttp.ClientSession()
-
+            self.aio_request_session = self.sessions.get("aio_request_session")
         log.info("Session '%s' was started", repr(self.sessions['aio_request_session']))
 
     async def _ensure_guild_is_chunked(self):
@@ -528,7 +528,9 @@ class AntiPetrosBot(commands.Bot):
             await self._close_sessions()
             if ServerItem.client is not None:
                 await ServerItem.client.close()
+                log.info("Closed %s", ServerItem.client)
             await self.wait_until_ready()
+            await asyncio.sleep(5)
         except Exception as error:
             log.error(error, exc_info=True)
         finally:
@@ -547,8 +549,6 @@ class AntiPetrosBot(commands.Bot):
         return self.__class__.__name__
 
     def __getattr__(self, attr_name):
-        if attr_name in self.sessions:
-            return self.sessions[attr_name]
         if hasattr(self.support, attr_name) is True:
             return getattr(self.support, attr_name)
         return getattr(super(), attr_name)
