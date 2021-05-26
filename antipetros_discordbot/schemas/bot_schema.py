@@ -49,27 +49,20 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 class AntiPetrosBotSchema(Schema):
     owner_ids = fields.List(fields.Integer())
     version = fields.String()
-    private_channels = fields.List(fields.String())
-    cogs = fields.Dict(keys=fields.String(), values=fields.Nested(AntiPetrosBaseCogSchema()))
     github_url = fields.Url()
     github_wiki_url = fields.Url()
     portrait_url = fields.Url()
     antistasi_invite_url = fields.Url()
+    intents = fields.Function(lambda obj: {k: v for k, v in iter(obj.intents)})
 
     class Meta:
         additional = ('name',
                       'id',
                       'display_name',
                       'description'
-                      'non_mention_prefixes',
                       'case_insensitive',
-                      'latency',
                       'strip_after_prefix',
-                      'start_time',
-                      'uptime',
-                      'uptime_pretty',
                       'antistasi_invite_url',
-                      'self_bot',
                       'command_amount',
                       'cog_amount',
                       'creator_id',
@@ -77,7 +70,9 @@ class AntiPetrosBotSchema(Schema):
                       'brief',
                       'short_doc',
                       'long_description',
-                      'extra_info')
+                      'extra_info',
+                      'app_name',
+                      'author_name')
 
 
 # region[Main_Exec]

@@ -1,7 +1,0 @@
-{% extends "base_readme_template.md.jinja" %}
-
-{% for dyn_block in dyn_blocks %}
-{% block dyn_block.block_name scoped %}
-{{ dyn_block.template }}
-{% endblock %}
-{% endfor %}

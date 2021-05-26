@@ -115,6 +115,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [Properties]
 
+
     @property
     def server_message_remove_time(self) -> int:
         return COGS_CONFIG.retrieve(self.config_name, 'server_message_delete_after_seconds', typus=int, direct_fallback=300)
@@ -462,7 +463,10 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
     async def clear_emojis_from_is_online_message(self):
         for key, msg_id in self.is_online_messages.items():
-            await self._clear_emoji_from_msg(msg_id)
+            try:
+                await self._clear_emoji_from_msg(msg_id)
+            except discord.errors.NotFound as e:
+                log.error(e, exc_info=True)
 
     async def _clear_emoji_from_msg(self, msg_id: int):
         msg = await self.is_online_messages_channel.fetch_message(msg_id)
@@ -487,7 +491,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

@@ -53,6 +53,7 @@ from antipetros_discordbot.engine.replacements.helper.help_embed_builder import 
 from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
 from antipetros_discordbot.auxiliary_classes.server_item import ServerItem, ServerStatus
 import ftfy
+import json
 import inspect
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -82,6 +83,11 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 # endregion [TODO]
+
+class RoleSchema(Schema):
+
+    class Meta:
+        additional = ("id", "name", "mentionable", "position", 'created_at', 'hoist')
 
 
 class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
@@ -188,6 +194,15 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         x['default'] = 839782169303449640
         x = {key: value for key, value in sorted(x.items(), key=lambda x: (x[0] != 'default', x[0]))}
         await ctx.send(CodeBlock(pformat(x, sort_dicts=False), "python"))
+
+    @ auto_meta_info_command()
+    async def dump_roles(self, ctx: commands.Context):
+        async with ctx.typing():
+            schema = RoleSchema()
+
+            with open('role_dump.json', 'w') as f:
+                f.write(schema.dumps(list(self.bot.antistasi_guild.roles), many=True))
+            await ctx.send('done', delete_after=90, allowed_mentions=discord.AllowedMentions.none())
 
     def cog_unload(self):
 

@@ -121,6 +121,10 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
     @tasks.loop(hours=1)
     async def garbage_clean_loop(self):
+        """
+        WiP
+
+        """
         if self.ready is False:
             return
         log.info('running garbage clean')

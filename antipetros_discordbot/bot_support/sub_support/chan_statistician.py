@@ -89,7 +89,8 @@ class ChannelStatistician(SubSupportBase):
         # if msg.author.bot is True:
         #     log.debug("channel usage author is Bot")
         #     return
-        asyncio.create_task(self._channel_usage_to_db(msg))
+        if any(not msg.content.startswith(prefix) for prefix in self.bot.all_prefixes):
+            asyncio.create_task(self._channel_usage_to_db(msg))
         await self.bot.process_commands(msg)
 
     async def _channel_usage_to_db(self, msg: discord.Message):

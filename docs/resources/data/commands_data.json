@@ -1,0 +1,3694 @@
+[
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": false,
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "texttoimage",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "text+to+image",
+            "texttoimage",
+            "text-to-image",
+            "text.to.image"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "text_to_image",
+        "cog_name": "ImageManipulationCog",
+        "signature": {
+            "font": "font: str",
+            "text": "text: str"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py/#L362-L393",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/text_to_image",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Deletes messages.",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros delete_msg 837700676872044604 837488218567475200",
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            },
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Deletes messages.",
+        "best_alias": "deletemsg",
+        "docstring": "Deletes messages.\n\nCan take several message Ids as input, as long as they are seperated by a single space.\n\nExample:\n    @AntiPetros delete_msg 837700676872044604 837488218567475200",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "deletemsg",
+            "delete.msg",
+            "delete-msg",
+            "delete+msg"
+        ],
+        "enabled": true,
+        "description": "Deletes messages.\nCan take several message Ids as input, as long as they are seperated by a single space.",
+        "name": "delete_msg",
+        "cog_name": "AdministrationCog",
+        "signature": {
+            "msgs": "*msgs: discord.message.Message"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/discord_admin_cogs/discord_admin_cog.py/#L113-L128",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/delete_msg",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Shuts the bot down, via nor...",
+        "usage": "@AntiPetros <shutdown or alias> <reason>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<reason>\nThe Reason that should be written to the Log of the Bot\nDefaults to 'No reason given'\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros shutdown",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Shuts the bot down, via normal shutdown procedure.",
+        "best_alias": "die",
+        "docstring": "Shuts the bot down, via normal shutdown procedure.\n\nArgs:\n    reason (str, optional): The Reason that should be written to the Log of the Bot. Defaults to 'No reason given'.\n\nExample:\n    @AntiPetros shutdown",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "go-away",
+            "get_banned",
+            "die",
+            "go_away",
+            "goaway",
+            "rip",
+            "go.away"
+        ],
+        "enabled": true,
+        "description": "Shuts the bot down, via normal shutdown procedure.",
+        "name": "shutdown",
+        "cog_name": "BotAdminCog",
+        "signature": {
+            "reason": "reason: str = 'No reason given'"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py/#L228-L242",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/shutdown",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Collects all Guild emojis a...",
+        "allowed_roles": [],
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [],
+        "example": "@AntiPetros all_guild_emojis",
+        "categories": [
+            {
+                "docstring": "A variety of commands, each of which should be helpful to at least one of the Teams",
+                "brief": null,
+                "long_description": null,
+                "description": "A variety of commands, each of which should be helpful to at least one of the Teams",
+                "extra_info": null,
+                "name": "TeamToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L286-L301",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/TeamToolsCommandCategory",
+                "short_doc": null
+            },
+            {
+                "docstring": "Commands inteded as helpers for the Dev Team",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands inteded as helpers for the Dev Team",
+                "extra_info": null,
+                "name": "DevToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L268-L283",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/DevToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Collects all Guild emojis and sends them as zipped file.",
+        "best_alias": "allguildemojis",
+        "docstring": "Collects all Guild emojis and sends them as zipped file.\n\nExample:\n    @AntiPetros all_guild_emojis",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "all+guild+emojis",
+            "all.guild.emojis",
+            "all-guild-emojis",
+            "allguildemojis"
+        ],
+        "enabled": true,
+        "description": "Collects all Guild emojis and sends them as zipped file.",
+        "name": "all_guild_emojis",
+        "cog_name": "AdministrationCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/discord_admin_cogs/discord_admin_cog.py/#L229-L250",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/all_guild_emojis",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "new-word-emoji",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "addwordreactioninstruction",
+            "new-word-emoji",
+            "add+word+reaction+instruction",
+            "add-word-reaction-instruction",
+            "add.word.reaction.instruction"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "add_word_reaction_instruction",
+        "cog_name": "AutoReactionCog",
+        "signature": {
+            "name": "name: str",
+            "word": "word: str",
+            "exceptions": "exceptions: str",
+            "emojis": "*emojis"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/auto_reaction_cog.py/#L338-L353",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/add_word_reaction_instruction",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": true,
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "communityrules",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "communityrules",
+            "community-rules",
+            "community+rules",
+            "community.rules"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "community_rules",
+        "cog_name": "RulesCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/rules_cog.py/#L161-L171",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/community_rules",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Posts an ASCII Art version ...",
+        "usage": "@AntiPetros <make_figlet or alias> <text>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<text>\ntext you want to see as ASCII Art\n-----",
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros make_figlet The text to figlet",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Posts an ASCII Art version of the input text.",
+        "best_alias": "makefiglet",
+        "docstring": "Posts an ASCII Art version of the input text.\n\nArgs:\n    text (str): text you want to see as ASCII Art.\n\nExample:\n    @AntiPetros make_figlet The text to figlet\n\nInfo:\n    Your invoking message gets deleted!",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "makefiglet",
+            "make-figlet",
+            "make+figlet",
+            "make.figlet"
+        ],
+        "enabled": true,
+        "description": "Posts an ASCII Art version of the input text.",
+        "name": "make_figlet",
+        "cog_name": "KlimBimCog",
+        "signature": {
+            "text": "text: str"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/klim_bim_cog.py/#L261-L281",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/make_figlet",
+        "gif": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/init_userdata/data_pack/image_files/gifs/make_figlet_command.gif",
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Checks all Classnames insid...",
+        "usage": "@AntiPetros <check_template or alias> <all_items_file> <case_insensitive>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<all_items_file>\nif it should also provide a file that lists all used classes\nDefaults to True\n-----\n<case_insensitive>\nif it should check Case insentive\nDefaults to False\n-----",
+        "parent": null,
+        "hidden": false,
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands inteded as helpers for the Dev Team",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands inteded as helpers for the Dev Team",
+                "extra_info": null,
+                "name": "DevToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L268-L283",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/DevToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Checks all Classnames inside a provided template.",
+        "best_alias": "checktemplate",
+        "docstring": "Checks all Classnames inside a provided template.\n\nNeeds to have the tempalte as attachment to the invoking message.\n\nReturns the list of classnames it can't find in the config along with possible correction.\n\nReturns also a corrected version of the template file.\n\nArgs:\n    all_items_file (bool, optional): if it should also provide a file that lists all used classes. Defaults to True.\n    case_insensitive (bool, optional): if it should check Case insentive. Defaults to False.",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "check+template",
+            "check.template",
+            "check-template",
+            "checktemplate"
+        ],
+        "enabled": true,
+        "description": "Checks all Classnames inside a provided template.\nNeeds to have the tempalte as attachment to the invoking message.\nReturns the list of classnames it can't find in the config along with possible correction.\nReturns also a corrected version of the template file.",
+        "name": "check_template",
+        "cog_name": "TemplateCheckerCog",
+        "signature": {
+            "all_items_file": "all_items_file=True",
+            "case_insensitive": "case_insensitive: bool = False"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/template_checker_cog.py/#L127-L214",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/check_template",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": false,
+        "example": null,
+        "categories": [],
+        "short_doc": null,
+        "best_alias": "availablelanguages",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "availablelanguages",
+            "available.languages",
+            "available+languages",
+            "available-languages"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "available_languages",
+        "cog_name": "TranslateCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/translate_cog.py/#L264-L272",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/available_languages",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Removes a User from the Bla...",
+        "usage": "@AntiPetros <remove_from_blacklist or alias> <user>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<user>\nA discord User of the Guild\nInput can be name or Id\nbut best to use Id\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros remove_from_blacklist 576522029470056450",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Removes a User from the Blacklist.",
+        "best_alias": "removefromblacklist",
+        "docstring": "Removes a User from the Blacklist.\n\nBest to use user-id as the parameter.\n\nArgs:\n    user (discord.Member): A discord User of the Guild. Input can be name or Id, but best to use Id.\n\nExample:\n    @AntiPetros remove_from_blacklist 576522029470056450",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "remove.from.blacklist",
+            "remove-from-blacklist",
+            "removefromblacklist",
+            "remove+from+blacklist"
+        ],
+        "enabled": true,
+        "description": "Removes a User from the Blacklist.\nBest to use user-id as the parameter.",
+        "name": "remove_from_blacklist",
+        "cog_name": "BotAdminCog",
+        "signature": {
+            "user": "user: discord.member.Member"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py/#L285-L302",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/remove_from_blacklist",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": true,
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "serverrules",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "server.rules",
+            "server+rules",
+            "server-rules",
+            "serverrules"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "server_rules",
+        "cog_name": "RulesCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/rules_cog.py/#L173-L183",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/server_rules",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Simulates a coin flip and p...",
+        "allowed_roles": [
+            "all"
+        ],
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros flip_coin",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Simulates a coin flip and posts the result as an image of a Petros Dollar.",
+        "best_alias": "flip",
+        "docstring": "Simulates a coin flip and posts the result as an image of a Petros Dollar.\n\nExample:\n    @AntiPetros flip_coin",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "flipcoin",
+            "coinflip",
+            "flip-coin",
+            "flip+coin",
+            "flip.coin",
+            "flip"
+        ],
+        "enabled": true,
+        "description": "Simulates a coin flip and posts the result as an image of a Petros Dollar.",
+        "name": "flip_coin",
+        "cog_name": "KlimBimCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/klim_bim_cog.py/#L169-L197",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/flip_coin",
+        "gif": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/init_userdata/data_pack/image_files/gifs/flip_coin_command.gif",
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": "Shows all server of the Ant...",
+        "allowed_roles": [
+            "all"
+        ],
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros current_online_server",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Shows all server of the Antistasi Community, that are currently online.",
+        "best_alias": "server",
+        "docstring": "Shows all server of the Antistasi Community, that are currently online.\n\nExample:\n    @AntiPetros current_online_server",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "current+online+server",
+            "server",
+            "server?",
+            "servers",
+            "current.online.server",
+            "servers?",
+            "currentonlineserver",
+            "current-online-server"
+        ],
+        "enabled": true,
+        "description": "Shows all server of the Antistasi Community, that are currently online.\nTestserver_3 and Eventserver are excluded as they usually are password guarded.",
+        "name": "current_online_server",
+        "cog_name": "CommunityServerInfoCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/community_server_info_cog.py/#L252-L268",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/current_online_server",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Stamps an image with a smal...",
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros stamp_image -si ASLOGO -fp bottom -sp right -so 0.5 -f 0.25",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Stamps an image with a small image from the available stamps.",
+        "best_alias": "stampimage",
+        "docstring": "Stamps an image with a small image from the available stamps.\n\nNeeds to have the to stamp image as an attachment on the invoking message.\n\nUsefull for watermarking images.\n\nGet all available stamps with '@AntiPetros available_stamps'\n\n\nExample:\n    @AntiPetros stamp_image -si ASLOGO -fp bottom -sp right -so 0.5 -f 0.25",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "stampimage",
+            "stamp.image",
+            "stamp-image",
+            "stamp+image"
+        ],
+        "enabled": true,
+        "description": "Stamps an image with a small image from the available stamps.\nNeeds to have the to stamp image as an attachment on the invoking message.\nUsefull for watermarking images.\nGet all available stamps with '@AntiPetros available_stamps'",
+        "name": "stamp_image",
+        "cog_name": "ImageManipulationCog",
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py/#L189-L246",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/stamp_image",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Shows some info of the Anti...",
+        "allowed_roles": [
+            "all"
+        ],
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros info_guild",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Shows some info of the Antistasi Guild.",
+        "best_alias": "infoguild",
+        "docstring": "Shows some info of the Antistasi Guild.\n\nExample:\n    @AntiPetros info_guild",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "infoguild",
+            "info-guild",
+            "info.guild",
+            "info+guild"
+        ],
+        "enabled": true,
+        "description": "Shows some info of the Antistasi Guild.",
+        "name": "info_guild",
+        "cog_name": "InfoCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/info_cog.py/#L234-L275",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/info_guild",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Gets the log files of the b...",
+        "usage": "@AntiPetros <send_log_file or alias> <which_logs>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<which_logs>\n[description]\nDefaults to 'newest'\nother options = 'all'\n-----",
+        "allowed_roles": [],
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [],
+        "example": "@AntiPetros send_log_file all",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Gets the log files of the bot and post it as a file to discord.",
+        "best_alias": "sendlogfile",
+        "docstring": "Gets the log files of the bot and post it as a file to discord.\n\nYou can choose to only get the newest or all logs.\n\nArgs:\n    which_logs (str, optional): [description]. Defaults to 'newest'. other options = 'all'\n\nExample:\n    @AntiPetros send_log_file all",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "send+log+file",
+            "send-log-file",
+            "send.log.file",
+            "sendlogfile"
+        ],
+        "enabled": true,
+        "description": "Gets the log files of the bot and post it as a file to discord.\nYou can choose to only get the newest or all logs.",
+        "name": "send_log_file",
+        "cog_name": "BotAdminCog",
+        "signature": {
+            "which_logs": "which_logs: str = 'newest'"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py/#L304-L336",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/send_log_file",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": "Reports the latency in the ...",
+        "usage": "@AntiPetros <report_latency or alias> <with_graph>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<with_graph>\nif it should be presented in graph form\nDefaults to True\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros report_latency yes",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Reports the latency in the last 24h",
+        "best_alias": "reportlatency",
+        "docstring": "Reports the latency in the last 24h\n\nArgs:\n    with_graph (bool, optional): if it should be presented in graph form. Defaults to True.\n\nExample:\n    @AntiPetros report_latency yes",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "report-latency",
+            "report+latency",
+            "report.latency",
+            "reportlatency"
+        ],
+        "enabled": true,
+        "description": "Reports the latency in the last 24h",
+        "name": "report_latency",
+        "cog_name": "PerformanceCog",
+        "signature": {
+            "with_graph": "with_graph: bool = True"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/performance_cog.py/#L191-L215",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/report_latency",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Sends about a page worth of...",
+        "usage": "@AntiPetros <the_bots_new_clothes or alias> <delete_after>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<delete_after>\ntime in seconds after which to delete the empty message\nDefaults to None which means that it does not delete the empty message\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros the_bot_new_clothes 120",
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            },
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Sends about a page worth of empty message to a channel, looks like channel got purged.",
+        "best_alias": "clr-scrn",
+        "docstring": "Sends about a page worth of empty message to a channel, looks like channel got purged.\n\nOptional deletes the empty message after specified seconds (defaults to not deleting)\n\nArgs:\n    delete_after (int, optional): time in seconds after which to delete the empty message. Defaults to None which means that it does not delete the empty message.\n\nExample:\n    @AntiPetros the_bot_new_clothes 120",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "thebotsnewclothes",
+            "the-bots-new-clothes",
+            "the+bots+new+clothes",
+            "the.bots.new.clothes",
+            "clr-scrn"
+        ],
+        "enabled": true,
+        "description": "Sends about a page worth of empty message to a channel, looks like channel got purged.\nOptional deletes the empty message after specified seconds (defaults to not deleting)",
+        "name": "the_bots_new_clothes",
+        "cog_name": "AdministrationCog",
+        "signature": {
+            "delete_after": "delete_after: int = None"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/discord_admin_cogs/discord_admin_cog.py/#L130-L148",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/the_bots_new_clothes",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": true,
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "allrules",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "all.rules",
+            "all-rules",
+            "all+rules",
+            "allrules"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "all_rules",
+        "cog_name": "RulesCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/rules_cog.py/#L185-L191",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/all_rules",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": true,
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            },
+            {
+                "docstring": "A variety of commands, each of which should be helpful to at least one of the Teams",
+                "brief": null,
+                "long_description": null,
+                "description": "A variety of commands, each of which should be helpful to at least one of the Teams",
+                "extra_info": null,
+                "name": "TeamToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L286-L301",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/TeamToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "creategiveaway",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "create-giveaway",
+            "create+giveaway",
+            "create.giveaway",
+            "creategiveaway"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "create_giveaway",
+        "cog_name": "GiveAwayCog",
+        "signature": " [--enter_emoji ENTER_EMOJI=\ud83c\udf81] [--start_message START_MESSAGE] [--end_message END_MESSAGE=Give away has finished!] [--num_winners NUM_WINNERS=1] [--end_date END_DATE=24 hours] [--title TITLE=Antistasi Give-Away]",
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/community_events_cogs/give_away_cog.py/#L226-L298",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/create_giveaway",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "allowed_roles": [],
+        "parent": null,
+        "hidden": false,
+        "allowed_channels": [],
+        "example": "NA",
+        "categories": [
+            {
+                "docstring": "Commands inteded as helpers for the Dev Team",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands inteded as helpers for the Dev Team",
+                "extra_info": null,
+                "name": "DevToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L268-L283",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/DevToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "NA",
+        "best_alias": "clearallisonlinemessages",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "clear+all+is+online+messages",
+            "clear.all.is.online.messages",
+            "clear-all-is-online-messages",
+            "clearallisonlinemessages"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "clear_all_is_online_messages",
+        "cog_name": "CommunityServerInfoCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/community_server_info_cog.py/#L353-L357",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/clear_all_is_online_messages",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": "Shows Info about the Bot it...",
+        "allowed_roles": [
+            "all"
+        ],
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros info_bot",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Shows Info about the Bot itself.",
+        "best_alias": "infobot",
+        "docstring": "Shows Info about the Bot itself.\n\nExample:\n    @AntiPetros info_bot",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "info.bot",
+            "infobot",
+            "info-bot",
+            "info+bot"
+        ],
+        "enabled": true,
+        "description": "Shows Info about the Bot itself.",
+        "name": "info_bot",
+        "cog_name": "InfoCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/info_cog.py/#L188-L232",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/info_bot",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": true,
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "exploitsrules",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "exploitsrules",
+            "exploits-rules",
+            "exploits+rules",
+            "exploits.rules"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "exploits_rules",
+        "cog_name": "RulesCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/rules_cog.py/#L149-L159",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/exploits_rules",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": false,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "addfont",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "addfont",
+            "add.font",
+            "add+font",
+            "add-font"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "add_font",
+        "cog_name": "ImageManipulationCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py/#L395-L409",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/add_font",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Unloads a specific Cog.",
+        "usage": "@AntiPetros <disable_cog or alias> <cog>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<cog>\nName of the Cog\ncase-INsensitive\nprefix `Cog` is optional\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros disable_cog Klimbim",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Unloads a specific Cog.",
+        "best_alias": "disablecog",
+        "docstring": "Unloads a specific Cog.\n\nThis disables all functionality and all backgroundtasks associated with that Cog. It also sets the config to not load the cog, so it does not get reloaded on accident.\n\nArgs:\n    cog (CogConverter): Name of the Cog, case-INsensitive. prefix `Cog` is optional.\n\nExample:\n    @AntiPetros disable_cog Klimbim",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "disable+cog",
+            "disablecog",
+            "disable-cog",
+            "disable.cog"
+        ],
+        "enabled": true,
+        "description": "Unloads a specific Cog.\nThis disables all functionality and all backgroundtasks associated with that Cog. It also sets the config to not load the cog, so it does not get reloaded on accident.",
+        "name": "disable_cog",
+        "cog_name": "BotAdminCog",
+        "signature": {
+            "cog": "cog: antipetros_discordbot.utility.converters.CogConverter"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py/#L338-L360",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/disable_cog",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Translates text into multip...",
+        "usage": "@AntiPetros <translate or alias> <text_to_translate> <to_language_id>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<text_to_translate>\nthe text to translate\nquotes are optional\n-----\n<to_language_id>\neither can be the name of the language or an language code (iso639-1 language codes)\nDefaults to \"english\"\n-----",
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros translate german This is the Sentence to translate",
+        "categories": [],
+        "short_doc": "Translates text into multiple different languages.",
+        "best_alias": "translate",
+        "docstring": "Translates text into multiple different languages.\n\nTries to auto-guess input language.\n\nArgs:\n    text_to_translate (str): the text to translate, quotes are optional\n    to_language_id (Optional[LanguageConverter], optional): either can be the name of the language or an language code (iso639-1 language codes). Defaults to \"english\".\n\nExample:\n        @AntiPetros translate german This is the Sentence to translate\n\nInfo:\n    Your invoking message gets deleted!",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [],
+        "enabled": true,
+        "description": "Translates text into multiple different languages.\nTries to auto-guess input language.",
+        "name": "translate",
+        "cog_name": "TranslateCog",
+        "signature": {
+            "to_language_id": "to_language_id: Optional[antipetros_discordbot.utility.converters.LanguageConverter] = 'english'",
+            "text_to_translate": "text_to_translate: str"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/translate_cog.py/#L240-L262",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/translate",
+        "gif": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/init_userdata/data_pack/image_files/gifs/translate_command.gif",
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "allowed_roles": [],
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [],
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "sendstoredfiles",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "send+stored+files",
+            "send.stored.files",
+            "sendstoredfiles",
+            "send-stored-files"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "send_stored_files",
+        "cog_name": "BotAdminCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py/#L167-L187",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/send_stored_files",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "removereactioninstruction",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "remove-reaction-instruction",
+            "remove+reaction+instruction",
+            "removereactioninstruction",
+            "remove.reaction.instruction"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "remove_reaction_instruction",
+        "cog_name": "AutoReactionCog",
+        "signature": {
+            "instruction_name": "instruction_name: str"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/auto_reaction_cog.py/#L355-L368",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/remove_reaction_instruction",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "addchannelreactioninstruction",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "add+channel+reaction+instruction",
+            "addchannelreactioninstruction",
+            "add.channel.reaction.instruction",
+            "add-channel-reaction-instruction"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "add_channel_reaction_instruction",
+        "cog_name": "AutoReactionCog",
+        "signature": {
+            "name": "name: str",
+            "channel": "channel: discord.channel.TextChannel",
+            "emojis": "*emojis: str"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/auto_reaction_cog.py/#L322-L336",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/add_channel_reaction_instruction",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Adds a User to the Bots Bla...",
+        "usage": "@AntiPetros <add_to_blacklist or alias> <user>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<user>\nA discord User of the Guild\nInput can be name or Id\nbut best to use Id\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros add_to_blacklist 576522029470056450",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Adds a User to the Bots Blacklist.",
+        "best_alias": "addtoblacklist",
+        "docstring": "Adds a User to the Bots Blacklist.\n\nThe User will not be able to trigger the bot as long as he is on the Blacklist. Best to use user-id as the parameter.\n\nArgs:\n    user (discord.Member): A discord User of the Guild. Input can be name or Id, but best to use Id.\n\nExample:\n    @AntiPetros add_to_blacklist 576522029470056450",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "add+to+blacklist",
+            "add-to-blacklist",
+            "add.to.blacklist",
+            "addtoblacklist"
+        ],
+        "enabled": true,
+        "description": "Adds a User to the Bots Blacklist.\nThe User will not be able to trigger the bot as long as he is on the Blacklist. Best to use user-id as the parameter.",
+        "name": "add_to_blacklist",
+        "cog_name": "BotAdminCog",
+        "signature": {
+            "user": "user: discord.member.Member"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py/#L260-L283",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/add_to_blacklist",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "allowed_roles": [],
+        "parent": null,
+        "hidden": false,
+        "allowed_channels": [],
+        "example": "NA",
+        "categories": [
+            {
+                "docstring": "Commands inteded as helpers for the Dev Team",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands inteded as helpers for the Dev Team",
+                "extra_info": null,
+                "name": "DevToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L268-L283",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/DevToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "NA",
+        "best_alias": "opengithubissues",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "open.github.issues",
+            "opengithubissues",
+            "open-github-issues",
+            "open+github+issues"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "open_github_issues",
+        "cog_name": "GithubCog",
+        "signature": {
+            "since_days_ago": "since_days_ago: Optional[int] = 31",
+            "labels": "labels: str = None"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/github_cog.py/#L499-L520",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/open_github_issues",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": "Selects random items from a...",
+        "usage": "@AntiPetros <choose_random or alias> <choices> <select_amount>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<choices>\ninput list as semi-colon seperated list\n-----\n<select_amount>\nHow many items to select\nDefaults to 1\n-----",
+        "parent": null,
+        "hidden": false,
+        "example": "`@AntiPetros 2 this is the first item; this is the second; this is the third`",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Selects random items from a semi-colon(`;`) seperated list. No limit on how many items the list can have, except for Discord character limit.",
+        "best_alias": "chooserandom",
+        "docstring": "Selects random items from a semi-colon(`;`) seperated list. No limit on how many items the list can have, except for Discord character limit.\n\nAmount of item to select can be set by specifying a number before the list. Defaults to selecting only 1 item. Max amount is 25.\n\nArgs:\n\n    choices (str): input list as semi-colon seperated list.\n    select_amount (Optional[int], optional): How many items to select. Defaults to 1.\n\nExample:\n    `@AntiPetros 2 this is the first item; this is the second; this is the third`",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "choose.random",
+            "chooserandom",
+            "choose-random",
+            "choose+random"
+        ],
+        "enabled": true,
+        "description": "Selects random items from a semi-colon(`;`) seperated list. No limit on how many items the list can have, except for Discord character limit.\nAmount of item to select can be set by specifying a number before the list. Defaults to selecting only 1 item. Max amount is 25.",
+        "name": "choose_random",
+        "cog_name": "KlimBimCog",
+        "signature": {
+            "select_amount": "select_amount: Optional[int] = 1",
+            "choices": "choices: str"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/klim_bim_cog.py/#L463-L512",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/choose_random",
+        "gif": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/init_userdata/data_pack/image_files/gifs/choose_random_command.gif",
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": false,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "NA",
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "NA",
+        "best_alias": "setserverrestartreason",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "set+server+restart+reason",
+            "set.server.restart.reason",
+            "setserverrestartreason",
+            "set-server-restart-reason"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "set_server_restart_reason",
+        "cog_name": "CommunityServerInfoCog",
+        "signature": {
+            "notification_msg_id": "notification_msg_id: Optional[int] = None",
+            "reason": "reason: str"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/community_server_info_cog.py/#L334-L351",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/set_server_restart_reason",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Adds a new stamp image to t...",
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros add_stamp",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Adds a new stamp image to the available stamps.",
+        "best_alias": "addstamp",
+        "docstring": "Adds a new stamp image to the available stamps.\n\nThis command needs to have the image as an attachment.\n\nExample:\n    @AntiPetros add_stamp",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "add_image",
+            "addstamp",
+            "add+stamp",
+            "add.stamp",
+            "add-stamp"
+        ],
+        "enabled": true,
+        "description": "Adds a new stamp image to the available stamps.\nThis command needs to have the image as an attachment.",
+        "name": "add_stamp",
+        "cog_name": "ImageManipulationCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py/#L337-L360",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/add_stamp",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "changeprefix",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "change.prefix",
+            "change+prefix",
+            "change-prefix",
+            "changeprefix"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "change_prefix",
+        "cog_name": "ConfigCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/config_cog.py/#L187-L190",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/change_prefix",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Reports the memory use in t...",
+        "usage": "@AntiPetros <report_memory or alias> <with_graph>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<with_graph>\nif it should be presented in graph form\nDefaults to True\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros report_memory yes",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Reports the memory use in the last 24h",
+        "best_alias": "reportmemory",
+        "docstring": "Reports the memory use in the last 24h\n\nArgs:\n    with_graph (bool, optional): if it should be presented in graph form. Defaults to True.\n\nExample:\n    @AntiPetros report_memory yes",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "report-memory",
+            "report.memory",
+            "report+memory",
+            "reportmemory"
+        ],
+        "enabled": true,
+        "description": "Reports the memory use in the last 24h",
+        "name": "report_memory",
+        "cog_name": "PerformanceCog",
+        "signature": {
+            "with_graph": "with_graph: bool = True",
+            "since_last_hours": "since_last_hours: int = 24"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/performance_cog.py/#L217-L249",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/report_memory",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "listallreactioninstructions",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "list-all-reaction-instructions",
+            "listallreactioninstructions",
+            "list.all.reaction.instructions",
+            "list+all+reaction+instructions"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "list_all_reaction_instructions",
+        "cog_name": "AutoReactionCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/auto_reaction_cog.py/#L410-L417",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/list_all_reaction_instructions",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": "Reports all collected metri...",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros report",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Reports all collected metrics as Graph.",
+        "best_alias": "report",
+        "docstring": "Reports all collected metrics as Graph.\n\nExample:\n    @AntiPetros report",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [],
+        "enabled": true,
+        "description": "Reports all collected metrics as Graph.",
+        "name": "report",
+        "cog_name": "PerformanceCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/performance_cog.py/#L277-L293",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/report",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Only for Bob",
+        "usage": "@AntiPetros <bob_streaming or alias> <extra_msg>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<extra_msg>\nThe message you want to add to the embed\nDefaults to None\n-----",
+        "allowed_roles": [
+            "all"
+        ],
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros bob_streaming This is an extra message and is optional",
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Only for Bob",
+        "best_alias": "bobdev",
+        "docstring": "Only for Bob\n\n\nArgs:\n    extra_msg (str, optional): The message you want to add to the embed. Defaults to None.\n\nExample:\n    @AntiPetros bob_streaming This is an extra message and is optional",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "bob+streaming",
+            "bobdev",
+            "bob.streaming",
+            "bobstreaming",
+            "bob-streaming"
+        ],
+        "enabled": true,
+        "description": "Only for Bob",
+        "name": "bob_streaming",
+        "cog_name": "FixedAnswerCog",
+        "signature": {
+            "extra_msg": "extra_msg: str = None"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/fixed_answer_cog.py/#L161-L189",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/bob_streaming",
+        "gif": null,
+        "allowed_in_dms": true
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "changewordreactioninstructionoption",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "change.word.reaction.instruction.option",
+            "changewordreactioninstructionoption",
+            "change-word-reaction-instruction-option",
+            "change+word+reaction+instruction+option"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "change_word_reaction_instruction_option",
+        "cog_name": "AutoReactionCog",
+        "signature": {
+            "instruction_name": "instruction_name: str",
+            "option_name": "option_name: str",
+            "option_value": "option_value: bool"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/auto_reaction_cog.py/#L390-L408",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/change_word_reaction_instruction_option",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Provides a list of all exis...",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros list_configs",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Provides a list of all existing configs-files.",
+        "best_alias": "listconfigs",
+        "docstring": "Provides a list of all existing configs-files.\n\nThe names are without the extension, and show up like they are needed as input for other config commands.\n\nExample:\n    @AntiPetros list_configs",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "listconfigs",
+            "list-configs",
+            "list.configs",
+            "list+configs"
+        ],
+        "enabled": false,
+        "description": "Provides a list of all existing configs-files.\nThe names are without the extension, and show up like they are needed as input for other config commands.",
+        "name": "list_configs",
+        "cog_name": "ConfigCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/config_cog.py/#L223-L239",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/list_configs",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Roll Dice and get the resul...",
+        "usage": "@AntiPetros <roll_dice or alias> <dice_line>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<dice_line>\nthe dice you want to roll in the format `2d6`\nfirst number is amount\nMultiple different dice can be rolled\njust seperate them by a space\n-> 2d6 4d20 1d4\n-----",
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros roll_dice 14d4 14d6 14d8 14d10 14d12 14d20 14d100",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Roll Dice and get the result also as Image.",
+        "best_alias": "dice",
+        "docstring": "Roll Dice and get the result also as Image.\n\nAll standard DnD Dice are available, d4, d6, d8, d10, d12, d20, d100.\n\nArgs:\n    dice_line (str): the dice you want to roll in the format `2d6`, first number is amount. Multiple different dice can be rolled, just seperate them by a space. -> 2d6 4d20 1d4.\n\nExample:\n    @AntiPetros roll_dice 14d4 14d6 14d8 14d10 14d12 14d20 14d100",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "rolldice",
+            "dice",
+            "roll+dice",
+            "roll.dice",
+            "roll-dice"
+        ],
+        "enabled": true,
+        "description": "Roll Dice and get the result also as Image.\nAll standard DnD Dice are available, d4, d6, d8, d10, d12, d20, d100.",
+        "name": "roll_dice",
+        "cog_name": "KlimBimCog",
+        "signature": {
+            "dice_line": "dice_line: str"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/klim_bim_cog.py/#L352-L406",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/roll_dice",
+        "gif": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/init_userdata/data_pack/image_files/gifs/roll_dice_command.gif",
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": "Posts an FAQ as an embed on...",
+        "usage": "@AntiPetros <post_faq_by_number or alias> <faq_numbers>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<faq_numbers>\nminimum one faq number\nno maximum\neach seperated by one space (ie 14 12 3)\n-----",
+        "allowed_roles": [],
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [],
+        "example": "@AntiPetros post_faq_by_number 4 8 12",
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Posts an FAQ as an embed on request.",
+        "best_alias": "faq",
+        "docstring": "Posts an FAQ as an embed on request.\n\nEither as an normal message or as an reply, if the invoking message was also an reply.\n\nArgs:\n    faq_numbers (commands.Greedy[int]): minimum one faq number, no maximum,each seperated by one space (ie 14 12 3)\n\nExample:\n    @AntiPetros post_faq_by_number 4 8 12\n\nInfo:\n    Deletes invoking message.",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "post-faq-by-number",
+            "postfaqbynumber",
+            "post+faq+by+number",
+            "post.faq.by.number",
+            "faq"
+        ],
+        "enabled": true,
+        "description": "Posts an FAQ as an embed on request.\nEither as an normal message or as an reply, if the invoking message was also an reply.",
+        "name": "post_faq_by_number",
+        "cog_name": "FaqCog",
+        "signature": {
+            "faq_numbers": "faq_numbers: <discord.ext.commands.converter._Greedy object at 0x0000020A5F9737C0>"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/special_channels_cogs/faq_cog.py/#L166-L201",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/post_faq_by_number",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": "Adds a youtube music video ...",
+        "usage": "@AntiPetros <add_music or alias> <band> <title> <youtube_link>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<band>\nThe name of the Band or Artist\nNeeds to be put in quotes(\") if it contains spaces\n-----\n<title>\nThe name of the Tile\nNeeds to be put in quotes(\") if it contains spaces\n-----\n<youtube_link>\nThe actual linkt to the video\n-----",
+        "parent": null,
+        "hidden": false,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros add_music \"Weird Al Yankovic\" \"Amish Paradise\" https://www.youtube.com/watch?v=lOfZLb33uCg",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Adds a youtube music video link to the bots internal youtube link storage.",
+        "best_alias": "addmusic",
+        "docstring": "Adds a youtube music video link to the bots internal youtube link storage.\n\nThis makes it possible for the youtube link to show up when the `random_music` command is used.\n\nArgs:\n    band (str): The name of the Band or Artist. Needs to be put in quotes(\") if it contains spaces\n    title (str): The name of the Tile. Needs to be put in quotes(\") if it contains spaces\n    youtube_link (UrlConverter): The actual linkt to the video.\n\nExample:\n    @AntiPetros add_music \"Weird Al Yankovic\" \"Amish Paradise\" https://www.youtube.com/watch?v=lOfZLb33uCg\n\nInfo:\n    When this command is used, it logs the user! It also messages Giddi the Link and the Name of the Person that added it",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "add+music",
+            "add-music",
+            "add.music",
+            "addmusic"
+        ],
+        "enabled": true,
+        "description": "Adds a youtube music video link to the bots internal youtube link storage.\nThis makes it possible for the youtube link to show up when the `random_music` command is used.",
+        "name": "add_music",
+        "cog_name": "KlimBimCog",
+        "signature": {
+            "band": "band: str",
+            "title": "title: str",
+            "youtube_link": "youtube_link: antipetros_discordbot.utility.converters.UrlConverter"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/klim_bim_cog.py/#L532-L566",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/add_music",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Removes all messages of the...",
+        "allowed_roles": [],
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [],
+        "example": "@AntiPetros purge_antipetros -gid yes -n 1000",
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Removes all messages of the bot and optionally of giddi.",
+        "best_alias": "purgeantipetros",
+        "docstring": "Removes all messages of the bot and optionally of giddi.\n\nExample:\n    @AntiPetros purge_antipetros -gid yes -n 1000",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "purge+antipetros",
+            "purgeantipetros",
+            "purge.antipetros",
+            "purge-antipetros"
+        ],
+        "enabled": true,
+        "description": "Removes all messages of the bot and optionally of giddi.",
+        "name": "purge_antipetros",
+        "cog_name": "PurgeMessagesCog",
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/discord_admin_cogs/purge_messages_cog.py/#L197-L217",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/purge_antipetros",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": "Adds an alias for a command.",
+        "usage": "@AntiPetros <add_alias or alias> <command_name> <alias>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<command_name>\nname of the command\n-----\n<alias>\nthe new alias\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros add_alias flip_coin flip_it",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Adds an alias for a command.",
+        "best_alias": "addalias",
+        "docstring": "Adds an alias for a command.\n\nAlias has to be unique and not spaces.\n\nArgs:\n    command_name (str): name of the command\n    alias (str): the new alias.\n\nExample:\n    @AntiPetros add_alias flip_coin flip_it",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "addalias",
+            "add-alias",
+            "add+alias",
+            "add.alias"
+        ],
+        "enabled": true,
+        "description": "Adds an alias for a command.\nAlias has to be unique and not spaces.",
+        "name": "add_alias",
+        "cog_name": "ConfigCog",
+        "signature": {
+            "command": "command: antipetros_discordbot.utility.converters.CommandConverter",
+            "new_alias": "new_alias: str"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/config_cog.py/#L267-L293",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/add_alias",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Stamps the avatar of a Memb...",
+        "allowed_roles": [],
+        "parent": null,
+        "hidden": false,
+        "allowed_channels": [],
+        "example": "@AntiPetros member_avatar",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Stamps the avatar of a Member with the Antistasi Crest.",
+        "best_alias": "memberavatar",
+        "docstring": "Stamps the avatar of a Member with the Antistasi Crest.\n\nReturns the new stamped avatar as a .PNG image that the Member can save and replace his orginal avatar with.\n\nExample:\n    @AntiPetros member_avatar",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "member-avatar",
+            "member+avatar",
+            "memberavatar",
+            "member.avatar"
+        ],
+        "enabled": true,
+        "description": "Stamps the avatar of a Member with the Antistasi Crest.\nReturns the new stamped avatar as a .PNG image that the Member can save and replace his orginal avatar with.",
+        "name": "member_avatar",
+        "cog_name": "ImageManipulationCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py/#L276-L285",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/member_avatar",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "allowed_roles": [],
+        "parent": null,
+        "hidden": false,
+        "allowed_channels": [],
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "help",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [],
+        "enabled": true,
+        "description": "NA",
+        "name": "help",
+        "cog_name": "HelpCog",
+        "signature": {
+            "in_object": "in_object: Union[antipetros_discordbot.utility.converters.CommandConverter, antipetros_discordbot.utility.converters.CategoryConverter] = None"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/help_cog.py/#L295-L309",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/help",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": "Writes a message as the bot...",
+        "usage": "@AntiPetros <write_message or alias> <channel> <message>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<channel>\nname or id of channel\nPreferably use Id as it is failsafe\n-----\n<message>\nThe message you want to write\ndoes not need any quotes and can be multiline\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros write_message 645930607683174401 This is my message",
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            },
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Writes a message as the bot to a specific channel.",
+        "best_alias": "writemessage",
+        "docstring": "Writes a message as the bot to a specific channel.\n\n\nArgs:\n    channel (discord.TextChannel): name or id of channel. Preferably use Id as it is failsafe.\n    message (str): The message you want to write, does not need any quotes and can be multiline\n\nExample:\n    @AntiPetros write_message 645930607683174401 This is my message",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "write+message",
+            "write.message",
+            "write-message",
+            "writemessage"
+        ],
+        "enabled": true,
+        "description": "Writes a message as the bot to a specific channel.",
+        "name": "write_message",
+        "cog_name": "AdministrationCog",
+        "signature": {
+            "channel": "channel: discord.channel.TextChannel",
+            "message": "message: str"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/discord_admin_cogs/discord_admin_cog.py/#L150-L166",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/write_message",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": false,
+        "example": "NA",
+        "categories": [
+            {
+                "docstring": "Commands inteded as helpers for the Dev Team",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands inteded as helpers for the Dev Team",
+                "extra_info": null,
+                "name": "DevToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L268-L283",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/DevToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "NA",
+        "best_alias": "githubtraffic",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "github.traffic",
+            "github-traffic",
+            "githubtraffic",
+            "github+traffic"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "github_traffic",
+        "cog_name": "GithubCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/github_cog.py/#L463-L497",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/github_traffic",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Creates a simple embed mess...",
+        "usage": "@AntiPetros <make_embed or alias> <channel> <--title> <--description> <--url> <--thumbnail> <--image> <--timestamp> <--author-name> <--author-url> <--author-icon> <--footer-text> <--footer-icon> <--disable-mentions> <--delete-after>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<channel>\neither channel name or channel id (prefered)\nwhere the message should be posted\n-----\n<--title>\n\n-----\n<--description>\n\n-----\n<--url>\n\n-----\n<--thumbnail>\n\n-----\n<--image>\n\n-----\n<--timestamp>\n\n-----\n<--author-name>\n\n-----\n<--author-url>\n\n-----\n<--author-icon>\n\n-----\n<--footer-text>\n\n-----\n<--footer-icon>\n\n-----\n<--disable-mentions>\n\n-----\n<--delete-after>\n\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros make_embed -t \"My Title\" -d \"This is my description\" -dis yes -da 120",
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            },
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Creates a simple embed message in the specified channel.",
+        "best_alias": "makeembed",
+        "docstring": "Creates a simple embed message in the specified channel.\n\nNo support for embed fields, as input would be to complicated.\n\nArgs:\n    channel (discord.TextChannel): either channel name or channel id (prefered), where the message should be posted.\n    --title (str):\n    --description (str):\n    --url (str):\n    --thumbnail (str):\n    --image (str):\n    --timestamp (str):\n    --author-name (str):\n    --author-url (str):\n    --author-icon (str):\n    --footer-text (str):\n    --footer-icon (str):\n    --thumbnail (str):\n    --image (str):\n    --disable-mentions (bool):\n    --delete-after (int):\n\nExample:\n    @AntiPetros make_embed -t \"My Title\" -d \"This is my description\" -dis yes -da 120",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "make-embed",
+            "make.embed",
+            "makeembed",
+            "make+embed"
+        ],
+        "enabled": true,
+        "description": "Creates a simple embed message in the specified channel.\nNo support for embed fields, as input would be to complicated.",
+        "name": "make_embed",
+        "cog_name": "AdministrationCog",
+        "signature": "@AntiPetros <make_embed or alias> <channel> <--title> <--description> <--url> <--thumbnail> <--image> <--timestamp> <--author-name> <--author-url> <--author-icon> <--footer-text> <--footer-icon> <--disable-mentions> <--delete-after>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<channel>\neither channel name or channel id (prefered)\nwhere the message should be posted\n-----\n<--title>\n\n-----\n<--description>\n\n-----\n<--url>\n\n-----\n<--thumbnail>\n\n-----\n<--image>\n\n-----\n<--timestamp>\n\n-----\n<--author-name>\n\n-----\n<--author-url>\n\n-----\n<--author-icon>\n\n-----\n<--footer-text>\n\n-----\n<--footer-icon>\n\n-----\n<--disable-mentions>\n\n-----\n<--delete-after>\n\n----- [--delete_after DELETE_AFTER] [--disable_mentions DISABLE_MENTIONS=True] [--footer_icon FOOTER_ICON=Embed.Empty] [--footer_text FOOTER_TEXT] [--author_icon AUTHOR_ICON=Embed.Empty] [--author_url AUTHOR_URL=Embed.Empty] [--author_name AUTHOR_NAME] [--timestamp TIMESTAMP=2021-05-26 23:45:51.407693] [--image IMAGE] [--thumbnail THUMBNAIL] [--url URL=Embed.Empty] [--description DESCRIPTION=\u200b] [--title TITLE=\u200b]",
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/discord_admin_cogs/discord_admin_cog.py/#L168-L227",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/make_embed",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Checks if the bot is runnin...",
+        "allowed_roles": [],
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [],
+        "example": "@AntiPetros life_check",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Checks if the bot is running, receiving messages and capable to answer, or even if two instances are running.",
+        "best_alias": "lifecheck",
+        "docstring": "Checks if the bot is running, receiving messages and capable to answer, or even if two instances are running.\n\nThis is a more fun version of a `pong` command\n\nExample:\n    @AntiPetros life_check",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "are-you-there",
+            "life+check",
+            "lifecheck",
+            "life.check",
+            "life-check",
+            "you_dead?",
+            "poke-with-stick"
+        ],
+        "enabled": true,
+        "description": "Checks if the bot is running, receiving messages and capable to answer, or even if two instances are running.\nThis is a more fun version of a `pong` command",
+        "name": "life_check",
+        "cog_name": "BotAdminCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py/#L244-L258",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/life_check",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": false,
+        "example": "NA",
+        "categories": [
+            {
+                "docstring": "Commands inteded as helpers for the Dev Team",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands inteded as helpers for the Dev Team",
+                "extra_info": null,
+                "name": "DevToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L268-L283",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/DevToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "NA",
+        "best_alias": "githubreferals",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "github-referals",
+            "githubreferals",
+            "github+referals",
+            "github.referals"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "github_referals",
+        "cog_name": "GithubCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/github_cog.py/#L438-L461",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/github_referals",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Gives a List of all current...",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros current_cogs",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Gives a List of all currently active and loaded Cogs.",
+        "best_alias": "currentcogs",
+        "docstring": "Gives a List of all currently active and loaded Cogs.\n\nExample:\n    @AntiPetros current_cogs",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "current+cogs",
+            "current.cogs",
+            "current-cogs",
+            "currentcogs"
+        ],
+        "enabled": true,
+        "description": "Gives a List of all currently active and loaded Cogs.",
+        "name": "current_cogs",
+        "cog_name": "BotAdminCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py/#L362-L374",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/current_cogs",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": false,
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "get_image",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "get_image",
+            "get+stamp+image",
+            "getstampimage",
+            "get-stamp-image",
+            "get.stamp.image"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "get_stamp_image",
+        "cog_name": "ImageManipulationCog",
+        "signature": {
+            "image_name": "image_name: str"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py/#L326-L335",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/get_stamp_image",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Returns a Config file as an...",
+        "usage": "@AntiPetros <config_request or alias> <config_name>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<config_name>\nName of the config\nor 'all' for all configs\nDefaults to 'all'\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros config_request cogs_config",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Returns a Config file as and attachment, with additional info in an embed.",
+        "best_alias": "configrequest",
+        "docstring": "Returns a Config file as and attachment, with additional info in an embed.\n\nArgs:\n    config_name (str, optional): Name of the config, or 'all' for all configs. Defaults to 'all'.\n\nExample:\n    @AntiPetros config_request cogs_config",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "config-request",
+            "configrequest",
+            "config+request",
+            "config.request"
+        ],
+        "enabled": true,
+        "description": "Returns a Config file as and attachment, with additional info in an embed.",
+        "name": "config_request",
+        "cog_name": "ConfigCog",
+        "signature": {
+            "config_name": "config_name: str = 'all'"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/config_cog.py/#L241-L265",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/config_request",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Posts and awesome ASCII Art...",
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros the_dragon",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Posts and awesome ASCII Art Dragon!",
+        "best_alias": "thedragon",
+        "docstring": "Posts and awesome ASCII Art Dragon!\n\nExample:\n    @AntiPetros the_dragon",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "the.dragon",
+            "the-dragon",
+            "thedragon",
+            "the+dragon"
+        ],
+        "enabled": true,
+        "description": "Posts and awesome ASCII Art Dragon!",
+        "name": "the_dragon",
+        "cog_name": "KlimBimCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/klim_bim_cog.py/#L150-L167",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/the_dragon",
+        "gif": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/init_userdata/data_pack/image_files/gifs/the_dragon_command.gif",
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "addexceptiontowordreactioninstruction",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "add+exception+to+word+reaction+instruction",
+            "addexceptiontowordreactioninstruction",
+            "add.exception.to.word.reaction.instruction",
+            "add-exception-to-word-reaction-instruction"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "add_exception_to_word_reaction_instruction",
+        "cog_name": "AutoReactionCog",
+        "signature": {
+            "instruction_name": "instruction_name: str",
+            "typus": "typus: str",
+            "in_id": "in_id: int"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/auto_reaction_cog.py/#L370-L388",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/add_exception_to_word_reaction_instruction",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Posts all available stamps.",
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros available_stamps",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Posts all available stamps.",
+        "best_alias": "availablestamps",
+        "docstring": "Posts all available stamps.\n\nRemoves them after 2min to keep channel clean.\n\nExample:\n    @AntiPetros available_stamps",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "available-stamps",
+            "available.stamps",
+            "available+stamps",
+            "availablestamps"
+        ],
+        "enabled": true,
+        "description": "Posts all available stamps.\nRemoves them after 2min to keep channel clean.",
+        "name": "available_stamps",
+        "cog_name": "ImageManipulationCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py/#L248-L274",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/available_stamps",
+        "gif": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/init_userdata/data_pack/image_files/gifs/available_stamps_command.gif",
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Reloads all enabled extensi...",
+        "allowed_roles": [],
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [],
+        "example": "@AntiPetros reload_all_ext",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Reloads all enabled extensions.",
+        "best_alias": "reload",
+        "docstring": "Reloads all enabled extensions.\n\nCurrently not working perfectly, it is recommended to just restart the bot.\n\nExample:\n    @AntiPetros reload_all_ext",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "reload",
+            "reload-all-ext",
+            "reload.all.ext",
+            "reloadallext",
+            "refresh",
+            "reload+all+ext"
+        ],
+        "enabled": true,
+        "description": "Reloads all enabled extensions.\nCurrently not working perfectly, it is recommended to just restart the bot.",
+        "name": "reload_all_ext",
+        "cog_name": "BotAdminCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py/#L189-L226",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/reload_all_ext",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": true
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": false,
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "listfonts",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "list-fonts",
+            "listfonts",
+            "list.fonts",
+            "list+fonts"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "list_fonts",
+        "cog_name": "ImageManipulationCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/image_manipulation_cog.py/#L417-L428",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/list_fonts",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Reports the cpu use in the ...",
+        "usage": "@AntiPetros <report_cpu or alias> <with_graph>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<with_graph>\nif it should be presented in graph form\nDefaults to True\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros report_cpu yes",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Reports the cpu use in the last 24h",
+        "best_alias": "reportcpu",
+        "docstring": "Reports the cpu use in the last 24h\n\nArgs:\n    with_graph (bool, optional): if it should be presented in graph form. Defaults to True.\n\nExample:\n    @AntiPetros report_cpu yes",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "reportcpu",
+            "report-cpu",
+            "report+cpu",
+            "report.cpu"
+        ],
+        "enabled": true,
+        "description": "Reports the cpu use in the last 24h",
+        "name": "report_cpu",
+        "cog_name": "PerformanceCog",
+        "signature": {
+            "with_graph": "with_graph: bool = True"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/performance_cog.py/#L251-L275",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/report_cpu",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": true,
+        "example": null,
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": null,
+        "best_alias": "eta",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "new+version+eta",
+            "eta",
+            "new-version-eta",
+            "update",
+            "new.version.eta",
+            "newversioneta"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "new_version_eta",
+        "cog_name": "FixedAnswerCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/fixed_answer_cog.py/#L146-L159",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/new_version_eta",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Same as `info_me`, but abou...",
+        "usage": "@AntiPetros <info_other or alias> <member_id>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<member_id>\nid of the user to get info about\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros info_other 576522029470056450",
+        "categories": [
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Same as `info_me`, but about other Users.",
+        "best_alias": "infoother",
+        "docstring": "Same as `info_me`, but about other Users.\n\nThis command is limited to Admins, to prevent user stalking.\n\nArgs:\n    member_id (int): id of the user to get info about.\n\nExample:\n    @AntiPetros info_other 576522029470056450",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "info-other",
+            "infoother",
+            "info+other",
+            "info.other"
+        ],
+        "enabled": true,
+        "description": "Same as `info_me`, but about other Users.\nThis command is limited to Admins, to prevent user stalking.",
+        "name": "info_other",
+        "cog_name": "InfoCog",
+        "signature": {
+            "member_id": "member_id: int"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/info_cog.py/#L317-L350",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/info_other",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Shows info about the invoki...",
+        "allowed_roles": [
+            "all"
+        ],
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros info_me",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Shows info about the invoking user.",
+        "best_alias": "infome",
+        "docstring": "Shows info about the invoking user.\n\nIncluding `join position`.\n\nExample:\n    @AntiPetros info_me",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "infome",
+            "info.me",
+            "info-me",
+            "info+me"
+        ],
+        "enabled": true,
+        "description": "Shows info about the invoking user.\nIncluding `join position`.",
+        "name": "info_me",
+        "cog_name": "InfoCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/info_cog.py/#L277-L315",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/info_me",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Posts a youtube music video...",
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros random_music",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Posts a youtube music video link, select randomly from its internal list of youtube links.",
+        "best_alias": "music",
+        "docstring": "Posts a youtube music video link, select randomly from its internal list of youtube links.\n\nHighly oppinionated by Giddi ;).\n\nExample:\n    @AntiPetros random_music",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "random.music",
+            "random-music",
+            "random+music",
+            "good_music",
+            "music",
+            "randommusic"
+        ],
+        "enabled": true,
+        "description": "Posts a youtube music video link, select randomly from its internal list of youtube links.\nHighly oppinionated by Giddi ;).",
+        "name": "random_music",
+        "cog_name": "KlimBimCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/klim_bim_cog.py/#L514-L530",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/random_music",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "allowed_roles": [
+            "all"
+        ],
+        "parent": null,
+        "hidden": false,
+        "example": "NA",
+        "categories": [
+            {
+                "docstring": "Commands inteded as helpers for the Dev Team",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands inteded as helpers for the Dev Team",
+                "extra_info": null,
+                "name": "DevToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L268-L283",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/DevToolsCommandCategory",
+                "short_doc": null
+            },
+            {
+                "docstring": "Commands that are intended to help admins with their daily tasks.",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that are intended to help admins with their daily tasks.",
+                "extra_info": null,
+                "name": "AdminToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L251-L265",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/AdminToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "NA",
+        "best_alias": "communityserverlogfile",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "community+server+log+file",
+            "communityserverlogfile",
+            "community.server.log.file",
+            "community-server-log-file"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "community_server_log_file",
+        "cog_name": "CommunityServerInfoCog",
+        "signature": {
+            "amount": "amount: Optional[int] = 1",
+            "server_name": "server_name: Optional[str] = 'mainserver_1'"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/community_server_info_cog.py/#L314-L327",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/community_server_log_file",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Turns log Profiling on or o...",
+        "usage": "@AntiPetros <profiling_switch or alias> <action>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<action>\nNeeds to be one of \"status\"\n\"enable\"\n\"disable\"\n\"switch\"\nDefaults to \"status\"\n-----",
+        "parent": null,
+        "hidden": true,
+        "allowed_channels": [
+            "all"
+        ],
+        "example": "@AntiPetros profiling_switch switch",
+        "categories": [
+            {
+                "docstring": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands that deal with the configuration or maintanance of the Bot itself",
+                "extra_info": null,
+                "name": "MetaCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L304-L314",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/MetaCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Turns log Profiling on or off, or reports if it is currently on or not.",
+        "best_alias": "profiling",
+        "docstring": "Turns log Profiling on or off, or reports if it is currently on or not.\n\nArgs:\n    action (str, optional): Needs to be one of \"status\", \"enable\", \"disable\", \"switch\". Defaults to \"status\".\n\nExample:\n    @AntiPetros profiling_switch switch",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "profiling-switch",
+            "profiling.switch",
+            "profilingswitch",
+            "profiling",
+            "profiling+switch"
+        ],
+        "enabled": true,
+        "description": "Turns log Profiling on or off, or reports if it is currently on or not.",
+        "name": "profiling_switch",
+        "cog_name": "ConfigCog",
+        "signature": {
+            "action": "action: str = 'status'"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/config_cog.py/#L295-L314",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/profiling_switch",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": null,
+        "usage": "",
+        "parent": null,
+        "hidden": false,
+        "example": "NA",
+        "categories": [
+            {
+                "docstring": "Commands inteded as helpers for the Dev Team",
+                "brief": null,
+                "long_description": null,
+                "description": "Commands inteded as helpers for the Dev Team",
+                "extra_info": null,
+                "name": "DevToolsCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L268-L283",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/DevToolsCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "NA",
+        "best_alias": "listbranches",
+        "docstring": null,
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "list-branches",
+            "list+branches",
+            "list.branches",
+            "listbranches"
+        ],
+        "enabled": true,
+        "description": "NA",
+        "name": "list_branches",
+        "cog_name": "GithubCog",
+        "signature": {},
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/github_cog.py/#L431-L436",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/list_branches",
+        "gif": null,
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    },
+    {
+        "brief": "Searches Urbandictionary fo...",
+        "usage": "@AntiPetros <urban_dictionary or alias> <term> <entries>\n\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\u25ac\n<term>\nthe search term\n-----\n<entries>\nHow many UD entries for that term it should post\nmax is 5\nDefaults to 1\n-----",
+        "parent": null,
+        "hidden": false,
+        "example": "@AntiPetros urban_dictionary Petros 2",
+        "categories": [
+            {
+                "docstring": "Category for commands that do not fit any other category.",
+                "brief": null,
+                "long_description": null,
+                "description": "Category for commands that do not fit any other category.",
+                "extra_info": null,
+                "name": "GeneralCommandCategory",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/replacements/command_replacements/command_category.py/#L238-L248",
+                "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GeneralCommandCategory",
+                "short_doc": null
+            }
+        ],
+        "short_doc": "Searches Urbandictionary for the search term and post the answer as embed",
+        "best_alias": "urbandictionary",
+        "docstring": "Searches Urbandictionary for the search term and post the answer as embed\n\nArgs:\n\n    term (str): the search term\n    entries (int, optional): How many UD entries for that term it should post, max is 5. Defaults to 1.\n\nExample:\n    @AntiPetros urban_dictionary Petros 2",
+        "_old_data": {
+            "help": null,
+            "brief": null,
+            "description": "",
+            "short_doc": null,
+            "usage": null,
+            "signature": null
+        },
+        "aliases": [
+            "urban.dictionary",
+            "urban+dictionary",
+            "urbandictionary",
+            "urban-dictionary"
+        ],
+        "enabled": false,
+        "description": "Searches Urbandictionary for the search term and post the answer as embed",
+        "name": "urban_dictionary",
+        "cog_name": "KlimBimCog",
+        "signature": {
+            "term": "term: str",
+            "entries": "entries: int = 1"
+        },
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/klim_bim_cog.py/#L224-L259",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/urban_dictionary",
+        "gif": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/init_userdata/data_pack/image_files/gifs/urban_dictionary_command.gif",
+        "allowed_members": [
+            "all"
+        ],
+        "allowed_in_dms": false
+    }
+]

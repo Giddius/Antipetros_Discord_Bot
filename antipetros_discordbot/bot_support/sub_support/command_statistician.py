@@ -66,11 +66,11 @@ class CommandStatistician(SubSupportBase):
 
     @property
     def command_amount(self) -> int:
-        return len(list(set(self.bot.commands)))
+        return len(list(set(command for command in self.bot.commands if command.cog_name.casefold() != "generaldebugcog")))
 
     @property
     def cog_amount(self) -> int:
-        return len(list(self.bot.cogs.values()))
+        return len(list(cog for cog in self.bot.cogs.values() if cog.name.casefold() != 'generaldebugcog'))
 
     async def most_invoked_commands(self):
         frequ_counter = await self.get_command_frequency()

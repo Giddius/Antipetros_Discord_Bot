@@ -40,6 +40,9 @@ from antipetros_discordbot.utility.emoji_handling import is_unicode_emoji
 from antipetros_discordbot.engine.replacements import CommandCategory, AntiPetrosBaseGroup
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 from antipetros_discordbot.auxiliary_classes.server_item import ServerItem
+from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
+from antipetros_discordbot.schemas.cog_schema import AntiPetrosBaseCogSchema
+from antipetros_discordbot.schemas.command_schema import AntiPetrosBaseCommandSchema
 import signal
 import platform
 # endregion[Imports]
@@ -107,6 +110,9 @@ class CommandAutoDict(UserDict):
 class AntiPetrosBot(commands.Bot):
 
     # region [ClassAttributes]
+    app_name = os.getenv('APP_NAME')
+    author_name = os.getenv('AUTHOR_NAME')
+
     ToUpdateItem = namedtuple("ToUpdateItem", ["function", "typus_triggers"])
     creator_id = 576522029470056450
     launch_date = datetime(year=2021, month=3, day=11)
@@ -115,13 +121,20 @@ class AntiPetrosBot(commands.Bot):
     testing_channel = BASE_CONFIG.retrieve("debug", "current_testing_channel", typus=str, direct_fallback='bot-testing')
     essential_cog_paths = BOT_ADMIN_COG_PATHS + DISCORD_ADMIN_COG_PATHS
     dev_cog_paths = DEV_COG_PATHS
+
     description_file = pathmaker(APPDATA['documentation'], 'bot_description.md')
+    brief_file = pathmaker(APPDATA['documentation'], 'bot_brief.md')
+    long_description_file = pathmaker(APPDATA['documentation'], 'bot_long_description.md')
+    extra_info_file = pathmaker(APPDATA['documentation'], 'bot_extra_info.md')
+    short_doc_file = pathmaker(APPDATA['documentation'], 'bot_short_doc.md')
+
     activity_dict = {'playing': discord.ActivityType.playing,
                      'watching': discord.ActivityType.watching,
                      'listening': discord.ActivityType.listening,
                      'streaming': discord.ActivityType.streaming}
 
     max_message_length = 1900
+    schema = AntiPetrosBotSchema()
 # endregion[ClassAttributes]
 
     def __init__(self, token: str = None, ipc_key: str = None, ** kwargs):
@@ -148,6 +161,7 @@ class AntiPetrosBot(commands.Bot):
         self.ipc = None
         self._command_dict = None
         self.connect_counter = 0
+
         self._setup()
 
         glog.class_init_notification(log, self)
@@ -165,6 +179,8 @@ class AntiPetrosBot(commands.Bot):
         self.add_check(user_not_blacklisted)
         self._get_initial_cogs()
         COGS_CONFIG.read()
+        if os.getenv('INFO_RUN') == "1":
+            self._info_run()
 
     async def on_resumed(self):
         log.critical("Bot was reconnected and has resumed the session!")
@@ -191,8 +207,7 @@ class AntiPetrosBot(commands.Bot):
         await self._make_command_dict()
 
         self.setup_finished = True
-        if os.getenv('INFO_RUN') == "1":
-            await self._info_run()
+
         log.info("Bot is ready")
         log.info('%s End of Setup Procedures %s', '+-+' * 15, '+-+' * 15)
 
@@ -205,7 +220,7 @@ class AntiPetrosBot(commands.Bot):
     async def _start_sessions(self):
         self.sessions = {}
         if self.sessions.get('aio_request_session', None) is None or self.sessions.get('aio_request_session', None).closed is True:
-            self.sessions['aio_request_session'] = aiohttp.ClientSession()
+            self.sessions['aio_request_session'] = aiohttp.ClientSession(connector=aiohttp.TCPConnector(enable_cleanup_closed=True))
             self.aio_request_session = self.sessions.get("aio_request_session")
         log.info("Session '%s' was started", repr(self.sessions['aio_request_session']))
 
@@ -219,13 +234,20 @@ class AntiPetrosBot(commands.Bot):
         self._watch_for_config_changes.start()
         self._watch_for_alias_changes.start()
 
-    async def _info_run(self):
-        await asyncio.sleep(5)
-        for cog_name, cog_object in self.cogs.items():
-            print(f"Collecting command-info for '{cog_name}'")
-            # TODO: Change to Schema dump
-            save_cog_command_data(cog_object, output_file=os.getenv('INFO_RUN_OUTPUT_FILE'))
-        await self.bot.close()
+    def _info_run(self):
+
+        target_folder = pathmaker(os.getenv('INFO_RUN_DUMP_FOLDER'))
+
+        writejson(self.dump(), pathmaker(target_folder, 'bot_data.json'), default=str, sort_keys=False)
+        print('Collected Bot-data')
+
+        cog_data = [cog_object.dump() for cog_object in self.cogs.values() if cog_object.name.casefold() != "generaldebugcog"]
+        writejson(cog_data, pathmaker(target_folder, 'cogs_data.json'), default=str, sort_keys=False)
+        print('Collected Cogs-data')
+
+        command_data = [command_object.dump() for command_object in self.commands if command_object.cog_name.casefold() != 'generaldebugcog']
+        writejson(command_data, pathmaker(target_folder, 'commands_data.json'), default=str, sort_keys=False)
+        print('Collected Commands-data')
 
     def _handle_ipc(self):
         if BASE_CONFIG.retrieve('ipc', "use_ipc_server", typus=bool, direct_fallback=False) is True:
@@ -267,19 +289,27 @@ class AntiPetrosBot(commands.Bot):
 
     @property
     def brief(self):
-        return ''
+        if os.path.isfile(self.brief_file) is False:
+            writeit(self.brief_file, '')
+        return readit(self.brief_file)
 
     @property
     def long_description(self):
-        return ''
+        if os.path.isfile(self.long_description_file) is False:
+            writeit(self.long_description_file, '')
+        return readit(self.long_description_file)
 
     @property
     def short_doc(self):
-        return ''
+        if os.path.isfile(self.short_doc_file) is False:
+            writeit(self.short_doc_file, '')
+        return readit(self.short_doc_file)
 
     @property
     def extra_info(self):
-        return ''
+        if os.path.isfile(self.extra_info_file) is False:
+            writeit(self.extra_info_file, '')
+        return readit(self.extra_info_file)
 
     @description.setter
     def description(self, value):
@@ -360,6 +390,7 @@ class AntiPetrosBot(commands.Bot):
 
 # region [Loops]
 
+
     @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_config_changes(self):
         # TODO: How to make sure they are also correctly restarted, regarding all loops on the bot
@@ -382,6 +413,7 @@ class AntiPetrosBot(commands.Bot):
 # endregion[Loops]
 
 # region [Helper]
+
 
     @staticmethod
     def _get_intents():
@@ -445,10 +477,10 @@ class AntiPetrosBot(commands.Bot):
         all_target_objects = [cog_object for cog_object in self.cogs.values()] + [subsupport for subsupport in self.subsupports]
         for target_object in all_target_objects:
             if hasattr(target_object, command):
-                task = asyncio.create_task(getattr(target_object, command)(*args, **kwargs), name=f"{target_object}_{command}")
-                all_tasks.append(task)
+                all_tasks.append(getattr(target_object, command)(*args, **kwargs))
+
         if all_tasks:
-            await asyncio.wait(all_tasks, return_when="ALL_COMPLETED", timeout=None)
+            await asyncio.gather(*all_tasks)
 
     async def to_all_cogs(self, command, *args, **kwargs):
         all_tasks = []
@@ -514,23 +546,33 @@ class AntiPetrosBot(commands.Bot):
     def add_update_method(self, meth: Callable, *typus: UpdateTypus):
         self.to_update_methods.append(self.ToUpdateItem(meth, list(typus)))
 
+    def dump(self):
+        return self.schema.dump(self)
 # region [SpecialMethods]
 
     async def _close_sessions(self):
         for session_name, session in self.sessions.items():
+
             await session.close()
             log.info("'%s' was shut down", session_name)
 
     async def close(self):
         try:
             log.info("retiring troops")
+            self._watch_for_alias_changes.stop()
+            self._watch_for_config_changes.stop()
             self.support.retire_subsupport()
             await self._close_sessions()
-            if ServerItem.client is not None:
-                await ServerItem.client.close()
-                log.info("Closed %s", ServerItem.client)
+            for task in asyncio.all_tasks():
+                try:
+                    task.cancel()
+                except asyncio.CancelledError:
+                    log.debug("task %s was cancelled", task.get_name())
+                finally:
+                    log.debug("task %s was cancelled", task.get_name())
             await self.wait_until_ready()
             await asyncio.sleep(5)
+            time.sleep(5)
         except Exception as error:
             log.error(error, exc_info=True)
         finally:

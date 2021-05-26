@@ -196,13 +196,16 @@ def command_info_run(output_file, verbose):
 
     collected in `/docs/resources/data` as `commands_data.json`
     """
+    load_dotenv('token.env')
+    load_dotenv("nextcloud.env")
+    load_dotenv('ipc.env')
     os.environ['INFO_RUN'] = "1"
+    os.environ['INFO_RUN_DUMP_FOLDER'] = output_file
     if verbose is False:
         logging.disable(logging.CRITICAL)
-    anti_petros_bot = AntiPetrosBot()
-    for cog_name, cog_object in anti_petros_bot.cogs.items():
-        print(f"Collecting command-info for '{cog_name}'")
-        save_cog_command_data(cog_object, output_file=output_file)
+
+    anti_petros_bot = AntiPetrosBot(token=os.getenv('ANTIDEVTROS_TOKEN'), ipc_key=os.getenv('IPC_SECRET_KEY'))
+
     print('#' * 15 + ' finished collecting command-infos ' + '#' * 15)
 
 
@@ -290,7 +293,9 @@ def stop(member_id):
 @ click.option('--token', '-t')
 @ click.option('--nextcloud-username', '-nu', default=None)
 @ click.option('--nextcloud-password', '-np', default=None)
-def run(token, nextcloud_username, nextcloud_password):
+@ click.option('--github-token', '-gt', default=None)
+@click.option('--ipc-key', '-ipc', default=None)
+def run(token, nextcloud_username, nextcloud_password, github_token, ipc_key):
     """
     Standard way to start the bot and connect it to discord.
     takes the token as string and the key to decrypt the db also as string.
@@ -302,10 +307,10 @@ def run(token, nextcloud_username, nextcloud_password):
         nexctcloud_password([str]): password for dev_drive on nextcloud
     """
     os.environ['INFO_RUN'] = "0"
-    main(token=str(token), nextcloud_username=nextcloud_username, nextcloud_password=nextcloud_password)
+    main(token=str(token), nextcloud_username=nextcloud_username, nextcloud_password=nextcloud_password, github_token=github_token, ipc_key=ipc_key)
 
 
-def main(token: str, nextcloud_username: str = None, nextcloud_password: str = None, ipc_key: str = None):
+def main(token: str, nextcloud_username: str = None, nextcloud_password: str = None, ipc_key: str = None, github_token: str = None):
     """
     Starts the Antistasi Discord Bot 'AntiPetros'.
 
@@ -335,12 +340,16 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
         os.environ['NEXTCLOUD_USERNAME'] = nextcloud_username
     if nextcloud_password is not None:
         os.environ['NEXTCLOUD_PASSWORD'] = nextcloud_password
+    if github_token is not None:
+        os.environ['GITHUB_TOKEN'] = github_token
+
     os.environ['INFO_RUN'] = "0"
 
     anti_petros_bot = AntiPetrosBot(token=token, ipc_key=ipc_key)
 
     if BASE_CONFIG.retrieve('ipc', "use_ipc_server", typus=bool, direct_fallback=False) is True:
         anti_petros_bot.ipc.start()
+
     anti_petros_bot.run()
 
     log.info('~+~' * 20 + ' finished shutting down! ' + '~+~' * 20)
@@ -355,7 +364,7 @@ if __name__ == '__main__':
         load_dotenv("nextcloud.env")
         load_dotenv('ipc.env')
 
-        main(token=os.getenv('ANTIDEVTROS_TOKEN'), nextcloud_username=os.getenv('NX_USERNAME'), nextcloud_password=os.getenv("NX_PASSWORD"), ipc_key=os.getenv('IPC_SECRET_KEY'))
+        main(token=os.getenv('ANTIDEVTROS_TOKEN'), nextcloud_username=os.getenv('NX_USERNAME'), nextcloud_password=os.getenv("NX_PASSWORD"), ipc_key=os.getenv('IPC_SECRET_KEY'), github_token=os.getenv('GITHUB_TOKEN'))
     else:
         main()
 

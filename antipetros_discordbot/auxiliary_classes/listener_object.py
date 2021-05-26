@@ -46,6 +46,7 @@ from discord.ext import commands, tasks, flags, ipc
 import gidlogger as glog
 from antipetros_discordbot.utility.event_data import ListenerEvents
 from antipetros_discordbot.utility.misc import get_github_line_link
+from antipetros_discordbot.utility.gidtools_functions import pathmaker
 # endregion[Imports]
 
 # region [TODO]
@@ -91,7 +92,7 @@ class ListenerObject:
 
     @property
     def file(self):
-        return getsourcefile(self.cog.__class__)
+        return pathmaker(getsourcefile(self.cog.__class__))
 
     @property
     def source_lines(self):

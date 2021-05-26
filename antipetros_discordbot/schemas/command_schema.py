@@ -79,7 +79,22 @@ class AntiPetrosBaseCommandSchema(Schema):
     categories = fields.List(fields.Nested('CommandCategorySchema', exclude=('commands',)))
 
     class Meta:
-        additional = ('best_alias', '_old_data', 'docstring', 'description', 'brief', 'short_doc', 'usage', 'signature', 'example', 'enabled', 'hidden', 'aliases', 'name', 'github_link', 'github_wiki_link')
+        additional = ('best_alias',
+                      '_old_data',
+                      'docstring',
+                      'description',
+                      'brief',
+                      'short_doc',
+                      'usage',
+                      'signature',
+                      'example',
+                      'enabled',
+                      'hidden',
+                      'aliases',
+                      'name',
+                      'github_link',
+                      'github_wiki_link',
+                      'cog_name')
 
 
 # region[Main_Exec]

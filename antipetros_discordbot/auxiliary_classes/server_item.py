@@ -433,7 +433,9 @@ class ServerItem:
     @classmethod
     async def ensure_client(cls):
         if cls.client is None:
+            log.debug("%s client was None", cls.__name__)
             cls.client = AioWebdavClient(**get_nextcloud_options())
+            cls.cog.bot.sessions["aiowebdavclient"] = cls.client
 
     async def get_mod_files(self):
         html_file = await self.log_parser.get_mod_data_html_file()
