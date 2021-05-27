@@ -234,7 +234,7 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     extra_info = ""
     required_config_data = {'base_config': {},
                             'cogs_config': {}}
-    reaction_instructions_data_file = pathmaker(APPDATA['json_data'], "message_reaction_instructions_dat.json")
+    reaction_instructions_data_file = pathmaker(APPDATA['json_data'], "message_reaction_instructions_data.json")
     required_folder = []
     required_files = [RequiredFile(reaction_instructions_data_file, [], RequiredFile.FileType.JSON)]
 

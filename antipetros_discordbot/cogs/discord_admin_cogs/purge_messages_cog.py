@@ -142,6 +142,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
 
 # endregion[Init]
+
 # region [Setup]
 
     async def on_ready_setup(self):

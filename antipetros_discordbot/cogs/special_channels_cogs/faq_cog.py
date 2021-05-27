@@ -70,8 +70,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
     long_description = ""
     extra_info = ""
     required_config_data = {'base_config': {},
-                            'cogs_config': {"faq_channel_id": "673410398510383115",
-                                            "numbers_background_image": "faq_num_background.png"}}
+                            'cogs_config': {"faq_channel_id": "673410398510383115"}}
     faq_name_data_file = pathmaker(APPDATA["json_data"], "faq_name_table.json")
     required_folder = []
     required_files = [RequiredFile(faq_name_data_file, {}, RequiredFile.FileType.JSON)]

@@ -159,8 +159,8 @@ class AntiPetrosBaseCog(commands.Cog):
         for command in self.get_commands():
             if any(isinstance(check, AllowedChannelAndAllowedRoleCheck) for check in command.checks):
                 for suffix, default_value in COMMAND_CONFIG_SUFFIXES.values():
-                    if COGS_CONFIG.has_option(self.config_name, f"{command.name}_{suffix}") is False:
-                        COGS_CONFIG.set(self.config_name, f"{command.name}_{suffix}", str(default_value))
+                    if COGS_CONFIG.has_option(self.config_name, f"{command.name.strip()}{suffix}") is False:
+                        COGS_CONFIG.set(self.config_name, f"{command.name.strip()}{suffix}", str(default_value))
         for option, value in self.required_config_data.get("cogs_config").items():
             if COGS_CONFIG.has_option(self.config_name, option) is False:
                 COGS_CONFIG.set(self.config_name, option, str(value))

@@ -1,16 +1,6 @@
 {
-    "brief": "WiP",
-    "long_description": "WiP",
-    "owner_ids": [
-        122348088319803392,
-        262095121527472128,
-        576522029470056450,
-        346595708180103170
-    ],
-    "strip_after_prefix": true,
     "antistasi_invite_url": "https://discord.gg/8WNsueDKf5",
-    "creator_id": 576522029470056450,
-    "short_doc": "WiP",
+    "command_amount": 70,
     "intents": {
         "guilds": true,
         "members": true,
@@ -28,12 +18,22 @@
         "guild_typing": true,
         "dm_typing": true
     },
-    "github_wiki_url": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki",
-    "extra_info": "WiP",
-    "command_amount": 70,
-    "author_name": "antistasi_tools",
-    "app_name": "antipetros_discordbot",
-    "version": "1.3.9",
+    "brief": "WiP",
     "cog_amount": 20,
-    "github_url": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/antipetros_bot.py"
+    "creator_id": 576522029470056450,
+    "version": "1.3.9",
+    "github_url": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/antipetros_bot.py",
+    "strip_after_prefix": true,
+    "app_name": "antipetros_discordbot",
+    "short_doc": "WiP",
+    "owner_ids": [
+        122348088319803392,
+        262095121527472128,
+        576522029470056450,
+        346595708180103170
+    ],
+    "github_wiki_url": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki",
+    "long_description": "WiP",
+    "author_name": "antistasi_tools",
+    "extra_info": "WiP"
 }

@@ -220,7 +220,7 @@ def activator_run(c, command, echo=True, **kwargs):
 
 @task
 def clean_repo(c):
-    to_clean_folder = ['logs', 'dist']
+    to_clean_folder = ['logs', 'dist', 'report']
     to_clean_files = ['antipetros_permission_dump.json',
                       'antidevtros_permission_dump.json']
     main_dir = THIS_FILE_DIR
@@ -301,7 +301,11 @@ def clean_userdata(c, dry_run=False):
                       "team_items.json",
                       "subscription_topics_data.json",
                       "bot_feature_suggestions.json",
-                      "message_reaction_instructions_dat.json"]
+                      "message_reaction_instructions_data.json",
+                      "is_online_messages.json",
+                      "notified_log_files.json",
+                      "stored_reasons.json",
+                      "faq_name_table.json"]
 
     if dry_run is True:
         print('')
@@ -337,6 +341,7 @@ def store_userdata(c):
                                                 "token.pickle",
                                                 "save_link_db.db",
                                                 "save_suggestion.db",
+                                                "general_antipetros.db",
                                                 "archive/*",
                                                 "performance_data/*",
                                                 "stats/*",
@@ -484,6 +489,16 @@ def clear_icecream(c):
             f_mod.write('\n'.join(new_content_lines))
 
 
+PACKAGE_URL_REGEX = re.compile(r"home-page\:\s?(?P<url>.*)", re.IGNORECASE)
+
+
+def get_package_url(c, package_name):
+    package_info = activator_run(c, f"pip show {package_name}")
+    url_match = PACKAGE_URL_REGEX.search(package_info)
+    if url_match:
+        return url_match.group('url').strip()
+
+
 @task
 def set_requirements(c):
     old_cwd = os.getcwd()
@@ -508,9 +523,15 @@ def set_requirements(c):
     pyproject["tool"]["flit"]["metadata"]['requires'] = _requirements
     with open('pyproject.toml', 'w') as f:
         f.write(tomlkit.dumps(pyproject))
-    prod_file = pathmaker('tools', 'venv_setup_settings', 'required_production.txt')
-    with open(prod_file, 'w') as fprod:
-        fprod.write('\n'.join(_requirements))
+    prod_file = pathmaker('temp', 'temp_requirements.json')
+    specifier_regex = re.compile(r"(\=\=)|(\>\=)|(\<\=)|(\~\=)")
+    temp_stored_requirements = []
+    for req in _requirements:
+        name, version = specifier_regex.split(req)
+        temp_stored_requirements.append({'name': name.strip(),
+                                         'version': version.strip(),
+                                         'url': get_package_url(c, name)})
+    writejson(temp_stored_requirements, prod_file, sort_keys=False)
     os.chdir(old_cwd)
 
 

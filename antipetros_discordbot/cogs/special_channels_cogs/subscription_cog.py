@@ -159,7 +159,15 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     long_description = ""
     extra_info = ""
     required_config_data = {'base_config': {},
-                            'cogs_config': {}}
+                            'cogs_config': {"header_description": """Please note that we have a new system for notifications!
+	With the implementation of this system you will be able to decide, which topics you would like to be informed/pinged about.
+	If you for example are interested into events and would like to get notified about them, subscribe to Events.""",
+                                            "header_how_to_subscribe_text": "You can subscribe by reacting via the emoji under the message of the topic you would like to be informed about.",
+                                            "header_how_to_unsubscribe_text": "You can unsubscribe from a topic by removing your reaction under the message of the topic you are currently subscribed to.",
+                                            "header_how_does_it_work_text": """By reacting to a message you will automatically be assigned the associated role. This role will be @-mentioned/pinged whenever there are news about said topic.
+	When unsubscribing from a topic, the role will be taken from you and you will not receive pings to said topic anymore.""",
+                                            "header_color": "teal",
+                                            "header_thumbnail": "info"}}
     topics_data_file = pathmaker(APPDATA['json_data'], 'subscription_topics_data.json')
     required_folder = []
     required_files = [RequiredFile(topics_data_file, [], RequiredFile.FileType.JSON)]

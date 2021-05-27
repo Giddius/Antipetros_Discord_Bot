@@ -90,6 +90,7 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         self.db = general_db
         self.color = "gray"
         self.ready = False
+
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
@@ -102,15 +103,18 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         for loop in self.loops.values():
             loop_starter(loop)
+
         self.ready = await asyncio.sleep(5, True)
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
         if typus in [UpdateTypus.ALIAS, UpdateTypus.CONFIG]:
             await self.bot.insert_command_data()
+
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]

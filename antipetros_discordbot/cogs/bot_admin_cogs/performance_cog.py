@@ -86,7 +86,8 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
                                             "threshold_memory_warning": "0.5",
                                             "threshold_memory_critical": "0.75",
                                             "latency_graph_formatting": "r1-",
-                                            "memory_graph_formatting": "b1-"}}
+                                            "memory_graph_formatting": "b1-",
+                                            "cpu_graph_formatting": "y2-"}}
 
     save_folder = APPDATA['performance_data']
     required_folder = [RequiredFolder(save_folder)]

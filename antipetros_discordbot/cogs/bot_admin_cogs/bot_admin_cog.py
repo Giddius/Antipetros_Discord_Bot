@@ -85,19 +85,26 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Init]
 
-
     def __init__(self, bot: "AntiPetrosBot"):
+        self.listeners_enabled = {'stop_the_reaction_petros_listener': False}
         super().__init__(bot)
         self.latest_who_is_triggered_time = datetime.utcnow()
         self.reaction_remove_ids = []
         self.color = "olive"
         self.ready = False
-        self.listeners_enabled = {'stop_the_reaction_petros_listener': False}
+
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 # endregion[Init]
 
 # region [Setup]
+
+    def _ensure_config_data(self):
+        super()._ensure_config_data()
+        for name in self.listeners_enabled:
+            option = f"{name}_enabled"
+            if COGS_CONFIG.has_option(self.config_name, option) is False:
+                COGS_CONFIG.set(self.config_name, option, "yes")
 
     async def on_ready_setup(self):
         # self.garbage_clean_loop.start()
@@ -118,6 +125,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion [Setup]
 
 # region [Loops]
+
 
     @tasks.loop(hours=1)
     async def garbage_clean_loop(self):
@@ -146,7 +154,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_reaction_add')
     async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):
         if self.ready is False:
@@ -162,7 +169,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Listener]
 
 # region[Commands]
-
 
     @auto_meta_info_command()
     @commands.is_owner()
@@ -378,7 +384,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Helper]
 
-
     async def _update_listener_enabled(self):
         for listener_name in self.listeners_enabled:
             self.listeners_enabled[listener_name] = COGS_CONFIG.retrieve(self.config_name, listener_name + '_enabled', typus=bool, direct_fallback=False)
@@ -387,6 +392,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Helper]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

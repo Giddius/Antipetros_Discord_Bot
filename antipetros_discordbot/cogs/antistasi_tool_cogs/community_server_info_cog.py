@@ -33,8 +33,8 @@ from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_rol
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command, auto_meta_info_group
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.auxiliary_classes.server_item import ServerItem, ServerStatus
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_community_server_info_cog import CommunityServerInfo, ServerStatusChange
@@ -43,6 +43,8 @@ if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from io import BytesIO
 from pprint import pprint
+import re
+
 # endregion[Imports]
 
 # region [TODO]
@@ -73,8 +75,6 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
 
-from struct import unpack_from as _unpack_from, calcsize as _calcsize
-
 
 class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.DEVTOOLS}):
     """
@@ -88,12 +88,26 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     already_notified_savefile = pathmaker(APPDATA["json_data"], "notified_log_files.json")
     is_online_messages_data_file = pathmaker(APPDATA["json_data"], "is_online_messages.json")
     stored_reasons_data_file = pathmaker(APPDATA["json_data"], "stored_reasons.json")
+    server_address_verification_regex = re.compile(r"^(?P<address>[\w\-\.\d]+)\:(?P<port>\d+)$", re.IGNORECASE)
 
     required_files = [RequiredFile(already_notified_savefile, [], RequiredFile.FileType.JSON),
                       RequiredFile(is_online_messages_data_file, {}, RequiredFile.FileType.JSON),
                       RequiredFile(stored_reasons_data_file, {}, RequiredFile.FileType.JSON)]
+    required_config_data = {'base_config': {},
+                            'cogs_config': {"server_message_delete_after_seconds": "300",
+                                            "server_names": "Mainserver_1, Mainserver_2, Testserver_1, Testserver_2, Eventserver, SOG_server_1, SOG_server_2",
+                                            "status_change_notification_channel": "bot-testing",
+                                            "is_online_messages_channel": "bot-testing",
+                                            "sub_log_folder": "Server",
+                                            "base_log_folder": "Antistasi_Community_Logs"}}
+
     server_logos = {'mainserver_1': "https://i.postimg.cc/d0Y0krSc/mainserver-1-logo.png",
                     "mainserver_2": "https://i.postimg.cc/BbL8csTr/mainserver-2-logo.png"}
+
+    available_server_options = {"report_status_change": "no",
+                                "show_in_server_command": "no",
+                                "is_online_message_enabled": "no",
+                                "exclude_logs": "yes"}
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -114,7 +128,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Init]
 
 # region [Properties]
-
 
     @property
     def server_message_remove_time(self) -> int:
@@ -174,9 +187,23 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             self.server_items = self.load_server_items()
         log.debug('cog "%s" was updated', str(self))
 
+    def _ensure_config_data(self):
+        super()._ensure_config_data()
+        for server_name in self.server_names:
+            options = {f"{server_name.casefold()}_report_status_change": "no",
+                       f"{server_name.casefold()}_show_in_server_command": "no",
+                       f"{server_name.casefold()}_is_online_message_enabled": "no",
+                       f"{server_name.casefold()}_exclude_logs": "yes",
+                       f"{server_name.casefold()}_address": ""}
+            for option_name, option_value in options.items():
+                if COGS_CONFIG.has_option(self.config_name, option_name) is False:
+                    COGS_CONFIG.set(self.config_name, option_name, str(option_value))
+
+
 # endregion [Setup]
 
 # region [Loops]
+
 
     @tasks.loop(minutes=5, reconnect=True)
     async def check_server_online_loop(self):
@@ -267,50 +294,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                 await msg.add_reaction(self.bot.armahosts_emoji)
         await delete_message_if_text_channel(ctx, delay=self.server_message_remove_time)
 
-    # @auto_meta_info_command(aliases=['players', 'players?'], categories=CommandCategory.GENERAL)
-    # @allowed_channel_and_allowed_role()
-    # @commands.cooldown(1, 120, commands.BucketType.member)
-    # async def current_players(self, ctx: commands.Context, *, server: str = "mainserver_1"):
-    #     """
-    #     Show all players that are currently online on one of the Antistasi Community Server.
-
-    #     Shows Player Name, Player Score and Time Played on that Server.
-
-    #     Args:
-    #         server (str): Name of the Server, case insensitive.
-
-    #     Example:
-    #         @AntiPetros current_players mainserver_1
-    #     """
-    #     mod_server = server.strip().replace(' ', '_')
-    #     server_holder = {server_item.name.casefold(): server_item for server_item in self.servers}.get(mod_server.casefold(), None)
-    #     if server_holder is None:
-    #         await ctx.send(f"Can't find a server nammed {server}", delete_after=120)
-    #         return
-    #     if server_holder.is_online is False:
-    #         await ctx.send(f"The server, `{server}` is currently not online", delete_after=120)
-    #         return
-    #     try:
-    #         player_data = await server_holder.get_players()
-    #         player_data = sorted(player_data, key=lambda x: x.score, reverse=True)
-    #         fields = []
-    #         for player in player_data:
-    #             if player.name:
-    #                 fields.append(self.bot.field_item(name=f"__***{player.name}***__",
-    #                                                   value=f"{ZERO_WIDTH}\n**Score:** {(ZERO_WIDTH+' ')*16} {player.score}\n**Duration:** {(ZERO_WIDTH+' ')*10} {alt_seconds_to_pretty(player.duration, shorten_name_to=3)}\n{'━'*25}", inline=False))
-    #         info = await server_holder.get_info()
-    #         async for embed_data in self.bot.make_paginatedfields_generic_embed(title=f'Online Players on {info.server_name}',
-    #                                                                             thumbnail=self.server_symbol,
-    #                                                                             description=f"Current map is __**{info.map_name}**__",
-    #                                                                             footer={'text': f"Amount Players is {info.player_count}"},
-    #                                                                             fields=fields):
-    #             await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none(), delete_after=120)
-    #     except asyncio.exceptions.TimeoutError:
-    #         await ctx.send(f"The server, `{server}` is currently not online", delete_after=120)
-    #         server_holder.is_online = False
-    #     await asyncio.sleep(120)
-    #     await delete_message_if_text_channel(ctx)
-
     @auto_meta_info_command(categories=[CommandCategory.DEVTOOLS, CommandCategory.ADMINTOOLS])
     @allowed_channel_and_allowed_role()
     async def community_server_log_file(self, ctx: commands.Context, amount: Optional[int] = 1, server_name: Optional[str] = 'mainserver_1'):
@@ -325,11 +308,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                     embed_data = await item.content_embed()
                 await ctx.send(**embed_data)
         await delete_message_if_text_channel(ctx, delay=15)
-
-    # @auto_meta_info_command()
-    # async def trigger_server_switch(self, ctx: commands.Context):
-    #     server = await self._get_server_by_name('mainserver_1')
-    #     await self.send_server_notification(server, ServerStatus.ON)
 
     @auto_meta_info_command(alias=['restart_reason'], categories=[CommandCategory.ADMINTOOLS])
     @owner_or_admin()
@@ -351,10 +329,63 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command()
+    @owner_or_admin()
     async def clear_all_is_online_messages(self, ctx: commands.Context):
         for server in self.server_items:
             await self._delete_is_online_message(server)
         await delete_message_if_text_channel(ctx)
+
+    async def _parse_options(self, options_string: str):
+        options_string = options_string.casefold().strip()
+        option_parts = list(map(lambda x: x.strip(), options_string.split(',')))
+        _out = {}
+        for option_pair in option_parts:
+            key, value = map(lambda x: x.strip(), option_pair.split('>'))
+            _out[key.casefold()] = value
+        return _out
+
+    @auto_meta_info_group(invoke_without_command=False)
+    @owner_or_admin()
+    async def server_meta(self, ctx: commands.Context):
+        pass
+
+    @server_meta.command(name='add')
+    async def add_server(self, ctx: commands.Context, server_name: str, server_address: str, *, options: Optional[str] = None):
+
+        options = {} if options is None else await self._parse_options(options)
+        if self.server_address_verification_regex.match(server_address) is None:
+            await ctx.send(f"Server address `{server_address}` does not seem to have the valid format like example: `nae-ugs1.armahosts.com:2352`")
+            return
+        server_names = self.server_names
+        server_names.append(server_name)
+        COGS_CONFIG.set(self.config_name, "server_names", ', '.join(list(set(server_names))))
+
+        if COGS_CONFIG.has_option(self.config_name, f"{server_name.casefold()}_address") is False:
+            COGS_CONFIG.set(self.config_name, f"{server_name.casefold()}_address", server_address)
+        for av_option in self.available_server_options:
+            option_name = f"{server_name.casefold()}_{av_option}"
+            value = options.get(av_option, None)
+            if value is None and COGS_CONFIG.has_option(self.config_name, option_name) is False:
+                COGS_CONFIG.set(self.config_name, option_name, self.available_server_options.get(av_option))
+            else:
+                COGS_CONFIG.set(self.config_name, option_name, value)
+
+        # TODO: make better reporting of what was set
+        await ctx.send(f"Added Server {server_name} to my servers", allowed_mentions=discord.AllowedMentions.none())
+
+    @server_meta.command(name='setting')
+    async def change_setting(self, ctx: commands.Context, server_name: str, setting_name: str, setting_value: bool):
+        clean_setting_name = setting_name.casefold().replace('-', '_')
+        clean_server_name = server_name.casefold()
+        if clean_setting_name not in self.available_server_options:
+            await ctx.send(f"Unknown option `{setting_name}`,\nAvailable Options:\n{ListMarker.make_list(list(self.available_server_options))}", allowed_mentions=discord.AllowedMentions.none())
+            return
+        if clean_server_name not in [s_name.casefold() for s_name in self.server_names]:
+            await ctx.send(f"Unknown Server Name `{server_name}`\nAvailable Servers:\n{ListMarker.make_list(self.server_names)}", allowed_mentions=discord.AllowedMentions.none())
+            return
+
+        COGS_CONFIG.set(self.config_name, f"{clean_server_name}_{clean_setting_name}", str(setting_value))
+        await ctx.send(f"Setting `{clean_setting_name}` was set to `{setting_value}` for server `{server_name}`", allowed_mentions=discord.AllowedMentions.none())
 
 # endregion [Commands]
 
@@ -365,16 +396,19 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # region [HelperMethods]
 
     async def _send_to_dm(self, member: discord.Member, server: ServerItem):
-        mod_data = await server.get_mod_files()
-        embed_data = await self.bot.make_generic_embed(title=server.official_name,
-                                                       description=ZERO_WIDTH,
-                                                       thumbnail=mod_data.image,
-                                                       author="armahosts",
-                                                       footer="armahosts",
-                                                       color="blue")
-        embed_data['files'].append(mod_data.html)
-        msg = await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-        await msg.add_reaction(self.bot.armahosts_emoji)
+        try:
+            mod_data = await server.get_mod_files()
+            embed_data = await self.bot.make_generic_embed(title=server.official_name,
+                                                           description=ZERO_WIDTH,
+                                                           thumbnail=mod_data.image,
+                                                           author="armahosts",
+                                                           footer="armahosts",
+                                                           color="blue")
+            embed_data['files'].append(mod_data.html)
+            msg = await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+            await msg.add_reaction(self.bot.armahosts_emoji)
+        except IndexError:
+            log.warning("Requesting log files to dm lead to an IndexError with Server %s", server.name)
 
     async def _server_from_is_online_message_id(self, message_id: int) -> ServerItem:
         server_name = {str(value): key for key, value in self.is_online_messages.items()}.get(str(message_id))
@@ -468,11 +502,16 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             except discord.errors.NotFound as e:
                 log.error(e, exc_info=True)
 
-    async def _clear_emoji_from_msg(self, msg_id: int):
-        msg = await self.is_online_messages_channel.fetch_message(msg_id)
+    async def _clear_emoji_from_msg(self, msg_id: int, all_reactions: bool = False):
+        try:
+            msg = await self.is_online_messages_channel.fetch_message(msg_id)
+        except discord.errors.NotFound as e:
+            log.error(e, exc_info=True)
         for reaction in msg.reactions:
             async for user in reaction.users():
                 if user.id != self.bot.id:
+                    await reaction.remove(user)
+                elif all_reactions is True:
                     await reaction.remove(user)
 
     def load_server_items(self):
@@ -481,6 +520,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         _out = []
         for server_name in self.server_names:
             server_adress = COGS_CONFIG.retrieve(self.config_name, f"{server_name.lower()}_address", typus=str, direct_fallback=None)
+            if not server_adress:
+                log.critical("Missing server address for server %s", server_name)
+                continue
             log_folder = server_name
             if COGS_CONFIG.retrieve(self.config_name, f"{server_name.lower()}_exclude_logs", typus=bool, direct_fallback=False) is True:
                 log_folder = None
@@ -491,6 +533,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

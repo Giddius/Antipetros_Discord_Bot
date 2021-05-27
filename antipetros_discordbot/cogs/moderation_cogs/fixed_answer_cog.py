@@ -85,7 +85,9 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
     long_description = ""
     extra_info = ""
     required_config_data = {'base_config': {},
-                            'cogs_config': {}}
+                            'cogs_config': {"eta_message_title": "When it is ready",
+                                            "eta_message_text": "",
+                                            "bob_streaming_announcement_channel_name": "announcements"}}
 
     soon_thumbnails_file = pathmaker(APPDATA["embed_data"], 'soon_thumbnails.json')
 
@@ -96,7 +98,6 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 
 
 # region [Init]
-
 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
@@ -120,7 +121,6 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
@@ -142,6 +142,7 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command(aliases=['eta', "update"])
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
@@ -197,7 +198,6 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 
 # region [HelperMethods]
 
-
     async def _spread_out_text(self, text: str):
         return f"\n{ZERO_WIDTH}\n".join(line for line in text.splitlines() if line != '')
 
@@ -205,7 +205,6 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True
