@@ -85,6 +85,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Init]
 
+
     def __init__(self, bot: "AntiPetrosBot"):
         self.listeners_enabled = {'stop_the_reaction_petros_listener': False}
         super().__init__(bot)
@@ -126,7 +127,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Loops]
 
-
     @tasks.loop(hours=1)
     async def garbage_clean_loop(self):
         """
@@ -154,6 +154,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Listener]
 
+
     @commands.Cog.listener(name='on_reaction_add')
     async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):
         if self.ready is False:
@@ -169,6 +170,12 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Listener]
 
 # region[Commands]
+
+
+    @auto_meta_info_command()
+    @commands.is_owner()
+    async def tell_connect_counter(self, ctx: commands.Context):
+        await ctx.send(f"{self.bot.connect_counter}", allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command()
     @commands.is_owner()
@@ -384,6 +391,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Helper]
 
+
     async def _update_listener_enabled(self):
         for listener_name in self.listeners_enabled:
             self.listeners_enabled[listener_name] = COGS_CONFIG.retrieve(self.config_name, listener_name + '_enabled', typus=bool, direct_fallback=False)
@@ -392,7 +400,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Helper]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

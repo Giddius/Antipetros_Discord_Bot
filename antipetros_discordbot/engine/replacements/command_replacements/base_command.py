@@ -18,6 +18,7 @@ from typing import Any, get_type_hints, get_args, _GenericAlias
 from inspect import getdoc
 from functools import singledispatchmethod
 import inspect
+from inspect import Parameter
 import re
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
@@ -231,24 +232,6 @@ class AntiPetrosBaseCommand(commands.Command):
     @property
     def usage(self):
         usage = {}
-
-        # for key, value in self.callback.__annotations__.items():
-        #     if key not in ['self', 'ctx']:
-
-        #         if value is str:
-        #             usage[f"<{key}>"] = "Text that needs to be put in quotes if it contains spaces."
-        #         elif value is int:
-        #             usage[f"<{key}>"] = "A number"
-        #         else:
-        #             if isinstance(value, _GenericAlias):
-        #                 value = get_args(value)[0]
-        #                 if value is str:
-        #                     usage[f"<{key}>"] = "Text that needs to be put in quotes if it contains spaces."
-        #                 elif value is int:
-        #                     usage[f"<{key}>"] = "A number"
-        #                 else:
-        #                     usage[f"<{key}>"] = value.usage_description if hasattr(value, 'usage_description') else getdoc(value).splitlines()[0]
-        #             usage[f"<{key}>"] = value.usage_description if hasattr(value, 'usage_description') else getdoc(value).splitlines()[0]
         if not self.docstring:
             return ""
         arg_match = self.args_regex.search(self.docstring)
@@ -259,25 +242,23 @@ class AntiPetrosBaseCommand(commands.Command):
                 try:
                     key, value = line.split(':', maxsplit=1)
                 except ValueError as error:
-                    log.debug(ic.format(self.name))
-                    log.debug(ic.format(line))
-                    log.debug(ic.format(arg_lines))
                     raise error
                 if '(' in key:
                     key = key.split('(')[0]
                 if key.casefold().strip() != 'args':
-                    usage[f"<{key.strip()}>"] = value.strip()
+                    specifier = '[]' if "defaults" not in value.casefold() else '<>'
+                    usage[f"{specifier[0]}{key.strip()}{specifier[1]}"] = value.strip()
 
         usage_line = "@AntiPetros "
         if self.parent is not None:
-            usage_line += f"<{self.parent.name} or parent alias> "
-        usage_line += f"<{self.name} or alias> "
+            usage_line += f"[{self.parent.name} | alias-of-{self.parent.name}] "
+        usage_line += f"[{self.best_alias} | alias] "
         usage_explanation = []
         for key, value in usage.items():
             usage_line += f"{key} "
             value = '\n'.join(map(lambda x: x.strip(), re.split(r"\,|\.", value)))
             usage_explanation.append(f"{key}\n{value.strip()}\n-----")
-        full_usage = usage_line.strip() + '\n' + '▬' * len(usage_line) + '\n' + '\n'.join(usage_explanation)
+        full_usage = usage_line.strip() + '\n' + '▬' * 10 + '\n' + '\n'.join(usage_explanation)
         return full_usage
 
     @usage.setter
@@ -286,10 +267,15 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def signature(self):
+        _out = {}
         signature = inspect.signature(self.callback).parameters
-        signature = {key: value for key, value in signature.items() if key not in ['self', 'ctx']}
+        for name, value in signature.items():
+            if name not in ['self', 'ctx']:
+                _out[name] = {'annotation': value.annotation if value.annotation is not Parameter.empty else '',
+                              "default": value.default if value.default is not Parameter.empty else 'no-default',
+                              "kind": str(value.kind)}
 
-        return signature
+        return str(_out)
 
     @signature.setter
     def signature(self, value):

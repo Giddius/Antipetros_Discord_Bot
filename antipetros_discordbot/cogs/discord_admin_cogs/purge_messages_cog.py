@@ -82,14 +82,15 @@ class MessageRepostCacheDict(UserDict):
         text_content = msg.content
         attachment_content = [await attachment.read() for attachment in msg.attachments]
         cleaned_content = await asyncio.to_thread(self.clean_content, text_content)
-        all_content = [cleaned_content] + attachment_content if cleaned_content else attachment_content
+        all_content = [cleaned_content] + attachment_content
+        full_msg_hash = ""
         for content_item in all_content:
-            hashed_content = await self.hash_content(content_item)
+            full_msg_hash += await self.hash_content(content_item)
 
-            if hashed_content in set(self.data.get(member_id_string, [])):
-                return True
+        if full_msg_hash in set(self.data.get(member_id_string, [])):
+            return True
 
-            await self.add(member_id_string, hashed_content)
+        await self.add(member_id_string, full_msg_hash)
 
         return False
 

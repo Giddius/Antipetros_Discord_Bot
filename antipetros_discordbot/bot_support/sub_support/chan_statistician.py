@@ -74,7 +74,7 @@ class ChannelStatistician(SubSupportBase):
     def __init__(self, bot: "AntiPetrosBot", support: "BotSupporter"):
         self.bot = bot
         self.support = support
-        self.support.overwritten_methods |= {'on_message': self.record_channel_usage}
+
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.ready = False
@@ -82,31 +82,23 @@ class ChannelStatistician(SubSupportBase):
         glog.class_init_notification(log, self)
 
     async def record_channel_usage(self, msg: discord.Message):
-        # if self.bot.setup_finished is False:
-        #     return
-        # if isinstance(msg.channel, discord.DMChannel):
-        #     return
-        # if msg.author.bot is True:
-        #     log.debug("channel usage author is Bot")
-        #     return
-        if any(not msg.content.startswith(prefix) for prefix in self.bot.all_prefixes):
+        if all(msg.content.startswith(prfx) is False for prfx in await self.bot.get_prefix(msg)):
             asyncio.create_task(self._channel_usage_to_db(msg))
-        await self.bot.process_commands(msg)
 
     async def _channel_usage_to_db(self, msg: discord.Message):
         channel = msg.channel
         if self.bot.setup_finished is False:
             return
-        if msg.author.bot is True:
+        if await asyncio.sleep(0, msg.author.bot) is True:
             return
-        if isinstance(msg.channel, discord.DMChannel) is True:
+        if await asyncio.sleep(0, isinstance(msg.channel, discord.DMChannel)) is True:
             return
-        if channel.name.casefold() in self.exclude_channels:
+        if await asyncio.sleep(0, channel.name.casefold()) in self.exclude_channels:
             return
-        if channel.category.name.casefold() in self.exclude_categories:
+        if await asyncio.sleep(0, channel.category.name.casefold()) in self.exclude_categories:
             return
 
-        await self.general_db.insert_channel_use(channel)
+        asyncio.create_task(self.general_db.insert_channel_use(channel))
         log.info("channel usage recorded for channel '%s'", channel.name)
 
     async def make_heat_map(self):

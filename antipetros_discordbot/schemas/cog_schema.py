@@ -76,10 +76,12 @@ class AntiPetrosBaseCogSchema(Schema):
 
     def handle_loops(self, obj):
         loop_data = obj.get_loops()
-        _out = {}
+        _out = []
         for name, loop in loop_data.items():
-            _out[name] = {"docstring": getdoc(loop.coro),
-                          "loop_interval": alt_seconds_to_pretty((loop.seconds + (loop.minutes * 60.0) + (loop.hours * 3600.0)))}
+            _out.append({"name": name,
+                         "docstring": getdoc(loop.coro),
+                         "loop_interval_pretty": alt_seconds_to_pretty((loop.seconds + (loop.minutes * 60.0) + (loop.hours * 3600.0))),
+                         "loop_interval_seconds": (loop.seconds + (loop.minutes * 60.0) + (loop.hours * 3600.0))})
         return _out
 
 

@@ -11,11 +11,12 @@ from datetime import datetime, timedelta, timezone
 from contextlib import asynccontextmanager
 import asyncio
 import unicodedata
+from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO, StringIO
 from textwrap import dedent
 from pprint import pprint
 # * Third Party Imports -->
-from icecream import ic
+from pprint import pformat
 from pygments import highlight
 from pygments.lexers import PythonLexer, get_lexer_by_name, get_all_lexers, guess_lexer
 from pygments.formatters import HtmlFormatter, ImageFormatter
@@ -32,6 +33,7 @@ from pygments.filters import get_all_filters
 # from fuzzywuzzy import fuzz, process
 import aiohttp
 import discord
+from fuzzywuzzy import process as fuzzprocess, fuzz
 
 from discord.ext import tasks, commands, flags
 from async_property import async_property
@@ -48,7 +50,8 @@ from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, Up
 from antipetros_discordbot.utility.exceptions import GithubRateLimitUsedUp
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE, SPECIAL_SPACE_2, ListMarker
 from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle
 from github import Github
 import github
@@ -64,7 +67,7 @@ from sqf.analyzer import analyze as sqf_analyze
 from antipetros_discordbot.abstracts.connect_signal import AbstractConnectSignal
 from antipetros_discordbot.utility.emoji_handling import CHECK_MARK_BUTTON_EMOJI, CROSS_MARK_BUTTON_EMOJI, NUMERIC_EMOJIS, ALPHABET_EMOJIS
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
-from antipetros_discordbot.utility.misc import seconds_to_pretty, delete_specific_message_if_text_channel, alt_seconds_to_pretty, loop_stopper, loop_starter
+from antipetros_discordbot.utility.misc import seconds_to_pretty, delete_specific_message_if_text_channel, alt_seconds_to_pretty, loop_stopper, loop_starter, async_loop_starter
 from functools import reduce
 from antipetros_discordbot.utility.gidtools_functions import bytes2human
 # endregion[Imports]
@@ -117,14 +120,15 @@ class BranchItem:
     def __init__(self, branch_name: str, branch: github.Branch) -> None:
         self.name = branch_name
         self.files = defaultdict(list)
-        self.file_names = set()
         self.branch = branch
         self.url = self.antistasi_repo.html_url + '/tree/' + self.name
 
     @classmethod
     async def async_init(cls, branch_name: str):
         branch = await asyncio.to_thread(cls.antistasi_repo.get_branch, branch_name)
-        return cls(branch_name, branch)
+        branch_item = cls(branch_name, branch)
+        await branch_item.gather_files()
+        return branch_item
 
     @classmethod
     @property
@@ -161,8 +165,11 @@ class BranchItem:
             await cls.rate_limit_hit.emit(cls.reset_time)
             asyncio.create_task(cls._wait_for_rate_limit_reset())
 
-    async def get_tree(self):
-        return await asyncio.to_thread(self.antistasi_repo.get_git_tree, self.latest_sha, True)
+    async def get_tree_files(self):
+        tree = await asyncio.to_thread(self.antistasi_repo.get_git_tree, self.latest_sha, True)
+        for item in tree.tree:
+            if '.' in os.path.basename(item.path):
+                yield item
 
     async def gather_files(self):
         await self.check_rate_limit_used_up()
@@ -171,26 +178,18 @@ class BranchItem:
 
         self.files = defaultdict(list)
 
-        tree = await self.get_tree()
-        for item in tree.tree:
+        async for item in self.get_tree_files():
             path = item.path
             name = os.path.basename(path).casefold()
-            if '.' in name:
-                self.files[name].append(path)
-            await asyncio.sleep(0)
+            self.files[name].append(path)
+
         for name in list(self.files):
-            await self._make_alias_names(name)
 
-        self.file_names = set(self.files)
+            self.files[name.removeprefix('fn_')] = self.files.get(name)
+            self.files[name.split('.')[0]] = self.files.get(name)
+            self.files[name.split('.')[0].removeprefix('fn_')] = self.files.get(name)
+
         log.info("finished collecting all files for branch %s", self)
-
-    async def _make_alias_names(self, name: str):
-        self.files[name.removeprefix('fn_')] = await asyncio.sleep(0, self.files[name])
-        self.files[name.removeprefix('fn_AS_')] = await asyncio.sleep(0, self.files[name])
-        no_extension_name = name.split('.')[0]
-        self.files[no_extension_name] = await asyncio.sleep(0, self.files[name])
-        self.files[no_extension_name.removeprefix('fn_')] = await asyncio.sleep(0, self.files[name])
-        self.files[no_extension_name.removeprefix('fn_AS_')] = await asyncio.sleep(0, self.files[name])
 
     async def _resolve_multiple_file_choice(self, file_name: str, file_paths: List[str], msg: discord.Message):
 
@@ -278,7 +277,11 @@ class BranchItem:
         return thumbnail, content_file
 
     async def request_file(self, file_name: str, msg: discord.Message):
-        file_paths = self.files.get(file_name.casefold())
+        file_paths = self.files.get(file_name.casefold(), None)
+        if file_paths is None:
+            alternative = fuzzprocess.extractOne(file_name, set(self.files))[0]
+            await msg.channel.send(f'File `{file_name}` was not found in branch `{self.name}`\n did you mean `{alternative}`?', allowed_mentions=discord.AllowedMentions.none(), reference=msg.to_reference(fail_if_not_exists=False), delete_after=60)
+            return
         if len(file_paths) > 24:
             pprint(file_paths)
             failed_embed = await self.bot.make_cancelled_embed(title='To many possible files', msg=f"There are too many possible files for file_name `{file_name}`. Max possible is 24!")
@@ -306,10 +309,10 @@ class BranchItem:
             await msg.channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none(), reference=msg.to_reference(fail_if_not_exists=False))
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.name}, amount_files={len(set(reduce(lambda x,y:x+y,self.files.values())))})"
+        return f"{self.__class__.__name__}(name={self.name})"
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(branch_name={self.name})"
+        return f"{self.__class__.__name__}(branch_name={self.name}, amount_files={len(set(reduce(lambda x,y:x+y,self.files.values())))})"
 
 
 class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.DEVTOOLS}):
@@ -356,16 +359,16 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
     def trigger_prefix(self):
         return COGS_CONFIG.retrieve(self.config_name, 'trigger_prefix', typus=str, direct_fallback='##')
 
+
 # endregion [Properties]
 
 # region [Setup]
 
     async def on_ready_setup(self):
-        log.info("Github Rate limit remaining: %s", self.github_client.rate_limiting[0])
+
+        for loop in self.loops.values():
+            loop_starter(loop)
         await self.make_branches()
-        for loop_name, loop_object in self.loops.items():
-            loop_starter(loop_object)
-            log.debug("started loop '%s'", loop_name)
         self.ready = True
 
         log.debug('setup for cog "%s" finished', str(self))
@@ -417,22 +420,41 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         prefix, branch_name, request_identifier = request_match.groups()
         if request_identifier.isnumeric():
             request_identifier = int(request_identifier)
-            await self._send_github_issue(request_identifier, channel, author, msg)
+            asyncio.create_task(self._send_github_issue(request_identifier, channel, author, msg))
 
         else:
-            await self._send_github_file(branch_name, request_identifier, channel, author, msg)
+            asyncio.create_task(self._send_github_file(branch_name, request_identifier, channel, author, msg))
 
 
 # endregion [Listener]
 
 # region [Commands]
 
-
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
     async def list_branches(self, ctx: commands.Context):
-        embed_data = await self.bot.make_generic_embed(title=self.antistasi_repo.name + ' Branches', description=ListMarker.make_list([branch.name for branch in sorted(self.branches, key=lambda x:x.latest_commit_date, reverse=True)]))
-        await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none(), delete_after=240)
+        """
+        Lists up to 24 of the newest Branches from all branches with changes in the last 90 days.
+
+        Shows date of last change, user and provides a link.
+
+        Example:
+            @AntiPetros list_branches
+        """
+        fields = []
+        for branch in sorted(self.branches, key=lambda x: x.latest_commit_date, reverse=True)[:24]:
+            fields.append(self.bot.field_item(name=branch.name,
+                                              value=ListMarker.make_list(symbol='arrow_down',
+                                                                         in_data=[f"`{branch.latest_commit_date.date().strftime('%Y-%m-%d')}`",
+                                                                                  f"by {embed_hyperlink(branch.latest_commit.author.login, branch.latest_commit.author.html_url)}", embed_hyperlink("link", branch.url)],
+                                                                         indent=1)))
+
+        embed_data = await self.bot.make_generic_embed(title=self.antistasi_repo.name + ' Branches',
+                                                       description="The most recently changed branches",
+                                                       fields=fields,
+                                                       url=self.antistasi_repo_url,
+                                                       thumbnail=None)
+        await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
         await delete_specific_message_if_text_channel(ctx.message)
 
     @auto_meta_info_command()
@@ -498,6 +520,16 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
     @auto_meta_info_command()
     async def open_github_issues(self, ctx: commands.Context, since_days_ago: Optional[int] = 31, *, labels: str = None):
+        """
+        Gets all open github issues of the antistasi repo.
+
+        Args:
+            since_days_ago (Optional[int], optional): Retrieves only Issues that are younger than this amount of Days. Defaults to 31.
+            labels (str, optional): Retrieves only issues with these label and all if None, labels do not need to put in quotes, just separeted by an colon `,`. Defaults to None.
+
+        Example:
+            @AntiPetros open_gihub_issues 7 bug
+        """
         labels = list(map(lambda x: x.strip(), labels.split(','))) if labels is not None else github.GithubObject.NotSet
         open_issues = await asyncio.to_thread(self.antistasi_repo.get_issues, state='open', since=datetime.now(timezone.utc) - timedelta(days=since_days_ago), labels=labels)
         open_issues = sorted(open_issues, key=lambda x: x.created_at, reverse=True)
@@ -518,6 +550,8 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
         async for embed_data in self.bot.make_paginatedfields_generic_embed(title=title, url=url, fields=fields, thumbnail="https://avatars0.githubusercontent.com/u/53788409?s=200&v=4"):
             await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+
 # endregion [Commands]
 
 # region [DataStorage]
@@ -526,6 +560,14 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
+    async def get_branch_names(self, pool):
+        branches = await self.bot.loop.run_in_executor(pool, self.antistasi_repo.get_branches)
+        for branch in branches:
+            latest_commit_data = await self.bot.loop.run_in_executor(pool, lambda x: x.commit.commit.author.date, branch)
+            if latest_commit_data > (datetime.now() - timedelta(days=90)):
+
+                yield await asyncio.sleep(0, branch.name)
 
     async def notify_creator_rate_limit_hit(self, reset_time: datetime):
         message = f"Github rate-limit was hit and will reset at {reset_time.strftime(self.bot.std_date_time_format + ' UTC')}"
@@ -542,10 +584,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         branch_item = await self.get_branch_item_by_name(branch_name)
         if branch_item is None:
             await channel.send(f'Branch `{branch_name}` not found', allowed_mentions=discord.AllowedMentions.none(), reference=msg.to_reference(fail_if_not_exists=False), delete_after=60)
-            return
-
-        if file_name.casefold() not in branch_item.file_names:
-            await channel.send(f'File `{file_name}` was not found in branch `{branch_item}`', allowed_mentions=discord.AllowedMentions.none(), reference=msg.to_reference(fail_if_not_exists=False), delete_after=60)
             return
 
         await branch_item.request_file(file_name, msg)
@@ -575,14 +613,12 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
     async def make_branches(self):
         self.branches = []
+        with ThreadPoolExecutor() as pool:
+            async for branch_name in self.get_branch_names(pool):
+                asyncio.create_task(self._branch_creation_helper(branch_name))
 
-        for branch in self.antistasi_repo.get_branches():
-            item = await BranchItem.async_init(branch.name)
-            asyncio.create_task(item.gather_files())
-            self.branches.append(item)
-
-        log.info("finished initiating all %s github branches", len(self.branches))
-
+    async def _branch_creation_helper(self, branch_name):
+        self.branches.append(await BranchItem.async_init(branch_name))
 # endregion [HelperMethods]
 
 # region [SpecialMethods]

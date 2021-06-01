@@ -107,16 +107,15 @@ class AbstractGeneralHelpProvider(ABC):
 class GeneralHelpFieldsProviderBasic(AbstractGeneralHelpProvider):
     field_item = EmbedFieldItem
     provides = 'fields'
-    command_list_usage = '@AntiPetros help command-list'
-    category_list_usage = '@AntiPetros help category-list'
-    general_usage = CodeBlock("<prefix> help <command-list, category-list or the name/alias of an command/category>", 'Less')
-    examples = CodeBlock(f"{command_list_usage}\n{category_list_usage}\n@Antipetros help flip\n@AntiPetros help roll_dice text\n@AntiPetros help server?", "Less")
+    command_list_usage = '@AntiPetros help list'
+
+    general_usage = CodeBlock("<prefix> help [list | command-name]", 'Less')
+    examples = CodeBlock(f"{command_list_usage}\n@Antipetros help flip\n@AntiPetros help roll_dice text\n@AntiPetros help server?", "Less")
 
     async def __call__(self):
         fields = self.in_builder.default_fields.copy()
         fields.append(self.field_item(name='Prefixes you can use to invoke a command'.title(), value=ListMarker.make_list(self.bot.all_prefixes, indent=1, formatting='**')))
-        fields.append(self.field_item(name='Special Command __`command-list`__', value="Lists all possible __commands__, that you are allowed to invoke.\nSubcommands do not get listed, they are listed at the parent commands help embed."))
-        fields.append(self.field_item(name='Special Command __`category-list`__', value="Lists all possible __categories__, that you are allowed to use"))
+        fields.append(self.field_item(name='Special Command __`list`__', value="Lists all possible __commands__, that you are allowed to invoke.\nSubcommands do not get listed, they are listed at the parent commands help embed."))
         fields.append(self.field_item(name='general help usage'.title(), value=self.general_usage))
         fields.append(self.field_item(name='Examples', value=self.examples))
         return fields
@@ -134,9 +133,9 @@ class GeneralHelpDescriptionProvider(AbstractGeneralHelpProvider):
 
     async def __call__(self):
         # text = self.bot.description
-        text = f"{self.bot.description}\n" + f"{ZERO_WIDTH}\n" * 2
+        text = f"{self.bot.description}\n"
         text += '\n' + Seperators.make_line() + '\n'
-        text += f"{self.in_builder.default_description}\n" + f"{ZERO_WIDTH}\n" * 2
+        text += f"{self.in_builder.default_description}\n"
         # text += self.in_builder.default_description
         return text
 
@@ -293,7 +292,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # region [Commands]
 
     @auto_meta_info_group(categories=[CommandCategory.META], case_insensitive=False, invoke_without_command=True)
-    async def help(self, ctx: commands.Context, *, in_object: Union[CommandConverter, CategoryConverter] = None):
+    async def help(self, ctx: commands.Context, *, in_object: Union[CommandConverter, CogConverter] = None):
         if in_object is None:
             await self.general_help(ctx)
 

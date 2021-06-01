@@ -25,7 +25,7 @@ from itertools import product
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.enums import UpdateTypus
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
-from antipetros_discordbot.utility.misc import save_bin_file
+from antipetros_discordbot.utility.misc import save_bin_file, loop_stopper
 from antipetros_discordbot.engine.global_checks import user_not_blacklisted
 from antipetros_discordbot.auxiliary_classes.version_item import VersionItem
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
@@ -199,7 +199,7 @@ class AntiPetrosBot(commands.Bot):
                 signal.signal(signal.SIGINT, self.shutdown_signal)
             await self._start_sessions()
             await self.send_startup_message()
-            await self._start_watchers()
+            asyncio.create_task(self._start_watchers())
             await self.set_activity()
             await self.to_all_as_tasks('on_ready_setup')
             await self._check_if_all_cogs_ready()
@@ -231,6 +231,8 @@ class AntiPetrosBot(commands.Bot):
             log.debug("finished chunking Antistasi Guild")
 
     async def _start_watchers(self):
+        while self.setup_finished is False:
+            await asyncio.sleep(0.1)
         self._watch_for_config_changes.start()
         self._watch_for_alias_changes.start()
 
@@ -390,7 +392,6 @@ class AntiPetrosBot(commands.Bot):
 
 # region [Loops]
 
-
     @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_config_changes(self):
         # TODO: How to make sure they are also correctly restarted, regarding all loops on the bot
@@ -413,7 +414,6 @@ class AntiPetrosBot(commands.Bot):
 # endregion[Loops]
 
 # region [Helper]
-
 
     @staticmethod
     def _get_intents():
@@ -477,7 +477,7 @@ class AntiPetrosBot(commands.Bot):
         all_target_objects = [cog_object for cog_object in self.cogs.values()] + [subsupport for subsupport in self.subsupports]
         for target_object in all_target_objects:
             if hasattr(target_object, command):
-                all_tasks.append(getattr(target_object, command)(*args, **kwargs))
+                all_tasks.append(asyncio.create_task(getattr(target_object, command)(*args, **kwargs)))
 
         if all_tasks:
             await asyncio.gather(*all_tasks)
@@ -557,27 +557,33 @@ class AntiPetrosBot(commands.Bot):
             log.info("'%s' was shut down", session_name)
 
     async def close(self):
-        try:
-            log.info("retiring troops")
-            self._watch_for_alias_changes.stop()
-            self._watch_for_config_changes.stop()
-            self.support.retire_subsupport()
-            await self._close_sessions()
-            for task in asyncio.all_tasks():
-                try:
-                    task.cancel()
-                except asyncio.CancelledError:
-                    log.debug("task %s was cancelled", task.get_name())
-                finally:
-                    log.debug("task %s was cancelled", task.get_name())
-            await self.wait_until_ready()
-            await asyncio.sleep(5)
-            time.sleep(5)
-        except Exception as error:
-            log.error(error, exc_info=True)
-        finally:
-            log.info("closing bot")
-            await super().close()
+
+        log.info("retiring troops")
+        self._watch_for_alias_changes.stop()
+        self._watch_for_config_changes.stop()
+        self.support.retire_subsupport()
+        await self._close_sessions()
+        for cog in self.cog_list:
+            for loop in cog.loops.values():
+                loop_stopper(loop)
+                await asyncio.sleep(0.25)
+                if loop.is_running() is True:
+                    loop.cancel()
+        await asyncio.sleep(5)
+        await self.wait_until_ready()
+        for task in asyncio.all_tasks():
+            try:
+                task.cancel()
+            except asyncio.CancelledError:
+                log.debug("task %s was cancelled", task.get_name())
+            finally:
+                log.debug("task %s was cancelled", task.get_name())
+        await asyncio.sleep(5)
+        await self.wait_until_ready()
+
+        log.info("closing bot")
+        await asyncio.sleep(5)
+        await super().close()
 
     def run(self, **kwargs):
         if self.token is None:

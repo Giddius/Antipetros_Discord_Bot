@@ -3,7 +3,8 @@
 import os
 import sys
 import asyncio
-
+from concurrent.futures import ThreadPoolExecutor
+from functools import wraps
 from io import BytesIO
 from asyncio import get_event_loop
 from datetime import datetime
@@ -12,7 +13,7 @@ from functools import wraps, partial
 from concurrent.futures import ThreadPoolExecutor
 from inspect import getclosurevars
 import json
-from typing import Awaitable, Iterable, Mapping, Tuple, TypeVar
+from typing import Awaitable, Iterable, Mapping, Tuple, TypeVar, Iterable, Dict
 # * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
 from validator_collection import validators
@@ -641,6 +642,13 @@ def help_to_file(in_object, out_file=None):
 def loop_starter(task_loop: tasks.Loop):
     if task_loop.is_running() is False:
         task_loop.start()
+
+
+async def async_loop_starter(task_loops: Dict[str, tasks.Loop]):
+    for task_loop_name, task_loop in task_loops.items():
+        if task_loop.is_running() is False:
+            await asyncio.sleep(0, task_loop.start())
+            log.info("Loop %s was started", task_loop_name)
 
 
 def loop_stopper(task_loop: tasks.Loop):

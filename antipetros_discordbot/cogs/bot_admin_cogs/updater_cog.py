@@ -100,7 +100,6 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         for loop in self.loops.values():
             loop_starter(loop)
@@ -129,6 +128,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 # endregion [Loops]
 
 # region [Listener]
+
 
     @commands.Cog.listener(name="on_guild_channel_delete")
     async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):
@@ -210,6 +210,13 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         log.info("Update Signal %s was send, because the Role %s was updated", UpdateTypus.MEMBERS, before.name)
         await self.send_update_signal(UpdateTypus.ROLES)
 
+    @commands.Cog.listener(name="on_message")
+    async def on_message_listener(self, msg: discord.Message):
+        if any([self.ready, self.bot.setup_finished]) is False:
+            return
+        if hasattr(self.bot, 'record_channel_usage'):
+            await self.bot.record_channel_usage(msg)
+
 # endregion [Listener]
 
 # region [Commands]
@@ -223,7 +230,6 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 # endregion [DataStorage]
 
 # region [HelperMethods]
-
 
     async def send_update_signal(self, typus: UpdateTypus):
         all_tasks = await self.bot.to_all_as_tasks("update", typus=typus)

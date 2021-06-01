@@ -53,7 +53,7 @@ class AntiPetrosBotSchema(Schema):
     github_wiki_url = fields.Url()
     portrait_url = fields.Url()
     antistasi_invite_url = fields.Url()
-    intents = fields.Function(lambda obj: {k: v for k, v in iter(obj.intents)})
+    intents = fields.Function(lambda obj: [{"name": k, "value": v} for k, v in iter(obj.intents)])
 
     class Meta:
         additional = ('name',

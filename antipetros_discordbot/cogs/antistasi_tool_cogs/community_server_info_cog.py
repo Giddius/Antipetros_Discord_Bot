@@ -241,6 +241,12 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
     @commands.Cog.listener(name='on_raw_reaction_add')
     async def subscription_reaction(self, payload: discord.RawReactionActionEvent):
+        """
+        Listens to emojis being clicked on the `is_online` messages to then send the user that clicked it, the modlist per DM.
+
+        Removes all other emojis being assigned to the messages.
+
+        """
         if self.ready is False or self.bot.setup_finished is False:
             return
         reaction_member = payload.member
@@ -296,7 +302,19 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
     @auto_meta_info_command(categories=[CommandCategory.DEVTOOLS, CommandCategory.ADMINTOOLS])
     @allowed_channel_and_allowed_role()
-    async def community_server_log_file(self, ctx: commands.Context, amount: Optional[int] = 1, server_name: Optional[str] = 'mainserver_1'):
+    async def get_server_logs(self, ctx: commands.Context, amount: Optional[int] = 1, server_name: Optional[str] = 'mainserver_1'):
+        """
+        Retrieve Log files from the community server.
+
+        Able to retrieve up to the 5 newest log files at once.
+
+        Args:
+            amount (Optional[int], optional): How many log files to retrieve. Defaults to 1.
+            server_name (Optional[str], optional): Name of the server, is fuzzy-matched. Defaults to 'mainserver_1'.
+
+        Example:
+            @AntiPetros get_server_logs 5 mainserver_2
+        """
         if amount > 5:
             await ctx.send('You requested more files than the max allowed amount of 5, aborting!')
             return
@@ -307,7 +325,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                 async with ctx.typing():
                     embed_data = await item.content_embed()
                 await ctx.send(**embed_data)
-        await delete_message_if_text_channel(ctx, delay=15)
 
     @auto_meta_info_command(alias=['restart_reason'], categories=[CommandCategory.ADMINTOOLS])
     @owner_or_admin()
@@ -331,6 +348,12 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     @auto_meta_info_command()
     @owner_or_admin()
     async def clear_all_is_online_messages(self, ctx: commands.Context):
+        """
+        Clears all the `is_online` messages, so they can be rebuilt on the next loop.
+
+        Example:
+            @AntiPetros clear_all_is_online_messages
+        """
         for server in self.server_items:
             await self._delete_is_online_message(server)
         await delete_message_if_text_channel(ctx)
@@ -468,8 +491,11 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def _delete_is_online_message(self, server: ServerItem):
         message_id = self.is_online_messages.get(server.name.casefold())
         if message_id is not None:
-            msg = await self.is_online_messages_channel.fetch_message(message_id)
-            await msg.delete()
+            try:
+                msg = await self.is_online_messages_channel.fetch_message(message_id)
+                await msg.delete()
+            except discord.NotFound:
+                log.info("is online message not found for server %s", server.name)
             data = self.is_online_messages.copy()
             del data[server.name.casefold()]
             writejson(data, self.is_online_messages_data_file)
@@ -480,7 +506,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         if server.log_folder is not None or server.previous_status is ServerStatus.ON:
             await msg.add_reaction(self.bot.server_emoji)
         if server.log_folder is None or server.previous_status is ServerStatus.OFF:
-            await msg.clear_reactions()
+            await self._clear_emoji_from_msg(msg.id, True)
         is_online_data = self.is_online_messages
         is_online_data[server.name.casefold()] = msg.id
         writejson(is_online_data, self.is_online_messages_data_file)
@@ -505,14 +531,16 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def _clear_emoji_from_msg(self, msg_id: int, all_reactions: bool = False):
         try:
             msg = await self.is_online_messages_channel.fetch_message(msg_id)
+            if all_reactions is True:
+                await msg.clear_reactions()
+            else:
+                for reaction in msg.reactions:
+                    async for user in reaction.users():
+                        if user.id != self.bot.id:
+                            await reaction.remove(user)
+
         except discord.errors.NotFound as e:
             log.error(e, exc_info=True)
-        for reaction in msg.reactions:
-            async for user in reaction.users():
-                if user.id != self.bot.id:
-                    await reaction.remove(user)
-                elif all_reactions is True:
-                    await reaction.remove(user)
 
     def load_server_items(self):
         ServerItem.cog = self
