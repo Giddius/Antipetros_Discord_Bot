@@ -172,22 +172,7 @@ def collect_data():
     """
 
 
-@cli.command(name='get-path')
-@click.option('--file', '-f', default=None, type=str)
-def get_path(file):
-    """
-    Get remote path to the User data dir or files withing.
-
-    Args:
-        file (str): name of the file you want to get the path of, if this is not given ,the path to the userdata folder is returned.
-    """
-    if file is None:
-        print(APPDATA)
-    else:
-        print(APPDATA[file])
-
-
-@collect_data.command(name='command')
+@collect_data.command(name='all')
 @click.option('--output-file', '-o', default=None)
 @click.option('--verbose', '-v', type=bool, default=False)
 def command_info_run(output_file, verbose):
@@ -198,7 +183,7 @@ def command_info_run(output_file, verbose):
     """
     load_dotenv('token.env')
     load_dotenv("nextcloud.env")
-    load_dotenv('ipc.env')
+
     os.environ['INFO_RUN'] = "1"
     os.environ['INFO_RUN_DUMP_FOLDER'] = output_file
     if verbose is False:
@@ -207,44 +192,6 @@ def command_info_run(output_file, verbose):
     anti_petros_bot = AntiPetrosBot(token=os.getenv('ANTIDEVTROS_TOKEN'), ipc_key=os.getenv('IPC_SECRET_KEY'))
 
     print('#' * 15 + ' finished collecting command-infos ' + '#' * 15)
-
-
-@collect_data.command(name='config')
-@click.option('--output-file', '-o', default=None)
-@click.option('--verbose', '-v', type=bool, default=False)
-def config_data_run(output_file, verbose):
-    """
-    Cli command to start up the bot, collect config prototype files, but not connect to discord.
-
-    collected in `/docs/resources/prototype_files` as `standard_cogs_config.ini`, `standard_base_config.ini`
-    """
-    os.environ['INFO_RUN'] = "1"
-    if verbose is False:
-        logging.disable(logging.CRITICAL)
-    anti_petros_bot = AntiPetrosBot()
-    print("Generating Prototype cogs_config.ini")
-    generate_base_cogs_config(anti_petros_bot, output_file=output_file)
-    print('#' * 15 + ' finished generating Prototype cogs_config.ini ' + '#' * 15)
-
-
-@collect_data.command(name='bot-help')
-@click.option('--output-file', '-o', default=None)
-@click.option('--verbose', '-v', type=bool, default=False)
-def bot_help_data_run(output_file, verbose):
-    """
-    Cli command to start up the bot, collect help info data, but not connect to discord.
-
-    collected in `/docs/resources/data` as `command_help.json`
-    """
-    os.environ['INFO_RUN'] = "1"
-    if verbose is False:
-        logging.disable(logging.CRITICAL)
-    anti_petros_bot = AntiPetrosBot()
-    for cog_name, cog_object in anti_petros_bot.cogs.items():
-
-        print(f"Collecting help-data for '{cog_name}'")
-        generate_help_data(cog_object, output_file=output_file)
-    print('#' * 15 + ' finished collecting help-data ' + '#' * 15)
 
 
 @cli.command(name="clean")
@@ -268,25 +215,9 @@ def clean_user_data():
 @click.option('--member-id', '-id', type=int)
 def stop(member_id):
     """
-    Cli way of autostoping the bot.
-    Writes a file to a specific folder that acts like a shutdown trigger (bot watches the folder)
-    afterwards deletes the file. Used as redundant way to shut down if other methods fail, if this fails, the server has to be restarted.
+    Not Implemented
     """
-    sleep(5)
-    logging.shutdown()
-
-    client = ipc.Client(secret_key=os.getenv('IPC_SECRET_KEY'), host=BASE_CONFIG.retrieve('ipc', 'host', typus=str), port=BASE_CONFIG.retrieve('ipc', 'port', typus=int))
-
-    async def do_stop():
-        _out = await client.request('shut_down', member_id=member_id)
-        await asyncio.sleep(5)
-        await asyncio.wait_for(client.session.close(), timeout=None)
-        await asyncio.wait_for(client.websocket.close(), timeout=None)
-        if _out.get('success') is True:
-            print(f'AntiPetrosBot was shut down at {datetime.utcnow().strftime("%H:%M:%S on the %Y.%m.%d")}')
-
-    asyncio.run(do_stop())
-    print('done')
+    raise NotImplementedError("not yet found good solution")
 
 
 @ cli.command(name='run')
@@ -294,8 +225,7 @@ def stop(member_id):
 @ click.option('--nextcloud-username', '-nu', default=None)
 @ click.option('--nextcloud-password', '-np', default=None)
 @ click.option('--github-token', '-gt', default=None)
-@click.option('--ipc-key', '-ipc', default=None)
-def run(token, nextcloud_username, nextcloud_password, github_token, ipc_key):
+def run(token, nextcloud_username, nextcloud_password, github_token):
     """
     Standard way to start the bot and connect it to discord.
     takes the token as string and the key to decrypt the db also as string.
@@ -347,9 +277,6 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
 
     anti_petros_bot = AntiPetrosBot(token=token, ipc_key=ipc_key)
 
-    if BASE_CONFIG.retrieve('ipc', "use_ipc_server", typus=bool, direct_fallback=False) is True:
-        anti_petros_bot.ipc.start()
-
     anti_petros_bot.run()
 
     log.info('~+~' * 20 + ' finished shutting down! ' + '~+~' * 20)
@@ -364,7 +291,7 @@ if __name__ == '__main__':
         load_dotenv("nextcloud.env")
         load_dotenv('ipc.env')
 
-        main(token=os.getenv('ANTIDEVTROS_TOKEN'), nextcloud_username=os.getenv('NX_USERNAME'), nextcloud_password=os.getenv("NX_PASSWORD"), ipc_key=os.getenv('IPC_SECRET_KEY'), github_token=os.getenv('GITHUB_TOKEN'))
+        main(token=os.getenv('ANTIDEVTROS_TOKEN'), nextcloud_username=os.getenv('NX_USERNAME'), nextcloud_password=os.getenv("NX_PASSWORD"), github_token=os.getenv('GITHUB_TOKEN'))
     else:
         main()
 

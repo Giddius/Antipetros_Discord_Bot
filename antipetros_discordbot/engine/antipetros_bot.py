@@ -137,7 +137,7 @@ class AntiPetrosBot(commands.Bot):
     schema = AntiPetrosBotSchema()
 # endregion[ClassAttributes]
 
-    def __init__(self, token: str = None, ipc_key: str = None, ** kwargs):
+    def __init__(self, token: str = None, ** kwargs):
 
         # region [Init]
         self.setup_finished = False
@@ -155,10 +155,8 @@ class AntiPetrosBot(commands.Bot):
         self.sessions = {}
         self.to_update_methods = []
         self.token = token
-        self.ipc_key = ipc_key
         self.support = None
         self.used_startup_message = None
-        self.ipc = None
         self._command_dict = None
         self.connect_counter = 0
 
@@ -175,7 +173,6 @@ class AntiPetrosBot(commands.Bot):
         self.support = BotSupporter(self)
         self.support.recruit_subsupports()
         self.overwrite_methods()
-        self._handle_ipc()
         self.add_check(user_not_blacklisted)
         self._get_initial_cogs()
         COGS_CONFIG.read()
@@ -211,9 +208,6 @@ class AntiPetrosBot(commands.Bot):
         log.info("Bot is ready")
         log.info('%s End of Setup Procedures %s', '+-+' * 15, '+-+' * 15)
 
-    async def on_ipc_ready(self):
-        """Called upon the IPC Server being ready"""
-        log.info(f"{self.ipc.host} {self.ipc.port} is ready")
 
 # ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
@@ -250,12 +244,6 @@ class AntiPetrosBot(commands.Bot):
         command_data = [command_object.dump() for command_object in self.commands if command_object.cog_name.casefold() != 'generaldebugcog']
         writejson(command_data, pathmaker(target_folder, 'commands_data.json'), default=str, sort_keys=False)
         print('Collected Commands-data')
-
-    def _handle_ipc(self):
-        if BASE_CONFIG.retrieve('ipc', "use_ipc_server", typus=bool, direct_fallback=False) is True:
-            if self.ipc_key is None:
-                raise AttributeError("ipc_key is missing")
-            self.ipc = ipc.Server(self, secret_key=self.ipc_key, host=BASE_CONFIG.retrieve('ipc', 'host', typus=str), port=BASE_CONFIG.retrieve('ipc', 'port', typus=int))
 
     def overwrite_methods(self):
         for name, meth in self.support.overwritten_methods.items():
