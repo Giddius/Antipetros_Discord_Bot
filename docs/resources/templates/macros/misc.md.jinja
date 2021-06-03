@@ -1,0 +1,7 @@
+{% macro dependency_table(dependencies) -%}
+| Name | Version   | Link  |
+|------|:---------:|------:|
+{% for dep_item in dependencies %}
+| {{dep_item.name}} | {{dep_item.version}} | [link]({{dep_item.url}}) |
+{% endfor %}
+{% endmacro -%}

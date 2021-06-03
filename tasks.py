@@ -167,6 +167,13 @@ SUB_COMMAND_NAME_VALUE_REGEX = re.compile(r"(?P<name>[\w\-]+)\s+(?P<description>
 JINJA_ENV = Environment(loader=FileSystemLoader(FOLDER.get('docs_templates')))
 
 
+class DependencyItem:
+    def __init__(self, name, version, url=None) -> None:
+        self.name = name
+        self.version = version
+        self.url = url
+
+
 def file_name_timestamp(with_brackets=False):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
@@ -595,18 +602,11 @@ def get_subcommands(c, script_name):
 
 
 def get_dependencies():
-    _out = {}
-    raw_dependencies = flit_data('dependencies')
-    for raw_dependency in raw_dependencies:
-        if "uvloop" not in raw_dependency:
-            try:
-                name, version = raw_dependency.split('==')
-                _out[name.strip()] = version.strip()
-            except ValueError as error:
-                print(raw_dependency)
-                raise error
-
-    return dict(sorted(_out.items()))
+    _out = []
+    prod_file = pathmaker('temp', 'temp_requirements.json')
+    for item in prod_file:
+        _out.append(DependencyItem(**item))
+    return sorted(_out, key=lambda x: x.name.casefold())
 
 
 def get_python_version():
