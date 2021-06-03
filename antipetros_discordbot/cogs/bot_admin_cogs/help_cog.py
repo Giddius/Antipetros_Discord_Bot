@@ -25,7 +25,7 @@ import aiohttp
 import discord
 from discord.ext import tasks, commands, flags
 from async_property import async_property
-
+from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
 # * Gid Imports -->
 import gidlogger as glog
 from abc import ABC, ABCMeta, abstractmethod
@@ -109,13 +109,13 @@ class GeneralHelpFieldsProviderBasic(AbstractGeneralHelpProvider):
     provides = 'fields'
     command_list_usage = '@AntiPetros help list'
 
-    general_usage = CodeBlock("<prefix> help [list | command-name]", 'Less')
+    general_usage = CodeBlock("[prefix] help [list | command-name]", 'Less')
     examples = CodeBlock(f"{command_list_usage}\n@Antipetros help flip\n@AntiPetros help roll_dice text\n@AntiPetros help server?", "Less")
 
     async def __call__(self):
         fields = self.in_builder.default_fields.copy()
         fields.append(self.field_item(name='Prefixes you can use to invoke a command'.title(), value=ListMarker.make_list(self.bot.all_prefixes, indent=1, formatting='**')))
-        fields.append(self.field_item(name='Special Command __`list`__', value="Lists all possible __commands__, that you are allowed to invoke.\nSubcommands do not get listed, they are listed at the parent commands help embed."))
+        fields.append(self.field_item(name='Special Help-Command __`list`__', value="Lists all possible __commands__, that you are allowed to invoke.\nSubcommands do not get listed, they are listed at the parent commands help embed."))
         fields.append(self.field_item(name='general help usage'.title(), value=self.general_usage))
         fields.append(self.field_item(name='Examples', value=self.examples))
         return fields
@@ -192,7 +192,7 @@ class GeneralHelpEmbedBuilder:
 
 class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.META}):
     """
-    WiP
+    Help commands and other meta information.
     """
 # region [ClassAttributes]
 
@@ -234,7 +234,6 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [Init]
 
 # region [Properties]
-
 
     @property
     def message_delete_after(self):
@@ -291,6 +290,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Commands]
 
+
     @auto_meta_info_group(categories=[CommandCategory.META], case_insensitive=False, invoke_without_command=True)
     async def help(self, ctx: commands.Context, *, in_object: Union[CommandConverter, CogConverter] = None):
         if in_object is None:
@@ -312,12 +312,15 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
         async for embed_data in self.command_list_embed(ctx):
             await self.send_help(ctx, embed_data)
+        if self.message_delete_invoking is True:
+            await delete_message_if_text_channel(ctx, delay=self.message_delete_after)
 
     @help.command(name='category_list', aliases=['categories'])
     async def help_category_list(self, ctx: commands.Context):
         async for embed_data in self.command_category_list_embed(ctx):
             await self.send_help(ctx, embed_data)
-
+        if self.message_delete_invoking is True:
+            await delete_message_if_text_channel(ctx, delay=self.message_delete_after)
 # endregion [Commands]
 
 # region [DataStorage]
@@ -326,7 +329,6 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [DataStorage]
 
 # region [Embeds]
-
 
     async def general_help(self, ctx: commands.Context):
         builder = GeneralHelpEmbedBuilder(self.bot, ctx)
@@ -468,10 +470,8 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        for loop in self.loops.values():
-            loop_stopper(loop)
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

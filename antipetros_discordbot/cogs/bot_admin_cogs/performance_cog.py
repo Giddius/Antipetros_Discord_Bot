@@ -166,9 +166,12 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
     @latency_measure_loop.error
     async def latency_measure_loop_error_handler(self, error):
         log.error(error, exc_info=True)
-        if self.latency_measure_loop.is_running() is False:
-            self.latency_measure_loop.start()
-            log.warning("latency measure loop was restarted")
+        if error is not asyncio.CancelledError:
+            if self.latency_measure_loop.is_running() is False:
+                self.latency_measure_loop.start()
+                log.warning("latency measure loop was restarted")
+        else:
+            raise error
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def memory_measure_loop(self):
@@ -298,6 +301,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Helper]
 
+
     async def format_graph(self, amount_data: int):
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
         if amount_data <= 3600 // DATA_COLLECT_INTERVALL:
@@ -406,12 +410,12 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [SpecialMethods]
 
+
     def __str__(self) -> str:
         return self.qualified_name
 
-    def cog_unload(self):
-        for loop in self.loops.values():
-            loop_stopper(loop)
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
         log.debug("Cog '%s' UNLOADED!", str(self))
 

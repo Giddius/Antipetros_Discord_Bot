@@ -187,11 +187,35 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
     @auto_meta_info_group(case_insensitive=True, categories=[CommandCategory.META], invoke_without_command=False)
     @owner_or_admin()
     async def change_prefix(self, ctx: commands.Context):
+        """
+        Group command to interact with Bot prefixes.
+
+        Example:
+            @AntiPetros change_prefix add -?-
+
+        Info:
+            Can not be invoked on its own and has to be used with one of the sub-commands
+        """
         pass
 
     @change_prefix.command(name='add')
     @owner_or_admin()
     async def add_prefix(self, ctx: commands.Context, *, new_prefix: str):
+        """
+        Adds a new prefix to the bot, with which he can be invoked.
+
+        Prefix can not be an duplicate of an already existing one.
+
+        Args:
+            new_prefix (str): The new prefix, can not contain spaces, but can be an std-emoji. No custom emojis.
+
+        Example:
+            @AntiPetros change_prefix add ??
+
+
+        Info:
+            It is best to only use lowercase letters if letters or words are used.
+        """
         non_mention_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
         if ' ' in new_prefix:
             await ctx.send(embed=await self.bot.make_cancelled_embed(title='change_prefix add Error', msg='A prefix can not contain spaces!'))
@@ -209,6 +233,13 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
     @change_prefix.command(name='remove')
     @owner_or_admin()
     async def remove_prefix(self, ctx: commands.Context, *, prefix_to_remove: str):
+        """
+        Removes an existing prefix from the bot and makes it so the bot cant be invoked by it anymore.
+
+
+        Args:
+            prefix_to_remove (str): The prefix to remove, has to be an existing prefix
+        """
         non_mention_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
         if prefix_to_remove not in non_mention_prefixes:
             embed_extra_info = f"Current Prefixes:\n{ZERO_WIDTH}\n```diff\n" + ListMarker.make_list(non_mention_prefixes) + '\n```'
@@ -368,10 +399,8 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
     def __str__(self):
         return self.__class__.__name__
 
-    def cog_unload(self):
-        for loop in self.loops.values():
-            loop_stopper(loop)
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 # endregion [SpecialMethods]
 
 

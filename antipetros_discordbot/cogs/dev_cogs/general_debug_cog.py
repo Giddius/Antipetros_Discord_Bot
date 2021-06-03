@@ -37,7 +37,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseGroup, CommandCategory, auto_meta_info_command
 from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name, normalize_emoji
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
@@ -131,6 +131,11 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
         log.debug('cog "%s" was updated', str(self))
 
+    @auto_meta_info_command()
+    async def tell_sub_supporter(self, ctx: commands.Context):
+        text = ListMarker.make_list([str(sub_sup) for sub_sup in self.bot.support.subsupports])
+        await ctx.send(text, allowed_mentions=discord.AllowedMentions.none(), delete_after=120)
+
     @ auto_meta_info_command()
     async def dump_bot(self, ctx: commands.Context):
         schema = AntiPetrosBotSchema()
@@ -204,9 +209,8 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
                 f.write(schema.dumps(list(self.bot.antistasi_guild.roles), many=True))
             await ctx.send('done', delete_after=90, allowed_mentions=discord.AllowedMentions.none())
 
-    def cog_unload(self):
-
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     async def cog_check(self, ctx):
         if ctx.author.id == 576522029470056450:

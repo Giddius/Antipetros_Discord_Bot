@@ -237,10 +237,8 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        for loop_object in self.loops.values():
-            loop_stopper(loop_object)
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.qualified_name}({self.bot.__class__.__name__})"

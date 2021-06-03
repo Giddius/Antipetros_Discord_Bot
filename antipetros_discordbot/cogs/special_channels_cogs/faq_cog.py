@@ -134,7 +134,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
     @commands.Cog.listener(name='on_message')
     async def faq_message_added_listener(self, message):
-        if self.ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
         channel = message.channel
         if channel is self.faq_channel:
@@ -142,7 +142,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
     @commands.Cog.listener(name='on_raw_message_delete')
     async def faq_message_deleted_listener(self, payload):
-        if self.ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
         channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
@@ -150,7 +150,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
     @commands.Cog.listener(name='on_raw_message_edit')
     async def faq_message_edited_listener(self, payload):
-        if self.ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
         channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
@@ -301,8 +301,8 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

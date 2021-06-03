@@ -52,9 +52,9 @@ glog.import_notification(log, __name__)
 
 class ChannelUsageResult:
     def __init__(self):
-        self.result_data = []
+        self.result_data = {}
 
-    async def add_data(self, data):
+    async def add_data(self, data: dict):
         self.result_data.append(await asyncio.sleep(0, data))
 
     async def convert_data_to_channels(self, bot):
@@ -148,9 +148,8 @@ class AioGeneralStorageSQLite:
         await self.db.aio_vacuum()
 
     async def insert_command_usage(self, command: Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
-        timestamp = datetime.now(tz=timezone.utc)
         command_name = command.name
-        await self.db.aio_write('insert_command_usage', (timestamp, command_name))
+        await self.db.aio_write('insert_command_usage', (command_name,))
 
     async def insert_cogs_many(self, cogs: List[commands.Cog]):
         categories_data = []
@@ -217,8 +216,7 @@ class AioGeneralStorageSQLite:
 
     async def insert_channel_use(self, text_channel: discord.TextChannel):
         channel_id = text_channel.id
-        timestamp = datetime.now(tz=timezone.utc)
-        await self.db.aio_write('insert_channel_use', (timestamp, channel_id))
+        await self.db.aio_write('insert_channel_use', (channel_id,))
 
     async def insert_text_channels(self, text_channels: List[discord.TextChannel]):
         text_channels_data = []

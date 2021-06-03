@@ -13,6 +13,7 @@ import asyncio
 import json
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
+from inspect import getdoc
 import discord
 from typing import List, Union, Mapping, Optional, Hashable, Any, Callable
 from aiodav import Client as AioWebdavClient
@@ -43,6 +44,7 @@ from antipetros_discordbot.auxiliary_classes.server_item import ServerItem
 from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
 from antipetros_discordbot.schemas.cog_schema import AntiPetrosBaseCogSchema
 from antipetros_discordbot.schemas.command_schema import AntiPetrosBaseCommandSchema
+from antipetros_discordbot.utility.sqldata_storager import ChannelUsageResult
 import signal
 import platform
 # endregion[Imports]
@@ -159,6 +161,7 @@ class AntiPetrosBot(commands.Bot):
         self.used_startup_message = None
         self._command_dict = None
         self.connect_counter = 0
+        self.after_invoke(self.after_command_invocation)
 
         self._setup()
 
@@ -172,7 +175,7 @@ class AntiPetrosBot(commands.Bot):
         CommandCategory.bot = self
         self.support = BotSupporter(self)
         self.support.recruit_subsupports()
-        self.overwrite_methods()
+        self.add_self_to_classes()
         self.add_check(user_not_blacklisted)
         self._get_initial_cogs()
         COGS_CONFIG.read()
@@ -198,7 +201,7 @@ class AntiPetrosBot(commands.Bot):
             await self.send_startup_message()
             asyncio.create_task(self._start_watchers())
             await self.set_activity()
-            await self.to_all_as_tasks('on_ready_setup')
+            await self.to_all_as_tasks('on_ready_setup', True)
             await self._check_if_all_cogs_ready()
 
         await self._make_command_dict()
@@ -210,6 +213,9 @@ class AntiPetrosBot(commands.Bot):
 
 
 # ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+    def add_self_to_classes(self):
+        ChannelUsageResult.bot = self
 
     async def _start_sessions(self):
         self.sessions = {}
@@ -245,9 +251,25 @@ class AntiPetrosBot(commands.Bot):
         writejson(command_data, pathmaker(target_folder, 'commands_data.json'), default=str, sort_keys=False)
         print('Collected Commands-data')
 
-    def overwrite_methods(self):
-        for name, meth in self.support.overwritten_methods.items():
-            setattr(self, name, meth)
+        missing_docstring_data = {'cogs': [], 'commands': [], 'loops': [], 'listener': []}
+        for cog_name, cog_object in self.cogs.items():
+            if cog_object.name.casefold() != "generaldebugcog":
+                if cog_object.docstring in {'', 'WiP', None}:
+                    missing_docstring_data['cogs'].append(cog_name)
+
+                for command in cog_object.get_commands():
+                    if command.docstring in {'', 'WiP', None}:
+                        missing_docstring_data['commands'].append(f"{cog_object.name}.{command.name}")
+
+                for loop_name, loop_object in cog_object.loops.items():
+                    if getdoc(loop_object.coro) in {'', 'WiP', None}:
+                        missing_docstring_data['loops'].append(f"{cog_object.name}.{loop_name}")
+
+                for listener in cog_object.all_listeners:
+                    if listener.description in {'', 'WiP', None}:
+                        missing_docstring_data['listener'].append(f"{cog_object.name}.{listener.name}")
+        writejson(missing_docstring_data, pathmaker(target_folder, 'missing_docstring_data.json'), default=str, sort_keys=False)
+        print('Collected Missing-Docstring-Data')
 
     async def _make_command_dict(self):
         self._command_dict = await asyncio.to_thread(CommandAutoDict, self, True)
@@ -380,28 +402,33 @@ class AntiPetrosBot(commands.Bot):
 
 # region [Loops]
 
+
     @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_config_changes(self):
         # TODO: How to make sure they are also correctly restarted, regarding all loops on the bot
+        if self.setup_finished is False:
+            return
         async for changes in awatch(APPDATA['config'], loop=self.loop):
             for change_typus, change_path in changes:
                 log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
-            if self.setup_finished is True:
 
-                await self.to_all_cogs('update', typus=UpdateTypus.CONFIG)
+            await self.to_all_cogs('update', typus=UpdateTypus.CONFIG)
 
     @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_alias_changes(self):
+        if self.setup_finished is False:
+            return
         async for changes in awatch(APPDATA['command_aliases.json'], loop=self.loop):
             for change_typus, change_path in changes:
                 log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
-            if self.setup_finished is True:
-                await self.to_all_cogs('update', typus=UpdateTypus.ALIAS)
+
+            await self.to_all_cogs('update', typus=UpdateTypus.ALIAS)
 
 
 # endregion[Loops]
 
 # region [Helper]
+
 
     @staticmethod
     def _get_intents():
@@ -424,6 +451,13 @@ class AntiPetrosBot(commands.Bot):
             except discord.NotFound:
                 log.debug('startup message was already deleted')
 
+    async def after_command_invocation(self, ctx):
+        method_name = "execute_on_after_command_invocation"
+        await self.to_all_as_tasks(method_name, False, ctx)
+
+    async def on_command_error(self, ctx: commands.Context, exception: Exception):
+        method_name = "execute_on_command_errors"
+        await self.to_all_as_tasks(method_name, False, ctx, exception)
 # endregion[Helper]
 
     async def send_startup_message(self):
@@ -460,14 +494,14 @@ class AntiPetrosBot(commands.Bot):
             finally:
                 os.remove(self.shutdown_message_pickle_file)
 
-    async def to_all_as_tasks(self, command, *args, **kwargs):
+    async def to_all_as_tasks(self, command, wait, *args, **kwargs):
         all_tasks = []
         all_target_objects = [cog_object for cog_object in self.cogs.values()] + [subsupport for subsupport in self.subsupports]
         for target_object in all_target_objects:
             if hasattr(target_object, command):
                 all_tasks.append(asyncio.create_task(getattr(target_object, command)(*args, **kwargs)))
 
-        if all_tasks:
+        if all_tasks and wait is True:
             await asyncio.gather(*all_tasks)
 
     async def to_all_cogs(self, command, *args, **kwargs):
@@ -545,33 +579,29 @@ class AntiPetrosBot(commands.Bot):
             log.info("'%s' was shut down", session_name)
 
     async def close(self):
+        self._watch_for_alias_changes.cancel()
+
+        self._watch_for_config_changes.cancel()
 
         log.info("retiring troops")
-        self._watch_for_alias_changes.stop()
-        self._watch_for_config_changes.stop()
         self.support.retire_subsupport()
-        await self._close_sessions()
-        for cog in self.cog_list:
-            for loop in cog.loops.values():
-                loop_stopper(loop)
-                await asyncio.sleep(0.25)
-                if loop.is_running() is True:
-                    loop.cancel()
-        await asyncio.sleep(5)
-        await self.wait_until_ready()
-        for task in asyncio.all_tasks():
-            try:
-                task.cancel()
-            except asyncio.CancelledError:
-                log.debug("task %s was cancelled", task.get_name())
-            finally:
-                log.debug("task %s was cancelled", task.get_name())
-        await asyncio.sleep(5)
-        await self.wait_until_ready()
 
-        log.info("closing bot")
+        log.info("closing sessions")
+        await self._close_sessions()
+
+        # for task in asyncio.all_tasks():
+        #     try:
+        #         task.cancel()
+        #     except asyncio.CancelledError:
+        #         log.debug("task %s was cancelled", task.get_name())
+        #     finally:
+        #         log.debug("task %s was cancelled", task.get_name())
+
         await asyncio.sleep(5)
+
+        log.info("calling bot method super().close()")
         await super().close()
+        time.sleep(5)
 
     def run(self, **kwargs):
         if self.token is None:

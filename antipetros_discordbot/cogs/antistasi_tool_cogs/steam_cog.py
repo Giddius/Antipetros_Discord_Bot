@@ -143,7 +143,8 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 
     @tasks.loop(minutes=5, reconnect=True)
     async def check_for_updates(self):
-        await self.bot.wait_until_ready()
+        if any([self.ready, self.bot.setup_finished]) is False:
+            return
         for item in self.registered_workshop_items:
             log.debug("checking steam_workshop_item '%s' for possible update", item.title)
             new_item = await self._get_fresh_item_data(item.id)
@@ -304,10 +305,8 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
     def __str__(self):
         return self.qualified_name
 
-    def cog_unload(self):
-        for loop_object in self.loops.values():
-            loop_stopper(loop_object)
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
 
 # endregion [SpecialMethods]

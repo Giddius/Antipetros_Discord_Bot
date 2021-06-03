@@ -149,13 +149,17 @@ class AntistasiInformer(SubSupportBase):
     def general_data(self):
         return loadjson(self.general_data_file)
 
+    @property
+    def antistasi_guild_id(self):
+        _out = BASE_CONFIG.retrieve('general_settings', 'guild_id', typus=int, direct_fallback=None)
+        if _out is None:
+            raise ValueError('You need to set "guild_id" under the section "general_settings" in the config file "base_config.ini"')
+        return _out
+
     @ property
     def antistasi_guild(self) -> discord.Guild:
-        guild_id = BASE_CONFIG.retrieve('general_settings', 'guild_id', typus=int, direct_fallback=None)
 
-        if guild_id is None:
-            raise ValueError('You need to set "guild_id" under the section "general_settings" in the config file "base_config.ini"')
-        guild = self.bot.get_guild(guild_id)
+        guild = self.bot.get_guild(self.antistasi_guild_id)
         return guild
 
     @property
@@ -211,6 +215,17 @@ class AntistasiInformer(SubSupportBase):
 
     def get_antistasi_role(self, role_id: int) -> discord.Role:
         return self.antistasi_guild.get_role(role_id)
+
+    def get_channel_link(self, channel: Union[int, str, discord.TextChannel]):
+        base_url = "https://discord.com/channels"
+        if isinstance(channel, discord.TextChannel):
+            channel_id = channel.id
+        elif isinstance(channel, str):
+            channel_id = self.channel_from_name(channel).id
+        elif isinstance(channel, int):
+            channel_id = channel
+
+        return f"{base_url}/{self.antistasi_guild_id}/{channel_id}"
 
     async def all_members_with_role(self, role: str) -> List[discord.Member]:
         role = await self.role_from_string(role)

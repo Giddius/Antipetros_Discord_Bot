@@ -239,7 +239,7 @@ class LogFileItem:
     size_string_regex = re.compile(r"(?P<number>\d+)\s?(?P<unit>\w+)")
     log_name_regex = re.compile(r"(?P<year>\d\d\d\d).(?P<month>\d+?).(?P<day>\d+).(?P<hour>[012\s]?\d).(?P<minute>[0123456]\d).(?P<second>[0123456]\d)")
     schema = LogFileSchema()
-    limit_semaphore = AioSemaphore(value=5)
+    lock = asyncio.Lock()
     time_pretty_format = "%Y-%m-%d %H:%M:%S UTC"
     hashfunc = shake_256
 
@@ -254,7 +254,7 @@ class LogFileItem:
         self.created_in_seconds = int(self.created.timestamp())
 
     async def collect_info(self) -> None:
-        async with self.limit_semaphore:
+        async with self.lock:
             self.info = await self.resource_item.info()
 
     async def update(self):
@@ -317,13 +317,15 @@ class LogFileItem:
             if self.size > self.server_item.cog.bot.filesize_limit:
                 with ZipFile(bytefile, 'w', ZIP_LZMA) as zippy:
                     content_bytes = b''
-                    async for chunk in await self.content_iter():
-                        content_bytes += chunk
-                    zippy.writestr(self.name, content_bytes.decode('utf-8', 'ignore'))
+                    async with self.lock:
+                        async for chunk in await self.content_iter():
+                            content_bytes += chunk
+                        zippy.writestr(self.name, content_bytes.decode('utf-8', 'ignore'))
             else:
                 name = self.name
-                async for chunk in await self.content_iter():
-                    bytefile.write(chunk)
+                async with self.lock:
+                    async for chunk in await self.content_iter():
+                        bytefile.write(chunk)
             bytefile.seek(0)
             _hash = self.hashfunc(bytefile.read()).hexdigest(8)
             bytefile.seek(0)

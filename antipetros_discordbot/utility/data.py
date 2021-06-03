@@ -1,4 +1,7 @@
 
+IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'tif', 'tiff', 'tga', 'gif'}
+
+
 COMMAND_CONFIG_SUFFIXES = {'enabled': ('_enabled', True), 'channels': ('_allowed_channels', ''), 'roles': ('_allowed_roles', ''), 'dm_ids': ('_allowed_dm_ids', '')}
 
 
@@ -6,9 +9,6 @@ DEFAULT_CONFIG_OPTION_NAMES = {'dm_ids': 'default_allowed_dm_ids', 'channels': '
 
 
 COG_CHECKER_ATTRIBUTE_NAMES = {'dm_ids': "allowed_dm_ids", 'channels': 'allowed_channels', 'roles': 'allowed_roles'}
-
-
-
 
 
 DEFAULT_CONFIG_SECTION = """# settings here are used if the options are not specified in the sections

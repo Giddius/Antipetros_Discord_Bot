@@ -76,7 +76,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADMINTOOLS, "hidden": True}):
     """
-    WiP
+    Commands that have a fixed answer and are mostly used to not have to type it out each time.
     """
 # region [ClassAttributes]
 
@@ -147,6 +147,17 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
     @auto_meta_info_command(aliases=['eta', "update"])
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def new_version_eta(self, ctx: commands.Context):
+        """
+        Send the text stored in the config regarding when new versions come out, as embed.
+
+
+        Example:
+            @AntiPetros eta
+
+
+        Info:
+            If this command is used in an reply, the resulting embeds will also be replies to that message, but without extra ping.
+        """
         title = COGS_CONFIG.retrieve(self.config_name, "eta_message_title", typus=str, direct_fallback='When it is ready')
         description = COGS_CONFIG.retrieve(self.config_name, "eta_message_text", typus=str, direct_fallback=embed_hyperlink("Antistasi Milestones on Github", "https://github.com/official-antistasi-community/A3-Antistasi/milestones"))
         embed_data = await self.bot.make_generic_embed(title=title,
@@ -218,8 +229,8 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

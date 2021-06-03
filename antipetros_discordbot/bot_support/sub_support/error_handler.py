@@ -82,7 +82,6 @@ class ErrorHandler(SubSupportBase):
         self.support = support
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
-        self.support.overwritten_methods |= {'on_command_error': self.handle_errors, 'on_ipc_error': self.handle_ipc_error}  # 'on_error': self.handle_base_errors,
         self.emphasis_regex = re.compile(r"'.*?'")
         self.error_handle_table = {commands.MaxConcurrencyReached: self._handle_max_concurrency,
                                    commands.CommandOnCooldown: self._handle_command_on_cooldown,
@@ -138,12 +137,7 @@ class ErrorHandler(SubSupportBase):
         arg_string = ', '.join(str(arg) for arg in args)
         log.error(f"{event_method} - '{arg_string}' - '{kwarg_string}'", exc_info=True)
 
-    async def handle_ipc_error(self, endpoint, error):
-        log.error(error, exc_info=True)
-
-        await self.bot.message_creator(f"Encountered IPC-error: {error} - Endpoint: {endpoint}")
-
-    async def handle_errors(self, ctx, error: Exception):
+    async def execute_on_command_errors(self, ctx, error: Exception):
 
         error_traceback = ''.join(traceback.format_tb(error.__traceback__)) + f"\n\n{'+'*50}\n{error.__cause__}\n{'+'*50}"
 

@@ -237,10 +237,10 @@ def run(token, nextcloud_username, nextcloud_password, github_token):
         nexctcloud_password([str]): password for dev_drive on nextcloud
     """
     os.environ['INFO_RUN'] = "0"
-    main(token=str(token), nextcloud_username=nextcloud_username, nextcloud_password=nextcloud_password, github_token=github_token, ipc_key=ipc_key)
+    main(token=str(token), nextcloud_username=nextcloud_username, nextcloud_password=nextcloud_password, github_token=github_token)
 
 
-def main(token: str, nextcloud_username: str = None, nextcloud_password: str = None, ipc_key: str = None, github_token: str = None):
+def main(token: str, nextcloud_username: str = None, nextcloud_password: str = None, github_token: str = None):
     """
     Starts the Antistasi Discord Bot 'AntiPetros'.
 
@@ -275,7 +275,7 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
 
     os.environ['INFO_RUN'] = "0"
 
-    anti_petros_bot = AntiPetrosBot(token=token, ipc_key=ipc_key)
+    anti_petros_bot = AntiPetrosBot(token=token)
 
     anti_petros_bot.run()
 

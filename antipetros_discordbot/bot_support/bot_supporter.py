@@ -48,7 +48,6 @@ class BotSupporter:
         self.bot = bot
         self.subsupports = []
         self.available_subsupport_classes = SUB_SUPPORT_CLASSES
-        self.overwritten_methods = {}
 
     def find_available_subsupport_classes(self):
         pass

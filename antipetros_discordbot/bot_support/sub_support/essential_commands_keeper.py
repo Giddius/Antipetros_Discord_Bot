@@ -126,8 +126,8 @@ class EssentialCommandsKeeper(SubSupportBase):
 
         except Exception as error:
             log.error(error, exc_info=True)
-        finally:
-            await self.bot.close()
+
+        await self.bot.close()
 
     async def split_to_messages(self, ctx, message, split_on='\n', in_codeblock=False, syntax_highlighting='json'):
         _out = ''

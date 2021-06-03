@@ -1,10 +1,6 @@
 INSERT
-    OR IGNORE INTO "command_usage_tbl" (
-        "timestamp",
-        "command_id"
-    )
+    OR IGNORE INTO "command_usage_tbl" ("command_id")
 VALUES (
-        ?,
         (
             SELECT "id"
             FROM "commands_tbl"

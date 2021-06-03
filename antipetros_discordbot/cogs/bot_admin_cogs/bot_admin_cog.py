@@ -133,7 +133,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         WiP
 
         """
-        if self.ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
         log.info('running garbage clean')
         x = gc.collect()
@@ -157,7 +157,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
     @commands.Cog.listener(name='on_reaction_add')
     async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):
-        if self.ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
         if self.listeners_enabled.get("stop_the_reaction_petros_listener", False) is False:
             return
@@ -173,13 +173,34 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 
     @auto_meta_info_command()
-    @commands.is_owner()
+    @owner_or_admin()
     async def tell_connect_counter(self, ctx: commands.Context):
-        await ctx.send(f"{self.bot.connect_counter}", allowed_mentions=discord.AllowedMentions.none())
+        """
+        Tells how often the bot has connected to Discord in the current run-time.
+
+
+
+        Example:
+            @AntiPetros tell_connect_counter
+
+        Info:
+            This is usefull only for debugging purposes.
+        """
+        extra = '' if self.bot.connect_counter <= 1 else ", this means that I have had to reconnect at least once!"
+        await ctx.send(f"I have connected {self.bot.connect_counter} times to discord in my current run-time" + extra, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command()
     @commands.is_owner()
     async def send_stored_files(self, ctx: commands.Context):
+        """
+        Send the current stored data files as an zip-archive.
+
+        Example:
+            @AntiPetros send_stored_files
+
+        Info:
+            This is usefull only for debugging purposes or transitioning to a new major version.
+        """
         async with ctx.typing():
             start_dir = str(APPDATA)
             with BytesIO() as bytefile:
@@ -419,10 +440,8 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
     def __str__(self):
         return self.qualified_name
 
-    def cog_unload(self):
-        for loop in self.loops.values():
-            loop_stopper(loop)
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 # endregion[SpecialMethods]
 
 # region[Main_Exec]

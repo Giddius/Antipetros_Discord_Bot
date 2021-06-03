@@ -102,7 +102,7 @@ class ChannelStatistician(SubSupportBase):
         log.info("channel usage recorded for channel '%s'", channel.name)
 
     async def make_heat_map(self):
-        pass
+        return NotImplemented
 
     async def get_usage_stats(self, scope: str = "all"):
         now = datetime.now(tz=timezone.utc)

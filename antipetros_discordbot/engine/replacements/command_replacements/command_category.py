@@ -123,9 +123,20 @@ class CommandCategoryMeta(type):
     def __or__(cls, other):
         if cls is other:
             return [cls]
+
+        if isinstance(other, list):
+            if cls in other:
+                return other
+
+            if all(issubclass(item, cls.base_command_category) for item in other):
+                other.append(cls)
+                return other
         if issubclass(other, cls.base_command_category):
             return [cls, other]
         raise NotImplementedError
+
+    def __ror__(cls, other):
+        return cls | other
 
     def __hash__(cls) -> int:
         return hash((cls.name, cls.__class__.__name__))

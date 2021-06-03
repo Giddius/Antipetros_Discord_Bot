@@ -75,7 +75,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADMINTOOLS, "hidden": True}):
     """
-    WiP
+    Commands to send the Rules found in the Rules channel as embed and optional as answer.
     """
 # region [ClassAttributes]
 
@@ -150,6 +150,16 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def exploits_rules(self, ctx: commands.Context):
+        """
+        Sends the exploits rules as embed.
+
+        Example:
+            @AntiPetros exploits-rules
+
+        Info:
+            If this command is used in an reply, the resulting embeds will also be replies to that message, but without extra ping.
+            It also attaches the links from the rules channels `further reading`
+        """
         embed_data = await self._make_rules_embed(self.rules_messages.get('exploits'))
         msg = await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
         bertha_emoji = self.bot.bertha_emoji
@@ -162,6 +172,16 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def community_rules(self, ctx: commands.Context):
+        """
+        Sends the community rules as embed.
+
+        Example:
+            @AntiPetros community-rules
+
+        Info:
+            If this command is used in an reply, the resulting embeds will also be replies to that message, but without extra ping.
+            It also attaches the links from the rules channels `further reading`
+        """
         embed_data = await self._make_rules_embed(self.rules_messages.get('community'))
         msg = await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
         bertha_emoji = self.bot.bertha_emoji
@@ -174,6 +194,16 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def server_rules(self, ctx: commands.Context):
+        """
+        Sends the server rules as embed.
+
+        Example:
+            @AntiPetros server-rules
+
+        Info:
+            If this command is used in an reply, the resulting embeds will also be replies to that message, but without extra ping.
+            It also attaches the links from the rules channels `further reading`
+        """
         embed_data = await self._make_rules_embed(self.rules_messages.get('server'))
         msg = await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
         bertha_emoji = self.bot.bertha_emoji
@@ -186,6 +216,17 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 90, commands.BucketType.channel)
     async def all_rules(self, ctx: commands.Context):
+        """
+        Sends all rules as embed. One embed per rule type (Server, Community, Exploits)
+
+
+        Example:
+            @AntiPetros all-rules
+
+        Info:
+            If this command is used in an reply, the resulting embeds will also be replies to that message, but without extra ping.
+            It also attaches the links from the rules channels `further reading`
+        """
         await self.exploits_rules(ctx)
         await self.community_rules(ctx)
         await self.server_rules(ctx)
@@ -270,8 +311,8 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

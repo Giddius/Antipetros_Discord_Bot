@@ -617,8 +617,8 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
     def __str__(self):
         return self.qualified_name
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
 # endregion[SpecialMethods]
 

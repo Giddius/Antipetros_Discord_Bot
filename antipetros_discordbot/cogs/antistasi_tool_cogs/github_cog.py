@@ -335,6 +335,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [Init]
 
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.github_client = Github(os.getenv('GITHUB_TOKEN'))
@@ -364,6 +365,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
 
         for loop in self.loops.values():
@@ -384,7 +386,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
     @tasks.loop(minutes=5, reconnect=True)
     async def tell_rate_limit_loop(self):
-        if self.ready is False or self.bot.setup_finished is False:
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
         log.info("Github Rate limit remaining: %s", self.github_client.rate_limiting[0])
 
@@ -394,7 +396,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
     @commands.Cog.listener(name='on_message')
     async def listen_for_github_request_in_message(self, msg: discord.Message):
-        if self.ready is False or self.bot.setup_finished is False:
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
         if BranchItem.is_waiting_for_rate_limit_reset is True:
             return
@@ -430,6 +432,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [Commands]
 
+
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
     async def list_branches(self, ctx: commands.Context):
@@ -458,67 +461,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         await delete_specific_message_if_text_channel(ctx.message)
 
     @auto_meta_info_command()
-    @allowed_channel_and_allowed_role()
-    async def github_referals(self, ctx: commands.Context):
-
-        fields = []
-        # for referal in self.antistasi_repo.get_top_referrers():
-        #     fields.append(self.bot.field_item(name=referal.referrer, value=f"Amount: {referal.count}\nUnique: {referal.uniques}", inline=False))
-        title = "Referals to the Antistasi Repo"
-        items = []
-        for referal in self.antistasi_repo.get_top_referrers():
-            items.append((referal.referrer, referal.uniques))
-        ax = plt.subplot(111)
-        ax.set_title(title)
-        x = list(range(len([item[0] for item in items])))
-        ax.bar(x, [item[1] for item in items])
-        plt.xticks(x, [item[0] for item in items], rotation=45)
-        ax.minorticks_off()
-        with BytesIO() as image_binary:
-            plt.savefig(image_binary, format='png', dpi=COGS_CONFIG.retrieve(self.config_name, 'graph_image_dpi', typus=int, direct_fallback=150))
-            plt.close()
-            image_binary.seek(0)
-
-            embed_data = await self.bot.make_generic_embed(title=title, fields=fields, url=self.antistasi_repo_url, image=image_binary.read(), thumbnail="https://avatars0.githubusercontent.com/u/53788409?s=200&v=4")
-            await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-
-    @auto_meta_info_command()
-    @allowed_channel_and_allowed_role()
-    async def github_traffic(self, ctx: commands.Context):
-        title = "Traffic for the Antistasi Repo"
-        fields = []
-        items = []
-        traffic_data = self.antistasi_repo.get_views_traffic()
-        # items.append(("Overall", int(traffic_data.get('count'))))
-        # fields.append(self.bot.field_item(name="Overall", value=f"Amount: {traffic_data.get('count')}\nUnique: {traffic_data.get('uniques')}"))
-        for date_views in traffic_data.get('views'):
-
-            items.append((date_views.timestamp, int(date_views.uniques)))
-
-            # fields.append(self.bot.field_item(name=date_views.timestamp.date(), value=f"Amount: {date_views.count}\nUnique: {date_views.uniques}"))
-
-        ax = plt.subplot(111)
-        ax.set_title(title)
-
-        ax.bar([item[0] for item in items], [item[1] for item in items])
-
-        ax.set_xlabel('Date')
-        ax.set_ylabel('Amount')
-
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-        ax.xaxis.set_major_locator(mdates.DayLocator(interval=1, tz=timezone.utc))
-
-        plt.gcf().autofmt_xdate()
-        plt.xticks(rotation=45)
-        with BytesIO() as image_binary:
-            plt.savefig(image_binary, format='png', dpi=COGS_CONFIG.retrieve(self.config_name, 'graph_image_dpi', typus=int, direct_fallback=150))
-            plt.close()
-            image_binary.seek(0)
-
-            embed_data = await self.bot.make_generic_embed(title=title, fields=fields, url=self.antistasi_repo_url, image=image_binary.read(), thumbnail="https://avatars0.githubusercontent.com/u/53788409?s=200&v=4")
-            await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-
-    @auto_meta_info_command()
     async def open_github_issues(self, ctx: commands.Context, since_days_ago: Optional[int] = 31, *, labels: str = None):
         """
         Gets all open github issues of the antistasi repo.
@@ -528,7 +470,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
             labels (str, optional): Retrieves only issues with these label and all if None, labels do not need to put in quotes, just separeted by an colon `,`. Defaults to None.
 
         Example:
-            @AntiPetros open_gihub_issues 7 bug
+            @AntiPetros open_github_issues 7 bug
         """
         labels = list(map(lambda x: x.strip(), labels.split(','))) if labels is not None else github.GithubObject.NotSet
         open_issues = await asyncio.to_thread(self.antistasi_repo.get_issues, state='open', since=datetime.now(timezone.utc) - timedelta(days=since_days_ago), labels=labels)
@@ -560,6 +502,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
 
     async def get_branch_names(self, pool):
         branches = await self.bot.loop.run_in_executor(pool, self.antistasi_repo.get_branches)
@@ -635,10 +578,8 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        for loop_object in self.loops.values():
-            loop_stopper(loop_object)
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

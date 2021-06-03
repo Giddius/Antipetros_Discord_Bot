@@ -274,13 +274,12 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
     team_item_data_file = pathmaker(APPDATA['json_data'], "team_items.json")
 
     required_folder = []
-    required_files = [RequiredFile(team_item_data_file, [], RequiredFile.FileType.JSON)]
+    required_files = [RequiredFile(team_item_data_file, {"last_changed_message": None, "team_items": []}, RequiredFile.FileType.JSON)]
 
 
 # endregion [ClassAttributes]
 
 # region [Init]
-
 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
@@ -289,7 +288,7 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
         TeamItem.config_name = self.config_name
         TeamItem.bot = self.bot
         self.color = "yellowgreen"
-        self.is_ready = False
+        self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
@@ -302,11 +301,10 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         await self.bot.antistasi_guild.chunk(cache=True)
         await self._load_team_items()
-        self.is_ready = True
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
@@ -322,10 +320,9 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
 
 # region [Listener]
 
-
     @commands.Cog.listener(name="on_member_update")
     async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):
-        if self.is_ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
             return
         if before.roles != after.roles:
             log.debug("updating Team Roster because role on Member was changed")
@@ -333,21 +330,21 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
 
     @commands.Cog.listener(name="on_guild_role_create")
     async def role_added_listener(self, role: discord.Role):
-        if self.is_ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
             return
         log.debug("updating Team Roster because new role was created")
         await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_delete")
     async def role_removed_listener(self, role: discord.Role):
-        if self.is_ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
             return
         log.debug("updating Team Roster because role was deleted")
         await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_update")
     async def role_updated_listener(self, before: discord.Role, after: discord.Role):
-        if self.is_ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
             return
         log.debug("updating Team Roster because role was modifed")
         await self._update_team_roster()
@@ -532,7 +529,6 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
 
 # region [HelperMethods]
 
-
     async def _update_team_roster(self):
         for team_item in self.team_items:
             try:
@@ -610,8 +606,8 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

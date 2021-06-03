@@ -100,6 +100,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         for loop in self.loops.values():
             loop_starter(loop)
@@ -128,7 +129,6 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 # endregion [Loops]
 
 # region [Listener]
-
 
     @commands.Cog.listener(name="on_guild_channel_delete")
     async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):
@@ -215,7 +215,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         if any([self.ready, self.bot.setup_finished]) is False:
             return
         if hasattr(self.bot, 'record_channel_usage'):
-            await self.bot.record_channel_usage(msg)
+            asyncio.create_task(self.bot.record_channel_usage(msg))
 
 # endregion [Listener]
 
@@ -231,8 +231,9 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
 # region [HelperMethods]
 
+
     async def send_update_signal(self, typus: UpdateTypus):
-        all_tasks = await self.bot.to_all_as_tasks("update", typus=typus)
+        all_tasks = await self.bot.to_all_as_tasks("update", False, typus=typus)
         if all_tasks:
             await asyncio.wait(all_tasks, return_when="ALL_COMPLETED")
 
@@ -252,10 +253,8 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        for loop in self.loops.values():
-            loop_stopper(loop)
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

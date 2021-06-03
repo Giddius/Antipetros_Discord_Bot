@@ -224,7 +224,7 @@ class WordReactionInstruction(BaseReactionInstruction):
 
 class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADMINTOOLS, "hidden": True}):
     """
-    WiP
+    Commands to create rules to make the bot auto react with Emojis to certain words or events.
     """
 # region [ClassAttributes]
 
@@ -476,8 +476,8 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

@@ -601,8 +601,8 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
     def __str__(self):
         return self.__class__.__name__
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
 # endregion [SpecialMethods]
 

@@ -123,7 +123,7 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     @tasks.loop(hours=12)
     async def scheduled_vacuum(self):
-        if self.ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
         asyncio.create_task(self.db.aio_vacuum(), name='db_vacuum')
         log.info("%s was scheduled vacuumed", str(self.db))
@@ -134,21 +134,29 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     @commands.Cog.listener(name="on_guild_channel_delete")
     async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):
+        if any([self.ready, self.bot.setup_finished]) is False:
+            return
         await self.bot.insert_channels_into_db()
         log.info('updated channels in %s, because Guild channel "%s" was removed', self.db, channel.name)
 
     @commands.Cog.listener(name="on_guild_channel_create")
     async def guild_structure_changes_listener_create(self, channel: discord.abc.GuildChannel):
+        if any([self.ready, self.bot.setup_finished]) is False:
+            return
         await self.bot.insert_channels_into_db()
         log.info('updated channels in %s, because Guild channel "%s" was created', self.db, channel.name)
 
     @commands.Cog.listener(name="on_guild_channel_update")
     async def guild_structure_changes_listener_update(self, before_channel: discord.abc.GuildChannel, after_channel: discord.abc.GuildChannel):
+        if any([self.ready, self.bot.setup_finished]) is False:
+            return
         await self.bot.insert_channels_into_db()
         log.info('updated channels in %s, because Guild channel "%s"/"%s" was updated', self.db, before_channel.name, after_channel.name)
 
     @commands.Cog.listener(name="on_guild_update")
     async def guild_update_listener(self, before_guild: discord.Guild, after_guild: discord.Guild):
+        if any([self.ready, self.bot.setup_finished]) is False:
+            return
         await self.bot.insert_channels_into_db()
         log.info('updated channels in %s, because Guild was updated', self.db)
 
@@ -184,10 +192,8 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        for loop in self.loops.values():
-            loop_stopper(loop)
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

@@ -26,6 +26,7 @@ from importlib import import_module
 import asyncio
 from inspect import getmembers, ismodule
 import isort
+from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
 GIT_EXE = shutil.which('git.exe')
 
 
@@ -1066,9 +1067,7 @@ def process_meta_data(c):
 
                 if not new_attrs.get('brief') and new_attrs.get('short_doc'):
                     brief = new_attrs.get("short_doc")
-                    if len(brief) > 30:
-                        brief = brief[:27] + '...'
-                    new_attrs['brief'] = brief
+                    new_attrs['brief'] = shorten(brief, 30)
 
         _new_dict[command_name] = new_attrs
     writejson(_new_dict, file_path)

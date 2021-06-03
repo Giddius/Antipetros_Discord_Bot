@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Union, Any, Callable, Optional, List, Dict, Se
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import discord
+import textwrap
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import delete_message_if_text_channel
 from antipetros_discordbot.utility.checks import in_allowed_channels
@@ -18,6 +19,7 @@ from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosFlagCommand, CommandCategory, auto_meta_info_command
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosFlagCommand, CommandCategory, auto_meta_info_command
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
+from antipetros_discordbot.utility.data import IMAGE_EXTENSIONS
 from collections import UserDict
 import asyncio
 import re
@@ -27,7 +29,8 @@ from discord.ext import commands
 from hashlib import blake2b
 from random import seed, randint
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE, SPECIAL_SPACE_2
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE, SPECIAL_SPACE_2, ListMarker
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
@@ -67,7 +70,7 @@ class MessageRepostCacheDict(UserDict):
     def clean_content(self, content: str) -> str:
         cleaned_content = discord.utils.remove_markdown(content)
         cleaned_content = self.whitespace_regex.sub('', cleaned_content)
-        return cleaned_content
+        return cleaned_content.casefold()
 
     async def hash_content(self, content: Union[str, bytes]) -> str:
         if isinstance(content, str):
@@ -125,10 +128,11 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
     long_description = ""
     extra_info = ""
     required_config_data = {'base_config': {},
-                            'cogs_config': {}}
+                            'cogs_config': {"double_post_notification_channel": 645930607683174401,
+                                            "notify_double_post_in_channel": False}}
     required_folder = []
     required_files = []
-
+    whitespace_regex = re.compile(r'\W')
 # endregion[ClassAttributes]
 
 # region [Init]
@@ -158,37 +162,53 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
 # endregion [Setup]
 
+# region [Properties]
+
+
+    @property
+    def notify_channel(self) -> discord.TextChannel:
+        notification_channel_id = COGS_CONFIG.retrieve(self.config_name, 'double_post_notification_channel', typus=int, direct_fallback=645930607683174401)  # direct fallback is channel Bot-testing
+        return self.bot.channel_from_id(notification_channel_id)
+
+    @property
+    def notify_double_post_in_channel(self) -> bool:
+        return COGS_CONFIG.retrieve(self.config_name, 'notify_double_post_in_channel', typus=bool, direct_fallback=False)
+
+
+# endregion[Properties]
+
 # region [Listener]
 
 
     @commands.Cog.listener(name='on_message')
     async def remove_double_posts(self, msg: discord.Message):
-        if self.ready is False or self.bot.setup_finished is False:
+        if any([self.ready is False, self.bot.setup_finished is False]):
             return
         if msg.channel.type is discord.ChannelType.private:
             return
-        if msg.channel.id != 645930607683174401:  # for dev hard coded to only apply in bot-testing
+        if self.bot.is_debug is True and msg.channel.id != 645930607683174401:  # for dev hard coded to only apply in bot-testing
             return
         if msg.author.bot is True:
             return
 
-        # commented out for dev so I can test it!
-
-        # if msg.author.top_role.position <= 5:
-        #     return
-        log.debug("checking 'remove_double_post' if it is bot prefix")
+        if msg.author.top_role.position >= 8:
+            return
+        log.debug("author top role has position < 8 -> %s", str(msg.author.top_role.position))
         if any(msg.content.startswith(prfx) for prfx in await self.bot.get_prefix(msg)):
             return
-        log.debug("finished checking 'remove_double_post' if it is bot prefix")
+        log.debug("Message is not an bot invocation")
         if await self.msg_keeper.handle_message(msg) is True:
-            log.debug("determined that message should be deleted")
-            content = msg.content if msg.content != '' else 'NO TEXT CONTENT'
-            author = msg.author
-            channel_name = msg.channel.name
-            files = [await attachment.to_file() for attachment in msg.attachments]
-            log.debug("requesting deletion")
+            log.debug("Message has been determined to be a duplicate message")
+            log.debug('Message content:\n%s', textwrap.indent(f'"{msg.content}"', ' ' * 8))
+
+            if self.notify_double_post_in_channel is True:
+                asyncio.create_task(self._notify_double_post_to_channel(msg.content, msg.author, msg.channel, [await attachment.to_file() for attachment in msg.attachments]))
+
+            asyncio.create_task(self._message_double_post_author(msg.content, msg.author, msg.channel, [await attachment.to_file() for attachment in msg.attachments]))
+
+            log.debug("requesting deletion of Message")
             await msg.delete()
-            await author.send(f"Your message in `{channel_name}` was deleted because you reposted the same message in a short time!\n\n> {content}", files=files, allowed_mentions=discord.AllowedMentions.none())
+            log.debug("Message has been deleted")
 
 
 # endregion[Listener]
@@ -220,6 +240,52 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
 # endregion[Commands]
 
+# region [Helper]
+
+    async def _message_double_post_author(self, content: str, author: discord.Member, channel: discord.TextChannel, files: List[discord.File]):
+        title = "Your Message was removed!"
+        description = "**Your Message:**\n" + textwrap.indent(content.strip(), '> ')
+        fields = [self.bot.field_item(name='Reason', value="The Message is identical to a Message that was already posted by you in the __**Antistasi**__ Guild a short time ago", inline=False),
+                  self.bot.field_item(name='Posted in Channel', value=embed_hyperlink(channel.name, self.bot.get_channel_link(channel.id)), inline=False)]
+        image = None
+        if len(files) > 0:
+            fields.append(self.bot.field_item(name='Attachments',
+                          value=ListMarker.make_list([f"`{att_file.filename}`" for att_file in files], indent=1), inline=False))
+            image = files.pop(0) if files[0].filename.split('.')[-1] in IMAGE_EXTENSIONS else None
+
+        if "help" in set(map(lambda x: x.casefold(), self.whitespace_regex.split(content))):
+            fields.append(self.bot.field_item(name='__**If you are asking for Help**__'.upper(),
+                          value=f"Please only post once in the channel {embed_hyperlink('***HELP***', self.bot.get_channel_link('help'))} and be patient!", inline=False))
+
+        footer = {'text': "This has been logged and Admins have been notified"}
+
+        embed_data = await self.bot.make_generic_embed(title=title, description=description, fields=fields, image=image, thumbnail='warning', footer=footer)
+
+        await author.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+        if files:
+            await author.send(files=files, allowed_mentions=discord.AllowedMentions.none())
+        log.debug("Author %s has been notified", author.display_name)
+
+    async def _notify_double_post_to_channel(self, content: str, author: discord.Member, channel: discord.TextChannel, files: List[discord.File]):
+        fields = [self.bot.field_item(name="Author", value=f"{author.mention} (`{author.name}`)", inline=False),
+                  self.bot.field_item(name="In Channel", value=channel.mention, inline=False),
+                  self.bot.field_item(name='Content', value=CodeBlock(textwrap.shorten(content, width=1000, placeholder="...[SHORTENED]"), 'fix'), inline=False)]
+        image = None
+        if len(files) > 0:
+            fields.append(self.bot.field_item(name='Attachments',
+                          value=f"The following attachment of the deleted message can be found attached to this message.\n{ListMarker.make_list([att_file.filename for att_file in files], indent=1)}", inline=False))
+            image = files.pop(0) if files[0].filename.split('.')[-1] in IMAGE_EXTENSIONS else None
+
+        embed_data = await self.bot.make_generic_embed(title='Double Post Deleted', fields=fields, image=image, thumbnail='warning')
+
+        await self.notify_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+        if files:
+            await self.notify_channel.send(files=files, allowed_mentions=discord.AllowedMentions.none())
+
+# endregion[Helper]
+
 # region [SpecialMethods]
 
     def __repr__(self):
@@ -228,8 +294,8 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
     def __str__(self):
         return self.qualified_name
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 # endregion[SpecialMethods]
 
 # region[Main_Exec]

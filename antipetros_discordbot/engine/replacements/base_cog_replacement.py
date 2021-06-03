@@ -19,7 +19,7 @@ from discord.ext import commands, tasks
 import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.checks import allowed_requester
-from antipetros_discordbot.utility.misc import make_config_name, sync_antipetros_repo_rel_path
+from antipetros_discordbot.utility.misc import make_config_name, sync_antipetros_repo_rel_path, loop_stopper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.schemas import AntiPetrosBaseCogSchema
 from antipetros_discordbot.auxiliary_classes.listener_object import ListenerObject
@@ -232,6 +232,10 @@ class AntiPetrosBaseCog(commands.Cog):
         log.debug('cog "%s" was updated', str(self))
 
     def cog_unload(self):
+        for loop_name, loop in self.loops.items():
+            if loop.is_running() is True:
+                loop.cancel()
+                log.info("loop %s was cancelled", loop_name)
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     def dump(self):

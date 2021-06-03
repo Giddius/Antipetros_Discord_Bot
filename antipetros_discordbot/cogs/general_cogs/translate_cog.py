@@ -24,6 +24,7 @@ from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command
 from antipetros_discordbot.utility.general_decorator import async_log_profiler
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
 
 from typing import Optional, TYPE_CHECKING
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
@@ -265,10 +266,18 @@ class TranslateCog(AntiPetrosBaseCog):
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_languages(self, ctx: commands.Context):
-        text = '```fix\n'
-        text += '\n'.join(value for key, value in LANGUAGES.items())
-        text += '\n```'
-        await ctx.send(text, delete_after=120)
+        """
+        Sends a list of all available languages, that can be used with the `translate` command.
+
+        Example:
+            @AntiPetros available_languages
+
+        Info:
+            Your invoking message gets deleted and after 120 seconds the message with the list of languages gets deleted too.
+        """
+        text = ListMarker.make_list(list(LANGUAGES.values()))
+
+        await ctx.send(text, delete_after=120, allowed_mentions=discord.AllowedMentions.none())
         await delete_message_if_text_channel(ctx)
 # endregion [Commands]
 
@@ -309,9 +318,8 @@ class TranslateCog(AntiPetrosBaseCog):
     def __str__(self):
         return self.qualified_name
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
-
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
 # endregion [SpecialMethods]
 

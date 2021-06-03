@@ -261,8 +261,8 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                 'Current File Size Limit': (bytes2human(as_guild.filesize_limit, annotate=True), True),
                 "Preferred Locale": (as_guild.preferred_locale, True),
                 'Created at': (as_guild.created_at.strftime("%H:%M:%S on the %Y.%b.%d"), False),
-                "Owner": (f"{as_guild.owner.mention} `{as_guild.owner.name}`", False),
-                "Current Booster": ('\n'.join([await asyncio.sleep(0, f"{member.mention} `{member.name}`") for member in sorted(as_guild.premium_subscribers, key=lambda x: len(x.display_name))]), False),
+                "Owner": (f"{as_guild.owner.mention} (`{as_guild.owner.name}`)", False),
+                "Current Booster": ('\n'.join([await asyncio.sleep(0, f"{member.mention} (`{member.name}`)") for member in sorted(as_guild.premium_subscribers, key=lambda x: len(x.display_name))]), False),
                 "Rules Channel": (as_guild.rules_channel.mention, False),
                 "Member for longest time": (await self._oldest_youngest_member(True), False),
                 "Member for shortest time": (await self._oldest_youngest_member(False), False),
@@ -380,7 +380,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
         join_time = member.joined_at
 
-        return f'{member.mention} `{member.name}`, joined at {join_time.strftime("%H:%M:%S on %a the %Y.%b.%d")}'
+        return f'{member.mention} (`{member.name}`), joined at {join_time.strftime("%H:%M:%S on %a the %Y.%b.%d")}'
 
     async def most_used_channel(self):
         stats = await self.bot.get_usage_stats('all')
@@ -410,8 +410,8 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

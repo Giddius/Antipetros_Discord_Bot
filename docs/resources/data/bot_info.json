@@ -1,6 +1,6 @@
 {
-    "amount_cogs": 20,
-    "amount_commands": 72,
+    "amount_cogs": 23,
+    "amount_commands": 86,
     "avatar_url": "https://cdn.discordapp.com/avatars/752943453624729640/3a99b98e804a4bb821686b04ee2877d0.webp?size=1024",
     "description": "__**AntiPetros is a bot that was custom made for the Antistasi Community by Giddi.**__\n\n**To get general stats about the Bot, use:**\n```css\n@AntiPetros infobot\n```\n**To suggest new commands or features just Ping @Giddi or send him a DM!**\n\n**If you think that there could be a better word to invoke a command then:**\n\n    *- if you are not an Admin, message either @Giddi or an admin and ask if they can set this new alias for the command.*\n\n    *- if you are an Admin, use:*\n```css\n@AntiPetros add_alias [command-name] [new-alias]\n```",
     "display_name": "AntiPetros",

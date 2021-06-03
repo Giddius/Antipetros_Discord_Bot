@@ -5,19 +5,19 @@
         "required_files": {},
         "all_listeners": [
             {
-                "name": "stop_the_reaction_petros_listener",
-                "event": "on_reaction_add",
-                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py#L158-L167",
                 "description": null,
+                "code": "    @commands.Cog.listener(name='on_reaction_add')\n    async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):\n        if self.ready is False:\n            return\n        if self.listeners_enabled.get(\"stop_the_reaction_petros_listener\", False) is False:\n            return\n        message = reaction.message\n        author = message.author\n        if user.id == 155149108183695360 and author.id in self.reaction_remove_ids:\n            asyncio.create_task(reaction.remove(user))\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py#L158-L167",
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py",
-                "code": "    @commands.Cog.listener(name='on_reaction_add')\n    async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):\n        if self.ready is False:\n            return\n        if self.listeners_enabled.get(\"stop_the_reaction_petros_listener\", False) is False:\n            return\n        message = reaction.message\n        author = message.author\n        if user.id == 155149108183695360 and author.id in self.reaction_remove_ids:\n            asyncio.create_task(reaction.remove(user))\n"
+                "event": "on_reaction_add",
+                "name": "stop_the_reaction_petros_listener"
             }
         ],
         "meta_status": [
             "DOCUMENTATION_MISSING",
             "FEATURE_MISSING"
         ],
-        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py/#L64-L425",
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/bot_admin_cog.py/#L64-L446",
         "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/BotAdminCog",
         "loops": [
             {
@@ -55,7 +55,7 @@
             "FEATURE_MISSING",
             "OPEN_TODOS"
         ],
-        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/config_cog.py/#L74-L374",
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/config_cog.py/#L74-L405",
         "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/ConfigCog",
         "loops": [],
         "config_name": "config",
@@ -82,36 +82,36 @@
         "required_files": {},
         "all_listeners": [
             {
-                "name": "guild_structure_changes_listener_remove",
-                "event": "on_guild_channel_delete",
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_guild_channel_delete\")\n    async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):\n        await self.bot.insert_channels_into_db()\n        log.info('updated channels in %s, because Guild channel \"%s\" was removed', self.db, channel.name)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/db_caretaker_cog.py#L135-L138",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/db_caretaker_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_guild_channel_delete\")\n    async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):\n        await self.bot.insert_channels_into_db()\n        log.info('updated channels in %s, because Guild channel \"%s\" was removed', self.db, channel.name)\n"
+                "event": "on_guild_channel_delete",
+                "name": "guild_structure_changes_listener_remove"
             },
             {
-                "name": "guild_structure_changes_listener_create",
-                "event": "on_guild_channel_create",
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_guild_channel_create\")\n    async def guild_structure_changes_listener_create(self, channel: discord.abc.GuildChannel):\n        await self.bot.insert_channels_into_db()\n        log.info('updated channels in %s, because Guild channel \"%s\" was created', self.db, channel.name)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/db_caretaker_cog.py#L140-L143",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/db_caretaker_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_guild_channel_create\")\n    async def guild_structure_changes_listener_create(self, channel: discord.abc.GuildChannel):\n        await self.bot.insert_channels_into_db()\n        log.info('updated channels in %s, because Guild channel \"%s\" was created', self.db, channel.name)\n"
+                "event": "on_guild_channel_create",
+                "name": "guild_structure_changes_listener_create"
             },
             {
-                "name": "guild_structure_changes_listener_update",
-                "event": "on_guild_channel_update",
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_guild_channel_update\")\n    async def guild_structure_changes_listener_update(self, before_channel: discord.abc.GuildChannel, after_channel: discord.abc.GuildChannel):\n        await self.bot.insert_channels_into_db()\n        log.info('updated channels in %s, because Guild channel \"%s\"/\"%s\" was updated', self.db, before_channel.name, after_channel.name)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/db_caretaker_cog.py#L145-L148",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/db_caretaker_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_guild_channel_update\")\n    async def guild_structure_changes_listener_update(self, before_channel: discord.abc.GuildChannel, after_channel: discord.abc.GuildChannel):\n        await self.bot.insert_channels_into_db()\n        log.info('updated channels in %s, because Guild channel \"%s\"/\"%s\" was updated', self.db, before_channel.name, after_channel.name)\n"
+                "event": "on_guild_channel_update",
+                "name": "guild_structure_changes_listener_update"
             },
             {
-                "name": "guild_update_listener",
-                "event": "on_guild_update",
-                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/db_caretaker_cog.py#L150-L153",
                 "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_guild_update\")\n    async def guild_update_listener(self, before_guild: discord.Guild, after_guild: discord.Guild):\n        await self.bot.insert_channels_into_db()\n        log.info('updated channels in %s, because Guild was updated', self.db)\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/db_caretaker_cog.py#L150-L153",
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/db_caretaker_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_guild_update\")\n    async def guild_update_listener(self, before_guild: discord.Guild, after_guild: discord.Guild):\n        await self.bot.insert_channels_into_db()\n        log.info('updated channels in %s, because Guild was updated', self.db)\n"
+                "event": "on_guild_update",
+                "name": "guild_update_listener"
             }
         ],
         "meta_status": [
@@ -158,7 +158,7 @@
         "loops": [],
         "config_name": "help",
         "public": true,
-        "description": "WiP",
+        "description": "Help commands and other meta information.",
         "long_description": "",
         "extra_info": "",
         "qualified_name": "HelpCog",
@@ -173,7 +173,7 @@
         },
         "short_doc": null,
         "brief": null,
-        "docstring": "WiP"
+        "docstring": "Help commands and other meta information."
     },
     {
         "name": "PerformanceCog",
@@ -234,100 +234,100 @@
         "required_files": {},
         "all_listeners": [
             {
-                "name": "guild_structure_changes_listener_remove",
-                "event": "on_guild_channel_delete",
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_guild_channel_delete\")\n    async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info('pdate Signal %s was send, because Guild channel \"%s\" was removed', UpdateTypus.GUILD, channel.name)\n        await self.send_update_signal(UpdateTypus.GUILD)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py#L133-L138",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_guild_channel_delete\")\n    async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info('pdate Signal %s was send, because Guild channel \"%s\" was removed', UpdateTypus.GUILD, channel.name)\n        await self.send_update_signal(UpdateTypus.GUILD)\n"
+                "event": "on_guild_channel_delete",
+                "name": "guild_structure_changes_listener_remove"
             },
             {
-                "name": "guild_structure_changes_listener_create",
-                "event": "on_guild_channel_create",
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_guild_channel_create\")\n    async def guild_structure_changes_listener_create(self, channel: discord.abc.GuildChannel):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info('Update Signal %s was send, because Guild channel \"%s\" was created', UpdateTypus.GUILD, channel.name)\n        await self.send_update_signal(UpdateTypus.GUILD)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py#L140-L145",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_guild_channel_create\")\n    async def guild_structure_changes_listener_create(self, channel: discord.abc.GuildChannel):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info('Update Signal %s was send, because Guild channel \"%s\" was created', UpdateTypus.GUILD, channel.name)\n        await self.send_update_signal(UpdateTypus.GUILD)\n"
+                "event": "on_guild_channel_create",
+                "name": "guild_structure_changes_listener_create"
             },
             {
-                "name": "guild_structure_changes_listener_update",
-                "event": "on_guild_channel_update",
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_guild_channel_update\")\n    async def guild_structure_changes_listener_update(self, before_channel: discord.abc.GuildChannel, after_channel: discord.abc.GuildChannel):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info('Update Signal %s was send, because Guild channel \"%s\"/\"%s\" was updated', UpdateTypus.GUILD, before_channel.name, after_channel.name)\n        await self.send_update_signal(UpdateTypus.GUILD)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py#L147-L152",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_guild_channel_update\")\n    async def guild_structure_changes_listener_update(self, before_channel: discord.abc.GuildChannel, after_channel: discord.abc.GuildChannel):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info('Update Signal %s was send, because Guild channel \"%s\"/\"%s\" was updated', UpdateTypus.GUILD, before_channel.name, after_channel.name)\n        await self.send_update_signal(UpdateTypus.GUILD)\n"
+                "event": "on_guild_channel_update",
+                "name": "guild_structure_changes_listener_update"
             },
             {
-                "name": "guild_update_listener",
-                "event": "on_guild_update",
+                "description": null,
+                "code": "    @ commands.Cog.listener(name=\"on_guild_update\")\n    @ universal_log_profiler\n    async def guild_update_listener(self, before_guild: discord.Guild, after_guild: discord.Guild):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info('Update Signal %s was send, because Guild was updated', UpdateTypus.GUILD)\n        await self.send_update_signal(UpdateTypus.GUILD)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py#L154-L160",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py",
-                "code": "    @ commands.Cog.listener(name=\"on_guild_update\")\n    @ universal_log_profiler\n    async def guild_update_listener(self, before_guild: discord.Guild, after_guild: discord.Guild):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info('Update Signal %s was send, because Guild was updated', UpdateTypus.GUILD)\n        await self.send_update_signal(UpdateTypus.GUILD)\n"
+                "event": "on_guild_update",
+                "name": "guild_update_listener"
             },
             {
-                "name": "member_join_listener",
-                "event": "on_member_join",
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_member_join\")\n    async def member_join_listener(self, member: discord.Member):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info(\"Update Signal %s was send, because a new member joined\", UpdateTypus.MEMBERS)\n        await self.send_update_signal(UpdateTypus.MEMBERS)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py#L162-L167",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_member_join\")\n    async def member_join_listener(self, member: discord.Member):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info(\"Update Signal %s was send, because a new member joined\", UpdateTypus.MEMBERS)\n        await self.send_update_signal(UpdateTypus.MEMBERS)\n"
+                "event": "on_member_join",
+                "name": "member_join_listener"
             },
             {
-                "name": "member_remove_listener",
-                "event": "on_member_remove",
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_member_remove\")\n    async def member_remove_listener(self, member: discord.Member):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info(\"Update Signal %s was send, because a was removed or left\", UpdateTypus.MEMBERS)\n        await self.send_update_signal(UpdateTypus.MEMBERS)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py#L169-L174",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_member_remove\")\n    async def member_remove_listener(self, member: discord.Member):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info(\"Update Signal %s was send, because a was removed or left\", UpdateTypus.MEMBERS)\n        await self.send_update_signal(UpdateTypus.MEMBERS)\n"
+                "event": "on_member_remove",
+                "name": "member_remove_listener"
             },
             {
-                "name": "member_roles_changed_listener",
-                "event": "on_member_update",
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_member_update\")\n    async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        if set(before.roles) != set(after.roles):\n            log.info(\"Update Signal %s was send, because a members roles changed\", UpdateTypus.MEMBERS | UpdateTypus.ROLES)\n            await self.send_update_signal(UpdateTypus.MEMBERS | UpdateTypus.ROLES)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py#L176-L182",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_member_update\")\n    async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        if set(before.roles) != set(after.roles):\n            log.info(\"Update Signal %s was send, because a members roles changed\", UpdateTypus.MEMBERS | UpdateTypus.ROLES)\n            await self.send_update_signal(UpdateTypus.MEMBERS | UpdateTypus.ROLES)\n"
-            },
-            {
-                "name": "member_name_changed_listener",
                 "event": "on_member_update",
+                "name": "member_roles_changed_listener"
+            },
+            {
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_member_update\")\n    async def member_name_changed_listener(self, before: discord.Member, after: discord.Member):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        if before.display_name != after.display_name:\n            log.info(\"Update Signal %s was send, because a members name changed\", UpdateTypus.MEMBERS)\n            await self.send_update_signal(UpdateTypus.MEMBERS)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py#L184-L190",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_member_update\")\n    async def member_name_changed_listener(self, before: discord.Member, after: discord.Member):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        if before.display_name != after.display_name:\n            log.info(\"Update Signal %s was send, because a members name changed\", UpdateTypus.MEMBERS)\n            await self.send_update_signal(UpdateTypus.MEMBERS)\n"
+                "event": "on_member_update",
+                "name": "member_name_changed_listener"
             },
             {
-                "name": "role_created_listener",
-                "event": "on_guild_role_create",
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_guild_role_create\")\n    async def role_created_listener(self, role: discord.Role):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info(\"Update Signal %s was send, because the Role %s was created\", UpdateTypus.MEMBERS, role.name)\n        await self.send_update_signal(UpdateTypus.ROLES)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py#L192-L197",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_guild_role_create\")\n    async def role_created_listener(self, role: discord.Role):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info(\"Update Signal %s was send, because the Role %s was created\", UpdateTypus.MEMBERS, role.name)\n        await self.send_update_signal(UpdateTypus.ROLES)\n"
+                "event": "on_guild_role_create",
+                "name": "role_created_listener"
             },
             {
-                "name": "role_deleted_listener",
-                "event": "on_guild_role_delete",
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_guild_role_delete\")\n    async def role_deleted_listener(self, role: discord.Role):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info(\"Update Signal %s was send, because the Role %s was deleted\", UpdateTypus.MEMBERS, role.name)\n        await self.send_update_signal(UpdateTypus.ROLES)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py#L199-L204",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_guild_role_delete\")\n    async def role_deleted_listener(self, role: discord.Role):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info(\"Update Signal %s was send, because the Role %s was deleted\", UpdateTypus.MEMBERS, role.name)\n        await self.send_update_signal(UpdateTypus.ROLES)\n"
+                "event": "on_guild_role_delete",
+                "name": "role_deleted_listener"
             },
             {
-                "name": "role_updated_listener",
-                "event": "on_guild_role_update",
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_guild_role_update\")\n    async def role_updated_listener(self, before: discord.Role, after: discord.Role):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info(\"Update Signal %s was send, because the Role %s was updated\", UpdateTypus.MEMBERS, before.name)\n        await self.send_update_signal(UpdateTypus.ROLES)\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py#L206-L211",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_guild_role_update\")\n    async def role_updated_listener(self, before: discord.Role, after: discord.Role):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        log.info(\"Update Signal %s was send, because the Role %s was updated\", UpdateTypus.MEMBERS, before.name)\n        await self.send_update_signal(UpdateTypus.ROLES)\n"
+                "event": "on_guild_role_update",
+                "name": "role_updated_listener"
             },
             {
-                "name": "on_message_listener",
-                "event": "on_message",
-                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py#L213-L218",
                 "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_message\")\n    async def on_message_listener(self, msg: discord.Message):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        if hasattr(self.bot, 'record_channel_usage'):\n            await self.bot.record_channel_usage(msg)\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py#L213-L218",
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/bot_admin_cogs/updater_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_message\")\n    async def on_message_listener(self, msg: discord.Message):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        if hasattr(self.bot, 'record_channel_usage'):\n            await self.bot.record_channel_usage(msg)\n"
+                "event": "on_message",
+                "name": "on_message_listener"
             }
         ],
         "meta_status": [
@@ -392,12 +392,12 @@
         "required_files": {},
         "all_listeners": [
             {
-                "name": "remove_double_posts",
-                "event": "on_message",
-                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/discord_admin_cogs/purge_messages_cog.py#L164-L191",
                 "description": null,
+                "code": "    @commands.Cog.listener(name='on_message')\n    async def remove_double_posts(self, msg: discord.Message):\n        if self.ready is False or self.bot.setup_finished is False:\n            return\n        if msg.channel.type is discord.ChannelType.private:\n            return\n        if msg.channel.id != 645930607683174401:  # for dev hard coded to only apply in bot-testing\n            return\n        if msg.author.bot is True:\n            return\n\n        # commented out for dev so I can test it!\n\n        # if msg.author.top_role.position <= 5:\n        #     return\n        log.debug(\"checking 'remove_double_post' if it is bot prefix\")\n        if any(msg.content.startswith(prfx) for prfx in await self.bot.get_prefix(msg)):\n            return\n        log.debug(\"finished checking 'remove_double_post' if it is bot prefix\")\n        if await self.msg_keeper.handle_message(msg) is True:\n            log.debug(\"determined that message should be deleted\")\n            content = msg.content if msg.content != '' else 'NO TEXT CONTENT'\n            author = msg.author\n            channel_name = msg.channel.name\n            files = [await attachment.to_file() for attachment in msg.attachments]\n            log.debug(\"requesting deletion\")\n            await msg.delete()\n            await author.send(f\"Your message in `{channel_name}` was deleted because you reposted the same message in a short time!\\n\\n> {content}\", files=files, allowed_mentions=discord.AllowedMentions.none())\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/discord_admin_cogs/purge_messages_cog.py#L164-L191",
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/discord_admin_cogs/purge_messages_cog.py",
-                "code": "    @commands.Cog.listener(name='on_message')\n    async def remove_double_posts(self, msg: discord.Message):\n        if self.ready is False or self.bot.setup_finished is False:\n            return\n        if msg.channel.type is discord.ChannelType.private:\n            return\n        if msg.channel.id != 645930607683174401:  # for dev hard coded to only apply in bot-testing\n            return\n        if msg.author.bot is True:\n            return\n\n        # commented out for dev so I can test it!\n\n        # if msg.author.top_role.position <= 5:\n        #     return\n        log.debug(\"checking 'remove_double_post' if it is bot prefix\")\n        if any(msg.content.startswith(prfx) for prfx in await self.bot.get_prefix(msg)):\n            return\n        log.debug(\"finished checking 'remove_double_post' if it is bot prefix\")\n        if await self.msg_keeper.handle_message(msg) is True:\n            log.debug(\"determined that message should be deleted\")\n            content = msg.content if msg.content != '' else 'NO TEXT CONTENT'\n            author = msg.author\n            channel_name = msg.channel.name\n            files = [await attachment.to_file() for attachment in msg.attachments]\n            log.debug(\"requesting deletion\")\n            await msg.delete()\n            await author.send(f\"Your message in `{channel_name}` was deleted because you reposted the same message in a short time!\\n\\n> {content}\", files=files, allowed_mentions=discord.AllowedMentions.none())\n"
+                "event": "on_message",
+                "name": "remove_double_posts"
             }
         ],
         "meta_status": [
@@ -427,12 +427,12 @@
         "required_files": {},
         "all_listeners": [
             {
-                "name": "subscription_reaction",
-                "event": "on_raw_reaction_add",
-                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/community_server_info_cog.py#L242-L279",
                 "description": "Listens to emojis being clicked on the `is_online` messages to then send the user that clicked it, the modlist per DM.\n\nRemoves all other emojis being assigned to the messages.",
+                "code": "    @commands.Cog.listener(name='on_raw_reaction_add')\n    async def is_online_mod_list_reaction_listener(self, payload: discord.RawReactionActionEvent):\n        \"\"\"\n        Listens to emojis being clicked on the `is_online` messages to then send the user that clicked it, the modlist per DM.\n\n        Removes all other emojis being assigned to the messages.\n\n        \"\"\"\n        if self.ready is False or self.bot.setup_finished is False:\n            return\n        reaction_member = payload.member\n\n        if payload.channel_id != self.is_online_messages_channel.id:\n            return\n        if payload.message_id not in set(self.is_online_messages.values()):\n            return\n        if reaction_member.bot is True:\n            return\n\n        try:\n            channel = self.bot.get_channel(payload.channel_id)\n            message = channel.get_partial_message(payload.message_id)\n        except discord.errors.NotFound:\n            return\n\n        if payload.emoji != self.bot.server_emoji:\n            asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))\n            asyncio.create_task(self.clear_emojis_from_is_online_message())\n            return\n\n        server_item = await self._server_from_is_online_message_id(message.id)\n        if server_item.previous_status is ServerStatus.OFF or server_item.log_folder is None:\n            asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))\n            return\n\n        asyncio.create_task(self._send_to_dm(reaction_member, server_item))\n        asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))\n        asyncio.create_task(self.clear_emojis_from_is_online_message())\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/community_server_info_cog.py#L242-L279",
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/antistasi_tool_cogs/community_server_info_cog.py",
-                "code": "    @commands.Cog.listener(name='on_raw_reaction_add')\n    async def subscription_reaction(self, payload: discord.RawReactionActionEvent):\n        \"\"\"\n        Listens to emojis being clicked on the `is_online` messages to then send the user that clicked it, the modlist per DM.\n\n        Removes all other emojis being assigned to the messages.\n\n        \"\"\"\n        if self.ready is False or self.bot.setup_finished is False:\n            return\n        reaction_member = payload.member\n\n        if payload.channel_id != self.is_online_messages_channel.id:\n            return\n        if payload.message_id not in set(self.is_online_messages.values()):\n            return\n        if reaction_member.bot is True:\n            return\n\n        try:\n            channel = self.bot.get_channel(payload.channel_id)\n            message = channel.get_partial_message(payload.message_id)\n        except discord.errors.NotFound:\n            return\n\n        if payload.emoji != self.bot.server_emoji:\n            asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))\n            asyncio.create_task(self.clear_emojis_from_is_online_message())\n            return\n\n        server_item = await self._server_from_is_online_message_id(message.id)\n        if server_item.previous_status is ServerStatus.OFF or server_item.log_folder is None:\n            asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))\n            return\n\n        asyncio.create_task(self._send_to_dm(reaction_member, server_item))\n        asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))\n        asyncio.create_task(self.clear_emojis_from_is_online_message())\n"
+                "event": "on_raw_reaction_add",
+                "name": "is_online_mod_list_reaction_listener"
             }
         ],
         "meta_status": [
@@ -440,7 +440,7 @@
             "FEATURE_MISSING",
             "UNTESTED"
         ],
-        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/community_server_info_cog.py/#L79-L588",
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/community_server_info_cog.py/#L79-L610",
         "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/CommunityServerInfoCog",
         "loops": [
             {
@@ -483,12 +483,12 @@
         "required_files": {},
         "all_listeners": [
             {
-                "name": "on_raw_reaction_add",
-                "event": "on_raw_reaction_add",
-                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/community_events_cogs/give_away_cog.py#L166-L181",
                 "description": null,
+                "code": "    @commands.Cog.listener()\n    async def on_raw_reaction_add(self, payload):\n        if self.ready is False:\n            return\n        try:\n            channel = self.bot.get_channel(payload.channel_id)\n            message = await channel.fetch_message(payload.message_id)\n            if message.author.bot is True:\n                return\n            for item in await self.give_aways:\n                if payload.message_id == item.message.id and normalize_emoji(payload.emoji.name) != normalize_emoji(item.enter_emoji):\n                    for reaction in message.reactions:\n                        if normalize_emoji(str(reaction.emoji)) != normalize_emoji(item.enter_emoji):\n                            await message.clear_reaction(reaction.emoji)\n        except discord.errors.NotFound:\n            return\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/community_events_cogs/give_away_cog.py#L166-L181",
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/community_events_cogs/give_away_cog.py",
-                "code": "    @commands.Cog.listener()\n    async def on_raw_reaction_add(self, payload):\n        if self.ready is False:\n            return\n        try:\n            channel = self.bot.get_channel(payload.channel_id)\n            message = await channel.fetch_message(payload.message_id)\n            if message.author.bot is True:\n                return\n            for item in await self.give_aways:\n                if payload.message_id == item.message.id and normalize_emoji(payload.emoji.name) != normalize_emoji(item.enter_emoji):\n                    for reaction in message.reactions:\n                        if normalize_emoji(str(reaction.emoji)) != normalize_emoji(item.enter_emoji):\n                            await message.clear_reaction(reaction.emoji)\n        except discord.errors.NotFound:\n            return\n"
+                "event": "on_raw_reaction_add",
+                "name": "on_raw_reaction_add"
             }
         ],
         "meta_status": [
@@ -526,6 +526,41 @@
         "short_doc": null,
         "brief": null,
         "docstring": "Creates and Runs Giveaways."
+    },
+    {
+        "name": "SteamCog",
+        "required_folder": {},
+        "required_files": {},
+        "all_listeners": [],
+        "meta_status": [
+            "DOCUMENTATION_MISSING",
+            "CRASHING",
+            "FEATURE_MISSING",
+            "UNTESTED"
+        ],
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/steam_cog.py/#L61-L310",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/SteamCog",
+        "loops": [
+            {
+                "name": "check_for_updates",
+                "docstring": null,
+                "loop_interval_pretty": "5 minutes",
+                "loop_interval_seconds": 300.0
+            }
+        ],
+        "config_name": "steam",
+        "public": false,
+        "description": "Commands to interact with Steam, the Steam Workshop and to alert if mods are updated. Still WiP",
+        "long_description": "",
+        "extra_info": "",
+        "qualified_name": "SteamCog",
+        "required_config_data": {
+            "base_config": {},
+            "cogs_config": {}
+        },
+        "short_doc": null,
+        "brief": null,
+        "docstring": "Commands to interact with Steam, the Steam Workshop and to alert if mods are updated. Still WiP"
     },
     {
         "name": "ImageManipulationCog",
@@ -594,12 +629,12 @@
         "required_files": {},
         "all_listeners": [
             {
-                "name": "emoji_translate_listener",
-                "event": "on_raw_reaction_add",
-                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/translate_cog.py#L182-L208",
                 "description": "Translates a Message when you add a Flag Emoji to it.\nThe flag emoji represents the language you want the message translated to.\nThe translated message is then send to you via DM.",
+                "code": "    @commands.Cog.listener(name=\"on_raw_reaction_add\")\n    @async_log_profiler\n    async def emoji_translate_listener(self, payload):\n        \"\"\"\n        Translates a Message when you add a Flag Emoji to it.\n        The flag emoji represents the language you want the message translated to.\n        The translated message is then send to you via DM.\n\n        \"\"\"\n\n        if await self._emoji_translate_checks(payload) is False:\n            return\n        channel = self.bot.get_channel(payload.channel_id)\n        try:\n            message = await channel.fetch_message(payload.message_id)\n        except discord.errors.NotFound:\n            return\n        country_code = self.language_emoji_map.get(normalize_emoji(payload.emoji.name))\n\n        if message.embeds != []:\n            log.debug('translating embed')\n            await self.translate_embed(payload.member, channel, message, message.embeds[0], country_code)\n            return\n\n        translated = self.translator.translate(text=message.content, dest=country_code, src=\"auto\")\n        # TODO: Make embed with Hyperlink\n        await payload.member.send(f\"{message.jump_url}\\n**in {LANGUAGES.get(country_code)}:**\\n {translated.text.strip('.')}\", allowed_mentions=AllowedMentions.none())\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/translate_cog.py#L182-L208",
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/general_cogs/translate_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_raw_reaction_add\")\n    @async_log_profiler\n    async def emoji_translate_listener(self, payload):\n        \"\"\"\n        Translates a Message when you add a Flag Emoji to it.\n        The flag emoji represents the language you want the message translated to.\n        The translated message is then send to you via DM.\n\n        \"\"\"\n\n        if await self._emoji_translate_checks(payload) is False:\n            return\n        channel = self.bot.get_channel(payload.channel_id)\n        try:\n            message = await channel.fetch_message(payload.message_id)\n        except discord.errors.NotFound:\n            return\n        country_code = self.language_emoji_map.get(normalize_emoji(payload.emoji.name))\n\n        if message.embeds != []:\n            log.debug('translating embed')\n            await self.translate_embed(payload.member, channel, message, message.embeds[0], country_code)\n            return\n\n        translated = self.translator.translate(text=message.content, dest=country_code, src=\"auto\")\n        # TODO: Make embed with Hyperlink\n        await payload.member.send(f\"{message.jump_url}\\n**in {LANGUAGES.get(country_code)}:**\\n {translated.text.strip('.')}\", allowed_mentions=AllowedMentions.none())\n"
+                "event": "on_raw_reaction_add",
+                "name": "emoji_translate_listener"
             }
         ],
         "meta_status": [
@@ -632,20 +667,20 @@
         "required_files": {},
         "all_listeners": [
             {
-                "name": "update_time_sorted_member_ids_join",
-                "event": "on_member_join",
-                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/info_cog.py#L175-L177",
                 "description": null,
+                "code": "    @commands.Cog.listener(name='on_member_join')\n    async def update_time_sorted_member_ids_join(self, member):\n        await self.make_time_sorted_guild_member_list()\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/info_cog.py#L175-L177",
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/general_cogs/info_cog.py",
-                "code": "    @commands.Cog.listener(name='on_member_join')\n    async def update_time_sorted_member_ids_join(self, member):\n        await self.make_time_sorted_guild_member_list()\n"
+                "event": "on_member_join",
+                "name": "update_time_sorted_member_ids_join"
             },
             {
-                "name": "update_time_sorted_member_ids_remove",
-                "event": "on_member_remove",
-                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/info_cog.py#L179-L181",
                 "description": null,
+                "code": "    @commands.Cog.listener(name='on_member_remove')\n    async def update_time_sorted_member_ids_remove(self, member):\n        await self.make_time_sorted_guild_member_list()\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/general_cogs/info_cog.py#L179-L181",
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/general_cogs/info_cog.py",
-                "code": "    @commands.Cog.listener(name='on_member_remove')\n    async def update_time_sorted_member_ids_remove(self, member):\n        await self.make_time_sorted_guild_member_list()\n"
+                "event": "on_member_remove",
+                "name": "update_time_sorted_member_ids_remove"
             }
         ],
         "meta_status": [
@@ -674,28 +709,28 @@
         "required_files": {},
         "all_listeners": [
             {
-                "name": "faq_message_added_listener",
-                "event": "on_message",
+                "description": null,
+                "code": "    @commands.Cog.listener(name='on_message')\n    async def faq_message_added_listener(self, message):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        channel = message.channel\n        if channel is self.faq_channel:\n            asyncio.create_task(self.collect_raw_faq_data())\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/special_channels_cogs/faq_cog.py#L135-L141",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/special_channels_cogs/faq_cog.py",
-                "code": "    @commands.Cog.listener(name='on_message')\n    async def faq_message_added_listener(self, message):\n        if self.ready is False:\n            return\n        channel = message.channel\n        if channel is self.faq_channel:\n            asyncio.create_task(self.collect_raw_faq_data())\n"
+                "event": "on_message",
+                "name": "faq_message_added_listener"
             },
             {
-                "name": "faq_message_deleted_listener",
-                "event": "on_raw_message_delete",
+                "description": null,
+                "code": "    @commands.Cog.listener(name='on_raw_message_delete')\n    async def faq_message_deleted_listener(self, payload):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        channel = self.bot.get_channel(payload.channel_id)\n        if channel is self.faq_channel:\n            asyncio.create_task(self.collect_raw_faq_data())\n",
                 "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/special_channels_cogs/faq_cog.py#L143-L149",
-                "description": null,
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/special_channels_cogs/faq_cog.py",
-                "code": "    @commands.Cog.listener(name='on_raw_message_delete')\n    async def faq_message_deleted_listener(self, payload):\n        if self.ready is False:\n            return\n        channel = self.bot.get_channel(payload.channel_id)\n        if channel is self.faq_channel:\n            asyncio.create_task(self.collect_raw_faq_data())\n"
+                "event": "on_raw_message_delete",
+                "name": "faq_message_deleted_listener"
             },
             {
-                "name": "faq_message_edited_listener",
-                "event": "on_raw_message_edit",
-                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/special_channels_cogs/faq_cog.py#L151-L157",
                 "description": null,
+                "code": "    @commands.Cog.listener(name='on_raw_message_edit')\n    async def faq_message_edited_listener(self, payload):\n        if any([self.ready, self.bot.setup_finished]) is False:\n            return\n        channel = self.bot.get_channel(payload.channel_id)\n        if channel is self.faq_channel:\n            asyncio.create_task(self.collect_raw_faq_data())\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/special_channels_cogs/faq_cog.py#L151-L157",
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/special_channels_cogs/faq_cog.py",
-                "code": "    @commands.Cog.listener(name='on_raw_message_edit')\n    async def faq_message_edited_listener(self, payload):\n        if self.ready is False:\n            return\n        channel = self.bot.get_channel(payload.channel_id)\n        if channel is self.faq_channel:\n            asyncio.create_task(self.collect_raw_faq_data())\n"
+                "event": "on_raw_message_edit",
+                "name": "faq_message_edited_listener"
             }
         ],
         "meta_status": [
@@ -759,19 +794,19 @@
         "required_files": {},
         "all_listeners": [
             {
-                "name": "listen_for_github_request_in_message",
-                "event": "on_message",
-                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/github_cog.py#L395-L426",
                 "description": null,
+                "code": "    @commands.Cog.listener(name='on_message')\n    async def listen_for_github_request_in_message(self, msg: discord.Message):\n        if self.ready is False or self.bot.setup_finished is False:\n            return\n        if BranchItem.is_waiting_for_rate_limit_reset is True:\n            return\n\n        channel = msg.channel\n        author = msg.author\n        if channel.type is discord.ChannelType.private:\n            return\n        if author.bot is True:\n            return\n\n        if channel.category.id != 639996196160798725:\n\n            return\n\n        if channel.id == self.github_webhook_channel_id:\n            await self.make_branches()\n            return\n        request_match = self.github_request_regex.search(msg.content)\n        if not request_match:\n            return\n\n        prefix, branch_name, request_identifier = request_match.groups()\n        if request_identifier.isnumeric():\n            request_identifier = int(request_identifier)\n            asyncio.create_task(self._send_github_issue(request_identifier, channel, author, msg))\n\n        else:\n            asyncio.create_task(self._send_github_file(branch_name, request_identifier, channel, author, msg))\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/github_cog.py#L397-L428",
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/antistasi_tool_cogs/github_cog.py",
-                "code": "    @commands.Cog.listener(name='on_message')\n    async def listen_for_github_request_in_message(self, msg: discord.Message):\n        if self.ready is False or self.bot.setup_finished is False:\n            return\n        if BranchItem.is_waiting_for_rate_limit_reset is True:\n            return\n\n        channel = msg.channel\n        author = msg.author\n        if channel.type is discord.ChannelType.private:\n            return\n        if author.bot is True:\n            return\n\n        if channel.category.id != 639996196160798725:\n\n            return\n\n        if channel.id == self.github_webhook_channel_id:\n            await self.make_branches()\n            return\n        request_match = self.github_request_regex.search(msg.content)\n        if not request_match:\n            return\n\n        prefix, branch_name, request_identifier = request_match.groups()\n        if request_identifier.isnumeric():\n            request_identifier = int(request_identifier)\n            asyncio.create_task(self._send_github_issue(request_identifier, channel, author, msg))\n\n        else:\n            asyncio.create_task(self._send_github_file(branch_name, request_identifier, channel, author, msg))\n"
+                "event": "on_message",
+                "name": "listen_for_github_request_in_message"
             }
         ],
         "meta_status": [
             "DOCUMENTATION_MISSING",
             "FEATURE_MISSING"
         ],
-        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/github_cog.py/#L318-L647",
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/antistasi_tool_cogs/github_cog.py/#L318-L590",
         "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/GithubCog",
         "loops": [
             {
@@ -798,6 +833,119 @@
         "docstring": "Dynamic meta info and files from the Antistasi Github."
     },
     {
+        "name": "SubscriptionCog",
+        "required_folder": {},
+        "required_files": {},
+        "all_listeners": [
+            {
+                "description": null,
+                "code": "    @commands.Cog.listener(name='on_raw_reaction_add')\n    async def subscription_reaction(self, payload):\n        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:\n            return\n        try:\n            channel = self.bot.get_channel(payload.channel_id)\n            message = await channel.fetch_message(payload.message_id)\n            if message not in [topic.message for topic in self.topics]:\n                return\n            topic = {topic.message: topic for topic in self.topics}.get(message)\n            emoji_name = normalize_emoji(payload.emoji.name)\n            if emoji_name != normalize_emoji(topic.emoji):\n                for reaction in message.reactions:\n                    if normalize_emoji(str(reaction.emoji)) != normalize_emoji(topic.emoji):\n                        await message.clear_reaction(reaction.emoji)\n                return\n            reaction_user = await self.bot.fetch_antistasi_member(payload.user_id)\n            if reaction_user.bot is True:\n                return\n            if topic.role in reaction_user.roles:\n                await reaction_user.send(f\"You already have the role `{topic.role.name}`.\\nThis should not have been possible, please contact Giddi!\")\n                return\n            await self._give_topic_role(reaction_user, topic)\n            await self.sucess_subscribed_embed(reaction_user, topic)\n\n        except discord.errors.NotFound:\n            return\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/special_channels_cogs/subscription_cog.py#L223-L249",
+                "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/special_channels_cogs/subscription_cog.py",
+                "event": "on_raw_reaction_add",
+                "name": "subscription_reaction"
+            },
+            {
+                "description": null,
+                "code": "    @commands.Cog.listener(name='on_raw_reaction_remove')\n    async def unsubscription_reaction(self, payload):\n        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:\n            return\n        try:\n            channel = self.bot.get_channel(payload.channel_id)\n\n            message = await channel.fetch_message(payload.message_id)\n\n            if message not in [topic.message for topic in self.topics]:\n                return\n            topic = {topic.message: topic for topic in self.topics}.get(message)\n            emoji_name = normalize_emoji(payload.emoji.name)\n            if emoji_name != normalize_emoji(topic.emoji):\n                for reaction in message.reactions:\n                    if normalize_emoji(str(reaction.emoji)) != normalize_emoji(topic.emoji):\n                        await message.clear_reaction(reaction.emoji)\n                return\n            reaction_user = await self.bot.fetch_antistasi_member(payload.user_id)\n            if reaction_user.bot is True:\n                return\n            if topic.role not in reaction_user.roles:\n                return\n            await self._remove_topic_role(reaction_user, topic)\n            await self.sucess_unsubscribed_embed(reaction_user, topic)\n        except discord.errors.NotFound:\n            return\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/special_channels_cogs/subscription_cog.py#L251-L277",
+                "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/special_channels_cogs/subscription_cog.py",
+                "event": "on_raw_reaction_remove",
+                "name": "unsubscription_reaction"
+            }
+        ],
+        "meta_status": [
+            "DOCUMENTATION_MISSING",
+            "FEATURE_MISSING",
+            "UNTESTED",
+            "WORKING"
+        ],
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/special_channels_cogs/subscription_cog.py/#L151-L659",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/SubscriptionCog",
+        "loops": [],
+        "config_name": "subscription",
+        "public": false,
+        "description": "Organizes Topic so they can be subscribed and mentioned selectively.",
+        "long_description": "",
+        "extra_info": "",
+        "qualified_name": "SubscriptionCog",
+        "required_config_data": {
+            "base_config": {},
+            "cogs_config": {
+                "header_description": "Please note that we have a new system for notifications!\n\tWith the implementation of this system you will be able to decide, which topics you would like to be informed/pinged about.\n\tIf you for example are interested into events and would like to get notified about them, subscribe to Events.",
+                "header_how_to_subscribe_text": "You can subscribe by reacting via the emoji under the message of the topic you would like to be informed about.",
+                "header_how_to_unsubscribe_text": "You can unsubscribe from a topic by removing your reaction under the message of the topic you are currently subscribed to.",
+                "header_how_does_it_work_text": "By reacting to a message you will automatically be assigned the associated role. This role will be @-mentioned/pinged whenever there are news about said topic.\n\tWhen unsubscribing from a topic, the role will be taken from you and you will not receive pings to said topic anymore.",
+                "header_color": "teal",
+                "header_thumbnail": "info"
+            }
+        },
+        "short_doc": null,
+        "brief": null,
+        "docstring": "Organizes Topic so they can be subscribed and mentioned selectively."
+    },
+    {
+        "name": "TeamRosterCog",
+        "required_folder": {},
+        "required_files": {},
+        "all_listeners": [
+            {
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_member_update\")\n    async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):\n        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:\n            return\n        if before.roles != after.roles:\n            log.debug(\"updating Team Roster because role on Member was changed\")\n            await self._update_team_roster()\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/special_channels_cogs/team_roster_cog.py#L323-L329",
+                "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/special_channels_cogs/team_roster_cog.py",
+                "event": "on_member_update",
+                "name": "member_roles_changed_listener"
+            },
+            {
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_guild_role_create\")\n    async def role_added_listener(self, role: discord.Role):\n        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:\n            return\n        log.debug(\"updating Team Roster because new role was created\")\n        await self._update_team_roster()\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/special_channels_cogs/team_roster_cog.py#L331-L336",
+                "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/special_channels_cogs/team_roster_cog.py",
+                "event": "on_guild_role_create",
+                "name": "role_added_listener"
+            },
+            {
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_guild_role_delete\")\n    async def role_removed_listener(self, role: discord.Role):\n        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:\n            return\n        log.debug(\"updating Team Roster because role was deleted\")\n        await self._update_team_roster()\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/special_channels_cogs/team_roster_cog.py#L338-L343",
+                "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/special_channels_cogs/team_roster_cog.py",
+                "event": "on_guild_role_delete",
+                "name": "role_removed_listener"
+            },
+            {
+                "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_guild_role_update\")\n    async def role_updated_listener(self, before: discord.Role, after: discord.Role):\n        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:\n            return\n        log.debug(\"updating Team Roster because role was modifed\")\n        await self._update_team_roster()\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/special_channels_cogs/team_roster_cog.py#L345-L350",
+                "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/special_channels_cogs/team_roster_cog.py",
+                "event": "on_guild_role_update",
+                "name": "role_updated_listener"
+            }
+        ],
+        "meta_status": [
+            "DOCUMENTATION_MISSING",
+            "FEATURE_MISSING",
+            "UNTESTED",
+            "WORKING"
+        ],
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/special_channels_cogs/team_roster_cog.py/#L262-L616",
+        "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/TeamRosterCog",
+        "loops": [],
+        "config_name": "team_roster",
+        "public": false,
+        "description": "Keeps a team roster up to date, updates it everytime a role on the Discord Guild changes or gets added or is removed.",
+        "long_description": "",
+        "extra_info": "",
+        "qualified_name": "TeamRosterCog",
+        "required_config_data": {
+            "base_config": {},
+            "cogs_config": {}
+        },
+        "short_doc": null,
+        "brief": null,
+        "docstring": "Keeps a team roster up to date, updates it everytime a role on the Discord Guild changes or gets added or is removed."
+    },
+    {
         "name": "FixedAnswerCog",
         "required_folder": {},
         "required_files": {},
@@ -807,12 +955,12 @@
             "FEATURE_MISSING",
             "UNTESTED"
         ],
-        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/fixed_answer_cog.py/#L77-L228",
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/fixed_answer_cog.py/#L77-L239",
         "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/FixedAnswerCog",
         "loops": [],
         "config_name": "fixed_answer",
         "public": false,
-        "description": "WiP",
+        "description": "Commands that have a fixed answer and are mostly used to not have to type it out each time.",
         "long_description": "",
         "extra_info": "",
         "qualified_name": "FixedAnswerCog",
@@ -826,7 +974,7 @@
         },
         "short_doc": null,
         "brief": null,
-        "docstring": "WiP"
+        "docstring": "Commands that have a fixed answer and are mostly used to not have to type it out each time."
     },
     {
         "name": "AutoReactionCog",
@@ -834,12 +982,12 @@
         "required_files": {},
         "all_listeners": [
             {
-                "name": "add_reaction_to_message_sorter_listener",
-                "event": "on_message",
-                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/auto_reaction_cog.py#L304-L314",
                 "description": null,
+                "code": "    @commands.Cog.listener(name='on_message')\n    async def add_reaction_to_message_sorter_listener(self, msg: discord.Message):\n        if self.ready is False:\n            return\n        try:\n            if msg.author.bot is True:\n                return\n            for instruction in self.reaction_instructions:\n                asyncio.create_task(instruction(msg))\n        except discord.errors.NotFound:\n            return\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/auto_reaction_cog.py#L304-L314",
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/moderation_cogs/auto_reaction_cog.py",
-                "code": "    @commands.Cog.listener(name='on_message')\n    async def add_reaction_to_message_sorter_listener(self, msg: discord.Message):\n        if self.ready is False:\n            return\n        try:\n            if msg.author.bot is True:\n                return\n            for instruction in self.reaction_instructions:\n                asyncio.create_task(instruction(msg))\n        except discord.errors.NotFound:\n            return\n"
+                "event": "on_message",
+                "name": "add_reaction_to_message_sorter_listener"
             }
         ],
         "meta_status": [
@@ -852,7 +1000,7 @@
         "loops": [],
         "config_name": "auto_reaction",
         "public": false,
-        "description": "WiP",
+        "description": "Commands to create rules to make the bot auto react with Emojis to certain words or events.",
         "long_description": "",
         "extra_info": "",
         "qualified_name": "AutoReactionCog",
@@ -862,7 +1010,7 @@
         },
         "short_doc": null,
         "brief": null,
-        "docstring": "WiP"
+        "docstring": "Commands to create rules to make the bot auto react with Emojis to certain words or events."
     },
     {
         "name": "RulesCog",
@@ -870,12 +1018,12 @@
         "required_files": {},
         "all_listeners": [
             {
-                "name": "update_rules",
-                "event": "on_raw_message_edit",
-                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/rules_cog.py#L139-L143",
                 "description": null,
+                "code": "    @commands.Cog.listener(name=\"on_raw_message_edit\")\n    async def update_rules(self, payload: discord.RawMessageUpdateEvent):\n        if payload.channel_id != self.rules_channel_id:\n            return\n        asyncio.create_task(self.get_rules_messages())\n",
+                "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/rules_cog.py#L139-L143",
                 "file": "d:/dropbox/hobby/modding/programs/github/my_repos/antipetros_discord_bot_new/.venv/lib/site-packages/antipetros_discordbot/cogs/moderation_cogs/rules_cog.py",
-                "code": "    @commands.Cog.listener(name=\"on_raw_message_edit\")\n    async def update_rules(self, payload: discord.RawMessageUpdateEvent):\n        if payload.channel_id != self.rules_channel_id:\n            return\n        asyncio.create_task(self.get_rules_messages())\n"
+                "event": "on_raw_message_edit",
+                "name": "update_rules"
             }
         ],
         "meta_status": [
@@ -883,12 +1031,12 @@
             "FEATURE_MISSING",
             "UNTESTED"
         ],
-        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/rules_cog.py/#L76-L280",
+        "github_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/cogs/moderation_cogs/rules_cog.py/#L76-L321",
         "github_wiki_link": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki/RulesCog",
         "loops": [],
         "config_name": "rules",
         "public": false,
-        "description": "WiP",
+        "description": "Commands to send the Rules found in the Rules channel as embed and optional as answer.",
         "long_description": "",
         "extra_info": "",
         "qualified_name": "RulesCog",
@@ -898,6 +1046,6 @@
         },
         "short_doc": null,
         "brief": null,
-        "docstring": "WiP"
+        "docstring": "Commands to send the Rules found in the Rules channel as embed and optional as answer."
     }
 ]

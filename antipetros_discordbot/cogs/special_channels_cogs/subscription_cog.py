@@ -222,7 +222,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
     @commands.Cog.listener(name='on_raw_reaction_add')
     async def subscription_reaction(self, payload):
-        if self.ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
             return
         try:
             channel = self.bot.get_channel(payload.channel_id)
@@ -250,7 +250,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
     @commands.Cog.listener(name='on_raw_reaction_remove')
     async def unsubscription_reaction(self, payload):
-        if self.ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
             return
         try:
             channel = self.bot.get_channel(payload.channel_id)
@@ -655,8 +655,8 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     def __str__(self):
         return self.qualified_name
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
 # region[Main_Exec]
 

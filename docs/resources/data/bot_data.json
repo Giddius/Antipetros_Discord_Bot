@@ -1,39 +1,84 @@
 {
-    "author_name": "antistasi_tools",
     "version": "1.3.9",
-    "github_url": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/antipetros_bot.py",
-    "github_wiki_url": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki",
-    "app_name": "antipetros_discordbot",
-    "extra_info": "WiP",
-    "command_amount": 72,
-    "long_description": "WiP",
-    "creator_id": 576522029470056450,
+    "author_name": "antistasi_tools",
     "short_doc": "WiP",
-    "cog_amount": 20,
+    "brief": "WiP",
+    "cog_amount": 23,
+    "long_description": "WiP",
+    "antistasi_invite_url": "https://discord.gg/8WNsueDKf5",
     "owner_ids": [
         122348088319803392,
         262095121527472128,
         576522029470056450,
         346595708180103170
     ],
-    "antistasi_invite_url": "https://discord.gg/8WNsueDKf5",
     "strip_after_prefix": true,
-    "brief": "WiP",
-    "intents": {
-        "guilds": true,
-        "members": true,
-        "bans": true,
-        "emojis": true,
-        "integrations": true,
-        "webhooks": true,
-        "invites": true,
-        "voice_states": true,
-        "presences": true,
-        "guild_messages": true,
-        "dm_messages": true,
-        "guild_reactions": true,
-        "dm_reactions": true,
-        "guild_typing": true,
-        "dm_typing": true
-    }
+    "github_wiki_url": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki",
+    "app_name": "antipetros_discordbot",
+    "intents": [
+        {
+            "name": "guilds",
+            "value": true
+        },
+        {
+            "name": "members",
+            "value": true
+        },
+        {
+            "name": "bans",
+            "value": true
+        },
+        {
+            "name": "emojis",
+            "value": true
+        },
+        {
+            "name": "integrations",
+            "value": true
+        },
+        {
+            "name": "webhooks",
+            "value": true
+        },
+        {
+            "name": "invites",
+            "value": true
+        },
+        {
+            "name": "voice_states",
+            "value": true
+        },
+        {
+            "name": "presences",
+            "value": true
+        },
+        {
+            "name": "guild_messages",
+            "value": true
+        },
+        {
+            "name": "dm_messages",
+            "value": true
+        },
+        {
+            "name": "guild_reactions",
+            "value": true
+        },
+        {
+            "name": "dm_reactions",
+            "value": true
+        },
+        {
+            "name": "guild_typing",
+            "value": true
+        },
+        {
+            "name": "dm_typing",
+            "value": true
+        }
+    ],
+    "creator_id": 576522029470056450,
+    "extra_info": "WiP",
+    "github_url": "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development/antipetros_discordbot/engine/antipetros_bot.py",
+    "command_amount": 86
 }

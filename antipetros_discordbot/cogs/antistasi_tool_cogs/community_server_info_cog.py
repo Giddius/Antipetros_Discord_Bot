@@ -39,6 +39,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 from antipetros_discordbot.auxiliary_classes.server_item import ServerItem, ServerStatus
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_community_server_info_cog import CommunityServerInfo, ServerStatusChange
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
+from collections import deque
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from io import BytesIO
@@ -116,7 +117,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         super().__init__(bot)
 
         self.server_items = self.load_server_items()
-        self.stored_server_messages = []
+        self.stored_server_messages = deque(maxlen=10)
         self.color = 'yellow'
         self.latest_sever_notification_msg_id = None
         self.ready = False
@@ -128,6 +129,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Init]
 
 # region [Properties]
+
 
     @property
     def server_message_remove_time(self) -> int:
@@ -194,7 +196,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                        f"{server_name.casefold()}_show_in_server_command": "no",
                        f"{server_name.casefold()}_is_online_message_enabled": "no",
                        f"{server_name.casefold()}_exclude_logs": "yes",
-                       f"{server_name.casefold()}_address": ""}
+                       f"{server_name.casefold()}_address": "",
+                       f"{server_name.casefold()}_notify_if_switched_off": 'no'}
             for option_name, option_value in options.items():
                 if COGS_CONFIG.has_option(self.config_name, option_name) is False:
                     COGS_CONFIG.set(self.config_name, option_name, str(option_value))
@@ -204,10 +207,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [Loops]
 
-
-    @tasks.loop(minutes=5, reconnect=True)
+    @tasks.loop(minutes=5, seconds=30, reconnect=True)
     async def check_server_online_loop(self):
-        if self.ready is False or self.bot.setup_finished is False:
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
         log.info("updating Server Items")
         await asyncio.gather(*[server.gather_log_items() for server in self.server_items])
@@ -224,9 +226,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                         await asyncio.to_thread(writejson, data, self.already_notified_savefile)
                 await asyncio.sleep(0)
 
-    @tasks.loop(minutes=2, reconnect=True)
+    @tasks.loop(minutes=1, reconnect=True)
     async def is_online_message_loop(self):
-        if self.ready is False or self.bot.setup_finished is False:
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
         await asyncio.gather(*[server.is_online() for server in self.server_items])
         for server in self.server_items:
@@ -240,14 +242,14 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # region [Listener]
 
     @commands.Cog.listener(name='on_raw_reaction_add')
-    async def subscription_reaction(self, payload: discord.RawReactionActionEvent):
+    async def is_online_mod_list_reaction_listener(self, payload: discord.RawReactionActionEvent):
         """
         Listens to emojis being clicked on the `is_online` messages to then send the user that clicked it, the modlist per DM.
 
         Removes all other emojis being assigned to the messages.
 
         """
-        if self.ready is False or self.bot.setup_finished is False:
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
         reaction_member = payload.member
 
@@ -318,18 +320,36 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         if amount > 5:
             await ctx.send('You requested more files than the max allowed amount of 5, aborting!')
             return
+
         server = await self._get_server_by_name(server_name)
         for i in range(amount):
             item = server.log_items[i]
             if item.is_over_threshold is False:
                 async with ctx.typing():
                     embed_data = await item.content_embed()
-                await ctx.send(**embed_data)
+                    await ctx.send(**embed_data)
+            await asyncio.sleep(2)
 
     @auto_meta_info_command(alias=['restart_reason'], categories=[CommandCategory.ADMINTOOLS])
     @owner_or_admin()
     @log_invoker(log, "info")
     async def set_server_restart_reason(self, ctx: commands.Context, notification_msg_id: Optional[int] = None, *, reason: str):
+        """
+        Sets a reason to the embed of a server restart.
+
+        The reason can either be a text or a key word that points to a stored reason, in which case the stored reason text gets set as reason.
+
+        Args:
+            reason (str): either the reason as text, does not need quotes `"` around it, or a keyword of a previous stored reason.
+            notification_msg_id (Optional[int], optional): The message id of the server restart message. Defaults to the last server restart message the bot posted.
+
+        Example:
+            @AntiPetros restart_reason Petros started dancing uncontrolled.
+
+        Info:
+            The command also puts the user who set the reason into the server-restart message. This command can be used multiple times. Best used from Bot-commands channel or Bot-testing channel.
+
+        """
         if notification_msg_id is None:
             notification_msg_id = self.latest_sever_notification_msg_id
         if notification_msg_id not in set(self.stored_server_messages) or notification_msg_id is None:
@@ -370,6 +390,12 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     @auto_meta_info_group(invoke_without_command=False)
     @owner_or_admin()
     async def server_meta(self, ctx: commands.Context):
+        """
+        Group command to interact with the stored server meta data of the bot.
+
+        Info:
+            Can not be invoked on its own and has to be used with one of the sub-commands
+        """
         pass
 
     @server_meta.command(name='add')
@@ -445,6 +471,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         return server
 
     async def send_server_notification(self, server_item: ServerItem, changed_to: ServerStatus):
+        if COGS_CONFIG.retrieve(self.config_name, f"{self.name.lower()}_notify_if_switched_off", typus=bool, direct_fallback=False) is False and changed_to is ServerStatus.OFF:
+            return
         title = server_item.pretty_name
         description = f"{server_item.pretty_name} was switched ON" if changed_to is ServerStatus.ON else f"{server_item.pretty_name} was switched OFF"
         thumbnail = self.server_logos.get(server_item.name.casefold(), self.server_symbol)
@@ -562,7 +590,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [SpecialMethods]
 
-
     def cog_check(self, ctx):
         return True
 
@@ -575,11 +602,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        for loop_object in self.loops.values():
-            loop_stopper(loop_object)
-
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.qualified_name}({self.bot.__class__.__name__})"

@@ -153,10 +153,12 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
     @check_give_away_ended_loop.error
     async def check_give_away_ended_loop_error_handler(self, error):
         log.error(error, exc_info=True)
+        raise error
 
     @clean_emojis_from_reaction.error
     async def clean_emojis_from_reaction_error_handler(self, error):
         log.error(error, exc_info=True)
+        raise error
 
 
 # endregion [Loops]
@@ -339,10 +341,8 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        self.check_give_away_ended_loop.stop()
-        self.clean_emojis_from_reaction.stop()
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
