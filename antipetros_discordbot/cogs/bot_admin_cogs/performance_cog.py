@@ -23,13 +23,12 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 
-from antipetros_discordbot.utility.misc import delete_message_if_text_channel, loop_starter, loop_stopper
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel, loop_starter
 from antipetros_discordbot.utility.enums import DataSize, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.checks import owner_or_admin
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed, make_basic_embed_inline
-from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.regexes import LOG_SCRAPE_REGEX, PROFILING_REGEX
 from antipetros_discordbot.utility.sqldata_storager import general_db
 
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFolder, auto_meta_info_command

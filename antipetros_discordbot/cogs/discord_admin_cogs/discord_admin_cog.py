@@ -25,7 +25,6 @@ from antipetros_discordbot.utility.converters import date_time_full_converter_fl
 
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosFlagCommand, CommandCategory, auto_meta_info_command
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

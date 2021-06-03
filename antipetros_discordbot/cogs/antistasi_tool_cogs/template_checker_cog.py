@@ -31,8 +31,7 @@ from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
-from antipetros_discordbot.utility.misc import loop_starter, loop_stopper
+from antipetros_discordbot.utility.misc import loop_starter
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 

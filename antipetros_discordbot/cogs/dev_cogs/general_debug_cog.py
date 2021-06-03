@@ -4,57 +4,34 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-import random
-from time import time
-from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-import asyncio
 import json
-from pprint import pprint, pformat
+from pprint import pformat
 from dotenv import load_dotenv
-from datetime import datetime
-import shutil
-from zipfile import ZipFile, ZIP_LZMA
-from tempfile import TemporaryDirectory
-import re
-from io import BytesIO
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands, flags, tasks
 from emoji import demojize, emojize, emoji_count
 from emoji.unicode_codes import EMOJI_UNICODE_ENGLISH
 from webdav3.client import Client
-from icecream import ic
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-from dateparser import parse as date_parse
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import antipetros_repo_rel_path, async_seconds_to_pretty_normal, generate_bot_data
-from antipetros_discordbot.utility.checks import has_attachments, only_giddi
-from antipetros_discordbot.utility.embed_helpers import make_basic_embed
-from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, writejson, loadjson, writeit
+from antipetros_discordbot.utility.misc import generate_bot_data
+from antipetros_discordbot.utility.gidtools_functions import writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseGroup, CommandCategory, auto_meta_info_command
-from antipetros_discordbot.utility.emoji_handling import create_emoji_custom_name, normalize_emoji
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker
-from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
-from antipetros_discordbot.utility.data_gathering import gather_data
-from antipetros_discordbot.utility.exceptions import NotAllowedChannelError
-from antipetros_discordbot.utility.converters import CogConverter, CommandConverter
+from antipetros_discordbot.utility.converters import CommandConverter
 from pyyoutube import Api
-from inspect import cleandoc, getdoc, getmembers, getsource, getsourcefile
 from antipetros_discordbot.utility.sqldata_storager import general_db
-from marshmallow import Schema, fields
+from marshmallow import Schema
 from rich import inspect as rinspect
-from antipetros_discordbot.engine.replacements.helper.help_embed_builder import HelpEmbedBuilder
 from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
-from antipetros_discordbot.auxiliary_classes.server_item import ServerItem, ServerStatus
 import ftfy
 import json
-import inspect
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion [Imports]

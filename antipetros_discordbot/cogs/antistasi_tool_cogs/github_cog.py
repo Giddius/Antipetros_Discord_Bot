@@ -4,19 +4,15 @@
 
 # * Standard Library Imports -->
 import gc
-import sys
 import os
-from typing import TYPE_CHECKING, List, Union, Any, Optional
+from typing import List, Optional, TYPE_CHECKING, Union
 from datetime import datetime, timedelta, timezone
-from contextlib import asynccontextmanager
 import asyncio
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
-from io import BytesIO, StringIO
-from textwrap import dedent
+from io import BytesIO
 from pprint import pprint
 # * Third Party Imports -->
-from pprint import pformat
 from pygments import highlight
 from pygments.lexers import PythonLexer, get_lexer_by_name, get_all_lexers, guess_lexer
 from pygments.formatters import HtmlFormatter, ImageFormatter
@@ -33,12 +29,11 @@ from pygments.filters import get_all_filters
 # from fuzzywuzzy import fuzz, process
 import aiohttp
 import discord
-from fuzzywuzzy import process as fuzzprocess, fuzz
+from fuzzywuzzy import process as fuzzprocess
 
 from discord.ext import tasks, commands, flags
 from async_property import async_property
 import re
-from functools import cached_property
 # * Gid Imports -->
 import gidlogger as glog
 from matplotlib import pyplot as plt
@@ -47,15 +42,12 @@ import matplotlib.dates as mdates
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
-from antipetros_discordbot.utility.exceptions import GithubRateLimitUsedUp
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
-from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE, SPECIAL_SPACE_2, ListMarker
-from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
+from antipetros_discordbot.utility.pygment_styles import DraculaStyle
 from github import Github
 import github
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from collections import defaultdict
@@ -65,9 +57,8 @@ from sqf.types import Variable
 from sqf.parser_types import Comment
 from sqf.analyzer import analyze as sqf_analyze
 from antipetros_discordbot.abstracts.connect_signal import AbstractConnectSignal
-from antipetros_discordbot.utility.emoji_handling import CHECK_MARK_BUTTON_EMOJI, CROSS_MARK_BUTTON_EMOJI, NUMERIC_EMOJIS, ALPHABET_EMOJIS
-from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
-from antipetros_discordbot.utility.misc import seconds_to_pretty, delete_specific_message_if_text_channel, alt_seconds_to_pretty, loop_stopper, loop_starter, async_loop_starter
+from antipetros_discordbot.utility.emoji_handling import ALPHABET_EMOJIS, CROSS_MARK_BUTTON_EMOJI, NUMERIC_EMOJIS
+from antipetros_discordbot.utility.misc import alt_seconds_to_pretty, delete_specific_message_if_text_channel, loop_starter
 from functools import reduce
 from antipetros_discordbot.utility.gidtools_functions import bytes2human
 # endregion[Imports]

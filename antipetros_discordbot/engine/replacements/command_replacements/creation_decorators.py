@@ -12,7 +12,6 @@ import unicodedata
 import discord
 from discord.ext import commands, tasks
 import gidlogger as glog
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 from .base_group import AntiPetrosBaseGroup
 from .base_command import AntiPetrosBaseCommand
 

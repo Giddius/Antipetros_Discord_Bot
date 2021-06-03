@@ -14,9 +14,6 @@ import unicodedata
 
 
 from marshmallow import Schema, fields
-from antipetros_discordbot.schemas.extra_schemas import RequiredFileSchema, RequiredFolderSchema, ListenerSchema
-from antipetros_discordbot.schemas.command_schema import AntiPetrosBaseCommandSchema
-from antipetros_discordbot.schemas.cog_schema import AntiPetrosBaseCogSchema
 import gidlogger as glog
 
 

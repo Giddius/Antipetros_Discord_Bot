@@ -32,7 +32,6 @@ from antipetros_discordbot.utility.image_manipulation import find_min_fontsize, 
 from typing import TYPE_CHECKING
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, WatermarkPosition
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseGroup, AntiPetrosFlagCommand, CommandCategory, auto_meta_info_command, auto_meta_info_group
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

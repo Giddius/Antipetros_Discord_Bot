@@ -16,13 +16,13 @@ from inspect import getdoc
 import discord
 from discord.ext import commands, tasks
 import inspect
-from inspect import getdoc, getfile, getsourcefile, getsource, getsourcelines
+from inspect import getdoc, getsourcefile, getsourcelines
 
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 import gidlogger as glog
 from antipetros_discordbot.schemas import CommandCategorySchema
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
+from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.utility.misc import make_config_name, sync_antipetros_repo_rel_path
 from antipetros_discordbot.engine.replacements.helper import JsonMetaDataProvider
 from antipetros_discordbot.auxiliary_classes.all_item import AllItem

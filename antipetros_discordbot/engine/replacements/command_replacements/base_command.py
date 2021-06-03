@@ -13,8 +13,7 @@ import os
 import sys
 import asyncio
 import unicodedata
-from pprint import pprint, pformat
-from typing import Any, get_type_hints, get_args, _GenericAlias
+from typing import Any
 from inspect import getdoc
 from functools import singledispatchmethod
 import inspect
@@ -50,8 +49,6 @@ from discord.ext import commands, tasks, flags, ipc
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 import gidlogger as glog
-from copy import copy, deepcopy
-from icecream import ic
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper

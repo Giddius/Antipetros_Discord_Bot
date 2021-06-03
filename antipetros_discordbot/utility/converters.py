@@ -10,7 +10,7 @@
 import os
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Union, Callable, Iterable, List, Tuple, Set
+from typing import Callable, TYPE_CHECKING, Union
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands import Converter, CommandError
 from googletrans import LANGUAGES
@@ -19,7 +19,7 @@ import discord
 from dateparser import parse as date_parse
 from validator_collection import validators
 import validator_collection
-from enum import Enum, auto, Flag
+from enum import Enum
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from antipetros_discordbot.utility.exceptions import ParameterError, ParameterErrorWithPossibleParameter
@@ -30,7 +30,6 @@ from antipetros_discordbot.utility.checks import (OnlyGiddiCheck, OnlyBobMurphyC
 from antipetros_discordbot.utility.misc import check_if_url, fix_url_prefix
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import ExtraHelpParameter, HelpCategory
-from icecream import ic
 if TYPE_CHECKING:
     pass
 

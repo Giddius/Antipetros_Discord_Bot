@@ -8,7 +8,6 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from inspect import iscoroutine, iscoroutinefunction
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 

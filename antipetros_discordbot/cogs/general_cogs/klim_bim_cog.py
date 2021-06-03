@@ -6,7 +6,7 @@ import os
 import random
 from math import ceil
 import secrets
-from typing import TYPE_CHECKING, List, Dict, Tuple, Set
+from typing import List, TYPE_CHECKING, Tuple
 import asyncio
 from urllib.parse import quote as urlquote
 import re
@@ -35,7 +35,6 @@ from antipetros_discordbot.utility.converters import UrlConverter
 
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseGroup, CommandCategory, RequiredFile, auto_meta_info_command, auto_meta_info_group
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

@@ -9,7 +9,7 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import random
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import random
 from typing import TYPE_CHECKING, Union
 # * Third Party Imports --------------------------------------------------------------------------------->
@@ -20,13 +20,11 @@ from humanize import naturaltime
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import asyncio
-import signal
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, pickleit
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]

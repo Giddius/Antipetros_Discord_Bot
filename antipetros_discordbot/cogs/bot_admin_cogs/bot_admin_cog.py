@@ -18,15 +18,14 @@ import gc
 import gidlogger as glog
 from typing import List, TYPE_CHECKING
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import delete_message_if_text_channel, loop_starter, loop_stopper
-from antipetros_discordbot.utility.checks import log_invoker, only_giddi, owner_or_admin
+from antipetros_discordbot.utility.misc import loop_starter
+from antipetros_discordbot.utility.checks import log_invoker, owner_or_admin
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, RequiredFolder, auto_meta_info_command
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.converters import CogConverter
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

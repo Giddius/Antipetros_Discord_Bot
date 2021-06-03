@@ -8,50 +8,43 @@
 
 
 import gc
-from copy import deepcopy, copy
+from copy import deepcopy
 import asyncio
 import unicodedata
 import discord
 from enum import Enum, auto, unique
 import os
 import re
-import random
 from asyncstdlib import map as async_map
-from typing import Union, Callable, TYPE_CHECKING, BinaryIO, Tuple
-from datetime import datetime, timedelta, timezone
-from tempfile import TemporaryDirectory
-from functools import cached_property, wraps, total_ordering
-from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING
+from datetime import datetime, timezone
+from functools import cached_property, total_ordering
 from dateparser import parse as date_parse
 from collections import namedtuple
 from async_property import async_property, async_cached_property
 from aiodav import Client as AioWebdavClient
 from aiodav.client import Resource
 import gidlogger as glog
-from asyncio import Semaphore as AioSemaphore, Lock as AioLock
+from asyncio import Lock as AioLock
 from asyncstdlib import lru_cache as async_lru_cache
-from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, readit, writejson, loadjson
+from antipetros_discordbot.utility.gidtools_functions import bytes2human, loadjson, readit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.regexes import LOG_NAME_DATE_TIME_REGEX, LOG_SPLIT_REGEX, MOD_TABLE_START_REGEX, MOD_TABLE_END_REGEX, MOD_TABLE_LINE_REGEX
+from antipetros_discordbot.utility.regexes import LOG_SPLIT_REGEX, MOD_TABLE_END_REGEX, MOD_TABLE_LINE_REGEX, MOD_TABLE_START_REGEX
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.misc import SIZE_CONV_BY_SHORT_NAME
-from antipetros_discordbot.utility.misc import async_list_iterator
-from antipetros_discordbot.utility.exceptions import NeededClassAttributeNotSet, NeededConfigValueMissing
+from antipetros_discordbot.utility.exceptions import NeededClassAttributeNotSet
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
-from inspect import isawaitable, iscoroutine, iscoroutinefunction
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 from jinja2 import Environment, FileSystemLoader, BaseLoader
-from io import StringIO, BytesIO
+from io import BytesIO
 import a2s
 from weasyprint import HTML
 import aiohttp
 from aiodav.exceptions import NoConnection
 from sortedcontainers import SortedDict, SortedList
 from marshmallow import Schema, fields
-from abc import ABC, ABCMeta, abstractmethod
-from hashlib import blake2b, blake2s, sha3_256, sha256, sha512, shake_256, sha1
+from hashlib import shake_256
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog
 from zipfile import ZipFile, ZIP_LZMA

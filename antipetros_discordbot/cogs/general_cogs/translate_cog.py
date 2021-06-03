@@ -8,7 +8,6 @@ import re
 from discord.ext import commands
 from googletrans import LANGUAGES, Translator
 from typing import Optional
-from textwrap import dedent
 import discord
 from discord import AllowedMentions
 # * Gid Imports ----------------------------------------------------------------------------------------->
@@ -29,7 +28,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from typing import Optional, TYPE_CHECKING
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, universal_log_profiler
+from antipetros_discordbot.utility.general_decorator import async_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

@@ -6,7 +6,7 @@
 import os
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, flags
-from typing import TYPE_CHECKING, Union, Any, Callable, Optional, List, Dict, Set, Tuple, Iterable
+from typing import List, TYPE_CHECKING, Union
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import discord
@@ -18,19 +18,16 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosFlagCommand, CommandCategory, auto_meta_info_command
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosFlagCommand, CommandCategory, auto_meta_info_command
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 from antipetros_discordbot.utility.data import IMAGE_EXTENSIONS
 from collections import UserDict
 import asyncio
 import re
-from collections import defaultdict
 from sortedcontainers import SortedDict, SortedList
 from discord.ext import commands
 from hashlib import blake2b
-from random import seed, randint
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE, SPECIAL_SPACE_2, ListMarker
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]

@@ -17,12 +17,11 @@ from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_rol
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_faq_cog import FaqItem
-from pprint import pformat, pprint
 from typing import TYPE_CHECKING, Union
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command, auto_meta_info_group, RequiredFile
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_group
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 if TYPE_CHECKING:

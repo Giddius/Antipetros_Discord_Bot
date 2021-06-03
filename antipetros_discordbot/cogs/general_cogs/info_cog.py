@@ -7,13 +7,8 @@ import gc
 import os
 from enum import Enum
 
-from datetime import datetime
-from functools import cached_property
-from contextlib import asynccontextmanager
-from tempfile import TemporaryDirectory
 import asyncio
 import unicodedata
-from io import BytesIO
 import imgkit
 # * Third Party Imports -->
 # import requests
@@ -28,7 +23,6 @@ import aiohttp
 import discord
 from discord.ext import tasks, commands, flags
 from async_property import async_property
-from inspect import getsource, getsourcefile, getsourcelines
 # * Gid Imports -->
 from sortedcontainers import SortedDict, SortedList
 import gidlogger as glog
@@ -39,21 +33,18 @@ from pygments.formatters import HtmlFormatter, ImageFormatter
 from pygments.styles import get_style_by_name, get_all_styles
 from pygments.filters import get_all_filters
 # * Local Imports -->
-from antipetros_discordbot.utility.misc import alt_seconds_to_pretty, antipetros_repo_rel_path
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, has_attachments, owner_or_admin
-from antipetros_discordbot.utility.gidtools_functions import bytes2human, pathmaker, readit
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, owner_or_admin
+from antipetros_discordbot.utility.gidtools_functions import bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from icecream import ic
 
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE, Seperators, ListMarker
-from antipetros_discordbot.utility.converters import CommandConverter
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
 from antipetros_discordbot.utility.pygment_styles import DraculaStyle, TomorrownighteightiesStyle, TomorrownightblueStyle, TomorrownightbrightStyle, TomorrownightStyle, TomorrowStyle
 
 from typing import TYPE_CHECKING
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot

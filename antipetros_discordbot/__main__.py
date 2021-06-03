@@ -14,20 +14,15 @@ On the Cli use:
 import shutil
 import os
 import logging
-from time import sleep
-from datetime import datetime
 import click
 from dotenv import load_dotenv
 import platform
 import gidlogger as glog
 from discord.ext import ipc
-import asyncio
-from antipetros_discordbot.utility.misc import generate_base_cogs_config, generate_help_data
 from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus
-from antipetros_discordbot.utility.data_gathering import save_cog_command_data
 import json
 
 # endregion[Imports]

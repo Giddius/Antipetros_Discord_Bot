@@ -30,10 +30,9 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.utility.misc import loop_starter, loop_stopper
+from antipetros_discordbot.utility.misc import loop_starter
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 

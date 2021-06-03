@@ -16,7 +16,6 @@ import unicodedata
 from marshmallow import Schema, fields
 from antipetros_discordbot.utility.misc import alt_seconds_to_pretty
 from antipetros_discordbot.schemas.extra_schemas import RequiredFileSchema, RequiredFolderSchema, ListenerSchema
-from antipetros_discordbot.schemas.command_schema import AntiPetrosBaseCommandSchema
 import gidlogger as glog
 
 from inspect import getdoc

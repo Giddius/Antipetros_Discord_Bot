@@ -7,43 +7,33 @@ Actual Bot class.
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-import sys
 import time
 import asyncio
-import json
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 from inspect import getdoc
 import discord
-from typing import List, Union, Mapping, Optional, Hashable, Any, Callable
+from typing import Callable, List
 from aiodav import Client as AioWebdavClient
 from collections import UserDict, namedtuple
-from watchgod import Change, awatch
+from watchgod import awatch
 from discord.ext import tasks, commands, ipc
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from itertools import product
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.enums import UpdateTypus
-from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
-from antipetros_discordbot.utility.misc import save_bin_file, loop_stopper
 from antipetros_discordbot.engine.global_checks import user_not_blacklisted
 from antipetros_discordbot.auxiliary_classes.version_item import VersionItem
 from antipetros_discordbot.engine.special_prefix import when_mentioned_or_roles_or
 from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
-from antipetros_discordbot.utility.gidtools_functions import get_pickled, loadjson, pathmaker, readit, writejson, writeit
+from antipetros_discordbot.utility.gidtools_functions import get_pickled, pathmaker, readit, writeit, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.cogs import BOT_ADMIN_COG_PATHS, DISCORD_ADMIN_COG_PATHS, DEV_COG_PATHS
-from antipetros_discordbot.utility.converters import CommandConverter
-from antipetros_discordbot.utility.data_gathering import save_cog_command_data
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from antipetros_discordbot.utility.emoji_handling import is_unicode_emoji
-from antipetros_discordbot.engine.replacements import CommandCategory, AntiPetrosBaseGroup
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
-from antipetros_discordbot.auxiliary_classes.server_item import ServerItem
+from antipetros_discordbot.engine.replacements import CommandCategory
 from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
-from antipetros_discordbot.schemas.cog_schema import AntiPetrosBaseCogSchema
-from antipetros_discordbot.schemas.command_schema import AntiPetrosBaseCommandSchema
 from antipetros_discordbot.utility.sqldata_storager import ChannelUsageResult
 import signal
 import platform

@@ -12,7 +12,6 @@ import unicodedata
 from typing import Callable, Callable
 from functools import lru_cache, partial
 import inspect
-from pprint import pprint
 import discord
 from discord.ext import commands, tasks
 from pygments import highlight

@@ -5,9 +5,8 @@
 import os
 from typing import TYPE_CHECKING
 import asyncio
-from textwrap import dedent
-from datetime import datetime, timezone, timedelta
-from typing import List, Optional, Union, Set, Tuple, Dict, IO, Callable, Iterable, Any
+from datetime import datetime, timezone
+from typing import List, Optional
 # * Third Party Imports -->
 import a2s
 from rich import print as rprint, inspect as rinspect
@@ -28,22 +27,17 @@ from fuzzywuzzy import process as fuzzprocess
 import gidlogger as glog
 
 # * Local Imports -->
-from antipetros_discordbot.utility.misc import alt_seconds_to_pretty, delete_message_if_text_channel, loop_starter, loop_stopper
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel, loop_starter
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, log_invoker, owner_or_admin
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command, auto_meta_info_group
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker
-from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.auxiliary_classes.server_item import ServerItem, ServerStatus
-from antipetros_discordbot.auxiliary_classes.for_cogs.aux_community_server_info_cog import CommunityServerInfo, ServerStatusChange
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 from collections import deque
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from io import BytesIO
-from pprint import pprint
 import re
 
 # endregion[Imports]
@@ -396,7 +390,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         Info:
             Can not be invoked on its own and has to be used with one of the sub-commands
         """
-        pass
 
     @server_meta.command(name='add')
     async def add_server(self, ctx: commands.Context, server_name: str, server_address: str, *, options: Optional[str] = None):

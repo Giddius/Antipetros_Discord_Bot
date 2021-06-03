@@ -10,47 +10,13 @@
 
 import gc
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import base64
-import pickle
-import random
-import shelve
-import shutil
-import asyncio
-import logging
-import sqlite3
-import platform
-import importlib
-import subprocess
 import unicodedata
 
-from io import BytesIO
-from abc import ABC, abstractmethod, ABCMeta
-from copy import copy, deepcopy
-from enum import Enum, Flag, auto, unique
-from time import time, sleep, monotonic_ns, time_ns
-from pprint import pprint, pformat
-from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
-from timeit import Timer
-from typing import Union, Callable, Iterable, TYPE_CHECKING, List, Dict, Any, Optional, Tuple, Set, Awaitable, get_type_hints, get_args, Mapping, Awaitable
-from zipfile import ZipFile
-from datetime import tzinfo, datetime, timezone, timedelta
-from tempfile import TemporaryDirectory
-from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
-from functools import wraps, partial, lru_cache, singledispatch, total_ordering, singledispatchmethod
-from importlib import import_module, invalidate_caches
-from contextlib import contextmanager
-from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict, UserDict
-from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
+from abc import ABC, abstractmethod
+from typing import Callable, Dict, TYPE_CHECKING, Union
+from datetime import datetime, timezone
+from functools import partial
+from collections import UserDict
 
 
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
@@ -62,28 +28,22 @@ from jinja2 import BaseLoader, Environment
 
 from natsort import natsorted
 
-from fuzzywuzzy import fuzz, process
 from discord.ext import commands, tasks, flags, ipc
 
 import gidlogger as glog
 
 from antipetros_discordbot.auxiliary_classes.all_item import AllItem
-from antipetros_discordbot.utility.exceptions import ParameterError
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writeit
-from antipetros_discordbot.utility.misc import delete_message_if_text_channel
-from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink, make_box
-from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, ExtraHelpParameter, HelpCategory
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
-from antipetros_discordbot.utility.general_decorator import is_refresh_task, universal_log_profiler, handler_method, handler_method_only_categories, handler_method_only_commands
-from antipetros_discordbot.utility.gidtools_functions import loadjson, readit
+from antipetros_discordbot.utility.general_decorator import handler_method, handler_method_only_commands
 from async_property import async_property
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink, make_box
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE, ListMarker, Seperators
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker, SPECIAL_SPACE, ZERO_WIDTH
 import inflect
 import inspect
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand
 from antipetros_discordbot.engine.replacements.helper import CommandCategory
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
