@@ -23,7 +23,6 @@ from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus
-from antipetros_discordbot.utility.gidtools_functions import writejson
 import json
 
 # endregion[Imports]

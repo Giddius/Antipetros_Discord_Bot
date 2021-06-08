@@ -12,19 +12,17 @@ import discord
 from discord.ext import commands
 from typing import TYPE_CHECKING
 from asyncstdlib.builtins import map as amap
-from functools import partial
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import delete_message_if_text_channel, loop_starter, make_other_source_code_images
 from antipetros_discordbot.utility.checks import log_invoker, owner_or_admin
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, loadjson, writejson
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, readit
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 
 from antipetros_discordbot.utility.converters import CommandConverter
-from antipetros_discordbot.utility.exceptions import ParameterErrorWithPossibleParameter
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker, ZERO_WIDTH
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, RequiredFolder, auto_meta_info_command, auto_meta_info_group
 

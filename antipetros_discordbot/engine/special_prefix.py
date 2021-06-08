@@ -7,7 +7,6 @@ Contains custom dynamic invokation prefix implementations.
 # * Third Party Imports -->
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands import when_mentioned, when_mentioned_or
-from typing import List
 # * Gid Imports ----------------------------------------------------------------------------------------->
 # * Gid Imports -->
 import gidlogger as glog

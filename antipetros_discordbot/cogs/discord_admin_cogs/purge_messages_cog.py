@@ -6,7 +6,7 @@
 import os
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, flags
-from typing import List, TYPE_CHECKING, Union, Optional
+from typing import List, TYPE_CHECKING, Union
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import discord
