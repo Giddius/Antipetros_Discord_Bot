@@ -3,6 +3,51 @@ from emoji import demojize, emoji_count
 from contextlib import contextmanager
 import random
 
+CHECK_MARK_BUTTON_EMOJI = "✅"
+
+CROSS_MARK_BUTTON_EMOJI = "❎"
+
+
+NUMERIC_EMOJIS = ["0️⃣",
+                  "1️⃣",
+                  "2️⃣",
+                  "3️⃣",
+                  "4️⃣",
+                  "5️⃣",
+                  "6️⃣",
+                  "7️⃣",
+                  "8️⃣",
+                  "9️⃣",
+                  "🔟",
+                  ]
+
+ALPHABET_EMOJIS = ["🇦",
+                   "🇧",
+                   "🇨",
+                   "🇩",
+                   "🇪",
+                   "🇫",
+                   "🇬",
+                   "🇭",
+                   "🇮",
+                   "🇯",
+                   "🇰",
+                   "🇱",
+                   "🇲",
+                   "🇳",
+                   "🇴",
+                   "🇵",
+                   "🇶",
+                   "🇷",
+                   "🇸",
+                   "🇹",
+                   "🇺",
+                   "🇻",
+                   "🇼",
+                   "🇽",
+                   "🇾",
+                   "🇿"]
+
 
 def is_unicode_emoji(data: str):
     return emoji_count(data) > 0

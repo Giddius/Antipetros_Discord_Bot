@@ -3,6 +3,8 @@
 import os
 import sys
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from functools import wraps
 from io import BytesIO
 from asyncio import get_event_loop
 from datetime import datetime
@@ -11,13 +13,13 @@ from functools import wraps, partial
 from concurrent.futures import ThreadPoolExecutor
 from inspect import getclosurevars
 import json
-from typing import Awaitable, Iterable, Mapping, Tuple, TypeVar
+from typing import Awaitable, Iterable, Mapping, Tuple, TypeVar, Iterable, Dict
 # * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
 from validator_collection import validators
 import validator_collection
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from aiohttp.client_exceptions import ClientConnectionError
 from colormap.colors import hex2rgb, rgb2hsv
 
@@ -423,10 +425,18 @@ def is_even(number: int):
     return not number & 1
 
 
-async def delete_message_if_text_channel(ctx: commands.Context):
+async def delete_specific_message_if_text_channel(message: discord.Message, delay: int = None):
+    try:
+        if message.channel.type is discord.ChannelType.text:
+            await message.delete(delay=delay)
+    except discord.errors.HTTPException as error:
+        log.error(error.text)
+
+
+async def delete_message_if_text_channel(ctx: commands.Context, delay: int = None):
     try:
         if ctx.channel.type is discord.ChannelType.text:
-            await ctx.message.delete()
+            await ctx.message.delete(delay=delay)
     except discord.errors.HTTPException as error:
         log.error(error.text)
 
@@ -627,3 +637,20 @@ def help_to_file(in_object, out_file=None):
 
         # Don't forget to reset stdout!
         sys.stdout = stdout
+
+
+def loop_starter(task_loop: tasks.Loop):
+    if task_loop.is_running() is False:
+        task_loop.start()
+
+
+async def async_loop_starter(task_loops: Dict[str, tasks.Loop]):
+    for task_loop_name, task_loop in task_loops.items():
+        if task_loop.is_running() is False:
+            await asyncio.sleep(0, task_loop.start())
+            log.info("Loop %s was started", task_loop_name)
+
+
+def loop_stopper(task_loop: tasks.Loop):
+    if task_loop.is_running() is True:
+        task_loop.stop()

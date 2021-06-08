@@ -8,8 +8,8 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from datetime import datetime, timezone, timedelta
-from typing import TYPE_CHECKING, Union, Optional, Callable, List
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import asyncio
@@ -62,15 +62,14 @@ class CommandStatistician(SubSupportBase):
         self.support = support
         self.last_invocation = datetime.now(tz=timezone.utc)
         glog.class_init_notification(log, self)
-        self.after_action()
 
     @property
     def command_amount(self) -> int:
-        return len(list(set(self.bot.commands)))
+        return len(list(set(command for command in self.bot.commands if command.cog_name.casefold() != "generaldebugcog")))
 
     @property
     def cog_amount(self) -> int:
-        return len(list(self.bot.cogs.values()))
+        return len(list(cog for cog in self.bot.cogs.values() if cog.name.casefold() != 'generaldebugcog'))
 
     async def most_invoked_commands(self):
         frequ_counter = await self.get_command_frequency()
@@ -108,22 +107,18 @@ class CommandStatistician(SubSupportBase):
 
         log.debug("'%s' sub_support was RETIRED", str(self))
 
-    def after_action(self):
+    async def execute_on_after_command_invocation(self, ctx):
+        self.last_invocation = datetime.now(tz=timezone.utc)
+        _command = ctx.command
+        if _command.name in ['shutdown', "get_command_stats", None, '']:
+            return
+        if self.is_debug is False and str(_command.cog) not in ['GeneralDebugCog'] and ctx.channel.name.casefold() not in ['bot-testing']:
+            asyncio.create_task(self.general_db.insert_command_usage(_command), name=f"enter_command_usage_{_command.name}")
+        elif self.is_debug is True:
+            asyncio.create_task(self.general_db.insert_command_usage(_command), name=f"debug_enter_command_usage_{_command.name}")
 
-        async def record_command_invocation(ctx):
-            self.last_invocation = datetime.now(tz=timezone.utc)
-            _command = ctx.command
-            if _command.name in ['shutdown', "get_command_stats", None, '']:
-                return
-            if self.is_debug is False and str(_command.cog) not in ['GeneralDebugCog'] and ctx.channel.name.casefold() not in ['bot-testing']:
-                asyncio.create_task(self.general_db.insert_command_usage(_command))
-            elif self.is_debug is True:
-                asyncio.create_task(self.general_db.insert_command_usage(_command))
-
-            log.debug("command invocations was recorded")
-            await self.bot.commands_map.sort_commands(await self.get_command_frequency())
-
-        return self.bot.after_invoke(record_command_invocation)
+        log.debug("command invocations was recorded")
+        await self.bot.commands_map.sort_commands(await self.get_command_frequency())
 
     def __str__(self) -> str:
         return self.__class__.__name__

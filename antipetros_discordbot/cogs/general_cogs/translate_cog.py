@@ -8,7 +8,6 @@ import re
 from discord.ext import commands
 from googletrans import LANGUAGES, Translator
 from typing import Optional
-from textwrap import dedent
 import discord
 from discord import AllowedMentions
 # * Gid Imports ----------------------------------------------------------------------------------------->
@@ -24,11 +23,12 @@ from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command
 from antipetros_discordbot.utility.general_decorator import async_log_profiler
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
 
 from typing import Optional, TYPE_CHECKING
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command
-from antipetros_discordbot.utility.general_decorator import async_log_profiler, universal_log_profiler
+from antipetros_discordbot.utility.general_decorator import async_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -118,11 +118,11 @@ class TranslateCog(AntiPetrosBaseCog):
 
 # region [Init]
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.translator = Translator()
         self.flag_emoji_regex = re.compile(r'REGIONAL INDICATOR SYMBOL LETTER (?P<letter>\w)')
+        self.color = "violet"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
@@ -136,12 +136,10 @@ class TranslateCog(AntiPetrosBaseCog):
 
 # region [Setup]
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -155,10 +153,9 @@ class TranslateCog(AntiPetrosBaseCog):
 
 # region [Listener]
 
-    @universal_log_profiler
     async def _emoji_translate_checks(self, payload):
-        if self.ready is False:
-            return
+        if self.ready is False or self.bot.setup_finished is False:
+            return False
         command_name = "emoji_translate_listener"
         channel = self.bot.get_channel(payload.channel_id)
         if channel.type is not discord.ChannelType.text:
@@ -195,7 +192,10 @@ class TranslateCog(AntiPetrosBaseCog):
         if await self._emoji_translate_checks(payload) is False:
             return
         channel = self.bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except discord.errors.NotFound:
+            return
         country_code = self.language_emoji_map.get(normalize_emoji(payload.emoji.name))
 
         if message.embeds != []:
@@ -207,7 +207,6 @@ class TranslateCog(AntiPetrosBaseCog):
         # TODO: Make embed with Hyperlink
         await payload.member.send(f"{message.jump_url}\n**in {LANGUAGES.get(country_code)}:**\n {translated.text.strip('.')}", allowed_mentions=AllowedMentions.none())
 
-    @universal_log_profiler
     async def translate_embed(self, member, channel, message, embed, country_code):
         embed_dict = embed.to_dict()
         if "author" in embed_dict:
@@ -226,7 +225,6 @@ class TranslateCog(AntiPetrosBaseCog):
         embed_dict['fields'] = _new_fields
         await member.send(embed=discord.Embed.from_dict(embed_dict), allowed_mentions=AllowedMentions.none())
 
-    @universal_log_profiler
     async def _translate_text(self, text: str, country_code: str):
         try:
             return self.translator.translate(text=text, dest=country_code, src='auto').text.strip('.')
@@ -248,14 +246,15 @@ class TranslateCog(AntiPetrosBaseCog):
 
         Tries to auto-guess input language.
 
-        **Warning, your invoking message gets deleted!**
-
         Args:
             text_to_translate (str): the text to translate, quotes are optional
             to_language_id (Optional[LanguageConverter], optional): either can be the name of the language or an language code (iso639-1 language codes). Defaults to "english".
 
         Example:
                 @AntiPetros translate german This is the Sentence to translate
+
+        Info:
+            Your invoking message gets deleted!
         """
         translated = self.translator.translate(text=text_to_translate, dest=to_language_id, src="auto")
 
@@ -266,10 +265,18 @@ class TranslateCog(AntiPetrosBaseCog):
     @allowed_channel_and_allowed_role()
     @commands.cooldown(1, 120, commands.BucketType.channel)
     async def available_languages(self, ctx: commands.Context):
-        text = '```fix\n'
-        text += '\n'.join(value for key, value in LANGUAGES.items())
-        text += '\n```'
-        await ctx.send(text, delete_after=120)
+        """
+        Sends a list of all available languages, that can be used with the `translate` command.
+
+        Example:
+            @AntiPetros available_languages
+
+        Info:
+            Your invoking message gets deleted and after 120 seconds the message with the list of languages gets deleted too.
+        """
+        text = ListMarker.make_list(list(LANGUAGES.values()))
+
+        await ctx.send(text, delete_after=120, allowed_mentions=discord.AllowedMentions.none())
         await delete_message_if_text_channel(ctx)
 # endregion [Commands]
 
@@ -284,7 +291,6 @@ class TranslateCog(AntiPetrosBaseCog):
 # region [HelperMethods]
 
     @staticmethod
-    @universal_log_profiler
     def get_emoji_name(s):
         return s.encode('ascii', 'namereplace').decode('utf-8', 'namereplace')
 
@@ -292,7 +298,6 @@ class TranslateCog(AntiPetrosBaseCog):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True
@@ -312,9 +317,8 @@ class TranslateCog(AntiPetrosBaseCog):
     def __str__(self):
         return self.qualified_name
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
-
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
 # endregion [SpecialMethods]
 

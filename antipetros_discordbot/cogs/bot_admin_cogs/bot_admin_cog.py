@@ -18,15 +18,14 @@ import gc
 import gidlogger as glog
 from typing import List, TYPE_CHECKING
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import log_invoker, only_giddi, owner_or_admin
+from antipetros_discordbot.utility.misc import loop_starter
+from antipetros_discordbot.utility.checks import log_invoker, owner_or_admin
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, RequiredFolder, auto_meta_info_command
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.converters import CogConverter
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -85,28 +84,38 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Init]
 
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
+        self.listeners_enabled = {'stop_the_reaction_petros_listener': False}
         super().__init__(bot)
         self.latest_who_is_triggered_time = datetime.utcnow()
         self.reaction_remove_ids = []
+        self.color = "olive"
         self.ready = False
-        self.listeners_enabled = {'stop_the_reaction_petros_listener': False}
+
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 # endregion[Init]
 
 # region [Setup]
-    @universal_log_profiler
+
+    def _ensure_config_data(self):
+        super()._ensure_config_data()
+        for name in self.listeners_enabled:
+            option = f"{name}_enabled"
+            if COGS_CONFIG.has_option(self.config_name, option) is False:
+                COGS_CONFIG.set(self.config_name, option, "yes")
+
     async def on_ready_setup(self):
         # self.garbage_clean_loop.start()
         reaction_remove_ids = [self.bot.id] + [_id for _id in self.bot.owner_ids]
         self.reaction_remove_ids = set(reaction_remove_ids)
         asyncio.create_task(self._update_listener_enabled())
+        for loop in self.loops.values():
+            loop_starter(loop)
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         if UpdateTypus.CONFIG in typus:
             asyncio.create_task(self._update_listener_enabled())
@@ -118,9 +127,12 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # region [Loops]
 
     @tasks.loop(hours=1)
-    @universal_log_profiler
     async def garbage_clean_loop(self):
-        if self.ready is False:
+        """
+        WiP
+
+        """
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
         log.info('running garbage clean')
         x = gc.collect()
@@ -131,7 +143,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def alive_phrases(self):
         if os.path.isfile(self.alive_phrases_file) is False:
             writejson(['I am alive!'], self.alive_phrases_file)
@@ -144,9 +155,8 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 
     @commands.Cog.listener(name='on_reaction_add')
-    @universal_log_profiler
     async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):
-        if self.ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
         if self.listeners_enabled.get("stop_the_reaction_petros_listener", False) is False:
             return
@@ -162,8 +172,34 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 
     @auto_meta_info_command()
+    @owner_or_admin()
+    async def tell_connect_counter(self, ctx: commands.Context):
+        """
+        Tells how often the bot has connected to Discord in the current run-time.
+
+
+
+        Example:
+            @AntiPetros tell_connect_counter
+
+        Info:
+            This is usefull only for debugging purposes.
+        """
+        extra = '' if self.bot.connect_counter <= 1 else ", this means that I have had to reconnect at least once!"
+        await ctx.send(f"I have connected {self.bot.connect_counter} times to discord in my current run-time" + extra, allowed_mentions=discord.AllowedMentions.none())
+
+    @auto_meta_info_command()
     @commands.is_owner()
     async def send_stored_files(self, ctx: commands.Context):
+        """
+        Send the current stored data files as an zip-archive.
+
+        Example:
+            @AntiPetros send_stored_files
+
+        Info:
+            This is usefull only for debugging purposes or transitioning to a new major version.
+        """
         async with ctx.typing():
             start_dir = str(APPDATA)
             with BytesIO() as bytefile:
@@ -333,23 +369,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         log.warning("%s log file%s was requested by '%s'", which_logs, 's' if which_logs == 'all' else '', ctx.author.name)
 
     @auto_meta_info_command()
-    @only_giddi()
-    async def send_loop_info(self, ctx: commands.Context, loop_attr: str = None):
-        """
-        Tells which loop is running.
-
-        """
-        loop_attr = 'name' if loop_attr is None else loop_attr
-        if loop_attr.casefold() not in self.loop_regex.groupindex.keys():
-            await ctx.send(f"`{loop_attr}` is not a valid value for the parameter `loop_attr`.\nNeeds to be one of " + ', '.join(f"`{g_name}`" for g_name in self.loop_regex.groupindex.keys()), delete_after=120)
-            await delete_message_if_text_channel(ctx)
-            return
-        loop = asyncio.get_event_loop()
-        loop_string = str(loop)  # "<uvloop.Loop running=True closed=False debug=False>"
-        loop_match = self.loop_regex.match(loop_string)
-        await ctx.send(loop_match.group(loop_attr.casefold()))
-
-    @auto_meta_info_command()
     @owner_or_admin()
     async def disable_cog(self, ctx: commands.Context, cog: CogConverter):
         """
@@ -387,29 +406,12 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
             text += f"NAME: {cog_name}, CONFIG_NAME: {cog_object.config_name}\n{'-'*10}\n"
         await self.bot.split_to_messages(ctx, text, in_codeblock=True, syntax_highlighting='fix')
 
-    @ auto_meta_info_command()
-    @owner_or_admin()
-    async def query_rate_limited(self, ctx: commands.Context):
-        """
-        Checks if the bot is rate limited currently.
-
-        The bot checks this every 30 min anyways (and logs the result), this command checks it on demand.
-
-        Example:
-            @AntiPetros query_rate_limited
-        """
-        result = self.bot.is_ws_ratelimited()
-        verbose_result = "**IS**" if result is True else "**IS NOT**"
-        color = 'red' if result is True else "green"
-        thumbnail = "cross_mark" if result is True else "check_mark"
-        embed_data = await self.bot.make_generic_embed(title="Rate Limit Check", description=f"The Bot {verbose_result} currently Rate Limited.", color=color, thumbnail=thumbnail)
-        await ctx.send(**embed_data)
 
 # endregion[Commands]
 
 # region [Helper]
 
-    @universal_log_profiler
+
     async def _update_listener_enabled(self):
         for listener_name in self.listeners_enabled:
             self.listeners_enabled[listener_name] = COGS_CONFIG.retrieve(self.config_name, listener_name + '_enabled', typus=bool, direct_fallback=False)
@@ -437,9 +439,8 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
     def __str__(self):
         return self.qualified_name
 
-    def cog_unload(self):
-        # self.garbage_clean_loop.stop()
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 # endregion[SpecialMethods]
 
 # region[Main_Exec]

@@ -1,5 +1,5 @@
-Pillow==8.2.0
 Jinja2==3.0.0rc2
+Pillow==8.2.0
 PyPDF2==1.26.0
 WeasyPrint==52.5
 aiohttp==3.7.4.post0
@@ -27,15 +27,17 @@ gidlogger==0.1.32
 googletrans==4.0.0rc1
 humanize==3.4.1
 icecream==2.1.0
+inflect
 marshmallow==3.11.1
 matplotlib==3.4.1
+natsort
 paramiko==2.7.2
 psutil==5.8.0
 pyfiglet==0.8.post1
 python-Levenshtein==0.12.2
 python-a2s==1.3.0
-python-youtube==0.8.0
 python-dotenv==0.17.0
+python-youtube==0.8.0
 pytz==2021.1
 sortedcontainers==2.3.0
 sqflint==0.3.2
@@ -43,5 +45,5 @@ tldextract==3.1.0
 validator-collection==1.5.0
 watchgod==0.7
 webdavclient3==3.14.5
-inflect
-natsort
+sortedcontainers
+pyparsing

@@ -42,7 +42,6 @@ from antipetros_discordbot.utility.exceptions import NeededClassAttributeNotSet,
 from typing import List, TYPE_CHECKING
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -188,7 +187,6 @@ class TeamItem:
 
     async def header_embed(self):
         embed = discord.Embed(title=self.name, color=self.member_role.color)
-        embed.set_thumbnail(url=self.description_thumbnail)
         embed.set_image(url=self.image)
         embed.add_field(name="**What do they do:**", value=f"*{self.description}*", inline=False)
         embed.add_field(name="**How to join:**", value=f"*{self.join_description}*", inline=False)
@@ -275,22 +273,21 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
     team_item_data_file = pathmaker(APPDATA['json_data'], "team_items.json")
 
     required_folder = []
-    required_files = [RequiredFile(team_item_data_file, [], RequiredFile.FileType.JSON)]
+    required_files = [RequiredFile(team_item_data_file, {"last_changed_message": None, "team_items": []}, RequiredFile.FileType.JSON)]
 
 
 # endregion [ClassAttributes]
 
 # region [Init]
 
-
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.team_items = None
         self.last_changed_message = None
         TeamItem.config_name = self.config_name
         TeamItem.bot = self.bot
-        self.is_ready = False
+        self.color = "yellowgreen"
+        self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
@@ -303,15 +300,12 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
 
 # region [Setup]
 
-
-    @universal_log_profiler
     async def on_ready_setup(self):
         await self.bot.antistasi_guild.chunk(cache=True)
         await self._load_team_items()
-        self.is_ready = True
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         await self.bot.antistasi_guild.chunk(cache=True)
         log.debug('cog "%s" was updated', str(self))
@@ -326,34 +320,30 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
 # region [Listener]
 
     @commands.Cog.listener(name="on_member_update")
-    @universal_log_profiler
     async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):
-        if self.is_ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
             return
         if before.roles != after.roles:
             log.debug("updating Team Roster because role on Member was changed")
             await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_create")
-    @universal_log_profiler
     async def role_added_listener(self, role: discord.Role):
-        if self.is_ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
             return
         log.debug("updating Team Roster because new role was created")
         await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_delete")
-    @universal_log_profiler
     async def role_removed_listener(self, role: discord.Role):
-        if self.is_ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
             return
         log.debug("updating Team Roster because role was deleted")
         await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_update")
-    @universal_log_profiler
     async def role_updated_listener(self, before: discord.Role, after: discord.Role):
-        if self.is_ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
             return
         log.debug("updating Team Roster because role was modifed")
         await self._update_team_roster()
@@ -371,13 +361,14 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
 
         This should not have to be called more than once.
 
-        **WARNING** When this command is used, it logs the user! **WARNING**
-
         Args:
             channel (discord.TextChannel): Id of channel to build the Team roster (can also use name, but id is safer)
 
         Example:
             @AntiPetros initialize_team_roster 712054600278081600
+
+        Info:
+            When this command is used, it logs the user!
         """
         async with ctx.typing():
             teams = COGS_CONFIG.retrieve(self.config_name, 'team_names', typus=List[str], direct_fallback=[])
@@ -413,12 +404,14 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
         Forces the Team Roster to update.
 
         Can be used often, as there is no negative consequence to it.
-        It is provided as a fallback if the automation does not trigger.
 
-        **WARNING** When this command is used, it logs the user! **WARNING**
+        It is provided as a fallback if the automation does not trigger.
 
         Example:
             @AntiPetros force_update_team_roster
+
+        Info:
+            When this command is used, it logs the user!
         """
         for team_item in self.team_items:
             try:
@@ -439,15 +432,17 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
         Deletes the Team roster messages and completely redoes them.
 
         Ultima Ratio version of "force_update_team_roster".
-        The Channel has to be entered, as this provides is also an option to change the Team roster channel.
 
-        **WARNING** When this command is used, it logs the user! **WARNING**
+        The Channel has to be entered, as this provides is also an option to change the Team roster channel.
 
         Args:
             channel (discord.TextChannel): Id of channel to build the Team roster (can also use name, but id is safer)
 
         Example:
             @AntiPetros delete_and_redo_team_roster 712054600278081600
+
+        Info:
+            When this command is used, it logs the user!
         """
         for item in self.team_items:
             await item.delete_messages()
@@ -533,8 +528,6 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
 
 # region [HelperMethods]
 
-
-    @universal_log_profiler
     async def _update_team_roster(self):
         for team_item in self.team_items:
             try:
@@ -544,14 +537,12 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
                 await self._save_team_items()
         await self.update_last_changed_message()
 
-    @universal_log_profiler
     async def _send_updated_embed(self, ctx: commands.Context, team_item: TeamItem, field: str):
         embed_data = await self.bot.make_generic_embed(title=f'{field} updated', description=f"{field} for Team `{team_item.name}` was updated!",
                                                        thumbnail="update")
         await ctx.send(**embed_data, delete_after=120, allowed_mentions=discord.AllowedMentions.none())
         await delete_message_if_text_channel(ctx)
 
-    @universal_log_profiler
     async def _send_team_not_found_embed(self, ctx: commands.Context, team: str):
         fields = []
         for team_name in (item.name for item in self.team_items):
@@ -562,14 +553,12 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
         await ctx.send(**embed_data, delete_after=120)
         await delete_message_if_text_channel(ctx)
 
-    @universal_log_profiler
     async def _send_not_team_lead_embed(self, ctx: commands.Context, team_item: TeamItem):
         embed_data = await self.bot.make_generic_embed(title='Not your Team', description=f"To modify an item you have to be Team lead of that Team!\nYou do not have the necessary role {team_item.lead_role.mention} !",
                                                        thumbnail="cancelled")
         await ctx.send(**embed_data, delete_after=120, allowed_mentions=discord.AllowedMentions.none())
         await delete_message_if_text_channel(ctx)
 
-    @universal_log_profiler
     async def update_last_changed_message(self):
         embed = discord.Embed(title='Last Modified', description=datetime.utcnow().strftime(self.bot.std_date_time_format) + ' UTC', timestamp=datetime.utcnow(), color=self.bot.fake_colorless)
         embed.set_footer(text='last modified your local time')
@@ -577,14 +566,12 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
         log.debug('Updating Team Roster last modified message')
         await self.last_changed_message.edit(embed=embed)
 
-    @universal_log_profiler
     async def create_last_changed_message(self, channel: discord.TextChannel):
         embed = discord.Embed(title='Last Modified', description=datetime.utcnow().strftime(self.bot.std_date_time_format) + ' UTC', timestamp=datetime.utcnow(), color=self.bot.fake_colorless)
         embed.set_footer(text='last modified your local time')
         embed.set_author(**self.bot.special_authors.get('bot_author'))
         self.last_changed_message = await channel.send(embed=embed)
 
-    @universal_log_profiler
     async def _load_team_items(self):
         if os.path.isfile(self.team_item_data_file) is False:
             writejson({"team_items": [], "last_changed_message": None}, self.team_item_data_file)
@@ -596,7 +583,6 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
             last_changed_channel = self.bot.channel_from_id(last_changed_data.get('channel_id'))
             self.last_changed_message = await last_changed_channel.fetch_message(last_changed_data.get('message_id'))
 
-    @universal_log_profiler
     async def _save_team_items(self):
         data = {"team_items": [item.to_dict() for item in self.team_items],
                 'last_changed_message': {'channel_id': self.last_changed_message.channel.id,
@@ -619,8 +605,8 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

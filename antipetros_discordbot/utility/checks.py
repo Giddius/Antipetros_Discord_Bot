@@ -189,6 +189,7 @@ def in_allowed_channels():
 def log_invoker(logger, level: str = 'info'):
     # TODO: make as before invoke hook and not check!
     def predicate(ctx):
+        ctx.command.set_logged(True)
         channel_name = ctx.channel.name if ctx.channel.type is discord.ChannelType.text else 'DM'
         getattr(logger, level)("command '%s' as '%s' -- invoked by: name: '%s', id: %s -- in channel: '%s' -- raw invoking message: '%s'",
                                ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, channel_name, ctx.message.content)

@@ -10,7 +10,7 @@ import gc
 import os
 import re
 import unicodedata
-from typing import Any, Callable, Union
+from typing import Any, Callable
 from functools import partial
 import discord
 from discord.ext import commands, tasks, ipc, flags

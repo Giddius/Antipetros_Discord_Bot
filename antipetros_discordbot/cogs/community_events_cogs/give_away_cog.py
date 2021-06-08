@@ -26,8 +26,7 @@ from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_give_away_cog import GiveAwayEvent
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosFlagCommand, CommandCategory, RequiredFile, auto_meta_info_command
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
-
+from antipetros_discordbot.utility.misc import loop_starter
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
@@ -83,7 +82,6 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 
 # region [Init]
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.give_away_item.bot = self.bot
@@ -108,15 +106,14 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 
 # region [Setup]
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         await asyncio.sleep(5)
-        self.check_give_away_ended_loop.start()
-        self.clean_emojis_from_reaction.start()
+        loop_starter(self.check_give_away_ended_loop)
+        loop_starter(self.clean_emojis_from_reaction)
+
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -125,6 +122,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 # endregion [Setup]
 
 # region [Loops]
+
 
     @tasks.loop(seconds=30, reconnect=True)
     async def check_give_away_ended_loop(self):
@@ -154,19 +152,19 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
     @check_give_away_ended_loop.error
     async def check_give_away_ended_loop_error_handler(self, error):
         log.error(error, exc_info=True)
+        raise error
 
     @clean_emojis_from_reaction.error
     async def clean_emojis_from_reaction_error_handler(self, error):
         log.error(error, exc_info=True)
+        raise error
 
 
 # endregion [Loops]
 
 # region [Listener]
 
-
     @commands.Cog.listener()
-    @universal_log_profiler
     async def on_raw_reaction_add(self, payload):
         if self.ready is False:
             return
@@ -186,7 +184,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 # endregion [Listener]
 
 # region [Commands]
-    @universal_log_profiler
+
     async def give_away_finished(self, event_item):
 
         users = []
@@ -219,7 +217,6 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
         await event_item.message.delete()
         await self.remove_give_away(event_item)
 
-    @universal_log_profiler
     async def notify_author(self, event_item, winners, amount_participants):
         embed_data = await self.bot.make_generic_embed(title=f'Give-Away "{event_item.title}" has finished', description=f'There were {amount_participants} participants',
                                                        fields=[self.bot.field_item(name=f"{index+1}. Winner", value=winner.name, inline=False) for index, winner in enumerate(winners)],
@@ -301,26 +298,6 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
                                                          channel=ctx.channel,
                                                          message=give_away_message))
 
-    @ auto_meta_info_command(hidden=True, enabled=False)
-    @ allowed_channel_and_allowed_role(in_dm_allowed=False)
-    @ log_invoker(logger=log, level="info")
-    async def abort_give_away(self, ctx):
-        """
-        NOT IMPLEMENTED
-        """
-        await self.bot.not_implemented(ctx)
-        return
-
-    @ auto_meta_info_command(hidden=True, enabled=False)
-    @ allowed_channel_and_allowed_role(in_dm_allowed=False)
-    @ log_invoker(logger=log, level="info")
-    async def finish_give_away(self, ctx):
-        """
-        NOT IMPLEMENTED
-        """
-        await self.bot.not_implemented(ctx)
-        return
-
 
 # endregion [Commands]
 
@@ -337,13 +314,11 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 # region [HelperMethods]
 
 
-    @universal_log_profiler
     async def add_give_away(self, give_away_event):
         data = loadjson(self.give_away_data_file)
         data.append(await give_away_event.to_dict())
         writejson(data, self.give_away_data_file)
 
-    @universal_log_profiler
     async def remove_give_away(self, give_away_event):
         data = loadjson(self.give_away_data_file)
         data.remove(await give_away_event.to_dict())
@@ -365,10 +340,8 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        self.check_give_away_ended_loop.stop()
-        self.clean_emojis_from_reaction.stop()
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

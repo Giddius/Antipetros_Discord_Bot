@@ -74,28 +74,35 @@ class ChannelStatistician(SubSupportBase):
     def __init__(self, bot: "AntiPetrosBot", support: "BotSupporter"):
         self.bot = bot
         self.support = support
-        self.support.overwritten_methods |= {'on_message': self.record_channel_usage}
+
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.ready = False
 
         glog.class_init_notification(log, self)
 
-    async def record_channel_usage(self, msg):
-        if self.ready is False:
-            return
-        if isinstance(msg.channel, discord.DMChannel):
-            return
-        if msg.author.id == self.bot.id:
-            return
+    async def record_channel_usage(self, msg: discord.Message):
+        if all(msg.content.startswith(prfx) is False for prfx in await self.bot.get_prefix(msg)):
+            asyncio.create_task(self._channel_usage_to_db(msg))
+
+    async def _channel_usage_to_db(self, msg: discord.Message):
         channel = msg.channel
-        if channel.name.casefold() not in self.exclude_channels and channel.category.name.casefold() not in self.exclude_categories:
-            asyncio.create_task(self.general_db.insert_channel_use(channel))
-            log.info("channel usage recorded for channel '%s'", channel.name)
-        await self.bot.process_commands(msg)
+        if self.bot.setup_finished is False:
+            return
+        if await asyncio.sleep(0, msg.author.bot) is True:
+            return
+        if await asyncio.sleep(0, isinstance(msg.channel, discord.DMChannel)) is True:
+            return
+        if await asyncio.sleep(0, channel.name.casefold()) in self.exclude_channels:
+            return
+        if await asyncio.sleep(0, channel.category.name.casefold()) in self.exclude_categories:
+            return
+
+        asyncio.create_task(self.general_db.insert_channel_use(channel))
+        log.info("channel usage recorded for channel '%s'", channel.name)
 
     async def make_heat_map(self):
-        pass
+        return NotImplemented
 
     async def get_usage_stats(self, scope: str = "all"):
         now = datetime.now(tz=timezone.utc)
@@ -108,7 +115,7 @@ class ChannelStatistician(SubSupportBase):
         result_item = await self.general_db.get_channel_usage(arguments[0], arguments[1])
         await result_item.convert_data_to_channels(self.bot)
         counter = await result_item.get_as_counter()
-        return counter.most_common()
+        return await asyncio.to_thread(counter.most_common)
 
     async def insert_channels_into_db(self):
         category_channels_data = []

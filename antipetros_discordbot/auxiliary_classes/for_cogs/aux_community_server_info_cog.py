@@ -130,7 +130,7 @@ class CommunityServerInfo:
     @property
     def query_full_address(self):
         if self.query_port is None:
-            # TODO: custom error
+
             raise RuntimeError(f"query port for {self.name} community server is None")
         return (self.address, self.query_port)
 

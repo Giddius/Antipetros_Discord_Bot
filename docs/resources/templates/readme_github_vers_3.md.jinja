@@ -1,5 +1,5 @@
 {% extends "base_readme_template.md.jinja" %}
-
+{% from 'macros/misc.md.jinja' import dependency_table %}
 {% block main_image %}
 <p align="center"><img src="{{ antipetros_image_location }}" alt="{{ project_name }} Avatar"/></p>
 {% endblock %}
@@ -31,6 +31,9 @@ __**Version:**__
 
 ```shell
 pip install {{ package_name }}=={{ package_version }}
+{% for optional_package in optional_packages %}
+pip install {{ package_name }}[{{ optional_package }}]=={{package_version}}
+{% endfor %}
 ```
 
 {% endblock %}
@@ -104,9 +107,7 @@ pip install {{ package_name }}=={{ package_version }}
 
 ### Python dependencies
 
-{% for dependency_name, dependency_version in dependencies.items() %}
-- **{{dependency_name}}** *{{dependency_version}}*
-{% endfor %}
+{{ dependency_table(dependencies) }}
 
 ### External dependencies
 

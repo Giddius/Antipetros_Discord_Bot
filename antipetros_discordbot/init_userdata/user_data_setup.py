@@ -11,7 +11,7 @@ from gidappdata.utility.extended_dotenv import find_dotenv_everywhere
 
 from .bin_data import bin_archive_data
 SingleAccessConfigHandler.set_default_setting("strict", False)
-SingleAccessConfigHandler.set_default_setting("read_before_retrieve", True)
+SingleAccessConfigHandler.set_default_setting("read_before_retrieve", False)
 SingleAccessConfigHandler.bool_true_values = {'yes', 'true', 'y', 'on', 'enabled', 'positive'}
 SingleAccessConfigHandler.bool_false_values = {'no', 'false', 'n', 'off', 'disabled', 'negative'}
 ParaStorageKeeper.set_special_config_handler(SingleAccessConfigHandler)

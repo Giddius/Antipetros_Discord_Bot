@@ -31,7 +31,7 @@ from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
 from antistasi_template_checker.engine.antistasi_template_parser import run as template_checker_run
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
+from antipetros_discordbot.utility.misc import loop_starter
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -75,9 +75,11 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
 # endregion [ClassAttributes]
 
 # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
+        self.color = "pink"
+        self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
@@ -90,13 +92,12 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
 
 # region [Setup]
 
-
-    @universal_log_profiler
     async def on_ready_setup(self):
-
+        for loop_object in self.loops.values():
+            loop_starter(loop_object)
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -115,8 +116,6 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
 
 # region [Commands]
 
-
-    @universal_log_profiler
     async def correct_template(self, template_content, item_data):
         new_content = template_content
         for item in item_data:
@@ -237,9 +236,8 @@ class TemplateCheckerCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "cat
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.qualified_name}({self.bot.__class__.__name__})"

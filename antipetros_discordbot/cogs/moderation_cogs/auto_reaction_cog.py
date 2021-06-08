@@ -39,7 +39,6 @@ from antipetros_discordbot.abstracts import BaseReactionInstruction
 from typing import List, TYPE_CHECKING
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 import asyncio
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -91,7 +90,7 @@ class ChannelReactionInstruction(BaseReactionInstruction):
                                                        color='green')
         return embed_data
 
-    async def to_dict(self):
+    def to_dict(self):
         return {"typus": str(self),
                 "data": {"name": self.name,
                          "channel_id": self.channel.id,
@@ -99,9 +98,9 @@ class ChannelReactionInstruction(BaseReactionInstruction):
                 }
 
     @classmethod
-    async def from_dict(cls, **kwargs):
+    def from_dict(cls, **kwargs):
         channel_id = kwargs.get('channel_id')
-        channel = await cls.bot.channel_from_id(channel_id)
+        channel = cls.bot.channel_from_id(channel_id)
         converted_emojis = []
         custom_emojis = {emoji.name: emoji for emoji in cls.bot.antistasi_guild.emojis}
         for emoji in kwargs.get('emojis'):
@@ -192,7 +191,7 @@ class WordReactionInstruction(BaseReactionInstruction):
                                                        color='green')
         return embed_data
 
-    async def to_dict(self):
+    def to_dict(self):
         exceptions = []
         for key, value in self.exceptions.items():
             for item in value:
@@ -207,7 +206,7 @@ class WordReactionInstruction(BaseReactionInstruction):
                 }
 
     @classmethod
-    async def from_dict(cls, **kwargs):
+    def from_dict(cls, **kwargs):
         word = kwargs.get('word')
         case_insensitive = kwargs.get('case_insensitive', False)
         converted_emojis = []
@@ -219,12 +218,12 @@ class WordReactionInstruction(BaseReactionInstruction):
         return cls(name=kwargs.get('name'), word=word, case_insensitive=case_insensitive, emojis=converted_emojis, exceptions=kwargs.get('exceptions'))
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self._word}, {self.case_insensitive}, {self.wrap_in_spaces}, {self.emojis})"
+        return f"{self.__class__.__name__}({self._word}, {self.case_insensitive}, {self.emojis})"
 
 
 class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADMINTOOLS, "hidden": True}):
     """
-    WiP
+    Commands to create rules to make the bot auto react with Emojis to certain words or events.
     """
 # region [ClassAttributes]
 
@@ -234,7 +233,7 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     extra_info = ""
     required_config_data = {'base_config': {},
                             'cogs_config': {}}
-    reaction_instructions_data_file = pathmaker(APPDATA['json_data'], "message_reaction_instructions_dat.json")
+    reaction_instructions_data_file = pathmaker(APPDATA['json_data'], "message_reaction_instructions_data.json")
     required_folder = []
     required_files = [RequiredFile(reaction_instructions_data_file, [], RequiredFile.FileType.JSON)]
 
@@ -246,11 +245,10 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 # region [Init]
 
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-        self.reaction_instructions = None
         BaseReactionInstruction.bot = self.bot
+        self.color = 'purple'
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
@@ -260,27 +258,34 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def reaction_instructions_data(self):
         if os.path.isfile(self.reaction_instructions_data_file) is False:
             writejson([], self.reaction_instructions_data_file)
         return loadjson(self.reaction_instructions_data_file)
 
     @property
-    @universal_log_profiler
+    def reaction_instructions(self):
+        _out = []
+        for item in self.reaction_instructions_data:
+            if item.get('typus') == "ChannelReactionInstruction":
+                _out.append(ChannelReactionInstruction.from_dict(**item.get('data')))
+            elif item.get('typus') == "WordReactionInstruction":
+                _out.append(WordReactionInstruction.from_dict(**item.get('data')))
+        return _out
+
+    @property
     def antistasi_custom_emojis(self):
         return {emoji.name: emoji for emoji in self.bot.antistasi_guild.emojis}
 
 # endregion [Properties]
 
 # region [Setup]
-    @universal_log_profiler
+
     async def on_ready_setup(self):
-        await self._load_reaction_instructions()
+
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -294,8 +299,8 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # region [Listener]
 
+
     @commands.Cog.listener(name='on_message')
-    @universal_log_profiler
     async def add_reaction_to_message_sorter_listener(self, msg: discord.Message):
         if self.ready is False:
             return
@@ -312,6 +317,7 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # region [Commands]
 
+
     @auto_meta_info_command()
     @owner_or_admin(False)
     async def add_channel_reaction_instruction(self, ctx: commands.Context, name: str, channel: discord.TextChannel, *emojis: str):
@@ -322,8 +328,7 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
             return
         emojis = [await self._handle_custom_emoji_input(emoji) for emoji in emojis]
         item = ChannelReactionInstruction(name=name, channel=channel, emojis=emojis)
-        self.reaction_instructions.append(item)
-        await self._save_reaction_instruction()
+        await self._add_to_reaction_instruction_data(item)
         first_embed = discord.Embed(title='Added Channel Auto Reaction', description="Added the following channel auto reaction item")
         await ctx.send(embed=first_embed, allowed_mentions=discord.AllowedMentions.none())
         info_embed_data = await item.get_info_embed()
@@ -340,8 +345,7 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         emojis = [await self._handle_custom_emoji_input(emoji) for emoji in emojis]
         exceptions = await self._handle_exceptions_data(exceptions)
         item = WordReactionInstruction(name=name, word=word, case_insensitive=True, emojis=emojis, exceptions=exceptions)
-        self.reaction_instructions.append(item)
-        await self._save_reaction_instruction()
+        await self._add_to_reaction_instruction_data(item)
         first_embed = discord.Embed(title='Added Word Auto Reaction', description="Added the following word auto reaction item")
         await ctx.send(embed=first_embed, allowed_mentions=discord.AllowedMentions.none())
         info_embed_data = await item.get_info_embed()
@@ -355,10 +359,10 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
             await delete_message_if_text_channel(ctx)
             return
         item = {item.name.casefold(): item for item in self.reaction_instructions}.get(instruction_name.casefold())
+        await self._remove_from_reaction_instruction_data(item)
         first_embed = discord.Embed(title="Reaction Instruction Removed", description="The following reaction instruction was removed")
         info_embed_data = await item.get_info_embed()
-        self.reaction_instructions.remove(item)
-        await self._save_reaction_instruction()
+
         await ctx.send(embed=first_embed, allowed_mentions=discord.AllowedMentions.none())
         await ctx.send(**info_embed_data, allowed_mentions=discord.AllowedMentions.none())
 
@@ -379,8 +383,8 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
             await delete_message_if_text_channel(ctx)
             return
         item.sort_exceptions([(f"by_{typus.casefold()}", in_id)])
+        await self._modify_reaction_instruction_data(item)
         await ctx.send("added exception to item")
-        await self._save_reaction_instruction()
 
     @auto_meta_info_command()
     @owner_or_admin()
@@ -399,8 +403,8 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
             await delete_message_if_text_channel(ctx)
             return
         setattr(item, option_name, option_value)
+        await self._modify_reaction_instruction_data(item)
         await ctx.send("changed option")
-        await self._save_reaction_instruction()
 
     @auto_meta_info_command()
     @owner_or_admin(True)
@@ -416,7 +420,6 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # region [HelperMethods]
 
-    @universal_log_profiler
     async def _handle_exceptions_data(self, exception_data):
         if exception_data.casefold() == 'none':
             return None
@@ -427,7 +430,6 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
             _out.append((typus.strip(), int(value_id.strip())))
         return _out
 
-    @universal_log_profiler
     async def _handle_custom_emoji_input(self, emoji: str):
         emoji_match = self.custom_emoji_regex.match(emoji)
         if emoji_match:
@@ -437,18 +439,24 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
             return self.antistasi_custom_emojis.get(name)
         return emoji
 
-    @universal_log_profiler
-    async def _load_reaction_instructions(self):
-        self.reaction_instructions = []
-        for item in self.reaction_instructions_data:
-            if item.get('typus') == "ChannelReactionInstruction":
-                self.reaction_instructions.append(await ChannelReactionInstruction.from_dict(**item.get('data')))
-            elif item.get('typus') == "WordReactionInstruction":
-                self.reaction_instructions.append(await WordReactionInstruction.from_dict(**item.get('data')))
+    async def _modify_reaction_instruction_data(self, modified_item: BaseReactionInstruction):
+        all_instructions = self.reaction_instructions
+        all_instructions.remove(modified_item)
+        all_instructions.append(modified_item)
+        await self._save_to_reaction_instructions_data(all_instructions)
 
-    @universal_log_profiler
-    async def _save_reaction_instruction(self):
-        data = [await instruction.to_dict() for instruction in self.reaction_instructions]
+    async def _add_to_reaction_instruction_data(self, new_item: BaseReactionInstruction):
+        all_instructions = self.reaction_instructions
+        all_instructions.append(new_item)
+        await self._save_to_reaction_instructions_data(all_instructions)
+
+    async def _remove_from_reaction_instruction_data(self, item_to_remove: BaseReactionInstruction):
+        all_instructions = self.reaction_instructions
+        all_instructions.remove(item_to_remove)
+        await self._save_to_reaction_instructions_data(all_instructions)
+
+    async def _save_to_reaction_instructions_data(self, items: List[BaseReactionInstruction]):
+        data = [instruction.to_dict() for instruction in items]
         writejson(data, self.reaction_instructions_data_file)
 
 # endregion [HelperMethods]
@@ -467,8 +475,8 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

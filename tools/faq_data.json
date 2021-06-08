@@ -1,0 +1,172 @@
+[
+    {
+        "answer": "Go here, boy:\n<https://steamcommunity.com/id/OfficialAntiStasiCommunity/myworkshopfiles/>",
+        "number": 1,
+        "question": "Where can I find dem juicy missions on the Steam Workshop?"
+    },
+    {
+        "answer": "The most current versions of the PBOs can be found here:\n\n<https://github.com/official-antistasi-community/A3-Antistasi/releases/latest>",
+        "number": 2,
+        "question": "Where do I find the PBO files for the missions?"
+    },
+    {
+        "answer": "Also for Singleplayer it\u2019s recommended to host it locally in Multiplayer as you have more options like for example all the parameters and singleplayer will be deactivated shortly.",
+        "number": 3,
+        "question": "How to play Antistasi in Singleplayer?"
+    },
+    {
+        "answer": "HOW TO SAVE PARAMETERS:\nTo have the same parameters all the time you start the mission you need to do following things:\nfor locally hosted MP game\n\\--> Either take the PBO from the download folder or from the release page on GitHub.\n\\--> Save the PBO in your C:\\\\Users\\\\USERNAME\\\\Documents\\\\Arma 3 - Other Profiles\\\\USERNAME\\\\mpmissions folder.\n\\--> Use the PBO manager to unpack it.\n\\--> Go to params.hpp and change the values you want to change.\n\\--> DO NOT pack it back into a PBO but leave it as a folder - Arma only reads out other folders in there, not PBOs.\n\\--> Start the game, launch the mission.\n\nfor hosted MP on a dedicated server\n\\-->go to your server.cfg and set up your mission cycle as shown in the example above.\n\\-->The class names as well as the values which can be set can be found in the missionDescription/params.hpp file\n<https://github.com/official-antistasi-community/A3-Antistasi/blob/master/A3-Antistasi/MissionDescription/params.hpp>\n\nPLEASE NOTE THAT THE SHOWN CODE IS AN EXAMPLE AND YOU AT LEAST NEED TO ADAPT THE NAME OF THE MISSION\nIf you come to me with a problem and you have not even adapted the mission name to the exact filename (excluding the .pbo at the end) I'm gonna shoot myself.\n// MISSIONS CYCLE (see below)\nclass Missions {\nclass Mission1    {\n    template =\"Antistasi-Malden-2-2-1.Malden\";\n        difficulty = \"Custom\";\n            class Params {\n            switchComm = 0;\n            pMarkers = 0;\n            AISkill = 2;\n            unlockItem = 40;\n            memberOnlyMagLimit = 60;\n            teamSwitchDelay = 1800;\n        };\n};\n};                // An empty Missions class means there will be no mission rotation\n\nmissionWhitelist\\[] = {\n\n}; //an empty whitelist means there is no restriction on what missions' available\n\nIf you have never setup a server, please use Google to get at least a basic knowledge before you attempt setting one up.",
+        "number": 4,
+        "question": "How do I save parameters?"
+    },
+    {
+        "answer": "The following link automatically redirects to the most current published version - there you cans ee the version number <https://github.com/official-antistasi-community/A3-Antistasi/releases/latest>",
+        "number": 5,
+        "question": "Which is the most current version?"
+    },
+    {
+        "answer": "Look at dis! It\u2019s showing the history bottom to top.",
+        "number": 6,
+        "question": "What is the story of the Antistasi version history?"
+    },
+    {
+        "answer": "Step #1:\nGo to ArmA 3 launcher, then mods, after that find the mod, now click on it, see the 3 dots in bottom right of the mod display? Click it, open via Windows file explorer, delete @ModName close that window and go back to the launcher, delete the mod/unsub.\n\nStep #2:\nGo to the steam directory, then SteamApps, then Workshop, now Content, then find ArmA3 number (107410) now open that, finally find the mod number and delete the file that has the number.\nYou can find the mod number in the link of it.\nExample: RHSUSAF is (843577117)\n\nStep #3:\nClose the launcher, then subscribe to the mod, go to steam download manager and top the download of ArmA 3 workshop, DO NOT open the game/launcher before the download is %100 completed.",
+        "number": 7,
+        "question": "I have a signature mismatch / my mod is corrupted (and so on). What do I do?"
+    },
+    {
+        "answer": "We have this fancy thingy which is called a forum. Take a look at it!\n<https://a3antistasi.enjin.com/forum/m/38173738/viewforum/7925231>",
+        "number": 8,
+        "question": "How do I set up a dedicated server?"
+    },
+    {
+        "answer": "Way too many to list them here. Have a look at the releases page of out GitHub and enjoy reading through the changelogs of the different versions.\n<https://github.com/official-antistasi-community/A3-Antistasi/releases>\nNO, we won\u2019t give you a rundown of them!",
+        "number": 9,
+        "question": "What are the differences between the current community version and [insert random version number here]?"
+    },
+    {
+        "answer": "Vanilla, RHS, 3CB. But take a look at our recommended and tested modsets!\n<https://steamcommunity.com/id/OfficialAntiStasiCommunity/myworkshopfiles/?section=collections>",
+        "number": 10,
+        "question": "Which mods are compatible?"
+    },
+    {
+        "answer": "You will see it when it comes out and the list above gets updated.",
+        "number": 11,
+        "question": "Will mod [insert random mod name here] be compatible at the future?"
+    },
+    {
+        "answer": "We NEVER give out any ETA as the whole Dev Team is working unpaid and only in their free time in the code. Don\u2019t bother us with \u201cwhen this, when that\u201d. It\u2019s done when it\u2019s done.",
+        "number": 12,
+        "question": "When will Antistasi be updated?"
+    },
+    {
+        "answer": "No, but you can add them on your own using Zeus. Zeus can be entered ingame by the host (if hosted locally) and the logged in admin (if on a dedicated server).",
+        "number": 13,
+        "question": "Can we have [insert random item] unlocked from the start?"
+    },
+    {
+        "answer": "There is no correct way to play Antistasi. Simply jump into the game and start dying exploring!",
+        "number": 14,
+        "question": "How do I play Antistasi?"
+    },
+    {
+        "answer": "If the mod has a sufficient amount of units and assts for all three factions, please contact Meerkat with your suggestion.\nIn case the mod you would like to add is non-conform with this requirement, most likely it is not possible to set up a proper compatibility due to technical restrictions.",
+        "number": 15,
+        "question": "Can we have mod [modname]?"
+    },
+    {
+        "answer": "Sort out your modlist and don\u2019t randomly load everything!",
+        "number": 16,
+        "question": "I can\u2019t join the server, it kicks me because of wrong mods. What do?"
+    },
+    {
+        "answer": "Read the channel description on teamspeak or below;\n\nBecoming a member:\n\nJoining our ranks is simple: play with us and participate in this community! If the members like you you may be granted trial membership by an admin upon recommendation.\n\nYour contribution and participation to this community will determine how long the trial period will be, and whether or not it results in full membership. As a trial member, you will receive in-game membership and a [trial] tag on these forums which assures you an invite to all events including official member meetings. Do note that only full members are entitled to vote on issues at meetings.",
+        "number": 17,
+        "question": "How to become a server member?"
+    },
+    {
+        "answer": "Because we decided on that, it\u2019s the main thing for communications and it\u2019s an obstacle to keep fucking trolls of the server.",
+        "number": 18,
+        "question": "Why do I have to have TS/TFAR?"
+    },
+    {
+        "answer": "If completed during the weekend it will be changed after the completion. If it\u2019s not completed, it\u2019ll be changed after the admin meeting on Sunday.",
+        "number": 19,
+        "question": "When will the mission be changed?"
+    },
+    {
+        "answer": "The modest gets changed once the mission is completed/changed.",
+        "number": 20,
+        "question": "We are playing Vanilla/RHS/[insert random modest here] on the server. Can we change it?"
+    },
+    {
+        "answer": "Join the server and find out.",
+        "number": 21,
+        "question": "How many people are currently online?"
+    },
+    {
+        "answer": "Join the server and find out.",
+        "number": 22,
+        "question": "Which mission is currently being played?"
+    },
+    {
+        "answer": "Join the server and find out.",
+        "number": 23,
+        "question": "Which modest is currently on the server?"
+    },
+    {
+        "answer": "Most likely you have waaayyyy to many mods loaded (which most likely also unsupported). We suggest using the tested and recommended modsets available here:\n<https://steamcommunity.com/id/OfficialAntiStasiCommunity/myworkshopfiles/?section=collections>\nIf it\u2019s still not working, feel free to write in #help",
+        "number": 24,
+        "question": "I am stuck on the loading screen for a very long time, why?"
+    },
+    {
+        "answer": "The information are stored in the vars-file.\nWhen playing locally it's located in your user/documents/arma 3 - otherprofiles/username folder.\nFor hosted on dedicated or such it's depending on your folder structure. We can't tell.",
+        "number": 25,
+        "question": "Where are the save files of Antistasi stored?"
+    },
+    {
+        "answer": "Hell yeah!\n<https://twitter.com/AntistasiO>",
+        "number": 26,
+        "question": "Do you have twitter?"
+    },
+    {
+        "answer": "Congratulation! You have been annihilated by the AI.\n PvP players are not even physically able to enter this vehicles so please don\u2019t blame it on them.",
+        "number": 27,
+        "question": "Why are PvP players killing me with [Jet, Heli, APC, Tank, Submarine, Drone, Artillery, Mortar]?"
+    },
+    {
+        "answer": "You can\u2019t. You only get what you are able to steal from the enemies.",
+        "number": 28,
+        "question": "Where/how can we buy [Jet, Heli, APC, Tank, Submarine, Drone, Artillery ]?"
+    },
+    {
+        "answer": "These older versions are no longer supported, therefore we can\u2019t and won\u2019t answer questions regarding them.",
+        "number": 29,
+        "question": "[Insert random question regarding Antistasi 1.8/1.9]"
+    },
+    {
+        "answer": "Stop yelling!\nWe have a wiki page of all our commands here:\n<https://github.com/official-antistasi-community/A3-Antistasi/wiki/Debug-Console-Commands>\nGitHub\nofficial-antistasi-community/A3-Antistasi\nAntiStasi Community Version - work in progress - Discord <https://discord.gg/t7JD7eT> - official-antistasi-community/A3-Antistasi",
+        "number": 30,
+        "question": "REEEEEEEEEEEEEEEEEEEEEE, I NEED CONSOLE COMMANDS!"
+    },
+    {
+        "answer": "Read below. Please note, that's not an easy task.\n\nFirst and foremost please note that we don't take any responsibility and will not give any support if anything goes wrong as it is not an official ported map but done by yourself and we can't even say based on which version you have done your map port.\n\nOne of the largest parts is the creation of the mission sqm. For Antistasi to run properly you need a lof of placed markers, units and modules of which some require specific names. These names are crucial so that the code can read out what a marker/module/unit is suppossed to be/do. Best thing here would be to look at already ported maps.\n\nOn the general topic of PROPER  map-porting, make sure you have adapted fn_initGarrisons.sqf, fn_initVarCommon.sqf, you have added the map relevant information in the stringtable.xml and replaced all the stringtable references within the mission.sqm as well as the description.ext.\nIf you want to go proper-proper, export the hightmap of the map of your choice, convert the ~30-50mb .emf file into a reasonable sized .jpg and put in on the whiteboard which you then can have on the ingame map, showing the correct map of your choice instead of the one used in the template you copy.\n\nAlso, you would need to create the roadsDB file as well as the navGrid file.\nThe tool for creating the navGrid file can be found in the NavGridTools folder and it also contains a proper readme which contains exact instructions on how to do it.\nTo create the roadsDB you would need to use following code and then safe the information in a properly named sqf file:\ncopyToClipboard (\"{roadsX setVariable [_x select 0,_x select 1]} forEach \" + str (call A3A_fnc_generateRoadsDB))",
+        "number": 31,
+        "question": "How can I port a map for Antistasi?"
+    },
+    {
+        "answer": "We currently can not implement CUP as a modset due to possible code issues and time constraints.\nIt IS on the list but there is certainly NO ETA.\nSo please stop molesting Meerkat, for fucks sake!!",
+        "number": 32,
+        "question": "I HATE 3CB AND WANT CUP!!!!!"
+    },
+    {
+        "answer": "Me should not load unsupported mods like CUP Units and CUP vehicles as they break stuff\nTo answer your question \"Which mods are compatible\", please read FAQ No 10 in this channel.",
+        "number": 33,
+        "question": "Me have an aircraftcarrier spawned like in the picture"
+    },
+    {
+        "answer": "Unless it is said somewhere in the event on the sign-up page then the event is always public, we rarely have restricted events but when we do it is written in the sign-up.",
+        "number": 34,
+        "question": "Is [Insert name or date] event for members only?"
+    }
+]

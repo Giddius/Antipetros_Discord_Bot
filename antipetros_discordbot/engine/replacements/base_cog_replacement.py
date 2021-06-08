@@ -10,9 +10,9 @@ import gc
 import os
 import unicodedata
 from typing import TYPE_CHECKING, Union
-from inspect import getdoc, getsource, getsourcefile, getsourcelines, getfile
-from textwrap import dedent
+from inspect import getdoc, getsourcefile, getsourcelines
 import discord
+import inspect
 from discord.ext import commands, tasks
 import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -22,7 +22,7 @@ from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.schemas import AntiPetrosBaseCogSchema
 from antipetros_discordbot.auxiliary_classes.listener_object import ListenerObject
 from antipetros_discordbot.utility.event_data import ListenerEvents
-from antipetros_discordbot.utility.gidtools_functions import writejson, readit, writeit, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, writeit, writejson
 from antipetros_discordbot.engine.replacements.helper import JsonMetaDataProvider
 from enum import Enum, unique, auto
 from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES
@@ -131,6 +131,7 @@ class AntiPetrosBaseCog(commands.Cog):
                             'cogs_config': {}}
     required_folder = []
     required_files = []
+    color = 'default'
     schema = AntiPetrosBaseCogSchema()
 
     def __init__(self, bot: "AntiPetrosBot") -> None:
@@ -144,6 +145,7 @@ class AntiPetrosBaseCog(commands.Cog):
         self.allowed_dm_ids = allowed_requester(self, 'dm_ids')
         self.meta_data_getter = self.meta_data_provider.get_auto_provider(self)
         self.meta_data_setter = self.meta_data_provider.set_auto_provider(self)
+        self.loops = self.get_loops()
         self.meta_data_setter('docstring', self.docstring)
         self._ensure_config_data()
 
@@ -155,8 +157,8 @@ class AntiPetrosBaseCog(commands.Cog):
         for command in self.get_commands():
             if any(isinstance(check, AllowedChannelAndAllowedRoleCheck) for check in command.checks):
                 for suffix, default_value in COMMAND_CONFIG_SUFFIXES.values():
-                    if COGS_CONFIG.has_option(self.config_name, f"{command.name}_{suffix}") is False:
-                        COGS_CONFIG.set(self.config_name, f"{command.name}_{suffix}", str(default_value))
+                    if COGS_CONFIG.has_option(self.config_name, f"{command.name.strip()}{suffix}") is False:
+                        COGS_CONFIG.set(self.config_name, f"{command.name.strip()}{suffix}", str(default_value))
         for option, value in self.required_config_data.get("cogs_config").items():
             if COGS_CONFIG.has_option(self.config_name, option) is False:
                 COGS_CONFIG.set(self.config_name, option, str(value))
@@ -167,6 +169,9 @@ class AntiPetrosBaseCog(commands.Cog):
         if not _out:
             _out = self.docstring
         return _out
+
+    def get_loops(self):
+        return {name: loop_object for name, loop_object in inspect.getmembers(self) if isinstance(loop_object, tasks.Loop)}
 
     @property
     def long_description(self):
@@ -225,6 +230,10 @@ class AntiPetrosBaseCog(commands.Cog):
         log.debug('cog "%s" was updated', str(self))
 
     def cog_unload(self):
+        for loop_name, loop in self.loops.items():
+            if loop.is_running() is True:
+                loop.cancel()
+                log.info("loop %s was cancelled", loop_name)
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     def dump(self):

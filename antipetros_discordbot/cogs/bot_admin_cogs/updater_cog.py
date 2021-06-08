@@ -30,9 +30,8 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-
-from antipetros_discordbot.utility.sqldata_storager import general_db
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory
+from antipetros_discordbot.utility.misc import loop_starter
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, AntiPetrosBaseCommand
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -84,7 +83,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 # endregion [ClassAttributes]
 
 # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.ready = False
@@ -101,13 +100,13 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 # region [Setup]
 
 
-    @universal_log_profiler
     async def on_ready_setup(self):
-        self.cyclic_update_loop.start()
+        for loop in self.loops.values():
+            loop_starter(loop)
+        self.bot.to_update_methods.append(self.bot.ToUpdateItem(AntiPetrosBaseCommand.alias_data_provider.update_default_alias_chars, [UpdateTypus.CONFIG, UpdateTypus.CYCLIC]))
         self.ready = await asyncio.sleep(0, True)
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         for to_update_item in self.bot.to_update_methods:
             if any(trigger in typus for trigger in to_update_item.typus_triggers):
@@ -118,9 +117,12 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
 # region [Loops]
 
-    @tasks.loop(minutes=5)
+    @tasks.loop(minutes=30)
     async def cyclic_update_loop(self):
+        if await self.bot.running_longer_than(minutes=5) is False:
+            return
         log.info('cyclic update started')
+
         await self.send_update_signal(UpdateTypus.CYCLIC)
 
 
@@ -128,9 +130,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
 # region [Listener]
 
-
     @commands.Cog.listener(name="on_guild_channel_delete")
-    @universal_log_profiler
     async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):
         if any([self.ready, self.bot.setup_finished]) is False:
             return
@@ -138,7 +138,6 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         await self.send_update_signal(UpdateTypus.GUILD)
 
     @commands.Cog.listener(name="on_guild_channel_create")
-    @universal_log_profiler
     async def guild_structure_changes_listener_create(self, channel: discord.abc.GuildChannel):
         if any([self.ready, self.bot.setup_finished]) is False:
             return
@@ -146,7 +145,6 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         await self.send_update_signal(UpdateTypus.GUILD)
 
     @commands.Cog.listener(name="on_guild_channel_update")
-    @universal_log_profiler
     async def guild_structure_changes_listener_update(self, before_channel: discord.abc.GuildChannel, after_channel: discord.abc.GuildChannel):
         if any([self.ready, self.bot.setup_finished]) is False:
             return
@@ -162,7 +160,6 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         await self.send_update_signal(UpdateTypus.GUILD)
 
     @commands.Cog.listener(name="on_member_join")
-    @universal_log_profiler
     async def member_join_listener(self, member: discord.Member):
         if any([self.ready, self.bot.setup_finished]) is False:
             return
@@ -170,7 +167,6 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         await self.send_update_signal(UpdateTypus.MEMBERS)
 
     @commands.Cog.listener(name="on_member_remove")
-    @universal_log_profiler
     async def member_remove_listener(self, member: discord.Member):
         if any([self.ready, self.bot.setup_finished]) is False:
             return
@@ -178,7 +174,6 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         await self.send_update_signal(UpdateTypus.MEMBERS)
 
     @commands.Cog.listener(name="on_member_update")
-    @universal_log_profiler
     async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):
         if any([self.ready, self.bot.setup_finished]) is False:
             return
@@ -187,7 +182,6 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
             await self.send_update_signal(UpdateTypus.MEMBERS | UpdateTypus.ROLES)
 
     @commands.Cog.listener(name="on_member_update")
-    @universal_log_profiler
     async def member_name_changed_listener(self, before: discord.Member, after: discord.Member):
         if any([self.ready, self.bot.setup_finished]) is False:
             return
@@ -196,7 +190,6 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
             await self.send_update_signal(UpdateTypus.MEMBERS)
 
     @commands.Cog.listener(name="on_guild_role_create")
-    @universal_log_profiler
     async def role_created_listener(self, role: discord.Role):
         if any([self.ready, self.bot.setup_finished]) is False:
             return
@@ -204,7 +197,6 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         await self.send_update_signal(UpdateTypus.ROLES)
 
     @commands.Cog.listener(name="on_guild_role_delete")
-    @universal_log_profiler
     async def role_deleted_listener(self, role: discord.Role):
         if any([self.ready, self.bot.setup_finished]) is False:
             return
@@ -212,12 +204,18 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         await self.send_update_signal(UpdateTypus.ROLES)
 
     @commands.Cog.listener(name="on_guild_role_update")
-    @universal_log_profiler
     async def role_updated_listener(self, before: discord.Role, after: discord.Role):
         if any([self.ready, self.bot.setup_finished]) is False:
             return
         log.info("Update Signal %s was send, because the Role %s was updated", UpdateTypus.MEMBERS, before.name)
         await self.send_update_signal(UpdateTypus.ROLES)
+
+    @commands.Cog.listener(name="on_message")
+    async def on_message_listener(self, msg: discord.Message):
+        if any([self.ready, self.bot.setup_finished]) is False:
+            return
+        if hasattr(self.bot, 'record_channel_usage'):
+            asyncio.create_task(self.bot.record_channel_usage(msg))
 
 # endregion [Listener]
 
@@ -233,8 +231,9 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
 # region [HelperMethods]
 
+
     async def send_update_signal(self, typus: UpdateTypus):
-        all_tasks = await self.bot.to_all_as_tasks("update", typus=typus)
+        all_tasks = await self.bot.to_all_as_tasks("update", False, typus=typus)
         if all_tasks:
             await asyncio.wait(all_tasks, return_when="ALL_COMPLETED")
 
@@ -254,9 +253,8 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        self.cyclic_update_loop.stop()
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

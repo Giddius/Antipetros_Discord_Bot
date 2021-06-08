@@ -6,7 +6,7 @@ import os
 import random
 from math import ceil
 import secrets
-from typing import TYPE_CHECKING, List, Dict, Tuple, Set
+from typing import List, TYPE_CHECKING, Tuple
 import asyncio
 from urllib.parse import quote as urlquote
 import re
@@ -35,7 +35,6 @@ from antipetros_discordbot.utility.converters import UrlConverter
 
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseGroup, CommandCategory, RequiredFile, auto_meta_info_command, auto_meta_info_group
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -94,7 +93,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
     # endregion [ClassAttributes]
 
     # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.dice_mapping = {
@@ -106,6 +105,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
             'd20': {'sides': 20},
             'd100': {'sides': 100}
         }
+        self.color = 'green'
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
 
@@ -116,19 +116,17 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def youtube_links(self):
         return loadjson(self.music_data_file)
 
 # endregion [Properties]
 
 # region [Setup]
-    @universal_log_profiler
+
     async def on_ready_setup(self):
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -147,7 +145,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 # endregion [Listener]
 
 # region [Commands]
-
 
     @ auto_meta_info_command()
     @ allowed_channel_and_allowed_role()
@@ -267,13 +264,14 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         """
         Posts an ASCII Art version of the input text.
 
-        **Warning, your invoking message gets deleted!**
-
         Args:
             text (str): text you want to see as ASCII Art.
 
         Example:
             @AntiPetros make_figlet The text to figlet
+
+        Info:
+            Your invoking message gets deleted!
         """
         figlet = Figlet(font='gothic', width=300)
         new_text = figlet.renderText(text.upper())
@@ -282,7 +280,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         await ctx.message.delete()
 
     @staticmethod
-    @universal_log_profiler
     def paste_together(*images):
         amount = len(images)
         spacing = 25
@@ -303,7 +300,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
         return b_image
 
-    @universal_log_profiler
     async def parse_dice_line(self, dice_line: str) -> List[Tuple[int, str]]:
         """
         Parses the input string for the `roll_dice` command into a tuple of "amounts" and "type of dice".
@@ -328,7 +324,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         return _out
 
     @staticmethod
-    @universal_log_profiler
     async def _roll_the_dice(sides):
         """
         Roles the die via the `secrets` module.
@@ -336,7 +331,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         return secrets.randbelow(sides) + 1
 
     @staticmethod
-    @universal_log_profiler
     def _get_dice_images(result_image_file_paths):
         """
         Retrieves the images of the dice from the filesystem.
@@ -345,7 +339,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         return images
 
     @staticmethod
-    @universal_log_profiler
     def _sum_dice_results(in_result):
         """
         Calculates the sum of the dice.
@@ -365,7 +358,8 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         All standard DnD Dice are available, d4, d6, d8, d10, d12, d20, d100.
 
         Args:
-            dice_line (str): the dice you want to roll in the format `2d6`, first number is amount. Multiple different dice can be rolled, just seperate them by a space. Like: 2d6 4d20 1d4.
+            dice_line (str): the dice you want to roll in the format `2d6`, first number is amount. Multiple different dice can be rolled, just seperate them by a space. -> 2d6 4d20 1d4.
+
         Example:
             @AntiPetros roll_dice 14d4 14d6 14d8 14d10 14d12 14d20 14d100
         """
@@ -543,8 +537,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
         This makes it possible for the youtube link to show up when the `random_music` command is used.
 
-        **WARNING** When this command is used, it logs the user! It also messages Giddi the Link and the Name of the Person that added it**WARNING**
-
         Args:
             band (str): The name of the Band or Artist. Needs to be put in quotes(") if it contains spaces
             title (str): The name of the Tile. Needs to be put in quotes(") if it contains spaces
@@ -552,6 +544,9 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
         Example:
             @AntiPetros add_music "Weird Al Yankovic" "Amish Paradise" https://www.youtube.com/watch?v=lOfZLb33uCg
+
+        Info:
+            When this command is used, it logs the user! It also messages Giddi the Link and the Name of the Person that added it
         """
         if "youtube" not in youtube_link.casefold():
             await ctx.send('Please only provide links to youtube in the format `https://www.youtube.com/watch?v=XXXXXX`!', delete_after=120)
@@ -586,6 +581,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
 # region [SpecialMethods]
 
+
     def cog_check(self, ctx):
         return True
 
@@ -604,8 +600,8 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
     def __str__(self):
         return self.__class__.__name__
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
 # endregion [SpecialMethods]
 

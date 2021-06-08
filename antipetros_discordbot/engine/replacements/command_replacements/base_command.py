@@ -13,11 +13,11 @@ import os
 import sys
 import asyncio
 import unicodedata
-from pprint import pprint, pformat
-from typing import Any, get_type_hints, get_args, _GenericAlias
+from typing import Any
 from inspect import getdoc
 from functools import singledispatchmethod
 import inspect
+from inspect import Parameter
 import re
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
@@ -49,8 +49,6 @@ from discord.ext import commands, tasks, flags, ipc
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 import gidlogger as glog
-from copy import copy, deepcopy
-
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -94,13 +92,14 @@ class AntiPetrosBaseCommand(commands.Command):
     alias_data_provider = JsonAliasProvider()
     source_code_data_provider = SourceCodeProvider()
     bot_mention_placeholder = '@BOTMENTION'
-    args_regex = re.compile(r"args\:\n(?P<args_values>.*?)(?:\n\s*example:.*)?$", re.IGNORECASE | re.DOTALL)
-
+    # args_regex = re.compile(r"args\:\n(?P<args_values>.*?)(?:\n\s*example:.*)?$", re.IGNORECASE | re.DOTALL)
+    args_regex = re.compile(r"(?P<description>.*?)(?P<args>args\:.*?(?=example\:)?)?(?P<example>example\:.*)?$", re.IGNORECASE | re.DOTALL)
     schema = AntiPetrosBaseCommandSchema()
 
     def __init__(self, func, **kwargs):
         self.name = func.__name__ if kwargs.get("name") is None else kwargs.get("name")
         self.extra_aliases = kwargs.pop("aliases", None)
+
         self.data_getters = {'meta_data': self.meta_data_provider.get_auto_provider(self),
                              'alias': self.alias_data_provider.get_auto_provider(self),
                              'source_code': self.source_code_data_provider.get_auto_provider(self)}
@@ -120,10 +119,49 @@ class AntiPetrosBaseCommand(commands.Command):
         self.handle_category_kwargs(kwargs.get('categories', []))
         self.module_object = sys.modules[func.__module__]
         self.data_setters['meta_data']("docstring", self.docstring)
+        self.only_debug = kwargs.get('only_debug', False)
+        self.specials = {self.experimental_notifier: kwargs.pop('experimental', False),
+                         self.logged_notifier: kwargs.get('logged', False)}
 
     @property
     def bot(self):
         return self.cog.bot
+
+    def set_logged(self, value: bool):
+        self.specials[self.logged_notifier] = value
+
+    async def experimental_notifier(self, ctx: commands.Context):
+        text = f"**It could be broken or be changed/removed any time. Feel free to play around with it and please give Feedback to {self.bot.creator.mention} if you can!**"
+        title = "WARNING THIS IS AN EXPERIMENTAL COMMAND"
+        description = text
+        thumbnail = "warning"
+        embed_data = await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail)
+        msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        ctx.extra_messages.append(msg)
+
+    async def logged_notifier(self, ctx: commands.Context):
+        title = "Logged"
+        description = "The usage of this command was logged with your username"
+        thumbnail = None
+        footer = None
+        embed_data = await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail, footer=footer)
+        msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        ctx.extra_messages.append(msg)
+
+    async def call_before_hooks(self, ctx: commands.Context):
+        if not hasattr(ctx, 'extra_messages'):
+            ctx.extra_messages = []
+        await super().call_before_hooks(ctx)
+
+        for special_coro, enabled in self.specials.items():
+            if enabled:
+                await special_coro(ctx)
+
+    async def call_after_hooks(self, ctx):
+        await super().call_after_hooks(ctx)
+        for extra_msg in ctx.extra_messages:
+            if extra_msg.channel.type is discord.ChannelType.text:
+                asyncio.create_task(extra_msg.delete(delay=60))
 
     @singledispatchmethod
     def handle_category_kwargs(self, categories: Any):
@@ -146,6 +184,8 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def enabled(self):
+        if self.only_debug is True and self.bot.is_debug is False:
+            return False
         return dynamic_enabled_checker(self)
 
     @enabled.setter
@@ -171,6 +211,10 @@ class AntiPetrosBaseCommand(commands.Command):
             self.data_setters['alias'](value)
 
     @property
+    def best_alias(self):
+        return self.alias_data_provider.get_best_alias(self)
+
+    @property
     def long_description(self):
         _help = self.data_getters['meta_data']('long_description', 'NA')
 
@@ -191,7 +235,11 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def brief(self):
-        brief = self.data_getters['meta_data']('brief', 'NA')
+        brief = self.data_getters['meta_data']('brief')
+        if brief is None:
+            brief = self.data_getters['meta_data']('short_doc')
+        if brief is None:
+            brief = self._old_data.get('brief')
         return brief
 
     @brief.setter
@@ -223,43 +271,33 @@ class AntiPetrosBaseCommand(commands.Command):
     @property
     def usage(self):
         usage = {}
-
-        # for key, value in self.callback.__annotations__.items():
-        #     if key not in ['self', 'ctx']:
-
-        #         if value is str:
-        #             usage[f"<{key}>"] = "Text that needs to be put in quotes if it contains spaces."
-        #         elif value is int:
-        #             usage[f"<{key}>"] = "A number"
-        #         else:
-        #             if isinstance(value, _GenericAlias):
-        #                 value = get_args(value)[0]
-        #                 if value is str:
-        #                     usage[f"<{key}>"] = "Text that needs to be put in quotes if it contains spaces."
-        #                 elif value is int:
-        #                     usage[f"<{key}>"] = "A number"
-        #                 else:
-        #                     usage[f"<{key}>"] = value.usage_description if hasattr(value, 'usage_description') else getdoc(value).splitlines()[0]
-        #             usage[f"<{key}>"] = value.usage_description if hasattr(value, 'usage_description') else getdoc(value).splitlines()[0]
+        if not self.docstring:
+            return ""
         arg_match = self.args_regex.search(self.docstring)
         if arg_match:
-            arg_lines = list(map(lambda x: x.strip(), arg_match.group('args_values').splitlines()))
+            arg_lines = list(map(lambda x: x.strip(), arg_match.group('args').splitlines()))
+            arg_lines = [arg_line for arg_line in arg_lines if arg_line != '']
             for line in arg_lines:
-                key, value = line.split(':')
+                try:
+                    key, value = line.split(':', maxsplit=1)
+                except ValueError as error:
+                    raise error
                 if '(' in key:
                     key = key.split('(')[0]
+                if key.casefold().strip() != 'args':
+                    specifier = '[]' if "defaults" not in value.casefold() else '<>'
+                    usage[f"{specifier[0]}{key.strip()}{specifier[1]}"] = value.strip()
 
-                usage[f"<{key.strip()}>"] = value.strip()
-        usage_line = f"@AntiPetros "
+        usage_line = "@AntiPetros "
         if self.parent is not None:
-            usage_line += f"<{self.parent.name} or parent alias> "
-        usage_line += f"<{self.name} or alias> "
+            usage_line += f"[{self.parent.name} | alias-of-{self.parent.name}] "
+        usage_line += f"[{self.best_alias} | alias] "
         usage_explanation = []
         for key, value in usage.items():
             usage_line += f"{key} "
             value = '\n'.join(map(lambda x: x.strip(), re.split(r"\,|\.", value)))
             usage_explanation.append(f"{key}\n{value.strip()}\n-----")
-        full_usage = usage_line.strip() + '\n' + '▬' * len(usage_line) + '\n' + '\n'.join(usage_explanation)
+        full_usage = usage_line.strip() + '\n' + '▬' * 10 + '\n' + '\n'.join(usage_explanation)
         return full_usage
 
     @usage.setter
@@ -268,10 +306,15 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def signature(self):
+        _out = {}
         signature = inspect.signature(self.callback).parameters
-        signature = {key: value for key, value in signature.items() if key not in ['self', 'ctx']}
+        for name, value in signature.items():
+            if name not in ['self', 'ctx']:
+                _out[name] = {'annotation': value.annotation if value.annotation is not Parameter.empty else '',
+                              "default": value.default if value.default is not Parameter.empty else 'no-default',
+                              "kind": str(value.kind)}
 
-        return signature
+        return str(_out)
 
     @signature.setter
     def signature(self, value):
@@ -281,10 +324,7 @@ class AntiPetrosBaseCommand(commands.Command):
     def example(self):
         example = self.data_getters['meta_data']('example', 'NA')
 
-        if self.cog.bot.bot_member is not None:
-            return example.replace(self.bot_mention_placeholder, self.cog.bot.bot_member.mention)
-        else:
-            return example
+        return example
 
     @example.setter
     def example(self, value):

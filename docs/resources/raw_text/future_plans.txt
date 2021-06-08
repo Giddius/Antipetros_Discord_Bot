@@ -6,7 +6,5 @@ Startup Info = auto updating server info in startup info, need to figure out how
 
 Github Wiki = Automatically create and modify github Wiki
 
-auto reaction regex = add an item that can auto react with an emoji to an regex pattern in message
-
-auto message cog = add an cog that works like auto reactions but does other things when triggered (than just emojis)
+listener Objects = make listeners more OOP
 

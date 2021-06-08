@@ -89,11 +89,11 @@ class BaseReactionInstruction(ABC):
 
     @classmethod
     @abstractmethod
-    async def from_dict(cls, **kwargs):
+    def from_dict(cls, **kwargs):
         ...
 
     @abstractmethod
-    async def to_dict(self):
+    def to_dict(self):
         ...
 
     @abstractmethod
@@ -106,8 +106,16 @@ class BaseReactionInstruction(ABC):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.emojis})"
 
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __eq__(self, o: object) -> bool:
+        if isinstance(o, BaseReactionInstruction):
+            return hash(o) == hash(self)
+        return NotImplemented
 
 # region[Main_Exec]
+
 
 if __name__ == '__main__':
     pass

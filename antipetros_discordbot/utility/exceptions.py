@@ -1,6 +1,7 @@
 # * Third Party Imports -->
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands.errors import CommandError
+from datetime import datetime
 
 
 class AntiPetrosBaseError(Exception):
@@ -95,6 +96,13 @@ class TokenError(AntiPetrosBaseError):
     __module__ = 'antipetros-discordbot'
 
 
+class TokenMissingError(TokenError):
+    def __init__(self, token_name):
+        self.token_name = token_name
+        self.msg = f"Token '{self.token_name}' is not set as env variable!"
+        super().__init__(self.msg)
+
+
 class DuplicateNameError(AntiPetrosBaseError):
     def __init__(self, name, container_name):
         self.msg = f"Name '{name}' is already in '{container_name}' and it does not allow duplicates."
@@ -123,7 +131,7 @@ class NotAllowedChannelError(BaseExtendedCommandError):
         self.alias_used = ctx.invoked_with
         self.channel_name = self.ctx.channel.name
         self.allowed_channels = allowed_channels
-        self.msg = f"The command '{self.command_name}' (alias used: '{self.alias_used}') is not allowed in channel '{self.channel_name}'"
+        self.msg = f"Sorry {ctx.author.name} I can't let you do that.\n\nThe command '{self.command_name}' (alias used: '{self.alias_used}') is not allowed in channel '{self.channel_name}'"
         super().__init__(self.msg)
 
 
@@ -209,4 +217,11 @@ class NameInUseError(BaseExtendedCommandError):
         self.name = name
         self.typus = typus
         self.msg = f"The Name {self.name} is already in use for {self.typus} items"
+        super().__init__(self.msg)
+
+
+class GithubRateLimitUsedUp(BaseExtendedCommandError):
+    def __init__(self, reset_time: datetime):
+        self.reset_time = reset_time
+        self.msg = "Rate Limit for github is used up, this action is not usable until " + self.reset_time.strftime("%Y-%m-%d %H:%M:%S UTC") + ", as the rate-limit resets at that time!"
         super().__init__(self.msg)

@@ -30,10 +30,9 @@ import gidlogger as glog
 # * Local Imports -->
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-
+from antipetros_discordbot.utility.misc import loop_starter
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -84,11 +83,13 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 # endregion [ClassAttributes]
 
 # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.db = general_db
+        self.color = "gray"
         self.ready = False
+
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
@@ -101,16 +102,18 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Setup]
 
-    @universal_log_profiler
+
     async def on_ready_setup(self):
-        self.scheduled_vacuum.start()
+        for loop in self.loops.values():
+            loop_starter(loop)
+
         self.ready = await asyncio.sleep(5, True)
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         if typus in [UpdateTypus.ALIAS, UpdateTypus.CONFIG]:
             await self.bot.insert_command_data()
+
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
@@ -118,11 +121,10 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 # region [Loops]
 
     @tasks.loop(hours=12)
-    @universal_log_profiler
     async def scheduled_vacuum(self):
-        if self.ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False:
             return
-        await self.db.aio_vacuum()
+        asyncio.create_task(self.db.aio_vacuum(), name='db_vacuum')
         log.info("%s was scheduled vacuumed", str(self.db))
 
 # endregion [Loops]
@@ -130,26 +132,30 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 # region [Listener]
 
     @commands.Cog.listener(name="on_guild_channel_delete")
-    @universal_log_profiler
     async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):
+        if any([self.ready, self.bot.setup_finished]) is False:
+            return
         await self.bot.insert_channels_into_db()
         log.info('updated channels in %s, because Guild channel "%s" was removed', self.db, channel.name)
 
     @commands.Cog.listener(name="on_guild_channel_create")
-    @universal_log_profiler
     async def guild_structure_changes_listener_create(self, channel: discord.abc.GuildChannel):
+        if any([self.ready, self.bot.setup_finished]) is False:
+            return
         await self.bot.insert_channels_into_db()
         log.info('updated channels in %s, because Guild channel "%s" was created', self.db, channel.name)
 
     @commands.Cog.listener(name="on_guild_channel_update")
-    @universal_log_profiler
     async def guild_structure_changes_listener_update(self, before_channel: discord.abc.GuildChannel, after_channel: discord.abc.GuildChannel):
+        if any([self.ready, self.bot.setup_finished]) is False:
+            return
         await self.bot.insert_channels_into_db()
         log.info('updated channels in %s, because Guild channel "%s"/"%s" was updated', self.db, before_channel.name, after_channel.name)
 
     @commands.Cog.listener(name="on_guild_update")
-    @universal_log_profiler
     async def guild_update_listener(self, before_guild: discord.Guild, after_guild: discord.Guild):
+        if any([self.ready, self.bot.setup_finished]) is False:
+            return
         await self.bot.insert_channels_into_db()
         log.info('updated channels in %s, because Guild was updated', self.db)
 
@@ -173,7 +179,6 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [SpecialMethods]
 
-
     def cog_check(self, ctx):
         return True
 
@@ -186,9 +191,8 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        self.scheduled_vacuum.stop()
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

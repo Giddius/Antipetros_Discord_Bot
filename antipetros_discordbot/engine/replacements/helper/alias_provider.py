@@ -15,7 +15,8 @@ from discord.ext import commands, tasks
 import gidlogger as glog
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from string import punctuation
+import re
 # endregion[Imports]
 
 # region [TODO]
@@ -50,14 +51,16 @@ class JsonAliasProvider:
     """
     alias_data_file = pathmaker(APPDATA['documentation'], 'command_aliases.json')
     base_config = ParaStorageKeeper.get_config('base_config')
+    punctuation_regex = re.compile(rf"[{re.escape(punctuation)}]")
+    default_alias_chars = BASE_CONFIG.retrieve('command_meta', 'base_alias_replacements', typus=List[str], direct_fallback='-')
 
     def __init__(self):
         if os.path.isfile(self.alias_data_file) is False:
             writejson({}, self.alias_data_file)
 
-    @property
-    def default_alias_chars(self) -> List[str]:
-        return self.base_config.retrieve('command_meta', 'base_alias_replacements', typus=List[str], direct_fallback='-')
+    @classmethod
+    async def update_default_alias_chars(cls):
+        cls.default_alias_chars = BASE_CONFIG.retrieve('command_meta', 'base_alias_replacements', typus=List[str], direct_fallback='-')
 
     @property
     def custom_alias_data(self) -> dict:
@@ -122,6 +125,25 @@ class JsonAliasProvider:
 
     def save(self, data: dict) -> None:
         writejson(data, self.alias_data_file)
+
+    def get_best_alias(self, command: commands.Command) -> str:
+        weighted_aliases = sorted(command.aliases + [command.name], key=self._alias_weighting)
+        return weighted_aliases[0]
+
+    def _alias_weighting(self, alias) -> int:
+        alias_length = len(self.punctuation_regex.sub('', alias))
+        punctuation_characters = self.punctuation_regex.findall(alias)
+        if not punctuation_characters:
+            punctuation_characters = ['']
+        amount_punctuation = len([char for char in punctuation_characters if char])
+
+        return self._alias_weighting_calculation(alias_length, punctuation_characters, amount_punctuation)
+
+    def _alias_weighting_calculation(self, alias_length: int, punctuation_characters: List[str], amount_punctuation: int) -> int:
+
+        _out = alias_length + amount_punctuation
+
+        return _out
 
 
 # region[Main_Exec]

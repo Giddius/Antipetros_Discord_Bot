@@ -10,7 +10,7 @@
 import os
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Union, Callable, Iterable, List, Tuple, Set
+from typing import Callable, TYPE_CHECKING, Union
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands import Converter, CommandError
 from googletrans import LANGUAGES
@@ -19,7 +19,7 @@ import discord
 from dateparser import parse as date_parse
 from validator_collection import validators
 import validator_collection
-from enum import Enum, auto, Flag
+from enum import Enum
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 from antipetros_discordbot.utility.exceptions import ParameterError, ParameterErrorWithPossibleParameter
@@ -30,7 +30,6 @@ from antipetros_discordbot.utility.checks import (OnlyGiddiCheck, OnlyBobMurphyC
 from antipetros_discordbot.utility.misc import check_if_url, fix_url_prefix
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import ExtraHelpParameter, HelpCategory
-from icecream import ic
 if TYPE_CHECKING:
     pass
 
@@ -273,7 +272,25 @@ class ExtraHelpParameterConverter(Converter):
         return "Name of an Extra-Help-Parameter. Case-INsensitive.\nPossible Values: " + '\n'.join(name for name in ExtraHelpParameter.__members__)
 
 
-        # region[Main_Exec]
+class RoleOrIntConverter(Converter):
+
+    async def convert(self, ctx: commands.Context, argument):
+        if argument.isnumeric() is False or len(str(argument)) == 18:
+            log.debug('argument "%s" is not an pure integer', argument)
+            return await self.convert_to_role(ctx, argument)
+
+        return int(argument)
+
+    async def convert_to_role(self, ctx: commands.Context, argument):
+        if argument.isnumeric():
+            role = ctx.bot.get_antistasi_role(int(argument))
+        else:
+            role = ctx.bot.role_from_string(argument)
+        if role is None:
+            raise ParameterError("role", argument)
+        return role
+
+    # region[Main_Exec]
 if __name__ == '__main__':
     pass
 

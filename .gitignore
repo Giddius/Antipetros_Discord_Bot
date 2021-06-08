@@ -600,14 +600,15 @@ shebang.txt
 .env_tools
 .env_main
 **/*.env
-*.json
+data_pack/
+
 private_quick_scripts/
 create_venv_logs/
 _project_meta.env
 
 # Project Specific ignores
 
-antipetros_discordbot/data/data_storage/sqlite_data/save_db.db
+Antipetros_Discord_Bot_new/antipetros_discordbot/data/data_storage/sqlite_data/save_db.db
 *.db
 quick_test.txt
 **/data_storage/images/
@@ -638,3 +639,5 @@ antipetros_discordbot/init_userdata/data_pack/image_files
 /antipetros_discordbot/init_userdata/data_pack/image_files/gifs
 misc/cog_dump.svg
 antipetros_discordbot.svg
+
+

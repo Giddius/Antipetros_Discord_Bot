@@ -25,7 +25,6 @@ from antipetros_discordbot.utility.converters import date_time_full_converter_fl
 
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosFlagCommand, CommandCategory, auto_meta_info_command
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -76,10 +75,9 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 
 # region [Init]
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-
+        self.color = "brown"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
@@ -89,12 +87,10 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 
 # region [Setup]
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -112,7 +108,6 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 # endregion[Loops]
 
 # region [Commands]
-
 
     @ auto_meta_info_command()
     @owner_or_admin()
@@ -163,7 +158,7 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
             channel (discord.TextChannel): name or id of channel. Preferably use Id as it is failsafe.
             message (str): The message you want to write, does not need any quotes and can be multiline
 
-        Examples:
+        Example:
             @AntiPetros write_message 645930607683174401 This is my message
         """
         await channel.send(message)
@@ -262,7 +257,6 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 
 # region [SpecialMethods]
 
-
     def cog_check(self, ctx):
         return True
 
@@ -281,9 +275,8 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
     def __str__(self):
         return self.__class__.__name__
 
-    def cog_unload(self):
-        self.community_meeting_messages.stop()
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
 # endregion[SpecialMethods]
 

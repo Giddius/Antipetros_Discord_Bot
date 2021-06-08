@@ -7,6 +7,11 @@
     <title>Arma 3</title>
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
     <style>
+@media print {
+    @page {
+      size:325mm 325mm;
+    }
+}
 body {
 	margin: 0;
 	padding: 0;
@@ -86,6 +91,7 @@ a:hover {
     <div class="mod-list">
       <table>
         {% for mod in req_mods %}
+        {% if mod %}
         <tr data-type="ModContainer">
           <td data-type="DisplayName">{{ mod.name }}</td>
           <td>
@@ -95,6 +101,7 @@ a:hover {
             <a href="{{ mod.link }}" data-type="Link">{{ mod.link }}</a>
           </td>
         </tr>
+        {% endif %}
         {% endfor %}
       </table>
     </div>

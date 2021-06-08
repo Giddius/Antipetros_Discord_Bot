@@ -40,17 +40,17 @@ CREATE TABLE IF NOT EXISTS commands_tbl (
 );
 CREATE TABLE IF NOT EXISTS memory_performance_tbl (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "timestamp" DATETIME NOT NULL UNIQUE,
+    "timestamp" DATETIME NOT NULL UNIQUE DEFAULT (datetime('now', 'utc')),
     "memory_in_use" INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS latency_performance_tbl (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "timestamp" DATETIME NOT NULL UNIQUE,
+    "timestamp" DATETIME NOT NULL UNIQUE DEFAULT (datetime('now', 'utc')),
     "latency" INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS cpu_performance_tbl (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "timestamp" DATETIME NOT NULL UNIQUE,
+    "timestamp" DATETIME NOT NULL UNIQUE DEFAULT (datetime('now', 'utc')),
     "usage_percent" INTEGER NOT NULL,
     "load_average_1" INTEGER NOT NULL,
     "load_average_5" INTEGER NOT NULL,
@@ -73,22 +73,38 @@ CREATE TABLE IF NOT EXISTS text_channels_tbl (
     "deleted" BOOL
 );
 CREATE TABLE IF NOT EXISTS channel_usage_tbl (
-    "timestamp" DATETIME NOT NULL,
+    "timestamp" DATETIME NOT NULL DEFAULT (datetime('now', 'utc')),
     "channel_id" INTEGER NOT NULL REFERENCES "text_channels_tbl" ("id"),
     UNIQUE ("timestamp", "channel_id")
 );
-CREATE INDEX IF NOT EXISTS channel_usage_timestamp_index ON "channel_usage_tbl" ("timestamp");
+CREATE VIEW IF NOT EXISTS channel_usage_view AS
+SELECT COUNT(timestamp) AS usage_amount,
+    channel_id
+FROM channel_usage_tbl
+GROUP BY channel_id
+ORDER BY usage_amount DESC;
 CREATE TABLE IF NOT EXISTS command_usage_tbl (
-    "timestamp" DATETIME NOT NULL,
+    "timestamp" DATETIME NOT NULL DEFAULT (datetime('now', 'utc')),
     "command_id" INTEGER NOT NULL REFERENCES "commands_tbl" ("id"),
     UNIQUE ("timestamp", "command_id")
 );
-CREATE INDEX IF NOT EXISTS command_usage_timestamp_index ON "command_usage_tbl" ("timestamp");
-CREATE TABLE IF NOT EXISTS profiling_data_tbl (
+CREATE VIEW IF NOT EXISTS command_usage_view AS
+SELECT COUNT(timestamp) AS usage_amount,
+    command_id
+FROM command_usage_tbl
+GROUP BY command_id
+ORDER BY usage_amount DESC;
+CREATE TABLE IF NOT EXISTS server_tbl (
     "id" INTEGER NOT NULL PRIMARY KEY,
-    "timestamp" DATETIME NOT NULL,
-    "module" TEXT NOT NULL,
-    "function" TEXT NOT NULL,
-    "time" INTEGER NOT NULL,
-    UNIQUE ("timestamp", "module", "function")
+    "name" TEXT NOT NULL UNIQUE,
+    "address" TEXT NOT NULL,
+    "port" INTEGER NOT NULL,
+    "query_port" INTEGER NOT NULL UNIQUE,
+    UNIQUE("address", "port")
+);
+CREATE TABLE IF NOT EXISTS server_population_tbl (
+    "timestamp" DATETIME NOT NULL DEFAULT (datetime('now', 'utc')),
+    "server_id" INTEGER NOT NULL REFERENCES "server_tbl" ("id"),
+    "amount_players" INTEGER NOT NULL,
+    UNIQUE ("timestamp", "server_id")
 );

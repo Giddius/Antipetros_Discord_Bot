@@ -28,7 +28,6 @@ from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
 from typing import TYPE_CHECKING
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -159,7 +158,15 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     long_description = ""
     extra_info = ""
     required_config_data = {'base_config': {},
-                            'cogs_config': {}}
+                            'cogs_config': {"header_description": """Please note that we have a new system for notifications!
+	With the implementation of this system you will be able to decide, which topics you would like to be informed/pinged about.
+	If you for example are interested into events and would like to get notified about them, subscribe to Events.""",
+                                            "header_how_to_subscribe_text": "You can subscribe by reacting via the emoji under the message of the topic you would like to be informed about.",
+                                            "header_how_to_unsubscribe_text": "You can unsubscribe from a topic by removing your reaction under the message of the topic you are currently subscribed to.",
+                                            "header_how_does_it_work_text": """By reacting to a message you will automatically be assigned the associated role. This role will be @-mentioned/pinged whenever there are news about said topic.
+	When unsubscribing from a topic, the role will be taken from you and you will not receive pings to said topic anymore.""",
+                                            "header_color": "teal",
+                                            "header_thumbnail": "info"}}
     topics_data_file = pathmaker(APPDATA['json_data'], 'subscription_topics_data.json')
     required_folder = []
     required_files = [RequiredFile(topics_data_file, [], RequiredFile.FileType.JSON)]
@@ -167,10 +174,11 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     # endregion[ClassAttributes]
 
 # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.topics = []
+        self.color = "tan"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
@@ -178,13 +186,12 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 # endregion[Init]
 
 # region [Setup]
-    @universal_log_profiler
+
     async def on_ready_setup(self):
         await self._load_topic_items()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -194,9 +201,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # region [Properties]
 
-
     @property
-    @universal_log_profiler
     def subscription_channel(self):
         name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
         if name is None:
@@ -204,7 +209,6 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         return self.bot.channel_from_name(name)
 
     @property
-    @universal_log_profiler
     def topic_data(self):
         if os.path.isfile(self.topics_data_file) is False:
             writejson([], self.topics_data_file)
@@ -215,9 +219,8 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 # region [Listener]
 
     @commands.Cog.listener(name='on_raw_reaction_add')
-    @universal_log_profiler
     async def subscription_reaction(self, payload):
-        if self.ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
             return
         try:
             channel = self.bot.get_channel(payload.channel_id)
@@ -244,9 +247,8 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
             return
 
     @commands.Cog.listener(name='on_raw_reaction_remove')
-    @universal_log_profiler
     async def unsubscription_reaction(self, payload):
-        if self.ready is False:
+        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
             return
         try:
             channel = self.bot.get_channel(payload.channel_id)
@@ -273,180 +275,6 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
             return
 
 # endregion[Listener]
-
-# region [Helper]
-    @universal_log_profiler
-    async def _get_header_message(self):
-        msg_id = COGS_CONFIG.retrieve(self.config_name, 'header_message_id', typus=int, direct_fallback=0)
-        if msg_id == 0:
-            return None
-        return await self.subscription_channel.fetch_message(msg_id)
-
-    @universal_log_profiler
-    async def _add_topic_data(self, topic_item):
-        current_data = self.topic_data
-        current_data.append(await topic_item.serialize())
-        writejson(current_data, self.topics_data_file)
-
-    @universal_log_profiler
-    async def _remove_topic_data(self, topic_item: TopicItem):
-        current_data = self.topic_data
-        current_data.remove(await topic_item.serialize())
-        writejson(current_data, self.topics_data_file)
-
-    @universal_log_profiler
-    async def _save_topic_data(self):
-        writejson([await item.serialize() for item in self.topics], self.topics_data_file)
-        await self._load_topic_items()
-
-    @universal_log_profiler
-    async def _clear_other_emojis(self, topic_item):
-        pass
-
-    @universal_log_profiler
-    async def _post_new_topic(self, topic_item: TopicItem):
-        embed_data = await self.bot.make_generic_embed(**topic_item.embed_data)
-        msg = await self.subscription_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-        await msg.add_reaction(topic_item.emoji)
-        topic_item.message = msg
-
-    @universal_log_profiler
-    async def _remove_topic_role(self, member: discord.Member, topic_item: TopicItem):
-        await member.remove_roles(topic_item.role, reason=f'User unsibscribed from topic "{topic_item.name}"')
-        log.info(f"removed role {topic_item.role.name} to {member.display_name}")
-
-    @universal_log_profiler
-    async def _give_topic_role(self, member: discord.Member, topic_item):
-        await member.add_roles(topic_item.role, reason=f"User subscribed to Topic '{topic_item.name}'")
-        log.info(f"assigned role {topic_item.role.name} to {member.display_name}")
-
-    @universal_log_profiler
-    async def _load_topic_items(self):
-        self.topics = []
-        data = self.topic_data
-        for item in data:
-            topic_item = await TopicItem.from_data(self.bot, self.subscription_channel, **item)
-            self.topics.append(topic_item)
-
-    @universal_log_profiler
-    async def convert_hex_color(self, color):
-        h = color.lstrip('#')
-        rgb = tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
-        return discord.Color.from_rgb(*rgb)
-
-    @universal_log_profiler
-    async def _create_topic_role(self, topic_item: TopicItem):
-        """
-        Creates the new subscriber role.
-
-        Role has not permissions, but is mentionable.
-
-        Args:
-            topic_item (`TopicItem`): The container holding the Topic information.
-
-        """
-        log.debug(f"Trying to create role '{topic_item.name}_Subscriber'")
-        new_role = await self.bot.antistasi_guild.create_role(name=f"{topic_item.name}_Subscriber", permissions=discord.Permissions.none(), mentionable=False, color=discord.Color.lighter_gray(), reason=f"Subscribe-able Topic creation, topic: '{topic_item.name}'")
-        # await new_role.edit(position=0, reason=f"Subscribe-able Topic creation, topic: '{topic_item.name}'")
-        topic_item.role = new_role
-        log.debug(f"finished creating role '{topic_item.name}_Subscriber'")
-
-    @universal_log_profiler
-    async def _create_topic_subscription_header_embed(self):
-        embed_data = await self.bot.make_generic_embed(title="Topic Subscription", description=COGS_CONFIG.retrieve(self.config_name, 'header_description', typus=str, direct_fallback=''),
-                                                       fields=[self.bot.field_item(name='How to subscribe', value=">>> " + COGS_CONFIG.retrieve(self.config_name, 'header_how_to_subscribe_text', typus=str, direct_fallback='')),
-                                                               self.bot.field_item(name='How to unsubscribe', value=">>> " + COGS_CONFIG.retrieve(self.config_name, 'header_how_to_unsubscribe_text', typus=str, direct_fallback='')),
-                                                               self.bot.field_item(name='How does it work', value=">>> " + COGS_CONFIG.retrieve(self.config_name, 'header_how_does_it_work_text', typus=str, direct_fallback=''))],
-                                                       color=COGS_CONFIG.retrieve(self.config_name, 'header_color', typus=str, direct_fallback='gray'),
-                                                       thumbnail=COGS_CONFIG.retrieve(self.config_name, 'header_thumbnail', typus=str, direct_fallback='antistasi_logo'))
-
-        return embed_data
-
-    @universal_log_profiler
-    async def _get_subscription_channel(self):
-        name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
-        if name is None:
-            return None
-        return self.bot.channel_from_name(name)
-
-    @universal_log_profiler
-    async def _remove_subscription_reaction(self, member: discord.member, topic_item: TopicItem):
-        message = topic_item.message
-        await message.remove_reaction(topic_item.emoji, member)
-
-    @universal_log_profiler
-    async def _send_topic_remove_notification(self, topic_item: TopicItem):
-        role = topic_item.role
-        for member in role.members:
-            embed_data = await self.bot.make_generic_embed(title=f"Topic {topic_item.name} was removed!",
-                                                           description=f"The Topic `{topic_item.name}` was removed as a topic, therefor the assigned role {topic_item.role.mention} has been removed from your account!")
-            await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-            await asyncio.sleep(0.25)
-
-    @universal_log_profiler
-    async def sucess_subscribed_embed(self, member: discord.Member, topic: TopicItem):
-        embed_data = await self.bot.make_generic_embed(title="Successfully Subscribed", description=f"You are now subscribed to {topic.name} and will get pinged if they have an Announcement.",
-                                                       thumbnail="subscribed",
-                                                       fields=[self.bot.field_item(name="Subscription Role", value=f"For this purpose you have been assigne the Role `{topic.role.name}`", inline=False),
-                                                               self.bot.field_item(name="Unsubscribe", value=f"To Unsubscribe just remove your emoji from the subscription post [link to post]({topic.message.jump_url})", inline=False),
-                                                               self.bot.field_item(name="Unsubscribe Command", value=f"You can also use the command `@AntiPetros unsubscribe {topic.name}`", inline=False)])
-        await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-
-    @universal_log_profiler
-    async def sucess_unsubscribed_embed(self, member: discord.Member, topic: TopicItem):
-        embed_data = await self.bot.make_generic_embed(title="Successfully Unsubscribed", description=f"You are now no longer subscribed to {topic.name} and will NOT get pinged anymore if they have an Announcement.",
-                                                       thumbnail="update",
-                                                       fields=[self.bot.field_item(name="Subscription Role", value=f"The Role {topic.role.name} has been removed", inline=False)])
-        await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-
-    @universal_log_profiler
-    async def _confirm_topic_creation_deletion(self, ctx: commands.Context, topic_item: TopicItem, typus: str):
-        topic_embed_data = await self.bot.make_generic_embed(**topic_item.embed_data)
-        description = f"Are you sure you want to create the Topic `{topic_item.name}`, with the following subscription message?" if typus == 'creation' else f"Are you sure you want to REMOVE the topic `{topic_item.name}`, with that subscription message above?"
-        confirmation_embed_data = await self.bot.make_generic_embed(title='Confirmation Required',
-                                                                    description=description,
-                                                                    fields=[self.bot.field_item(name='Time to answer', value="5 minutes"),
-                                                                            self.bot.field_item(name='To Confirm', value='React with ✅ to this message', inline=True),
-                                                                            self.bot.field_item(name='To Cancel', value="React with ❎ to this message", inline=True)])
-        topic_embed_message = await ctx.send(**topic_embed_data, allowed_mentions=discord.AllowedMentions.none())
-        conformation_message = await ctx.send(**confirmation_embed_data)
-
-        await conformation_message.add_reaction("✅")
-        await conformation_message.add_reaction("❎")
-
-        def check_confirm(payload: discord.RawReactionActionEvent):
-            return payload.message_id == conformation_message.id and payload.user_id == ctx.author.id and str(payload.emoji) in ['✅', '❎']
-        try:
-            payload = await self.bot.wait_for('raw_reaction_add', timeout=300.0, check=check_confirm)
-            if ctx.channel.type is discord.ChannelType.text:
-                await conformation_message.delete()
-                await topic_embed_message.delete()
-        except asyncio.TimeoutError:
-            description = "Cancelling Topic Creation because not answer was received" if typus == 'creation' else "Cancelling Topic Removal because no answer was received"
-            embed_data = await self.bot.make_generic_embed(title="Timed Out!", description=description, thumbnail="timeout")
-            await ctx.send(**embed_data)
-            if ctx.channel.type is discord.ChannelType.text:
-                await conformation_message.delete()
-                await topic_embed_message.delete()
-
-            return False
-        if str(payload.emoji) == '❎':
-            description = "Stopping Topic creation" if typus == 'creation' else "Stopping Topic removal"
-            embed_data = await self.bot.make_generic_embed(title='USER CANCELATION', description=description, thumbnail="cancelled")
-            await ctx.send(**embed_data)
-            return False
-        if str(payload.emoji) == '✅':
-            description = 'Topic creation confirmed, creating topic...' if typus == 'creation' else "Topic REMOVAL Confirmed, removing topic..."
-            embed_data = await self.bot.make_generic_embed(title="Confirmed", description=description, thumbnail="confirmed")
-            await ctx.send(**embed_data)
-            return True
-
-    @universal_log_profiler
-    async def _update_topic_embed(self, topic_item: TopicItem):
-        embed_data = await self.bot.make_generic_embed(**topic_item.embed_data)
-        await topic_item.message.edit(**embed_data)
-
-# endregion[Helper]
 
 # region [Commands]
 
@@ -571,7 +399,6 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
     @auto_meta_info_command()
     @commands.is_owner()
-    @has_attachments(1)
     async def modify_topic_embed(self, ctx: commands.Context, topic_name: str, setting: str, value: str):
         """
         **UNTESTED** - Modifies an attribute of an topic in place - **UNTESTED**
@@ -660,14 +487,165 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         else:
             await ctx.send(file=template_file)
 
-    # @auto_meta_info_command(hidden=True, enabled=True)
-    # @owner_or_admin()
-    # async def delete_test_role(self, ctx: commands.Context, role: discord.Role):
-    #     role_name = role.name
-    #     await role.delete(reason='Was for testing, and threw an error, cleaning up')
-    #     await ctx.send(f"`{role_name}` was removed", delete_after=60)
 
 # endregion[Commands]
+
+# region [Helper]
+
+
+    async def _get_header_message(self):
+        msg_id = COGS_CONFIG.retrieve(self.config_name, 'header_message_id', typus=int, direct_fallback=0)
+        if msg_id == 0:
+            return None
+        return await self.subscription_channel.fetch_message(msg_id)
+
+    async def _add_topic_data(self, topic_item):
+        current_data = self.topic_data
+        current_data.append(await topic_item.serialize())
+        writejson(current_data, self.topics_data_file)
+
+    async def _remove_topic_data(self, topic_item: TopicItem):
+        current_data = self.topic_data
+        current_data.remove(await topic_item.serialize())
+        writejson(current_data, self.topics_data_file)
+
+    async def _save_topic_data(self):
+        writejson([await item.serialize() for item in self.topics], self.topics_data_file)
+        await self._load_topic_items()
+
+    async def _clear_other_emojis(self, topic_item):
+        pass
+
+    async def _post_new_topic(self, topic_item: TopicItem):
+        embed_data = await self.bot.make_generic_embed(**topic_item.embed_data)
+        msg = await self.subscription_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        await msg.add_reaction(topic_item.emoji)
+        topic_item.message = msg
+
+    async def _remove_topic_role(self, member: discord.Member, topic_item: TopicItem):
+        await member.remove_roles(topic_item.role, reason=f'User unsibscribed from topic "{topic_item.name}"')
+        log.info(f"removed role {topic_item.role.name} to {member.display_name}")
+
+    async def _give_topic_role(self, member: discord.Member, topic_item):
+        await member.add_roles(topic_item.role, reason=f"User subscribed to Topic '{topic_item.name}'")
+        log.info(f"assigned role {topic_item.role.name} to {member.display_name}")
+
+    async def _load_topic_items(self):
+        self.topics = []
+        data = self.topic_data
+        for item in data:
+            topic_item = await TopicItem.from_data(self.bot, self.subscription_channel, **item)
+            self.topics.append(topic_item)
+
+    async def convert_hex_color(self, color):
+        h = color.lstrip('#')
+        rgb = tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+        return discord.Color.from_rgb(*rgb)
+
+    async def _create_topic_role(self, topic_item: TopicItem):
+        """
+        Creates the new subscriber role.
+
+        Role has not permissions, but is mentionable.
+
+        Args:
+            topic_item (`TopicItem`): The container holding the Topic information.
+
+        """
+        log.debug(f"Trying to create role '{topic_item.name}_Subscriber'")
+        new_role = await self.bot.antistasi_guild.create_role(name=f"{topic_item.name}_Subscriber", permissions=discord.Permissions.none(), mentionable=False, color=discord.Color.lighter_gray(), reason=f"Subscribe-able Topic creation, topic: '{topic_item.name}'")
+        # await new_role.edit(position=0, reason=f"Subscribe-able Topic creation, topic: '{topic_item.name}'")
+        topic_item.role = new_role
+        log.debug(f"finished creating role '{topic_item.name}_Subscriber'")
+
+    async def _create_topic_subscription_header_embed(self):
+        embed_data = await self.bot.make_generic_embed(title="Topic Subscription", description=COGS_CONFIG.retrieve(self.config_name, 'header_description', typus=str, direct_fallback=''),
+                                                       fields=[self.bot.field_item(name='How to subscribe', value=">>> " + COGS_CONFIG.retrieve(self.config_name, 'header_how_to_subscribe_text', typus=str, direct_fallback='')),
+                                                               self.bot.field_item(name='How to unsubscribe', value=">>> " + COGS_CONFIG.retrieve(self.config_name, 'header_how_to_unsubscribe_text', typus=str, direct_fallback='')),
+                                                               self.bot.field_item(name='How does it work', value=">>> " + COGS_CONFIG.retrieve(self.config_name, 'header_how_does_it_work_text', typus=str, direct_fallback=''))],
+                                                       color=COGS_CONFIG.retrieve(self.config_name, 'header_color', typus=str, direct_fallback='gray'),
+                                                       thumbnail=COGS_CONFIG.retrieve(self.config_name, 'header_thumbnail', typus=str, direct_fallback='antistasi_logo'))
+
+        return embed_data
+
+    async def _get_subscription_channel(self):
+        name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
+        if name is None:
+            return None
+        return self.bot.channel_from_name(name)
+
+    async def _remove_subscription_reaction(self, member: discord.member, topic_item: TopicItem):
+        message = topic_item.message
+        await message.remove_reaction(topic_item.emoji, member)
+
+    async def _send_topic_remove_notification(self, topic_item: TopicItem):
+        role = topic_item.role
+        for member in role.members:
+            embed_data = await self.bot.make_generic_embed(title=f"Topic {topic_item.name} was removed!",
+                                                           description=f"The Topic `{topic_item.name}` was removed as a topic, therefor the assigned role {topic_item.role.mention} has been removed from your account!")
+            await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+            await asyncio.sleep(0.25)
+
+    async def sucess_subscribed_embed(self, member: discord.Member, topic: TopicItem):
+        embed_data = await self.bot.make_generic_embed(title="Successfully Subscribed", description=f"You are now subscribed to {topic.name} and will get pinged if they have an Announcement.",
+                                                       thumbnail="subscribed",
+                                                       fields=[self.bot.field_item(name="Subscription Role", value=f"For this purpose you have been assigne the Role `{topic.role.name}`", inline=False),
+                                                               self.bot.field_item(name="Unsubscribe", value=f"To Unsubscribe just remove your emoji from the subscription post [link to post]({topic.message.jump_url})", inline=False),
+                                                               self.bot.field_item(name="Unsubscribe Command", value=f"You can also use the command `@AntiPetros unsubscribe {topic.name}`", inline=False)])
+        await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+    async def sucess_unsubscribed_embed(self, member: discord.Member, topic: TopicItem):
+        embed_data = await self.bot.make_generic_embed(title="Successfully Unsubscribed", description=f"You are now no longer subscribed to {topic.name} and will NOT get pinged anymore if they have an Announcement.",
+                                                       thumbnail="update",
+                                                       fields=[self.bot.field_item(name="Subscription Role", value=f"The Role {topic.role.name} has been removed", inline=False)])
+        await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+    async def _confirm_topic_creation_deletion(self, ctx: commands.Context, topic_item: TopicItem, typus: str):
+        topic_embed_data = await self.bot.make_generic_embed(**topic_item.embed_data)
+        description = f"Are you sure you want to create the Topic `{topic_item.name}`, with the following subscription message?" if typus == 'creation' else f"Are you sure you want to REMOVE the topic `{topic_item.name}`, with that subscription message above?"
+        confirmation_embed_data = await self.bot.make_generic_embed(title='Confirmation Required',
+                                                                    description=description,
+                                                                    fields=[self.bot.field_item(name='Time to answer', value="5 minutes"),
+                                                                            self.bot.field_item(name='To Confirm', value='React with ✅ to this message', inline=True),
+                                                                            self.bot.field_item(name='To Cancel', value="React with ❎ to this message", inline=True)])
+        topic_embed_message = await ctx.send(**topic_embed_data, allowed_mentions=discord.AllowedMentions.none())
+        conformation_message = await ctx.send(**confirmation_embed_data)
+
+        await conformation_message.add_reaction("✅")
+        await conformation_message.add_reaction("❎")
+
+        def check_confirm(payload: discord.RawReactionActionEvent):
+            return payload.message_id == conformation_message.id and payload.user_id == ctx.author.id and str(payload.emoji) in ['✅', '❎']
+        try:
+            payload = await self.bot.wait_for('raw_reaction_add', timeout=300.0, check=check_confirm)
+            if ctx.channel.type is discord.ChannelType.text:
+                await conformation_message.delete()
+                await topic_embed_message.delete()
+        except asyncio.TimeoutError:
+            description = "Cancelling Topic Creation because not answer was received" if typus == 'creation' else "Cancelling Topic Removal because no answer was received"
+            embed_data = await self.bot.make_generic_embed(title="Timed Out!", description=description, thumbnail="timeout")
+            await ctx.send(**embed_data)
+            if ctx.channel.type is discord.ChannelType.text:
+                await conformation_message.delete()
+                await topic_embed_message.delete()
+
+            return False
+        if str(payload.emoji) == '❎':
+            description = "Stopping Topic creation" if typus == 'creation' else "Stopping Topic removal"
+            embed_data = await self.bot.make_generic_embed(title='USER CANCELATION', description=description, thumbnail="cancelled")
+            await ctx.send(**embed_data)
+            return False
+        if str(payload.emoji) == '✅':
+            description = 'Topic creation confirmed, creating topic...' if typus == 'creation' else "Topic REMOVAL Confirmed, removing topic..."
+            embed_data = await self.bot.make_generic_embed(title="Confirmed", description=description, thumbnail="confirmed")
+            await ctx.send(**embed_data)
+            return True
+
+    async def _update_topic_embed(self, topic_item: TopicItem):
+        embed_data = await self.bot.make_generic_embed(**topic_item.embed_data)
+        await topic_item.message.edit(**embed_data)
+
+# endregion[Helper]
 
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"
@@ -675,8 +653,8 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     def __str__(self):
         return self.qualified_name
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
 # region[Main_Exec]
 

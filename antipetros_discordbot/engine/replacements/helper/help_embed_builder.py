@@ -10,47 +10,13 @@
 
 import gc
 import os
-import re
-import sys
-import json
-import lzma
-import time
-import queue
-import base64
-import pickle
-import random
-import shelve
-import shutil
-import asyncio
-import logging
-import sqlite3
-import platform
-import importlib
-import subprocess
 import unicodedata
 
-from io import BytesIO
-from abc import ABC, abstractmethod, ABCMeta
-from copy import copy, deepcopy
-from enum import Enum, Flag, auto, unique
-from time import time, sleep, monotonic_ns, time_ns
-from pprint import pprint, pformat
-from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
-from timeit import Timer
-from typing import Union, Callable, Iterable, TYPE_CHECKING, List, Dict, Any, Optional, Tuple, Set, Awaitable, get_type_hints, get_args, Mapping, Awaitable
-from zipfile import ZipFile
-from datetime import tzinfo, datetime, timezone, timedelta
-from tempfile import TemporaryDirectory
-from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
-from functools import wraps, partial, lru_cache, singledispatch, total_ordering, singledispatchmethod
-from importlib import import_module, invalidate_caches
-from contextlib import contextmanager
-from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict, UserDict
-from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
+from abc import ABC, abstractmethod
+from typing import Callable, Dict, TYPE_CHECKING, Union
+from datetime import datetime, timezone
+from functools import partial
+from collections import UserDict
 
 
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
@@ -62,28 +28,22 @@ from jinja2 import BaseLoader, Environment
 
 from natsort import natsorted
 
-from fuzzywuzzy import fuzz, process
 from discord.ext import commands, tasks, flags, ipc
 
 import gidlogger as glog
 
 from antipetros_discordbot.auxiliary_classes.all_item import AllItem
-from antipetros_discordbot.utility.exceptions import ParameterError
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writeit
-from antipetros_discordbot.utility.misc import delete_message_if_text_channel
-from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink, make_box
-from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, ExtraHelpParameter, HelpCategory
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
-from antipetros_discordbot.utility.general_decorator import is_refresh_task, universal_log_profiler, handler_method, handler_method_only_categories, handler_method_only_commands
-from antipetros_discordbot.utility.gidtools_functions import loadjson, readit
+from antipetros_discordbot.utility.general_decorator import handler_method, handler_method_only_commands
 from async_property import async_property
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink, make_box
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE, ListMarker, Seperators
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker, SPECIAL_SPACE, ZERO_WIDTH
 import inflect
 import inspect
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand
 from antipetros_discordbot.engine.replacements.helper import CommandCategory
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -267,7 +227,9 @@ class DefaulThumbnailProvider(AbstractProvider):
     provides = "thumbnail"
 
     async def __call__(self):
-        return None
+
+        if hasattr(self.in_object, 'gif') and self.in_object.gif is not None:
+            return self.in_object.gif
 
 
 class DefaulImageProvider(AbstractProvider):
@@ -321,9 +283,10 @@ class DefaultFieldsProvider(AbstractFieldProvider):
 
             else:
                 channel_member_permissions = channel.permissions_for(self.member)
-                if channel_member_permissions.administrator is True or channel_member_permissions.read_messages is True:
+                if channel_member_permissions.administrator is True or all(perms is True for perms in [channel_member_permissions.read_messages, channel_member_permissions.send_messages]):
                     _out.append(channel)
-        return _out
+
+        return set(_out)
 
     @ handler_method
     async def _handle_usage(self):
@@ -342,7 +305,7 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
-    @handler_method_only_commands
+    @ handler_method_only_commands
     async def _handle_allowed_members(self):
         attr_name = "allowed_members"
         name = await self.handle_name(attr_name)
@@ -358,7 +321,7 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         attr_name = "allowed_channels"
         name = await self.handle_name(attr_name)
         channels = sorted(getattr(self.in_object, attr_name), key=lambda x: x.position)
-        value = ListMarker.make_column_list([channel.mention for channel in channels], ListMarker.star, amount_columns=1)
+        value = ListMarker.make_column_list([channel.mention for channel in channels if channel in self.visible_channels], ListMarker.star, amount_columns=1)
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
@@ -379,13 +342,13 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
-    @ handler_method
-    async def _handle_github_link(self):
-        attr_name = "github_link"
-        name = await self.handle_name(attr_name)
-        value = embed_hyperlink('link 🔗', getattr(self.in_object, attr_name))
-        inline = True
-        return self.field_item(name=name, value=value, inline=inline)
+    # @ handler_method
+    # async def _handle_github_link(self):
+    #     attr_name = "github_link"
+    #     name = await self.handle_name(attr_name)
+    #     value = embed_hyperlink('link 🔗', getattr(self.in_object, attr_name))
+    #     inline = True
+    #     return self.field_item(name=name, value=value, inline=inline)
 
     @ handler_method
     async def _handle_github_wiki_link(self):
@@ -406,7 +369,7 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
-    @handler_method
+    @ handler_method
     async def _handle_example(self):
         attr_name = "example"
         name = await self.handle_name(attr_name)
@@ -414,7 +377,7 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
-    @handler_method_only_commands
+    @ handler_method_only_commands
     async def _handle_commands_co(self):
         attr_name = "commands"
         name = await self.handle_name('sub_commands')
@@ -422,11 +385,29 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 
+    @handler_method_only_commands
+    async def _handle_hidden(self):
+        attr_name = "hidden"
+        name = await self.handle_name(attr_name)
+        value = self.bool_symbol_map.get(getattr(self.in_object, attr_name))
+        inline = True
+        return self.field_item(name=name, value=value, inline=inline)
+
+    @handler_method_only_commands
+    async def _handle_enabled(self):
+        attr_name = "enabled"
+        name = await self.handle_name(attr_name)
+        value = self.bool_symbol_map.get(getattr(self.in_object, attr_name))
+        inline = True
+        return self.field_item(name=name, value=value, inline=inline)
+
 
 class DefaultColorProvider(AbstractProvider):
     provides = 'color'
 
     async def __call__(self):
+        if isinstance(self.in_object, commands.Command):
+            return self.in_object.cog.color
         return 'GIDDIS_FAVOURITE'
 
 
@@ -482,8 +463,7 @@ class HelpEmbedBuilder:
                                                        timestamp=await self.timestamp_provider())
 
         yield embed_data
-        if hasattr(self.in_object, "gif") and self.in_object.gif is not None:
-            yield {"file": discord.File(self.in_object.gif)}
+
 
 # region[Main_Exec]
 

@@ -1,0 +1,337 @@
+[
+    {
+        "category": "Information",
+        "name": "announcements",
+        "position": 0
+    },
+    {
+        "category": "Information",
+        "name": "starters-information",
+        "position": 1
+    },
+    {
+        "category": "Information",
+        "name": "server-rules",
+        "position": 2
+    },
+    {
+        "category": "Information",
+        "name": "faq",
+        "position": 3
+    },
+    {
+        "category": "Information",
+        "name": "server-status",
+        "position": 4
+    },
+    {
+        "category": "Information",
+        "name": "teams-roster",
+        "position": 5
+    },
+    {
+        "category": "Information",
+        "name": "github-and-travis",
+        "position": 6
+    },
+    {
+        "category": "Information",
+        "name": "mod-suggestion-channel",
+        "position": 7
+    },
+    {
+        "category": "Event Corner",
+        "name": "event-announcements",
+        "position": 8
+    },
+    {
+        "category": "Event Corner",
+        "name": "event-meeting-notes",
+        "position": 9
+    },
+    {
+        "category": "Event Corner",
+        "name": "event-suggestions",
+        "position": 10
+    },
+    {
+        "category": "Event Corner",
+        "name": "event-discussions",
+        "position": 11
+    },
+    {
+        "category": "Questions & Reports",
+        "name": "bug-report-gameplay-feedback",
+        "position": 12
+    },
+    {
+        "category": "Questions & Reports",
+        "name": "help",
+        "position": 13
+    },
+    {
+        "category": "Questions & Reports",
+        "name": "suggestions",
+        "position": 14
+    },
+    {
+        "category": "Questions & Reports",
+        "name": "discussion-of-suggestions",
+        "position": 15
+    },
+    {
+        "category": "Questions & Reports",
+        "name": "community-questions",
+        "position": 16
+    },
+    {
+        "category": "Questions & Reports",
+        "name": "report-form",
+        "position": 17
+    },
+    {
+        "category": "Questions & Reports",
+        "name": "remarks-form",
+        "position": 18
+    },
+    {
+        "category": "Chat",
+        "name": "general",
+        "position": 19
+    },
+    {
+        "category": "Chat",
+        "name": "trial-members",
+        "position": 20
+    },
+    {
+        "category": "Chat",
+        "name": "full-members",
+        "position": 21
+    },
+    {
+        "category": "Chat",
+        "name": "bot-commands",
+        "position": 22
+    },
+    {
+        "category": "Chat",
+        "name": "looking-for-group",
+        "position": 23
+    },
+    {
+        "category": "Tac Room",
+        "name": "tactical-library",
+        "position": 24
+    },
+    {
+        "category": "Tac Room",
+        "name": "tactical-knowledge",
+        "position": 25
+    },
+    {
+        "category": "Tac Room",
+        "name": "training-discussion",
+        "position": 26
+    },
+    {
+        "category": "Tac Room",
+        "name": "war-stories",
+        "position": 27
+    },
+    {
+        "category": "pictures & offtopic",
+        "name": "arma-media",
+        "position": 28
+    },
+    {
+        "category": "pictures & offtopic",
+        "name": "offtopic",
+        "position": 29
+    },
+    {
+        "category": "pictures & offtopic",
+        "name": "other-games",
+        "position": 30
+    },
+    {
+        "category": "pictures & offtopic",
+        "name": "arma-memes",
+        "position": 31
+    },
+    {
+        "category": "Community Info",
+        "name": "selective-votes",
+        "position": 32
+    },
+    {
+        "category": "Community Info",
+        "name": "meeting-notes",
+        "position": 33
+    },
+    {
+        "category": "Community Info",
+        "name": "trial-membership-reconmendations",
+        "position": 34
+    },
+    {
+        "category": "Admin Info",
+        "name": "admin-meeting-notes",
+        "position": 35
+    },
+    {
+        "category": "Admin Info",
+        "name": "to-do-list",
+        "position": 36
+    },
+    {
+        "category": "Admin Info",
+        "name": "remarks",
+        "position": 37
+    },
+    {
+        "category": "Admin Info",
+        "name": "reports",
+        "position": 38
+    },
+    {
+        "category": "Admin Info",
+        "name": "black-book",
+        "position": 39
+    },
+    {
+        "category": "Admin Info",
+        "name": "probationary-list",
+        "position": 40
+    },
+    {
+        "category": "Admin Info",
+        "name": "mute-appeals",
+        "position": 41
+    },
+    {
+        "category": "Admin Info",
+        "name": "logs",
+        "position": 42
+    },
+    {
+        "category": "Staff Rooms",
+        "name": "teams-locker-room",
+        "position": 43
+    },
+    {
+        "category": "Staff Rooms",
+        "name": "admin-team",
+        "position": 44
+    },
+    {
+        "category": "Staff Rooms",
+        "name": "trial-admin",
+        "position": 45
+    },
+    {
+        "category": "Staff Rooms",
+        "name": "pr-team",
+        "position": 46
+    },
+    {
+        "category": "Staff Rooms",
+        "name": "event-team",
+        "position": 47
+    },
+    {
+        "category": "Staff Rooms",
+        "name": "event-submission",
+        "position": 48
+    },
+    {
+        "category": "Staff Rooms",
+        "name": "back-end-team",
+        "position": 49
+    },
+    {
+        "category": "Staff Rooms",
+        "name": "art-room",
+        "position": 50
+    },
+    {
+        "category": "Staff Rooms",
+        "name": "art-workorders",
+        "position": 51
+    },
+    {
+        "category": "Staff Rooms",
+        "name": "armahosts",
+        "position": 52
+    },
+    {
+        "category": "Staff Rooms",
+        "name": "discord-announcements",
+        "position": 53
+    },
+    {
+        "category": "Development Corner",
+        "name": "general-dev-stuff",
+        "position": 54
+    },
+    {
+        "category": "Development Corner",
+        "name": "dev-meeting-notes",
+        "position": 55
+    },
+    {
+        "category": "Development Corner",
+        "name": "idea-stream",
+        "position": 56
+    },
+    {
+        "category": "Development Corner",
+        "name": "data-analysis",
+        "position": 57
+    },
+    {
+        "category": "Development Corner",
+        "name": "homepage",
+        "position": 58
+    },
+    {
+        "category": "Development Corner",
+        "name": "data-dump-ie-rpts",
+        "position": 59
+    },
+    {
+        "category": "Development Corner",
+        "name": "picture-dump",
+        "position": 60
+    },
+    {
+        "category": "Development Corner",
+        "name": "bot-development",
+        "position": 61
+    },
+    {
+        "category": "Development Corner",
+        "name": "bot-testing",
+        "position": 62
+    },
+    {
+        "category": "Development Corner",
+        "name": "dev-thrash",
+        "position": 63
+    },
+    {
+        "category": "Development Corner",
+        "name": "testing-facility",
+        "position": 64
+    },
+    {
+        "category": "Development Corner",
+        "name": "template-system-2_0",
+        "position": 65
+    },
+    {
+        "category": "Development Corner",
+        "name": "beer",
+        "position": 66
+    }
+]

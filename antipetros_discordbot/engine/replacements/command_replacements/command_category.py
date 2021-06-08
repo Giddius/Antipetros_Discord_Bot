@@ -7,49 +7,22 @@
 # region [Imports]
 
 # * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
-import gc
 import os
 import re
-import unicodedata
-
 from typing import List, Set, TYPE_CHECKING, Union
 from inspect import getdoc
 
-
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
 import discord
-
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-# from discord import Embed, File
-
 from discord.ext import commands, tasks
-
-# from github import Github, GithubException
-
-# from jinja2 import BaseLoader, Environment
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
 import inspect
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
+from inspect import getdoc, getsourcefile, getsourcelines
 
+# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 import gidlogger as glog
-from inspect import getdoc, getfile, getsourcefile, getsource, getsourcelines
 from antipetros_discordbot.schemas import CommandCategorySchema
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
+from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.utility.misc import make_config_name, sync_antipetros_repo_rel_path
 from antipetros_discordbot.engine.replacements.helper import JsonMetaDataProvider
 from antipetros_discordbot.auxiliary_classes.all_item import AllItem
@@ -150,9 +123,20 @@ class CommandCategoryMeta(type):
     def __or__(cls, other):
         if cls is other:
             return [cls]
+
+        if isinstance(other, list):
+            if cls in other:
+                return other
+
+            if all(issubclass(item, cls.base_command_category) for item in other):
+                other.append(cls)
+                return other
         if issubclass(other, cls.base_command_category):
             return [cls, other]
         raise NotImplementedError
+
+    def __ror__(cls, other):
+        return cls | other
 
     def __hash__(cls) -> int:
         return hash((cls.name, cls.__class__.__name__))
@@ -341,20 +325,20 @@ class MetaCommandCategory(CommandCategory):
         return set(_out)
 
 
-# class NotImplementedCommandCategory(CommandCategory):
-#     """
-#     NOT YET IMPLEMENTED!
-#     """
-#     commands = []
+class NotImplementedCommandCategory(CommandCategory):
+    """
+    NOT YET IMPLEMENTED!
+    """
+    commands = []
 
-#     @classmethod
-#     @property
-#     def allowed_roles(cls) -> Set[str]:
-#         return set()
+    @classmethod
+    @property
+    def allowed_roles(cls) -> Set[str]:
+        return set()
 
-#     @classmethod
-#     def visibility_check(cls, in_member: discord.Member):
-#         return False
+    @classmethod
+    def visibility_check(cls, in_member: discord.Member):
+        return False
 
 
 # region[Main_Exec]

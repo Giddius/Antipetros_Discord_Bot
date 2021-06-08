@@ -8,22 +8,20 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-from typing import Dict, Generator, List, Optional, Iterable, Callable, Union, Iterable
+from typing import Generator, List, Union
 import asyncio
-import random
 
-from time import time, time_ns, monotonic, monotonic_ns, process_time, process_time_ns, perf_counter, perf_counter_ns
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import discord
-from collections import UserDict, namedtuple
+from sortedcontainers import SortedDict, SortedList
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus
+from functools import cached_property
 from antipetros_discordbot.auxiliary_classes.all_item import AllItem
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 # endregion[Imports]
 
 # region [TODO]
@@ -57,6 +55,28 @@ class AntistasiInformer(SubSupportBase):
     general_data_file = pathmaker(APPDATA['fixed_data'], 'general_data.json')
     everyone_role_id = 449481990513754112
     all_item = AllItem()
+    color_emoji_id_map = {'default': 839782169303449640,
+                          'black': 844965636861067295,
+                          'blue': 844965636585422889,
+                          'brown': 844965636811784192,
+                          'cyan': 844965636711251979,
+                          'dark_orange': 845066731545952266,
+                          'firebrick': 845066731327979522,
+                          'gold': 845066731558928384,
+                          'gray': 844965636920442890,
+                          'green': 844965636920573953,
+                          'honeydew': 845066731550277652,
+                          'light_blue': 845066731567185970,
+                          'olive': 844965636944691221,
+                          'orange': 844965636911530074,
+                          'pink': 844965636849008660,
+                          'purple': 844965636895014963,
+                          'red': 844965637058461696,
+                          'tan': 845066731562205244,
+                          'violet': 844965636895277097,
+                          'white': 844965636958715914,
+                          'yellow': 844965637160042496,
+                          'yellowgreen': 845066731624857610}
 
     def __init__(self, bot, support):
         self.bot = bot
@@ -66,10 +86,11 @@ class AntistasiInformer(SubSupportBase):
         self.members_name_dict = None
         self.roles_name_dict = None
         self.channels_name_dict = None
+        self.antistasi_guild_id = self.get_antistasi_guild_id()
+        self._antistasi_guild = None
 
         glog.class_init_notification(log, self)
 
-    @universal_log_profiler
     async def _make_stored_dicts(self):
         if self.antistasi_guild.chunked is False:
             await self.antistasi_guild.chunk(cache=True)
@@ -79,27 +100,43 @@ class AntistasiInformer(SubSupportBase):
             setattr(self, f"{cat}_name_dict", name_attr_dict)
             log.info("created '%s_name_dict' fresh", cat)
 
-    @property
+    @cached_property
     def everyone_role(self) -> discord.Role:
         return self.get_antistasi_role(self.everyone_role_id)
 
-    @property
+    @cached_property
+    def antistasi_image(self):
+        return "https://avatars0.githubusercontent.com/u/53788409?s=200&v=4"
+
+    @cached_property
     def bertha_emoji(self) -> discord.Emoji:
         return discord.utils.get(self.antistasi_guild.emojis, id=829666475035197470)
 
-    @property
+    @cached_property
+    def bot_emoji(self) -> discord.Emoji:
+        return discord.utils.get(self.bot_testing_guild.emojis, id=839782169303449640)
+
+    @cached_property
+    def server_emoji(self) -> discord.Emoji:
+        return discord.utils.get(self.bot_testing_guild.emojis, id=845740762900856838)
+
+    @cached_property
     def antistasi_invite_url(self) -> str:
         return BASE_CONFIG.retrieve('links', 'antistasi_discord_invite', typus=str, direct_fallback='')
 
-    @property
+    @cached_property
     def armahosts_url(self) -> str:
-        return BASE_CONFIG.retrieve('antistasi_info', 'armahosts_url', typus=str, direct_fallback='https://www.armahosts.com/')
+        return BASE_CONFIG.retrieve('antistasi_info', 'armahosts_url', typus=str, direct_fallback='https://www.armahosts.com/game')
 
-    @property
+    @cached_property
     def armahosts_icon(self) -> str:
         return BASE_CONFIG.retrieve('antistasi_info', 'armahosts_icon', typus=str, direct_fallback='https://pictures.alignable.com/eyJidWNrZXQiOiJhbGlnbmFibGV3ZWItcHJvZHVjdGlvbiIsImtleSI6ImJ1c2luZXNzZXMvbG9nb3Mvb3JpZ2luYWwvNzEwMzQ1MC9BUk1BSE9TVFMtV29ybGRzLUJsdWVJY29uTGFyZ2UucG5nIiwiZWRpdHMiOnsiZXh0cmFjdCI6eyJsZWZ0IjowLCJ0b3AiOjE0Miwid2lkdGgiOjIwNDgsImhlaWdodCI6MjA0OH0sInJlc2l6ZSI6eyJ3aWR0aCI6MTgyLCJoZWlnaHQiOjE4Mn0sImV4dGVuZCI6eyJ0b3AiOjAsImJvdHRvbSI6MCwibGVmdCI6MCwicmlnaHQiOjAsImJhY2tncm91bmQiOnsiciI6MjU1LCJnIjoyNTUsImIiOjI1NSwiYWxwaGEiOjF9fX19')
 
-    @property
+    @cached_property
+    def armahosts_emoji(self):
+        return discord.utils.get(self.antistasi_guild.emojis, id=839468368402317353)
+
+    @cached_property
     def armahosts_footer_text(self) -> str:
         return BASE_CONFIG.retrieve('antistasi_info', 'amahosts_footer_text', typus=str, direct_fallback='We thank ARMAHOSTS for providing the Server')
 
@@ -111,16 +148,30 @@ class AntistasiInformer(SubSupportBase):
     def general_data(self):
         return loadjson(self.general_data_file)
 
-    @ property
-    def antistasi_guild(self) -> discord.Guild:
-        guild_id = self.bot.get_guild(BASE_CONFIG.retrieve('general_settings', 'guild_id', typus=int, direct_fallback=None))
-        if guild_id is None:
+    def get_antistasi_guild_id(self):
+        _out = BASE_CONFIG.retrieve('general_settings', 'guild_id', typus=int, direct_fallback=None)
+        if _out is None:
             raise ValueError('You need to set "guild_id" under the section "general_settings" in the config file "base_config.ini"')
-        return guild_id
+        return _out
+
+    @property
+    def antistasi_guild(self) -> discord.Guild:
+        if self._antistasi_guild is None:
+            self._antistasi_guild = self.bot.get_guild(self.antistasi_guild_id)
+        return self._antistasi_guild
+
+    @cached_property
+    def bot_testing_guild(self) -> discord.Guild:
+        guild = self.bot.get_guild(837389179025096764)
+        return guild
 
     @ property
     def blacklisted_users(self) -> list:
         return loadjson(APPDATA['blacklist.json'])
+
+    async def get_color_emoji(self, color_name: str):
+        color_emoji_id = self.color_emoji_id_map.get(color_name.casefold(), 839782169303449640)
+        return discord.utils.get(self.bot_testing_guild.emojis, id=color_emoji_id)
 
     async def get_antistasi_emoji(self, name):
         for _emoji in self.antistasi_guild.emojis:
@@ -163,6 +214,17 @@ class AntistasiInformer(SubSupportBase):
     def get_antistasi_role(self, role_id: int) -> discord.Role:
         return self.antistasi_guild.get_role(role_id)
 
+    def get_channel_link(self, channel: Union[int, str, discord.TextChannel]):
+        base_url = "https://discord.com/channels"
+        if isinstance(channel, discord.TextChannel):
+            channel_id = channel.id
+        elif isinstance(channel, str):
+            channel_id = self.channel_from_name(channel).id
+        elif isinstance(channel, int):
+            channel_id = channel
+
+        return f"{base_url}/{self.antistasi_guild_id}/{channel_id}"
+
     async def all_members_with_role(self, role: str) -> List[discord.Member]:
         role = await self.role_from_string(role)
         _out = []
@@ -192,16 +254,5 @@ def get_class() -> SubSupportBase:
 
 
 if __name__ == '__main__':
-    # CheckItem = namedtuple("CheckItem", ['name', 'age', 'best_friend'])
-    # name_data = loadjson(r"D:\Dropbox\hobby\Modding\Programs\Github\My_Repos\Antipetros_Discord_Bot_new\tools\scratches\random_names.json")
-    # data = []
-    # for name in random.choices(name_data, k=100):
-    #     data.append(CheckItem(name, random.randint(1, 100), random.choice(name_data)))
-    # st_time = time_ns()
-    # x = AutoDict(['name', 'age'], data, True, lambda x: x.casefold(), lambda x: str(x[0]))
-    # taken_time = time_ns() - st_time
-    # taken_time = taken_time / 1000000000
-    # print(taken_time)
-    # writejson({key: value._asdict() for key, value in x.items()}, 'checky.json', sort_keys=False)
     pass
 # endregion[Main_Exec]

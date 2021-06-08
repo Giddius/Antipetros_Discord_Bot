@@ -26,6 +26,7 @@ from importlib import import_module
 import asyncio
 from inspect import getmembers, ismodule
 import isort
+from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
 GIT_EXE = shutil.which('git.exe')
 
 
@@ -166,6 +167,13 @@ SUB_COMMAND_NAME_VALUE_REGEX = re.compile(r"(?P<name>[\w\-]+)\s+(?P<description>
 JINJA_ENV = Environment(loader=FileSystemLoader(FOLDER.get('docs_templates')))
 
 
+class DependencyItem:
+    def __init__(self, name, version, url=None) -> None:
+        self.name = name
+        self.version = version
+        self.url = url
+
+
 def file_name_timestamp(with_brackets=False):
     now = datetime.now()
     timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
@@ -220,7 +228,7 @@ def activator_run(c, command, echo=True, **kwargs):
 
 @task
 def clean_repo(c):
-    to_clean_folder = ['logs', 'dist']
+    to_clean_folder = ['logs', 'dist', 'report']
     to_clean_files = ['antipetros_permission_dump.json',
                       'antidevtros_permission_dump.json']
     main_dir = THIS_FILE_DIR
@@ -301,7 +309,11 @@ def clean_userdata(c, dry_run=False):
                       "team_items.json",
                       "subscription_topics_data.json",
                       "bot_feature_suggestions.json",
-                      "message_reaction_instructions_dat.json"]
+                      "message_reaction_instructions_data.json",
+                      "is_online_messages.json",
+                      "notified_log_files.json",
+                      "stored_reasons.json",
+                      "faq_name_table.json"]
 
     if dry_run is True:
         print('')
@@ -337,6 +349,7 @@ def store_userdata(c):
                                                 "token.pickle",
                                                 "save_link_db.db",
                                                 "save_suggestion.db",
+                                                "general_antipetros.db",
                                                 "archive/*",
                                                 "performance_data/*",
                                                 "stats/*",
@@ -484,6 +497,16 @@ def clear_icecream(c):
             f_mod.write('\n'.join(new_content_lines))
 
 
+PACKAGE_URL_REGEX = re.compile(r"home-page\:\s?(?P<url>.*)", re.IGNORECASE)
+
+
+def get_package_url(c, package_name):
+    package_info = activator_run(c, f"pip show {package_name}")
+    url_match = PACKAGE_URL_REGEX.search(package_info)
+    if url_match:
+        return url_match.group('url').strip()
+
+
 @task
 def set_requirements(c):
     old_cwd = os.getcwd()
@@ -508,9 +531,15 @@ def set_requirements(c):
     pyproject["tool"]["flit"]["metadata"]['requires'] = _requirements
     with open('pyproject.toml', 'w') as f:
         f.write(tomlkit.dumps(pyproject))
-    prod_file = pathmaker('tools', 'venv_setup_settings', 'required_production.txt')
-    with open(prod_file, 'w') as fprod:
-        fprod.write('\n'.join(_requirements))
+    prod_file = pathmaker('temp', 'temp_requirements.json')
+    specifier_regex = re.compile(r"(\=\=)|(\>\=)|(\<\=)|(\~\=)")
+    temp_stored_requirements = []
+    for req in _requirements:
+        name, version = specifier_regex.split(req)
+        temp_stored_requirements.append({'name': name.strip(),
+                                         'version': version.strip(),
+                                         'url': get_package_url(c, name)})
+    writejson(temp_stored_requirements, prod_file, sort_keys=False)
     os.chdir(old_cwd)
 
 
@@ -573,18 +602,11 @@ def get_subcommands(c, script_name):
 
 
 def get_dependencies():
-    _out = {}
-    raw_dependencies = flit_data('dependencies')
-    for raw_dependency in raw_dependencies:
-        if "uvloop" not in raw_dependency:
-            try:
-                name, version = raw_dependency.split('==')
-                _out[name.strip()] = version.strip()
-            except ValueError as error:
-                print(raw_dependency)
-                raise error
-
-    return dict(sorted(_out.items()))
+    _out = []
+    prod_file = pathmaker('temp', 'temp_requirements.json')
+    for item in prod_file:
+        _out.append(DependencyItem(**item))
+    return sorted(_out, key=lambda x: x.name.casefold())
 
 
 def get_python_version():
@@ -767,13 +789,13 @@ def build(c, typus='patch', description=None):
     NOTIFIER.show_toast(title=f"Finished Building {PROJECT_NAME}", icon_path=r"art/finished/icons/pip.ico", duration=15, msg=f"Published {PROJECT_NAME}, Version {get_package_version()} to PyPi")
 
 
-def get_alternative_name(name, number=0):
+def get_alternative_name(name, number=0, extension='.py'):
     if number == 0:
         mod_name = name
     else:
         mod_name = f"{name}_{number}"
 
-    if mod_name.casefold() in {file.name.split('.')[0].casefold() for file in os.scandir(FOLDER.get('scratches')) if file.is_file() and file.name.endswith('.py')}:
+    if mod_name.casefold() in {file.name.split('.')[0].casefold() for file in os.scandir(FOLDER.get('scratches')) if file.is_file() and file.name.endswith(extension)}:
         return get_alternative_name(name, number + 1)
     return mod_name
 
@@ -789,6 +811,17 @@ def new_scratch(c, prefix=None):
         f.write(SCRATCH_BOILER + '\n\n\n\n')
         f.write("if __name__ == '__main__':\n")
         f.write("\tpass\n")
+
+
+@task
+def new_notebook(c, name):
+    if os.path.isdir(FOLDER.get('scratches')) is False:
+        os.makedirs(FOLDER.get('scratches'))
+    name = name.casefold()
+    file_name = get_alternative_name(name, extension='.ipynb') + '.ipynb'
+    full_path = pathmaker(FOLDER.get('scratches'), file_name)
+    with open(full_path, 'w') as f:
+        f.write("")
 
 
 def extend_content_table(archive_name, file_paths):
@@ -999,3 +1032,42 @@ def delete_all_git_branches_except_development(c, force=False):
             print(error)
         c.run("git remote prune origin", echo=True, warn=True)
     print("the following branches are not fully merged:\n" + '\n'.join(not_fully_merged))
+
+
+@task(name='process-meta-data')
+def process_meta_data(c):
+    docstring_regex = re.compile(r"(?P<description>.*?)(?P<args>args\:.*?(?=example\:)?)?(?P<example>example\:.*?)?(?P<extra_info>info\:.*)?$", re.IGNORECASE | re.DOTALL)
+    file_path = pathmaker(THIS_FILE_DIR, 'antipetros_discordbot', 'init_userdata', 'data_pack', 'fixed_data', 'documentation', 'command_meta_data.json')
+    data = loadjson(file_path)
+    _new_dict = {}
+    for command_name, command_attrs in data.items():
+        new_attrs = {'docstring': None,
+                     'example': None,
+                     'long_description': None,
+                     'brief': None,
+                     'extra_info': None,
+                     'description': None,
+                     'short_doc': None} | command_attrs
+
+        if new_attrs.get('docstring'):
+            docstring = new_attrs.get('docstring')
+            docstring_match = docstring_regex.search(docstring)
+            if docstring_match:
+                if not new_attrs.get('description') and docstring_match.group('description'):
+                    new_attrs['description'] = '\n'.join(map(lambda x: x.strip(), [line for line in docstring_match.group('description').splitlines() if line != '']))
+
+                if not new_attrs.get('example') and docstring_match.group('example'):
+                    new_attrs['example'] = '\n'.join(map(lambda x: x.strip(), [line for line in docstring_match.group('example').splitlines() if line != '' and line.strip().casefold() != 'example:']))
+
+                if not new_attrs.get('extra_info') and docstring_match.group('extra_info'):
+                    new_attrs['extra_info'] = '\n'.join(map(lambda x: x.strip(), [line for line in docstring_match.group('extra_info').splitlines() if line != '' and line.strip().casefold() != 'info:']))
+
+                if not new_attrs.get('short_doc') and docstring_match.group('description'):
+                    new_attrs['short_doc'] = list(map(lambda x: x.strip(), [line for line in docstring_match.group('description').splitlines() if line != '']))[0]
+
+                if not new_attrs.get('brief') and new_attrs.get('short_doc'):
+                    brief = new_attrs.get("short_doc")
+                    new_attrs['brief'] = shorten(brief, 30)
+
+        _new_dict[command_name] = new_attrs
+    writejson(_new_dict, file_path)

@@ -39,7 +39,6 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, Command
 from typing import TYPE_CHECKING
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -75,7 +74,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADMINTOOLS, "hidden": True}):
     """
-    WiP
+    Commands to send the Rules found in the Rules channel as embed and optional as answer.
     """
 # region [ClassAttributes]
 
@@ -91,26 +90,17 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     rules_channel_id = 648725988813045765
     rules_message_regex = re.compile(r"^(?P<number>\d+(\.\d)?)[\)\.]\s?\-?(?P<text>.*)")
     links_message_regex = re.compile(r"(?P<name>.*)\n(?P<link>https\:\/\/.*)")
-    fake_fight_club_rules = {'1st RULE': 'You do not talk about **Antistasi**.',
-                             '2nd RULE': 'You __DO__ __NOT__ talk about **Antistasi**.',
-                             '3rd RULE': 'If someone surrenders or goes limp, double tap him to be sure.',
-                             '4th RULE': 'Only twenty guys to a mega-squad.',
-                             '5th RULE': 'One mega-squad at a time.',
-                             '6th RULE': 'No priest outfit, no shoes, wear sandals.',
-                             '7th RULE': 'Campaigns will go on till sunday or till we finally killed all '
-                             'civis.',
-                             '8th RULE': 'If this is your first night at **Antistasi**, you __HAVE__ to '
-                             'squadlead.'}
 
 
 # endregion [ClassAttributes]
 
 # region [Init]
 
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.rules_messages = {}
+        self.color = "gold"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
@@ -120,20 +110,18 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def rules_channel(self):
         return self.bot.channel_from_id(self.rules_channel_id)
 
 # endregion [Properties]
 
 # region [Setup]
-    @universal_log_profiler
+
     async def on_ready_setup(self):
         asyncio.create_task(self.get_rules_messages())
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -148,7 +136,6 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
 # region [Listener]
 
     @commands.Cog.listener(name="on_raw_message_edit")
-    @universal_log_profiler
     async def update_rules(self, payload: discord.RawMessageUpdateEvent):
         if payload.channel_id != self.rules_channel_id:
             return
@@ -162,6 +149,16 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def exploits_rules(self, ctx: commands.Context):
+        """
+        Sends the exploits rules as embed.
+
+        Example:
+            @AntiPetros exploits-rules
+
+        Info:
+            If this command is used in an reply, the resulting embeds will also be replies to that message, but without extra ping.
+            It also attaches the links from the rules channels `further reading`
+        """
         embed_data = await self._make_rules_embed(self.rules_messages.get('exploits'))
         msg = await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
         bertha_emoji = self.bot.bertha_emoji
@@ -174,6 +171,16 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def community_rules(self, ctx: commands.Context):
+        """
+        Sends the community rules as embed.
+
+        Example:
+            @AntiPetros community-rules
+
+        Info:
+            If this command is used in an reply, the resulting embeds will also be replies to that message, but without extra ping.
+            It also attaches the links from the rules channels `further reading`
+        """
         embed_data = await self._make_rules_embed(self.rules_messages.get('community'))
         msg = await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
         bertha_emoji = self.bot.bertha_emoji
@@ -186,6 +193,16 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 30, commands.BucketType.channel)
     async def server_rules(self, ctx: commands.Context):
+        """
+        Sends the server rules as embed.
+
+        Example:
+            @AntiPetros server-rules
+
+        Info:
+            If this command is used in an reply, the resulting embeds will also be replies to that message, but without extra ping.
+            It also attaches the links from the rules channels `further reading`
+        """
         embed_data = await self._make_rules_embed(self.rules_messages.get('server'))
         msg = await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
         bertha_emoji = self.bot.bertha_emoji
@@ -198,25 +215,20 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     @allowed_channel_and_allowed_role(False)
     @commands.cooldown(1, 90, commands.BucketType.channel)
     async def all_rules(self, ctx: commands.Context):
+        """
+        Sends all rules as embed. One embed per rule type (Server, Community, Exploits)
+
+
+        Example:
+            @AntiPetros all-rules
+
+        Info:
+            If this command is used in an reply, the resulting embeds will also be replies to that message, but without extra ping.
+            It also attaches the links from the rules channels `further reading`
+        """
         await self.exploits_rules(ctx)
         await self.community_rules(ctx)
         await self.server_rules(ctx)
-
-    @auto_meta_info_command()
-    @allowed_channel_and_allowed_role(False)
-    @commands.cooldown(1, 30, commands.BucketType.channel)
-    async def better_rules(self, ctx: commands.Context):
-        fields = []
-        for rule_num, rule_text in self.fake_fight_club_rules.items():
-            fields.append(self.bot.field_item(name=f"**{rule_num}**", value=rule_text))
-        embed_data = await self.bot.make_generic_embed(title='The Better Community Rules',
-                                                       description="Welcome to ~~  FIGHT  ~~ **ANTISTASI**",
-                                                       footer={'text': '\\s ... Big \\S'},
-                                                       fields=fields,
-                                                       thumbnail='stupid_logo',
-                                                       color='pink')
-
-        await ctx.reply(**embed_data)
 
 
 # endregion [Commands]
@@ -228,7 +240,7 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
 
 # region [HelperMethods]
 
-    @universal_log_profiler
+
     async def _make_rules_embed(self, rule_message: discord.Message):
         fields = await self.parse_rules(rule_message)
         fields.append(self.bot.field_item(name="Additional Rules Documents", value='\n'.join(await self.parse_links())))
@@ -239,15 +251,14 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
                                                        timestamp=timestamp,
                                                        footer={'text': "Last updated:"},
                                                        fields=fields,
-                                                       thumbnail='bertha_emoji_version',
+                                                       thumbnail=str(self.bot.bertha_emoji.url),
                                                        color='red')
         return embed_data
 
-    @universal_log_profiler
     async def get_rules_messages(self):
         self.rules_messages = {}
         async for message in self.rules_channel.history(limit=None):
-            content = message.content.strip().strip('-*').strip()
+            content = discord.utils.remove_markdown(message.content).strip('-').strip()
             first_line = content.splitlines()[0].strip('*_').casefold()
             if first_line == 'community rules':
                 self.rules_messages['community'] = message
@@ -258,7 +269,6 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
             elif first_line == 'a summary of currently known and reported exploits:':
                 self.rules_messages['exploits'] = message
 
-    @universal_log_profiler
     async def parse_rules(self, message: discord.Message) -> list:
         fields = []
         for line in message.content.splitlines():
@@ -275,7 +285,6 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
         fields.append(self.bot.field_item(name=Seperators.make_line('double', 10), value=ZERO_WIDTH))
         return fields
 
-    @universal_log_profiler
     async def parse_links(self) -> list:
         links = []
         for item_match in self.links_message_regex.finditer(self.rules_messages.get('links').content):
@@ -301,8 +310,8 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

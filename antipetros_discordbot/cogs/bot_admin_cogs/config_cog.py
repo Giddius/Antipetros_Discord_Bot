@@ -17,17 +17,16 @@ from functools import partial
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import delete_message_if_text_channel, make_other_source_code_images
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel, loop_starter, make_other_source_code_images
 from antipetros_discordbot.utility.checks import log_invoker, owner_or_admin
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 
 from antipetros_discordbot.utility.converters import CommandConverter
 from antipetros_discordbot.utility.exceptions import ParameterErrorWithPossibleParameter
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker, ZERO_WIDTH, SPECIAL_SPACE, Seperators
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker, ZERO_WIDTH
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, RequiredFolder, auto_meta_info_command, auto_meta_info_group
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -96,11 +95,12 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 # endregion[ClassAttributes]
 
 # region [Init]
-    @universal_log_profiler
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
         self.aliases = {}
+        self.color = "orange"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
@@ -110,17 +110,16 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
 # region [Setup]
 
-    @universal_log_profiler
     async def on_ready_setup(self):
         """
         standard setup async method.
         The Bot calls this method on all cogs when he has succesfully connected.
         """
-
+        for loop in self.loops.values():
+            loop_starter(loop)
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -130,9 +129,7 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
 # region [Properties]
 
-
     @property
-    @universal_log_profiler
     def existing_configs(self):
         existing_configs = {}
         for file in os.scandir(self.config_dir):
@@ -141,37 +138,31 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         return existing_configs
 
     @property
-    @universal_log_profiler
     def notify_when_changed(self):
         return COGS_CONFIG.retrieve(self.config_name, 'notify_when_changed', typus=bool, direct_fallback=False)
 
     @property
-    @universal_log_profiler
     def notify_via(self):
         return COGS_CONFIG.retrieve(self.config_name, 'notify_via', typus=str, direct_fallback='bot-testing')
 
     @property
-    @universal_log_profiler
     def notify_role_names(self):
         return COGS_CONFIG.retrieve(self.config_name, 'notify_roles', typus=List[str], direct_fallback=['admin'])
 
     @property
-    @universal_log_profiler
     def all_alias_names(self):
         _out = []
-        for key, value in self.aliases.items():
+        for key, value in loadjson(self.alias_file).items():
             _out.append(key)
             _out += value
-        return _out
+        return set(_out)
 # endregion[Properties]
 
 # region [HelperMethods]
 
-    @universal_log_profiler
     async def get_notify_roles(self):
         return [self.bot.role_from_string(role_name) for role_name in self.notify_role_names]
 
-    @universal_log_profiler
     async def send_config_file(self, ctx, config_name):
         config_path = self.existing_configs.get(config_name)
         modified = datetime.fromtimestamp(os.stat(config_path).st_mtime).astimezone(timezone.utc)
@@ -191,38 +182,69 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
 # region [Commands]
 
+
     @auto_meta_info_group(case_insensitive=True, categories=[CommandCategory.META], invoke_without_command=False)
     @owner_or_admin()
     async def change_prefix(self, ctx: commands.Context):
-        pass
+        """
+        Group command to interact with Bot prefixes.
+
+        Example:
+            @AntiPetros change_prefix add -?-
+
+        Info:
+            Can not be invoked on its own and has to be used with one of the sub-commands
+        """
 
     @change_prefix.command(name='add')
     @owner_or_admin()
     async def add_prefix(self, ctx: commands.Context, *, new_prefix: str):
-        current_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+        """
+        Adds a new prefix to the bot, with which he can be invoked.
+
+        Prefix can not be an duplicate of an already existing one.
+
+        Args:
+            new_prefix (str): The new prefix, can not contain spaces, but can be an std-emoji. No custom emojis.
+
+        Example:
+            @AntiPetros change_prefix add ??
+
+
+        Info:
+            It is best to only use lowercase letters if letters or words are used.
+        """
+        non_mention_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
         if ' ' in new_prefix:
             await ctx.send(embed=await self.bot.make_cancelled_embed(title='change_prefix add Error', msg='A prefix can not contain spaces!'))
             return
 
-        if new_prefix in current_prefixes:
-            embed_extra_info = f"Current Prefixes:\n{ZERO_WIDTH}\n```diff\n" + ListMarker.make_list(current_prefixes) + '\n```'
+        if new_prefix in non_mention_prefixes:
+            embed_extra_info = f"Current Prefixes:\n{ZERO_WIDTH}\n```diff\n" + ListMarker.make_list(non_mention_prefixes) + '\n```'
             await ctx.send(embed=await self.bot.make_cancelled_embed(title='change_prefix add Error', msg=f'Prefix `{new_prefix}` is already set as prefix for the bot!', extra=embed_extra_info))
             return
 
-        new_prefixes = current_prefixes + [new_prefix]
+        new_prefixes = non_mention_prefixes + [new_prefix]
         BASE_CONFIG.set('prefix', 'command_prefix', ', '.join(new_prefixes))
         await ctx.send(f"Prefix `{new_prefix}` was added to the bots Prefixes\nCurrent Prefixes:\n```diff\n" + '\n'.join(new_prefixes) + '\n```')
 
     @change_prefix.command(name='remove')
     @owner_or_admin()
     async def remove_prefix(self, ctx: commands.Context, *, prefix_to_remove: str):
-        current_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
-        if prefix_to_remove not in current_prefixes:
-            embed_extra_info = f"Current Prefixes:\n{ZERO_WIDTH}\n```diff\n" + ListMarker.make_list(current_prefixes) + '\n```'
+        """
+        Removes an existing prefix from the bot and makes it so the bot cant be invoked by it anymore.
+
+
+        Args:
+            prefix_to_remove (str): The prefix to remove, has to be an existing prefix
+        """
+        non_mention_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+        if prefix_to_remove not in non_mention_prefixes:
+            embed_extra_info = f"Current Prefixes:\n{ZERO_WIDTH}\n```diff\n" + ListMarker.make_list(non_mention_prefixes) + '\n```'
             await ctx.send(embed=await self.bot.make_cancelled_embed(title='change_prefix remove Error', msg=f"Prefix `{prefix_to_remove}` is not a Prefix of the bot", extra=embed_extra_info))
             return
 
-        new_prefixes = current_prefixes.copy()
+        new_prefixes = non_mention_prefixes.copy()
         new_prefixes.remove(prefix_to_remove)
         BASE_CONFIG.set('prefix', 'command_prefix', ', '.join(new_prefixes))
         await ctx.send(f"Prefix `{prefix_to_remove}` was removed from the bot Prefixes\nCurrent Prefixes:\n```diff\n" + '\n'.join(new_prefixes) + '\n```')
@@ -271,39 +293,6 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         else:
             await self.send_config_file(ctx, config_name)
 
-    @auto_meta_info_command()
-    @ owner_or_admin()
-    @ log_invoker(log, 'critical')
-    async def overwrite_config_from_file(self, ctx):
-        """
-        NOT IMPLEMENTED
-        """
-        await self.bot.not_implemented(ctx)
-
-    @ auto_meta_info_command()
-    @ owner_or_admin()
-    async def change_setting_to(self, ctx, config, section, option, value):
-        """
-        NOT IMPLEMENTED
-        """
-        await self.bot.not_implemented(ctx)
-
-    @ auto_meta_info_command()
-    @ owner_or_admin()
-    async def show_config_content(self, ctx: commands.Context, config_name: str = "all"):
-        """
-        NOT IMPLEMENTED
-        """
-        await self.bot.not_implemented(ctx)
-
-    @ auto_meta_info_command()
-    @ owner_or_admin()
-    async def show_config_content_raw(self, ctx: commands.Context, config_name: str = "all"):
-        """
-        NOT IMPLEMENTED
-        """
-        await self.bot.not_implemented(ctx)
-
     @ auto_meta_info_command()
     @ owner_or_admin()
     @ log_invoker(log, 'critical')
@@ -320,7 +309,6 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         Example:
             @AntiPetros add_alias flip_coin flip_it
         """
-        await self.refresh_command_aliases()
         new_alias = new_alias.casefold()
         if new_alias in self.all_alias_names:
             await ctx.send(f'Alias `{new_alias}` is already in use, either on this command or any other. Cannot be set as alias, aborting!')
@@ -332,61 +320,20 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         else:
             await ctx.send(f"error with adding alias `{new_alias}` to `{command.name}`, alias was **NOT** added!")
 
-    @ auto_meta_info_command(aliases=["profiling"])
-    @ owner_or_admin()
-    @ log_invoker(log, 'critical')
-    async def profiling_switch(self, ctx: commands.Context, action: str = "status"):
-        """
-        Turns log Profiling on or off, or reports if it is currently on or not.
+    @auto_meta_info_command()
+    @commands.is_owner()
+    async def toggle_config_access_logging(self, ctx: commands.Context):
+        current = os.getenv('LOG_CONFIG_RETRIEVE')
+        new = '0' if current == "1" else "1"
+        os.environ['LOG_CONFIG_RETRIEVE'] = new
+        as_text = 'OFF' if new == "0" else "ON"
+        await ctx.send(f"Config access loggin was turned {as_text}", delete_after=30)
+        await delete_message_if_text_channel(ctx)
 
-        Args:
-            action (str, optional): Needs to be one of "status", "enable", "disable", "switch". Defaults to "status".
-
-        Example:
-            @AntiPetros profiling_switch switch
-        """
-        action_map = {'status': self._report_profiling_enabled,
-                      'enable': partial(self._changed_profiling_enabled, new_status="1"),
-                      'disable': partial(self._changed_profiling_enabled, new_status="0"),
-                      'switch': self._changed_profiling_enabled}
-        if action.casefold() not in action_map:
-            raise ParameterErrorWithPossibleParameter('action', action, list(action_map.keys()))
-        await action_map.get(action)(ctx)
 # endregion [Commands]
 
 # region [Helper]
 
-    @universal_log_profiler
-    async def _report_profiling_enabled(self, ctx: commands.Context):
-        status = os.getenv('ANTIPETROS_PROFILING')
-        status = self.status_bool_string_map.get(status)
-        await ctx.send(f"Profiling is currently {status}", delete_after=120)
-        await delete_message_if_text_channel(ctx)
-
-    @universal_log_profiler
-    async def _changed_profiling_enabled(self, ctx: commands.Context, new_status: str = None):
-
-        current_status = os.getenv('ANTIPETROS_PROFILING')
-
-        if new_status == current_status:
-            status_string = self.status_bool_string_map(current_status)
-            await ctx.send(f"Profiling is already {status_string}!", delete_after=120)
-            await delete_message_if_text_channel(ctx)
-            return
-
-        if new_status is None:
-            change_to = "1" if current_status == "0" else "0"
-            BASE_CONFIG.set('profiling', "enable_profiling", change_to)
-            await ctx.send(f"Profiling has been {self.status_bool_string_map.get(change_to)}", delete_after=120)
-            await delete_message_if_text_channel(ctx)
-            return
-
-        BASE_CONFIG.set('profiling', "enable_profiling", new_status)
-        await ctx.send(f"Profiling has been {self.status_bool_string_map.get(new_status)}", delete_after=120)
-        await delete_message_if_text_channel(ctx)
-        return
-
-    @universal_log_profiler
     async def notify(self, event):
         roles = await self.get_notify_roles()
         embed_data = await event.as_embed_message()
@@ -404,14 +351,15 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
 
 # region [SpecialMethods]
 
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.user.name})"
 
     def __str__(self):
         return self.__class__.__name__
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 # endregion [SpecialMethods]
 
 

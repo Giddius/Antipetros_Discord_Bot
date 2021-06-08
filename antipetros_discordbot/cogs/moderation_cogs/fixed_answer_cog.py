@@ -39,7 +39,6 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 from typing import TYPE_CHECKING
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -76,7 +75,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADMINTOOLS, "hidden": True}):
     """
-    WiP
+    Commands that have a fixed answer and are mostly used to not have to type it out each time.
     """
 # region [ClassAttributes]
 
@@ -85,7 +84,9 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
     long_description = ""
     extra_info = ""
     required_config_data = {'base_config': {},
-                            'cogs_config': {}}
+                            'cogs_config': {"eta_message_title": "When it is ready",
+                                            "eta_message_text": "",
+                                            "bob_streaming_announcement_channel_name": "announcements"}}
 
     soon_thumbnails_file = pathmaker(APPDATA["embed_data"], 'soon_thumbnails.json')
 
@@ -97,10 +98,9 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 
 # region [Init]
 
-
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
+        self.color = "dark_orange"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
@@ -110,7 +110,6 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 # region [Properties]
 
     @property
-    @universal_log_profiler
     def soon_thumbnails(self):
         if os.path.isfile(self.soon_thumbnails_file) is False:
             writejson([""], self.soon_thumbnails_file)
@@ -121,13 +120,10 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 
 # region [Setup]
 
-
-    @universal_log_profiler
     async def on_ready_setup(self):
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         return
         log.debug('cog "%s" was updated', str(self))
@@ -150,6 +146,17 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
     @auto_meta_info_command(aliases=['eta', "update"])
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
     async def new_version_eta(self, ctx: commands.Context):
+        """
+        Send the text stored in the config regarding when new versions come out, as embed.
+
+
+        Example:
+            @AntiPetros eta
+
+
+        Info:
+            If this command is used in an reply, the resulting embeds will also be replies to that message, but without extra ping.
+        """
         title = COGS_CONFIG.retrieve(self.config_name, "eta_message_title", typus=str, direct_fallback='When it is ready')
         description = COGS_CONFIG.retrieve(self.config_name, "eta_message_text", typus=str, direct_fallback=embed_hyperlink("Antistasi Milestones on Github", "https://github.com/official-antistasi-community/A3-Antistasi/milestones"))
         embed_data = await self.bot.make_generic_embed(title=title,
@@ -201,8 +208,6 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
 
 # region [HelperMethods]
 
-
-    @universal_log_profiler
     async def _spread_out_text(self, text: str):
         return f"\n{ZERO_WIDTH}\n".join(line for line in text.splitlines() if line != '')
 
@@ -223,8 +228,8 @@ class FixedAnswerCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCate
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

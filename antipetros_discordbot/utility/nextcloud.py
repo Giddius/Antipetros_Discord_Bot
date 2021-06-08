@@ -6,14 +6,14 @@ def get_nextcloud_options():
     _options = {}
 
     if os.getenv('NEXTCLOUD_USERNAME') is not None:
-        _options['webdav_hostname'] = f"https://antistasi.de/dev_drive/remote.php/dav/files/{os.getenv('NEXTCLOUD_USERNAME')}/"
-        _options['webdav_login'] = os.getenv('NEXTCLOUD_USERNAME')
-        _options["webdav_timeout"] = 120
+        _options['hostname'] = f"https://antistasi.de/dev_drive/remote.php/dav/files/{os.getenv('NEXTCLOUD_USERNAME')}/"
+        _options['login'] = os.getenv('NEXTCLOUD_USERNAME')
+        # _options["timeout"] = 600
     else:
         if os.getenv('INFO_RUN') != "1":
             raise RuntimeError('no nextcloud Username set')
     if os.getenv('NEXTCLOUD_PASSWORD') is not None:
-        _options['webdav_password'] = os.getenv('NEXTCLOUD_PASSWORD')
+        _options['password'] = os.getenv('NEXTCLOUD_PASSWORD')
     else:
         if os.getenv('INFO_RUN') != "1":
             raise RuntimeError('no nextcloud Password set')

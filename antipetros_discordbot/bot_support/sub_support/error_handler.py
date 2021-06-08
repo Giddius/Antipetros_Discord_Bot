@@ -10,7 +10,6 @@
 import os
 import traceback
 from datetime import datetime
-import sys
 from typing import Tuple
 import re
 # * Third Party Imports --------------------------------------------------------------------------------->
@@ -19,10 +18,11 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process as fuzzprocess
 from discord.ext import commands
 import discord
-
+import asyncio
+from io import BytesIO
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+from rich import inspect as rinspect
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, async_split_camel_case_string
 from antipetros_discordbot.utility.exceptions import MissingAttachmentError, NotNecessaryRole, IsNotTextChannelError, NotNecessaryDmId, NotAllowedChannelError, NotNecessaryRole, ParseDiceLineError, NameInUseError, CustomEmojiError
@@ -33,6 +33,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from antipetros_discordbot.bot_support.sub_support.sub_support_helper.cooldown_dict import CoolDownDict
 from antipetros_discordbot.utility.enums import UpdateTypus
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -44,7 +45,7 @@ if TYPE_CHECKING:
 # TODO: rebuild whole error handling system
 # TODO: make it so that creating the embed also sends it, with more optional args
 
-# TODO: Handlers needed: discord.ext.commands.errors.DisabledCommand,ParameterError
+# TODO: Handlers needed: discord.ext.commands.errors.DisabledCommand,ParameterError,discord.ext.MissingRequiredArgument
 
 # endregion [TODO]
 
@@ -73,14 +74,13 @@ EMBED_SYMBOLS = loadjson(APPDATA["embed_symbols.json"])
 class ErrorHandler(SubSupportBase):
     char_to_replace = "'"
     config_name = 'error_handling'
-    error_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Dialog-error-round.svg/1200px-Dialog-error-round.svg.png"
+    error_thumbnail = "https://static01.nyt.com/images/2018/05/15/arts/01hal-voice1/merlin_135847308_098289a6-90ee-461b-88e2-20920469f96a-superJumbo.jpg?quality=90&auto=webp"
 
     def __init__(self, bot: "AntiPetrosBot", support: "BotSupporter"):
         self.bot = bot
         self.support = support
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
-        self.support.overwritten_methods |= {'on_error': self.handle_base_errors, 'on_command_error': self.handle_errors, 'on_ipc_error': self.handle_ipc_error}
         self.emphasis_regex = re.compile(r"'.*?'")
         self.error_handle_table = {commands.MaxConcurrencyReached: self._handle_max_concurrency,
                                    commands.CommandOnCooldown: self._handle_command_on_cooldown,
@@ -95,7 +95,8 @@ class ErrorHandler(SubSupportBase):
                                    ParseDiceLineError: self._handle_dice_line_error,
                                    NameInUseError: self._handle_name_in_use_error,
                                    CustomEmojiError: self._handle_custom_emoji_error,
-                                   commands.errors.BadUnionArgument: self._handle_bad_union_argument}
+                                   commands.errors.BadUnionArgument: self._handle_bad_union_argument,
+                                   commands.errors.MissingRequiredArgument: self._handle_missing_required_argument}
 
         self.cooldown_data = CoolDownDict()
 
@@ -135,15 +136,16 @@ class ErrorHandler(SubSupportBase):
         arg_string = ', '.join(str(arg) for arg in args)
         log.error(f"{event_method} - '{arg_string}' - '{kwarg_string}'", exc_info=True)
 
-    async def handle_ipc_error(self, endpoint, error):
-        log.error(error, exc_info=True)
-        await self.bot.message_creator(f"Encountered IPC-error: {error} - Endpoint: {endpoint}")
+    async def execute_on_command_errors(self, ctx, error: Exception):
 
-    async def handle_errors(self, ctx, error):
-        error_traceback = '\n'.join(traceback.format_exception(error, value=error, tb=None))
+        error_traceback = ''.join(traceback.format_tb(error.__traceback__)) + f"\n\n{'+'*50}\n{error.__cause__}\n{'+'*50}"
 
-        log.error(error, exc_info=True)
-        log.critical(error_traceback)
+        if hasattr(error, 'original'):
+            error_traceback = ''.join(traceback.format_tb(error.original.__traceback__)) + f"\n\n{'+'*50}\n{error.__cause__}\n{'+'*50}"
+
+        print('!' * 50)
+        print(repr(error.__traceback__))
+        print("!" * 50)
 
         await self.error_handle_table.get(type(error), self._default_handle_error)(ctx, error, error_traceback)
         if ctx.channel.type is ChannelType.text and ctx.command is not None:
@@ -154,15 +156,35 @@ class ErrorHandler(SubSupportBase):
     async def _default_handle_error(self, ctx: commands.Context, error, error_traceback):
         log.error('Ignoring exception in command {}:'.format(ctx.command))
         log.exception(error, exc_info=True, stack_info=False)
+        delete_after = None
+        creator_mention = self.bot.creator.display_name
         if ctx.channel.type is ChannelType.text:
-            await ctx.reply(f'The command had an unspecified __**ERROR**__\n please send {self.bot.creator.mention} a DM of what exactly you did when the error occured.', delete_after=120, allowed_mentions=discord.AllowedMentions.none())
-            await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error), error_traceback=error_traceback))
+            delete_after = 120
+            creator_mention = self.bot.creator.mention
+        try:
+            fields = [self.bot.field_item(name='Error', value=f"`{error.original.__class__.__name__}`", inline=False)]
+        except AttributeError:
+            fields = [self.bot.field_item(name='Error', value=f"`{error.__class__.__name__}`", inline=False)]
+        embed_data = await self.bot.make_generic_embed(title='Giddi Fucked up',
+                                                       description=f"**• There is an bug in the code\nor\n• {creator_mention} forgot to set an Error handler!**\n{ZERO_WIDTH}\n> {creator_mention} will be automatically notified so he can fix it, but please message him with the circumstances of this error if you can.",
+                                                       image="https://media.giphy.com/media/KsUKNNUEeryJa/giphy.gif",
+                                                       fields=fields,
+                                                       thumbnail="https://i.postimg.cc/J0zSHgRH/sorry-thumbnail.png",
+                                                       color='red')
+        await ctx.reply(**embed_data, delete_after=delete_after, allowed_mentions=discord.AllowedMentions.none())
+        await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error)), file=await self._make_traceback_file(error_traceback))
 
     async def _handle_name_in_use_error(self, ctx, error, error_traceback):
         await ctx.send(embed=await self.bot.make_error_embed(ctx, error), delete_after=60)
 
     async def _handle_custom_emoji_error(self, ctx, error, error_traceback):
         await ctx.send(embed=await self.bot.make_error_embed(ctx, error), delete_after=60)
+
+    async def _handle_missing_required_argument(self, ctx: commands.Context, error, error_traceback):
+        await ctx.send(error, delete_after=60)
+        command = ctx.command
+        await ctx.send("Usage:\n" + str(CodeBlock(command.usage, 'css')), delete_after=60)
+        await ctx.send("Example:\n" + str(CodeBlock(command.example, 'css')), delete_after=60)
 
     async def _handle_command_not_found(self, ctx, error, error_traceback):
         wrong_command_name = ctx.invoked_with
@@ -239,8 +261,15 @@ class ErrorHandler(SubSupportBase):
         await ctx.reply(**embed_data, delete_after=error.retry_after)
         await ctx.message.delete()
 
+    async def _make_traceback_file(self, error_traceback: str):
+        bytes_traceback = await asyncio.to_thread(error_traceback.encode, encoding='utf-8', errors='ignore')
+        with BytesIO() as bytefile:
+            await asyncio.to_thread(bytefile.write, bytes_traceback)
+            await asyncio.to_thread(bytefile.seek, 0)
+            return discord.File(bytefile, "error_file.txt")
+
     async def error_reply_embed(self, ctx, error, title, msg, error_traceback=None):
-        embed = Embed(title=title, description=f"{ZERO_WIDTH}\n{msg}\n{ZERO_WIDTH}", color=self.support.color('red').int, timestamp=datetime.utcnow())
+        embed = Embed(title=title, description=f"{ZERO_WIDTH}\n{msg}\n{ZERO_WIDTH}", color=discord.Colour.red(), timestamp=datetime.utcnow())
         embed.set_thumbnail(url=EMBED_SYMBOLS.get('warning'))
         embed.add_field(name="🔗", value=embed_hyperlink("invoking message jump url", ctx.message.jump_url), inline=False)
         embed.add_field(name="prefix used", value=f"`{ctx.prefix}`", inline=False)
@@ -248,9 +277,6 @@ class ErrorHandler(SubSupportBase):
         embed.add_field(name="args", value=ctx.args, inline=False)
         embed.add_field(name="kwargs", value=ctx.kwargs, inline=False)
 
-        # embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
-        if error_traceback is not None:
-            embed.add_field(name='Traceback', value=str(error_traceback)[0:500])
         if ctx.command is not None:
             embed.set_footer(text=f"Command: `{ctx.command.name}`\n{ZERO_WIDTH}\n By User: `{ctx.author.name}`\n{ZERO_WIDTH}\n Error: `{await async_split_camel_case_string(error.__class__.__name__)}`\n{ZERO_WIDTH}\n{ZERO_WIDTH}")
             embed.add_field(name='command used', value=ctx.command.name, inline=False)
@@ -258,7 +284,9 @@ class ErrorHandler(SubSupportBase):
         else:
             embed.set_footer(text=f"text: {ctx.message.content}\n{ZERO_WIDTH}\n By User: `{ctx.author.name}`\n{ZERO_WIDTH}\n Error: `{await async_split_camel_case_string(error.__class__.__name__)}`\n{ZERO_WIDTH}\n{ZERO_WIDTH}")
         embed.add_field(name='invoking user', value=ctx.author.name, inline=False)
-        embed.add_field(name='error type', value=await async_split_camel_case_string(error.__class__.__name__), inline=False)
+        error_type = error.__class__.__name__ if not hasattr(error, 'original') else error.original.__class__.__name__
+        embed.add_field(name='error type', value=error_type, inline=False)
+
         return embed
 
     async def error_message_embed(self, ctx, error, msg=ZERO_WIDTH):

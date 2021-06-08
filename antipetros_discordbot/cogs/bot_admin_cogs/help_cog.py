@@ -5,12 +5,10 @@
 # * Standard Library Imports -->
 import gc
 import os
-from enum import Enum
 
 import asyncio
 import unicodedata
-from typing import Callable, List, Optional, TYPE_CHECKING, Union
-from inspect import isclass
+from typing import TYPE_CHECKING, Union
 # * Third Party Imports -->
 # import requests
 # import pyperclip
@@ -25,26 +23,22 @@ import aiohttp
 import discord
 from discord.ext import tasks, commands, flags
 from async_property import async_property
-
 # * Gid Imports -->
 import gidlogger as glog
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 # * Local Imports -->
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
-from antipetros_discordbot.utility.misc import delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import BaseAntiPetrosCheck
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, writeit
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel, loop_starter, split_camel_case_string
+from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, SPECIAL_SPACE, SPECIAL_SPACE_2, Seperators, ListMarker
-from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, ExtraHelpParameter, HelpCategory
-from datetime import datetime, timedelta, timezone, tzinfo
-from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink, make_box
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker, Seperators, ZERO_WIDTH
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
+from datetime import datetime, timezone
+from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.converters import CategoryConverter, CogConverter, CommandConverter, HelpCategoryConverter, ExtraHelpParameterConverter
-from antipetros_discordbot.utility.exceptions import ParameterError
+from antipetros_discordbot.utility.converters import CogConverter, CommandConverter
 
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand, CommandCategory, RequiredFile, RequiredFolder, auto_meta_info_command, auto_meta_info_group
-from antipetros_discordbot.utility.general_decorator import is_refresh_task, universal_log_profiler
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseCommand, CommandCategory, RequiredFile, RequiredFolder, auto_meta_info_group
 import inflect
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -107,16 +101,15 @@ class AbstractGeneralHelpProvider(ABC):
 class GeneralHelpFieldsProviderBasic(AbstractGeneralHelpProvider):
     field_item = EmbedFieldItem
     provides = 'fields'
-    command_list_usage = '@AntiPetros help command-list'
-    category_list_usage = '@AntiPetros help category-list'
-    general_usage = CodeBlock("@AntiPetros help <command-list, category-list or the name/alias of an command/category>", 'Less')
-    examples = CodeBlock(f"{command_list_usage}\n{category_list_usage}\n@Antipetros help flip\n@AntiPetros help roll_dice text\n@AntiPetros help server?", "Less")
+    command_list_usage = '@AntiPetros help list'
+
+    general_usage = CodeBlock("[prefix] help [list | command-name]", 'Less')
+    examples = CodeBlock(f"{command_list_usage}\n@Antipetros help flip\n@AntiPetros help roll_dice text\n@AntiPetros help server?", "Less")
 
     async def __call__(self):
         fields = self.in_builder.default_fields.copy()
         fields.append(self.field_item(name='Prefixes you can use to invoke a command'.title(), value=ListMarker.make_list(self.bot.all_prefixes, indent=1, formatting='**')))
-        fields.append(self.field_item(name='Special Command __`command-list`__', value="Lists all possible __commands__, that you are allowed to invoke.\nSubcommands do not get listed, they are listed at the parent commands help embed."))
-        fields.append(self.field_item(name='Special Command __`category-list`__', value="Lists all possible __categories__, that you are allowed to use"))
+        fields.append(self.field_item(name='Special Help-Command __`list`__', value="Lists all possible __commands__, that you are allowed to invoke.\nSubcommands do not get listed, they are listed at the parent commands help embed."))
         fields.append(self.field_item(name='general help usage'.title(), value=self.general_usage))
         fields.append(self.field_item(name='Examples', value=self.examples))
         return fields
@@ -134,9 +127,9 @@ class GeneralHelpDescriptionProvider(AbstractGeneralHelpProvider):
 
     async def __call__(self):
         # text = self.bot.description
-        text = f"{ZERO_WIDTH}\n" * 2 + f'**__TEXT DESCRIBING THE BOT AND ITS GENERAL USAGE NEEDED__**\n{ZERO_WIDTH}\n' + f"~~{self.bot.description}~~\n" + f"{ZERO_WIDTH}\n" * 2
+        text = f"{self.bot.description}\n"
         text += '\n' + Seperators.make_line() + '\n'
-        text += f"{ZERO_WIDTH}\n" * 2 + '**__TEXT DESCRIBING THE HELP COMMAND AND ITS GENERAL USAGE NEEDED__**\n' + f"~~{self.in_builder.default_description}~~\n" + f"{ZERO_WIDTH}\n" * 2
+        text += f"{self.in_builder.default_description}\n"
         # text += self.in_builder.default_description
         return text
 
@@ -164,7 +157,7 @@ class GeneralHelpEmbedBuilder:
 
     @property
     def default_url(self):
-        return self.bot.github_url
+        return self.bot.github_wiki_url
 
     @property
     def default_author(self):
@@ -176,8 +169,7 @@ class GeneralHelpEmbedBuilder:
 
     @property
     def default_fields(self):
-        return [self.field_item(name='Github Link', value=embed_hyperlink('link 🔗', self.bot.github_url), inline=True),
-                self.field_item(name="Wiki Link", value=embed_hyperlink('link 🔗', self.bot.github_wiki_url), inline=True)]
+        return [self.field_item(name="Wiki Link", value=embed_hyperlink('link 🔗', self.bot.github_wiki_url), inline=True)]
 
     async def to_dict(self):
         embed_dict = {}
@@ -194,7 +186,7 @@ class GeneralHelpEmbedBuilder:
 
 class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.META}):
     """
-    WiP
+    Help commands and other meta information.
     """
 # region [ClassAttributes]
 
@@ -224,10 +216,9 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Init]
 
-    @universal_log_profiler
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-
+        self.color = "cyan"
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
 
@@ -271,13 +262,12 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Setup]
 
-    @universal_log_profiler
     async def on_ready_setup(self):
-
+        for loop in self.loops.values():
+            loop_starter(loop)
         self.ready = await asyncio.sleep(5, True)
         log.debug('setup for cog "%s" finished', str(self))
 
-    @universal_log_profiler
     async def update(self, typus: UpdateTypus):
         log.debug('cog "%s" was updated', str(self))
 
@@ -296,7 +286,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 
     @auto_meta_info_group(categories=[CommandCategory.META], case_insensitive=False, invoke_without_command=True)
-    async def help(self, ctx: commands.Context, *, in_object: Union[CommandConverter, CategoryConverter] = None):
+    async def help(self, ctx: commands.Context, *, in_object: Union[CommandConverter, CogConverter] = None):
         if in_object is None:
             await self.general_help(ctx)
 
@@ -308,17 +298,23 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
         else:
             await ctx.send(f"{in_object} seems to not match anything")
+        if self.message_delete_invoking is True:
+            await delete_message_if_text_channel(ctx, delay=self.message_delete_after)
 
-    @help.command(name='command_list')
+    @help.command(name='command_list', aliases=['list', 'commands'])
     async def help_command_list(self, ctx: commands.Context):
+
         async for embed_data in self.command_list_embed(ctx):
             await self.send_help(ctx, embed_data)
+        if self.message_delete_invoking is True:
+            await delete_message_if_text_channel(ctx, delay=self.message_delete_after)
 
-    @help.command(name='category_list')
+    @help.command(name='category_list', aliases=['categories'])
     async def help_category_list(self, ctx: commands.Context):
         async for embed_data in self.command_category_list_embed(ctx):
             await self.send_help(ctx, embed_data)
-
+        if self.message_delete_invoking is True:
+            await delete_message_if_text_channel(ctx, delay=self.message_delete_after)
 # endregion [Commands]
 
 # region [DataStorage]
@@ -365,7 +361,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                                                                             author={'name': self.bot.display_name, "url": self.bot.github_url, "icon_url": self.bot.portrait_url}):
             yield embed_data
 
-    async def command_list_embed(self, ctx: commands.Context):
+    async def command_list_embed(self, ctx: commands.Context, show_hidden: bool = True):
         member = self.bot.get_antistasi_member(ctx.author.id) if isinstance(ctx.author, discord.User) else ctx.author
 
         frequ_dict = await self.bot.get_command_frequency()
@@ -375,13 +371,14 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         color = 'GIDDIS_FAVOURITE'
         github_url = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/tree/development/antipetros_discordbot/cogs"
         github_wiki_url = self.base_wiki_link + '/commands'
-        fields = [self.bot.field_item(name='Github Link', value=embed_hyperlink('link 🔗', github_url), inline=True),
-                  self.bot.field_item(name='Wiki Link', value=embed_hyperlink('link 🔗', github_wiki_url), inline=True)]
+        fields = [self.bot.field_item(name='Wiki Link', value=embed_hyperlink('link 🔗', github_wiki_url), inline=True)]
         cog_dict = await self._get_command_list(ctx)
         for cog, cog_commands in cog_dict.items():
-            if cog_commands:
-                value = ListMarker.make_list([f"`{command}`\n> {command.brief}\n{ZERO_WIDTH}\n" for command in sorted(cog_commands, key=lambda x: frequ_dict.get(x.name, 0), reverse=True)])
-                fields.append(self.bot.field_item(name=f"**{cog.name}**\n{ZERO_WIDTH}", value=value, inline=False))
+            if cog.name.casefold() != 'generaldebugcog':
+                cog_commands = [command for command in cog_commands if command.hidden is False] if show_hidden is False else cog_commands
+                if cog_commands:
+                    value = ListMarker.make_list([f"`{command.best_alias}` | {command.brief}" for command in sorted(cog_commands, key=lambda x: frequ_dict.get(x.name, 0), reverse=True) if await self.filter_single_command(member, command) is True])
+                    fields.append(self.bot.field_item(name=f"{await self.bot.get_color_emoji(cog.color)} **{split_camel_case_string(cog.name.removesuffix('Cog'))}**\n{ZERO_WIDTH}", value=value, inline=False))
         async for embed_data in self.bot.make_paginatedfields_generic_embed(title="Command List", description=description,
                                                                             thumbnail=thumbnail,
                                                                             color=color,
@@ -467,9 +464,8 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     async def cog_after_invoke(self, ctx):
         pass
 
-    def cog_unload(self):
-
-        log.debug("Cog '%s' UNLOADED!", str(self))
+    # def cog_unload(self):
+    #     log.debug("Cog '%s' UNLOADED!", str(self))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"
