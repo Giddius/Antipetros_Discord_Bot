@@ -201,7 +201,6 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # region [Properties]
 
-
     @property
     def subscription_channel(self):
         name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
@@ -277,7 +276,222 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # endregion[Listener]
 
+# region [Commands]
+
+    @auto_meta_info_command()
+    @commands.is_owner()
+    async def create_subscription_channel_header(self, ctx: commands.Context):
+        """
+        Creates the Header on top of the subscription channel.
+
+        This will only be called once in normal circumstances, use "update_subscription_channel_header" to update the header afterwards.
+        Takes the actual text and images from the Config.
+
+        Example:
+            @AntiPetros create_subscription_channel_header
+        """
+        embed_data = await self._create_topic_subscription_header_embed()
+        header_message = await self.subscription_channel.send(**embed_data)
+        COGS_CONFIG.set(self.config_name, 'header_message_id', str(header_message.id))
+        await delete_message_if_text_channel(ctx)
+
+    @auto_meta_info_command()
+    @commands.is_owner()
+    async def update_subscription_channel_header(self, ctx: commands.Context):
+        """
+        Updates the Header on top of the subscription channel.
+
+        Takes the text and image data from the Config (Cogs_Config.ini) and updates the Header message in-place.
+
+        Example:
+            @AntiPetros update_subscription_channel_header
+        """
+        embed_data = await self._create_topic_subscription_header_embed()
+        header_message = await self._get_header_message()
+        await header_message.edit(**embed_data)
+        await delete_message_if_text_channel(ctx)
+
+    @auto_meta_info_command()
+    @commands.is_owner()
+    async def remove_topic(self, ctx: commands.context, topic_name: str):
+        """
+        Removes an existing Topic from the subscription channel and deletes the associated role.
+
+        All user that are subscribed to the Topic will be automatically informed of its removal.
+        This command will ask for conformation, before deleting the topic.
+
+        Args:
+            topic_name (str): Name of the topic, case-insensitive. Need to be inside quotes (`"`) if the name contains spaces.
+
+        Example:
+            @AntiPetros remove_topic Antistasi_Fake_Topic
+        """
+        topic_item = {item.name.casefold(): item for item in self.topics}.get(topic_name.casefold(), None)
+        if await self._confirm_topic_creation_deletion(ctx, topic_item, 'removal') is False:
+            return
+        await self._send_topic_remove_notification(topic_item)
+        await topic_item.role.delete(reason=f"Topic '{topic_item.name}' was removed")
+        await topic_item.message.delete()
+        if ctx.channel.type is discord.ChannelType.text:
+            await ctx.message.delete()
+        log.info(f"Topic '{topic_item.name}' was removed, by {ctx.author.display_name}")
+
+    @auto_meta_info_command()
+    @commands.is_owner()
+    @has_attachments(1)
+    async def new_topic(self, ctx: commands.Context, topic_creator_id: int = None):
+        """
+        Creates a new Topic from an File.
+
+        The new topic data gets parsed out of the input file, if no topic_creator_id is specified, it defaults to the person invoking the command.
+        The file needs to be send as attachment to the invoking message.
+
+        Args:
+            topic_creator_id (int, optional): User id of the person that should be put as the creator of the topic, defaults to invoker.
+
+        Example:
+            @AntiPetros new_topic 576522029470056450
+        """
+        if self.subscription_channel is None:
+            await ctx.send('No subscription Channel set in Config!')
+            return
+        file = ctx.message.attachments[0]
+        with TemporaryDirectory() as tempdir:
+            path = pathmaker(tempdir, file.filename)
+            await file.save(path)
+            content = readit(path)
+            command_data = await parse_command_text_file(content, {'name', 'emoji', 'color', 'description', 'image'})
+        if command_data.get('name') in [None, ""]:
+            await ctx.send('Missing required field:\n-__**Name**__\n\naborting!')
+            return
+        if command_data.get('emoji') in [None, ""]:
+            await ctx.send('Missing required field:\n-__**Emoji**__\n\naborting!"')
+            return
+        if topic_creator_id is None:
+            topic_creator = ctx.author
+        else:
+            topic_creator = await self.bot.fetch_antistasi_member(topic_creator_id)
+        if topic_creator is None:
+            await ctx.send(f'Unable to find Creator with id `{topic_creator_id}`')
+            return
+        if emoji_count(command_data.get('emoji')) == 0:
+            await ctx.send(f'Unusable emoji `{command_data.get("emoji")}`')
+            return
+        item = TopicItem(command_data.get('name'), command_data.get('emoji'), topic_creator, self.subscription_channel, description=command_data.get("description", ""), color=command_data.get('color'), image=command_data.get('image'))
+        if await self._confirm_topic_creation_deletion(ctx, item, 'creation') is False:
+            return
+        try:
+            await self._create_topic_role(item)
+            await self._post_new_topic(item)
+
+        except Exception as error:
+            if item.role is not None:
+                await item.role.delete(reason="Error at topic creation")
+            if item.message is not None:
+                await item.message.delete(reason="Error at topic creation")
+            raise error
+
+        await self._add_topic_data(item)
+        self.topics.append(item)
+        if ctx.channel.type is discord.ChannelType.text:
+            await ctx.message.delete()
+        log.info(f"Topic '{item.name}' was created, by {ctx.author.display_name}")
+
+    @auto_meta_info_command()
+    @commands.is_owner()
+    async def modify_topic_embed(self, ctx: commands.Context, topic_name: str, setting: str, value: str):
+        """
+        **UNTESTED** - Modifies an attribute of an topic in place - **UNTESTED**
+
+
+        Args:
+            topic_name (str): Name of the existing Topic, case-insensitive.
+            setting (str): The name of the attribute to modify
+            value (str): the new value, needs to be put in quotes (`"`) if it contains spaces
+
+        Example:
+            @AntiPetros modify_topic_embed Antistasi_Fake_Topic description "This is the new description"
+        """
+        allowed_setting_names = ['color', 'image', 'description']
+        if setting.casefold() not in allowed_setting_names:
+            await ctx.send(f'Setting {setting} is not a valid setting to modify, aborting!')
+            return
+        topic_item = {item.name.casefold(): item for item in self.topics}.get(topic_name.casefold(), None)
+
+        setattr(topic_item, setting.casefold(), value)
+        await self._update_topic_embed(topic_item)
+        await self._save_topic_data()
+
+    @auto_meta_info_command(hidden=False, categories=CommandCategory.GENERAL)
+    @commands.dm_only()
+    async def unsubscribe(self, ctx: commands.Context, topic_name: str):
+        """
+        Unsubscribes a user from a topic via command.
+
+        This is an alternative to just removing the emoji on the topic embed.
+
+        Args:
+            topic_name (str): Name of the topic to unsubscribe, case-insensitive, needs to be put in quotes (`"`) if it contains spaces.
+
+        Example:
+            @AntiPetros unsubscribe Antistasi_Fake_Topic
+        """
+        topic_item = {item.name.casefold(): item for item in self.topics}.get(topic_name.casefold(), None)
+        if topic_item is None:
+            # TODO: Custom Error and handling
+            await ctx.send(f'unable to find a Topic with the name `{topic_name}`')
+            return
+        member = await self.bot.fetch_antistasi_member(ctx.author.id)
+        if topic_item.role not in member.roles:
+            # TODO: Custom Error and handling
+            await ctx.send(f'You are currently not subscribed to the topic `{topic_name}`')
+            return
+        await self._remove_subscription_reaction(member, topic_item)
+        await self._remove_topic_role(member, topic_item)
+        await self.sucess_unsubscribed_embed(member, topic_item)
+
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def topic_template(self, ctx: commands.Context, with_example: str = None):
+        """
+        Provides an template file and instructions for topic creation.
+
+        File contains all possible topic attributes that can be set. Optionaly includes a second, filled out file as an example.
+
+        Args:
+            with_example (str, optional): if this parameter is "example", a second filled out filled is also send.
+
+        Example:
+            @AntiPetros topic_template example
+        """
+        embed_data = await self.bot.make_generic_embed(title="Topic Template File",
+                                                       description='Please use this file to create a topic. You can then use the filled File as an attachment for the command `@AntiPetros new_topic`.\nPlease obey the following rules!',
+                                                       fields=[self.bot.field_item(name='Field -> **Name**',
+                                                                                   value="Preferable to not use spaces in the Name, use `_`. Names can contains spaces, but better if not."),
+                                                               self.bot.field_item(name="Field -> **Emoji**",
+                                                                                   value="Only Unicode Emojis are allowed, no custom emojis!\nYou can search and copy Unicode emojis [on this site](https://emojipedia.org/)"),
+                                                               self.bot.field_item(name="Field -> **Color** __[OPTIONAL]__",
+                                                                                   value="This field takes a color name, case insensitive, if the color isn't int he bots color list, it uses a random color."),
+                                                               self.bot.field_item(name="Field -> **Image** __[OPTIONAL]__",
+                                                                                   value="Https Link to an image, you can use any Image Hosting to be able to use a local image, by uploading it there."),
+                                                               self.bot.field_item(name="Field -> **Describtion** __[OPTIONAL]__",
+                                                                                   value="Can be multiline, just be aware that there is a character limit, so don't go overboard. The bot will give you an Error message if it is to long."),
+                                                               self.bot.field_item(name="**Optional Fields**",
+                                                                                   value="If you do not want to use an optional field, remove the line completely. The Keyword before the `=` and the stuff after it.")])
+
+        template_file = discord.File(APPDATA['topic_template.txt'])
+        await ctx.send(**embed_data)
+        if with_example is not None and with_example.casefold() == 'example':
+            example_file = discord.File(APPDATA['topic_example.txt'])
+            await ctx.send(files=[template_file, example_file])
+        else:
+            await ctx.send(file=template_file)
+
+
+# endregion[Commands]
+
 # region [Helper]
+
 
     async def _get_header_message(self):
         msg_id = COGS_CONFIG.retrieve(self.config_name, 'header_message_id', typus=int, direct_fallback=0)
@@ -432,221 +646,6 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         await topic_item.message.edit(**embed_data)
 
 # endregion[Helper]
-
-# region [Commands]
-
-    @auto_meta_info_command()
-    @commands.is_owner()
-    async def create_subscription_channel_header(self, ctx: commands.Context):
-        """
-        Creates the Header on top of the subscription channel.
-
-        This will only be called once in normal circumstances, use "update_subscription_channel_header" to update the header afterwards.
-        Takes the actual text and images from the Config.
-
-        Example:
-            @AntiPetros create_subscription_channel_header
-        """
-        embed_data = await self._create_topic_subscription_header_embed()
-        header_message = await self.subscription_channel.send(**embed_data)
-        COGS_CONFIG.set(self.config_name, 'header_message_id', str(header_message.id))
-        await delete_message_if_text_channel(ctx)
-
-    @auto_meta_info_command()
-    @commands.is_owner()
-    async def update_subscription_channel_header(self, ctx: commands.Context):
-        """
-        Updates the Header on top of the subscription channel.
-
-        Takes the text and image data from the Config (Cogs_Config.ini) and updates the Header message in-place.
-
-        Example:
-            @AntiPetros update_subscription_channel_header
-        """
-        embed_data = await self._create_topic_subscription_header_embed()
-        header_message = await self._get_header_message()
-        await header_message.edit(**embed_data)
-        await delete_message_if_text_channel(ctx)
-
-    @auto_meta_info_command()
-    @commands.is_owner()
-    async def remove_topic(self, ctx: commands.context, topic_name: str):
-        """
-        Removes an existing Topic from the subscription channel and deletes the associated role.
-
-        All user that are subscribed to the Topic will be automatically informed of its removal.
-        This command will ask for conformation, before deleting the topic.
-
-        Args:
-            topic_name (str): Name of the topic, case-insensitive. Need to be inside quotes (`"`) if the name contains spaces.
-
-        Example:
-            @AntiPetros remove_topic Antistasi_Fake_Topic
-        """
-        topic_item = {item.name.casefold(): item for item in self.topics}.get(topic_name.casefold(), None)
-        if await self._confirm_topic_creation_deletion(ctx, topic_item, 'removal') is False:
-            return
-        await self._send_topic_remove_notification(topic_item)
-        await topic_item.role.delete(reason=f"Topic '{topic_item.name}' was removed")
-        await topic_item.message.delete()
-        if ctx.channel.type is discord.ChannelType.text:
-            await ctx.message.delete()
-        log.info(f"Topic '{topic_item.name}' was removed, by {ctx.author.display_name}")
-
-    @auto_meta_info_command()
-    @commands.is_owner()
-    @has_attachments(1)
-    async def new_topic(self, ctx: commands.Context, topic_creator_id: int = None):
-        """
-        Creates a new Topic from an File.
-
-        The new topic data gets parsed out of the input file, if no topic_creator_id is specified, it defaults to the person invoking the command.
-        The file needs to be send as attachment to the invoking message.
-
-        Args:
-            topic_creator_id (int, optional): User id of the person that should be put as the creator of the topic, defaults to invoker.
-
-        Example:
-            @AntiPetros new_topic 576522029470056450
-        """
-        if self.subscription_channel is None:
-            await ctx.send('No subscription Channel set in Config!')
-            return
-        file = ctx.message.attachments[0]
-        with TemporaryDirectory() as tempdir:
-            path = pathmaker(tempdir, file.filename)
-            await file.save(path)
-            content = readit(path)
-            command_data = await parse_command_text_file(content, {'name', 'emoji', 'color', 'description', 'image'})
-        if command_data.get('name') in [None, ""]:
-            await ctx.send('Missing required field:\n-__**Name**__\n\naborting!')
-            return
-        if command_data.get('emoji') in [None, ""]:
-            await ctx.send('Missing required field:\n-__**Emoji**__\n\naborting!"')
-            return
-        if topic_creator_id is None:
-            topic_creator = ctx.author
-        else:
-            topic_creator = await self.bot.fetch_antistasi_member(topic_creator_id)
-        if topic_creator is None:
-            await ctx.send(f'Unable to find Creator with id `{topic_creator_id}`')
-            return
-        if emoji_count(command_data.get('emoji')) == 0:
-            await ctx.send(f'Unusable emoji `{command_data.get("emoji")}`')
-            return
-        item = TopicItem(command_data.get('name'), command_data.get('emoji'), topic_creator, self.subscription_channel, description=command_data.get("description", ""), color=command_data.get('color'), image=command_data.get('image'))
-        if await self._confirm_topic_creation_deletion(ctx, item, 'creation') is False:
-            return
-        try:
-            await self._create_topic_role(item)
-            await self._post_new_topic(item)
-
-        except Exception as error:
-            if item.role is not None:
-                await item.role.delete(reason="Error at topic creation")
-            if item.message is not None:
-                await item.message.delete(reason="Error at topic creation")
-            raise error
-
-        await self._add_topic_data(item)
-        self.topics.append(item)
-        if ctx.channel.type is discord.ChannelType.text:
-            await ctx.message.delete()
-        log.info(f"Topic '{item.name}' was created, by {ctx.author.display_name}")
-
-    @auto_meta_info_command()
-    @commands.is_owner()
-    @has_attachments(1)
-    async def modify_topic_embed(self, ctx: commands.Context, topic_name: str, setting: str, value: str):
-        """
-        **UNTESTED** - Modifies an attribute of an topic in place - **UNTESTED**
-
-
-        Args:
-            topic_name (str): Name of the existing Topic, case-insensitive.
-            setting (str): The name of the attribute to modify
-            value (str): the new value, needs to be put in quotes (`"`) if it contains spaces
-
-        Example:
-            @AntiPetros modify_topic_embed Antistasi_Fake_Topic description "This is the new description"
-        """
-        allowed_setting_names = ['color', 'image', 'description']
-        if setting.casefold() not in allowed_setting_names:
-            await ctx.send(f'Setting {setting} is not a valid setting to modify, aborting!')
-            return
-        topic_item = {item.name.casefold(): item for item in self.topics}.get(topic_name.casefold(), None)
-
-        setattr(topic_item, setting.casefold(), value)
-        await self._update_topic_embed(topic_item)
-        await self._save_topic_data()
-
-    @auto_meta_info_command(hidden=False, categories=CommandCategory.GENERAL)
-    @commands.dm_only()
-    async def unsubscribe(self, ctx: commands.Context, topic_name: str):
-        """
-        Unsubscribes a user from a topic via command.
-
-        This is an alternative to just removing the emoji on the topic embed.
-
-        Args:
-            topic_name (str): Name of the topic to unsubscribe, case-insensitive, needs to be put in quotes (`"`) if it contains spaces.
-
-        Example:
-            @AntiPetros unsubscribe Antistasi_Fake_Topic
-        """
-        topic_item = {item.name.casefold(): item for item in self.topics}.get(topic_name.casefold(), None)
-        if topic_item is None:
-            # TODO: Custom Error and handling
-            await ctx.send(f'unable to find a Topic with the name `{topic_name}`')
-            return
-        member = await self.bot.fetch_antistasi_member(ctx.author.id)
-        if topic_item.role not in member.roles:
-            # TODO: Custom Error and handling
-            await ctx.send(f'You are currently not subscribed to the topic `{topic_name}`')
-            return
-        await self._remove_subscription_reaction(member, topic_item)
-        await self._remove_topic_role(member, topic_item)
-        await self.sucess_unsubscribed_embed(member, topic_item)
-
-    @auto_meta_info_command()
-    @owner_or_admin()
-    async def topic_template(self, ctx: commands.Context, with_example: str = None):
-        """
-        Provides an template file and instructions for topic creation.
-
-        File contains all possible topic attributes that can be set. Optionaly includes a second, filled out file as an example.
-
-        Args:
-            with_example (str, optional): if this parameter is "example", a second filled out filled is also send.
-
-        Example:
-            @AntiPetros topic_template example
-        """
-        embed_data = await self.bot.make_generic_embed(title="Topic Template File",
-                                                       description='Please use this file to create a topic. You can then use the filled File as an attachment for the command `@AntiPetros new_topic`.\nPlease obey the following rules!',
-                                                       fields=[self.bot.field_item(name='Field -> **Name**',
-                                                                                   value="Preferable to not use spaces in the Name, use `_`. Names can contains spaces, but better if not."),
-                                                               self.bot.field_item(name="Field -> **Emoji**",
-                                                                                   value="Only Unicode Emojis are allowed, no custom emojis!\nYou can search and copy Unicode emojis [on this site](https://emojipedia.org/)"),
-                                                               self.bot.field_item(name="Field -> **Color** __[OPTIONAL]__",
-                                                                                   value="This field takes a color name, case insensitive, if the color isn't int he bots color list, it uses a random color."),
-                                                               self.bot.field_item(name="Field -> **Image** __[OPTIONAL]__",
-                                                                                   value="Https Link to an image, you can use any Image Hosting to be able to use a local image, by uploading it there."),
-                                                               self.bot.field_item(name="Field -> **Describtion** __[OPTIONAL]__",
-                                                                                   value="Can be multiline, just be aware that there is a character limit, so don't go overboard. The bot will give you an Error message if it is to long."),
-                                                               self.bot.field_item(name="**Optional Fields**",
-                                                                                   value="If you do not want to use an optional field, remove the line completely. The Keyword before the `=` and the stuff after it.")])
-
-        template_file = discord.File(APPDATA['topic_template.txt'])
-        await ctx.send(**embed_data)
-        if with_example is not None and with_example.casefold() == 'example':
-            example_file = discord.File(APPDATA['topic_example.txt'])
-            await ctx.send(files=[template_file, example_file])
-        else:
-            await ctx.send(file=template_file)
-
-
-# endregion[Commands]
 
     def __repr__(self):
         return f"{self.name}({self.bot.user.name})"

@@ -51,11 +51,11 @@ def when_mentioned_or_roles_or():
     """
 
     def inner(bot, msg):
-        config_set_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
-        role_exceptions = BASE_CONFIG.retrieve('prefix', 'invoke_by_role_exceptions', typus=List[str], direct_fallback=[])
+        config_set_prefixes = bot.special_prefixes
+        role_exceptions = bot.prefix_role_exceptions
         extra = config_set_prefixes
         r = []
-        if BASE_CONFIG.retrieve('prefix', 'invoke_by_role_and_mention', typus=bool, direct_fallback=True):
+        if bot.use_invoke_by_role_and_mention:
             r.append(bot.user.mention)
             r.append(f"<@!{bot.user.id}>")
             for role in bot.member.roles:

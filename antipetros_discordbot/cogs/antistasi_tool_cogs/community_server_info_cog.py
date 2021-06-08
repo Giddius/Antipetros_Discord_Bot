@@ -35,11 +35,14 @@ from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command, auto_meta_info_group
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker
 from antipetros_discordbot.auxiliary_classes.server_item import ServerItem, ServerStatus
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from collections import deque
+from antipetros_discordbot.utility.exceptions import TokenMissingError
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 import re
-
+from io import BytesIO
+from antipetros_discordbot.utility.sqldata_storager import general_db
 # endregion[Imports]
 
 # region [TODO]
@@ -94,7 +97,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                                             "status_change_notification_channel": "bot-testing",
                                             "is_online_messages_channel": "bot-testing",
                                             "sub_log_folder": "Server",
-                                            "base_log_folder": "Antistasi_Community_Logs"}}
+                                            "base_log_folder": "Antistasi_Community_Logs",
+                                            "notify_if_switched_off_also": 'no',
+                                            'notification_time_out_seconds': 0}}
 
     server_logos = {'mainserver_1': "https://i.postimg.cc/d0Y0krSc/mainserver-1-logo.png",
                     "mainserver_2": "https://i.postimg.cc/BbL8csTr/mainserver-2-logo.png"}
@@ -103,6 +108,10 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                                 "show_in_server_command": "no",
                                 "is_online_message_enabled": "no",
                                 "exclude_logs": "yes"}
+    battlemetrics_api_base_url = "https://api.battlemetrics.com/"
+
+    reason_keyword_identifier = '%'
+
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -124,6 +133,12 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [Properties]
 
+
+    @property
+    def battlemetrics_auth(self):
+        if os.getenv('BATTLEMETRICS_TOKEN') is None:
+            raise TokenMissingError('BATTLEMETRICS_TOKEN')
+        return {'Authorization': f'Bearer {os.getenv("BATTLEMETRICS_TOKEN")}'}
 
     @property
     def server_message_remove_time(self) -> int:
@@ -157,13 +172,13 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
     @property
     def stored_reasons(self) -> dict:
-        return loadjson(self.stored_reasons_data_file)
+        return {f'{self.reason_keyword_identifier}{key.casefold()}': value for key, value in loadjson(self.stored_reasons_data_file).items()}
 # endregion [Properties]
 
 # region [Setup]
 
     async def on_ready_setup(self):
-
+        await asyncio.gather(*[general_db.insert_server(server) for server in self.server_items])
         await ServerItem.ensure_client()
         for loop_object in self.loops.values():
             loop_starter(loop_object)
@@ -190,8 +205,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                        f"{server_name.casefold()}_show_in_server_command": "no",
                        f"{server_name.casefold()}_is_online_message_enabled": "no",
                        f"{server_name.casefold()}_exclude_logs": "yes",
-                       f"{server_name.casefold()}_address": "",
-                       f"{server_name.casefold()}_notify_if_switched_off": 'no'}
+                       f"{server_name.casefold()}_address": ""}
             for option_name, option_value in options.items():
                 if COGS_CONFIG.has_option(self.config_name, option_name) is False:
                     COGS_CONFIG.set(self.config_name, option_name, str(option_value))
@@ -201,8 +215,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [Loops]
 
+
     @tasks.loop(minutes=5, seconds=30, reconnect=True)
-    async def check_server_online_loop(self):
+    async def update_logs_loop(self):
         if any([self.ready, self.bot.setup_finished]) is False:
             return
         log.info("updating Server Items")
@@ -225,12 +240,13 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         if any([self.ready, self.bot.setup_finished]) is False:
             return
         await asyncio.gather(*[server.is_online() for server in self.server_items])
-        for server in self.server_items:
-            if server.is_online_message_enabled is True:
-                await self._update_is_online_messages(server)
-            else:
-                asyncio.create_task(self._delete_is_online_message(server))
-        log.info("Updated 'is_online_messages'")
+        if datetime.now(tz=timezone.utc).minute % 2 == 0:
+            for server in self.server_items:
+                if server.is_online_message_enabled is True:
+                    await self._update_is_online_messages(server)
+                else:
+                    await self._delete_is_online_message(server)
+            log.info("Updated 'is_online_messages'")
 # endregion [Loops]
 
 # region [Listener]
@@ -270,8 +286,10 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))
             return
 
-        asyncio.create_task(self._send_to_dm(reaction_member, server_item))
-        asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))
+        await self._send_to_dm(reaction_member, server_item)
+        await asyncio.sleep(0)
+        await message.remove_reaction(payload.emoji, reaction_member)
+
         asyncio.create_task(self.clear_emojis_from_is_online_message())
 
 # endregion [Listener]
@@ -324,7 +342,18 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                     await ctx.send(**embed_data)
             await asyncio.sleep(2)
 
-    @auto_meta_info_command(alias=['restart_reason'], categories=[CommandCategory.ADMINTOOLS])
+    @auto_meta_info_command(categories=[CommandCategory.DEVTOOLS, CommandCategory.ADMINTOOLS], experimental=True)
+    @allowed_channel_and_allowed_role()
+    async def only_log_level(self, ctx: commands.Context, level: str = 'error'):
+        server = await self._get_server_by_name('mainserver_1')
+        text = await server.log_parser.get_only_level(level)
+        with BytesIO() as bytefile:
+            bytefile.write(text.encode('utf-8', errors='ignore'))
+            bytefile.seek(0)
+            file = discord.File(bytefile, f'only_level_{level}.log')
+        await ctx.send(file=file)
+
+    @auto_meta_info_command(aliases=['restart_reason'], categories=[CommandCategory.ADMINTOOLS])
     @owner_or_admin()
     @log_invoker(log, "info")
     async def set_server_restart_reason(self, ctx: commands.Context, notification_msg_id: Optional[int] = None, *, reason: str):
@@ -346,17 +375,65 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         """
         if notification_msg_id is None:
             notification_msg_id = self.latest_sever_notification_msg_id
-        if notification_msg_id not in set(self.stored_server_messages) or notification_msg_id is None:
+
+        if notification_msg_id is None or notification_msg_id not in set(self.stored_server_messages):
             await ctx.send('This message is either to old or not an server change message!')
             return
-        if reason.casefold() in self.stored_reasons:
-            reason = self.stored_reasons.get(reason.casefold())
+
         msg = await self.notification_channel.fetch_message(notification_msg_id)
+
+        if reason.strip().casefold().startswith(self.reason_keyword_identifier):
+            reason = self.stored_reasons.get(reason.strip().casefold(), None)
+            if reason is None:
+                await ctx.send(f"I was unable to find a stored reason for the keyword `{reason}`.\nNo reason was set for {msg.jump_link}", allowed_mentions=discord.AllowedMentions.none(), delete_after=120)
+                return
         embed = msg.embeds[0]
         embed.clear_fields()
-        embed.add_field(name='Reason', value=reason, inline=False)
-        embed.add_field(name='Reason set by', value=ctx.author.mention, inline=False)
+        embed.add_field(name='Reason', value=CodeBlock(reason, 'fix'), inline=False)
+        embed.add_field(name='Reason set by', value=f"{ctx.author.mention} at `{datetime.now(tz=timezone.utc).strftime(self.bot.std_date_time_format)} UTC`", inline=False)
+        embed.add_field(name="Server Status change happend at", value="⇓ See Timestamp (`in your local timezone`) ⇓", inline=False)
         await msg.edit(embed=embed, allowed_mentions=discord.AllowedMentions.none())
+        await delete_message_if_text_channel(ctx)
+
+    @auto_meta_info_command(categories=[CommandCategory.ADMINTOOLS])
+    @owner_or_admin()
+    @log_invoker(log, "info")
+    async def add_restart_reason(self, ctx: commands.Context, *, reason_line: str):
+        if "==" not in reason_line:
+            await ctx.send("The reason to add must have the format `name==text`!", allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
+            return
+        name, text = map(lambda x: x.strip(), reason_line.split('==', 1))
+        if " " in name:
+            await ctx.send("the name for the reason cannot contain spaces!", allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
+            return
+        if name == '':
+            await ctx.send(f"name seems to be empty, name: `{name}`", allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
+            return
+        if text == "":
+            await ctx.send(f"The text seems to be empty, text: `{text}`", allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
+            return
+
+        cleaned_name = name.casefold().lstrip(self.reason_keyword_identifier)
+        stored_reasons = self.stored_reasons
+
+        if self.reason_keyword_identifier + cleaned_name in stored_reasons:
+            already_stored_reason = stored_reasons[f"{self.reason_keyword_identifier}{name}"]
+            code_block = CodeBlock(f'Name: {name}\n\n"{already_stored_reason}"', 'fix')
+            await ctx.send(f"The name `{name}` is already assigned to an stored reason!\n\n{code_block}", allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
+            return
+        stored_reasons[cleaned_name] = text
+        writejson({key.strip(self.reason_keyword_identifier): value for key, value in stored_reasons.items()}, self.stored_reasons_data_file)
+        code_block = CodeBlock(f'Name: {name}\n\n"{text}"')
+        await ctx.send(f"{code_block}\n\n Was added to the stored reasons and can be use with `{self.reason_keyword_identifier}{name}`", allowed_mentions=discord.AllowedMentions.none(), delete_after=120)
+
+    @auto_meta_info_command(categories=[CommandCategory.ADMINTOOLS])
+    @owner_or_admin()
+    async def list_stored_restart_reasons(self, ctx: commands.Context):
+        fields = [self.bot.field_item(name=name.strip(self.reason_keyword_identifier), value=CodeBlock(value, 'fix'), inline=False) for name, value in self.stored_reasons.items()]
+        title = "Stored Restart Reasons"
+        description = f"To use the reason, prefix them with `{self.reason_keyword_identifier}` (no space in between).\nExample: `{self.reason_keyword_identifier}disconnect`"
+        async for embed_data in self.bot.make_paginatedfields_generic_embed(title=title, description=description, fields=fields, thumbnail=None):
+            await ctx.author.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
         await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command()
@@ -368,8 +445,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         Example:
             @AntiPetros clear_all_is_online_messages
         """
-        for server in self.server_items:
-            await self._delete_is_online_message(server)
+
+        await asyncio.gather(*[self._delete_is_online_message(server) for server in self.server_items])
         await delete_message_if_text_channel(ctx)
 
     async def _parse_options(self, options_string: str):
@@ -429,6 +506,15 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         COGS_CONFIG.set(self.config_name, f"{clean_server_name}_{clean_setting_name}", str(setting_value))
         await ctx.send(f"Setting `{clean_setting_name}` was set to `{setting_value}` for server `{server_name}`", allowed_mentions=discord.AllowedMentions.none())
 
+    @auto_meta_info_command(only_debug=True)
+    @owner_or_admin()
+    async def debug_server_notification(self, ctx: commands.Context, server_name: str = "mainserver_1", new_prev_status: bool = False):
+        server = await self._get_server_by_name(server_name)
+        server.previous_status = ServerStatus(new_prev_status)
+        await ctx.send(f"{server.pretty_name} is {server.previous_status}", allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
+        await delete_message_if_text_channel(ctx)
+
+
 # endregion [Commands]
 
 # region [DataStorage]
@@ -449,8 +535,10 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             embed_data['files'].append(mod_data.html)
             msg = await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
             await msg.add_reaction(self.bot.armahosts_emoji)
-        except IndexError:
+        except IndexError as e:
+            log.error(e, exc_info=True)
             log.warning("Requesting log files to dm lead to an IndexError with Server %s", server.name)
+            await member.send(f"Sorry there was an Error in getting the Mod data, please let {self.bot.creator.name} know!", allowed_mentions=discord.AllowedMentions.none())
 
     async def _server_from_is_online_message_id(self, message_id: int) -> ServerItem:
         server_name = {str(value): key for key, value in self.is_online_messages.items()}.get(str(message_id))
@@ -464,16 +552,16 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         return server
 
     async def send_server_notification(self, server_item: ServerItem, changed_to: ServerStatus):
-        if COGS_CONFIG.retrieve(self.config_name, f"{self.name.lower()}_notify_if_switched_off", typus=bool, direct_fallback=False) is False and changed_to is ServerStatus.OFF:
-            return
         title = server_item.pretty_name
+
         description = f"{server_item.pretty_name} was switched ON" if changed_to is ServerStatus.ON else f"{server_item.pretty_name} was switched OFF"
         thumbnail = self.server_logos.get(server_item.name.casefold(), self.server_symbol)
         embed_data = await self.bot.make_generic_embed(title=title,
                                                        description=description,
                                                        timestamp=datetime.now(timezone.utc),
                                                        thumbnail=thumbnail,
-                                                       footer="armahosts")
+                                                       footer="armahosts",
+                                                       fields=[self.bot.field_item(name="Server Status change happend at", value="⇓ See Timestamp(`Your local time`) ⇓", inline=False)])
 
         channel = self.notification_channel
         msg = await channel.send(**embed_data)
@@ -516,38 +604,43 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                 msg = await self.is_online_messages_channel.fetch_message(message_id)
                 await msg.delete()
             except discord.NotFound:
-                log.info("is online message not found for server %s", server.name)
+                log.warning("is online message not found for server %s", server.name)
             data = self.is_online_messages.copy()
-            del data[server.name.casefold()]
-            writejson(data, self.is_online_messages_data_file)
+            try:
+                del data[server.name.casefold()]
+                writejson(data, self.is_online_messages_data_file)
+            except Exception as e:
+                log.error(e, exc_info=True)
 
     async def _create_is_online_message(self, server: ServerItem):
         embed_data = await self._make_is_online_embed(server)
         msg = await self.is_online_messages_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-        if server.log_folder is not None or server.previous_status is ServerStatus.ON:
+        if server.log_folder is not None and server.previous_status is ServerStatus.ON:
             await msg.add_reaction(self.bot.server_emoji)
-        if server.log_folder is None or server.previous_status is ServerStatus.OFF:
+        else:
             await self._clear_emoji_from_msg(msg.id, True)
         is_online_data = self.is_online_messages
         is_online_data[server.name.casefold()] = msg.id
         writejson(is_online_data, self.is_online_messages_data_file)
 
     async def _update_is_online_messages(self, server: ServerItem):
-        message_id = self.is_online_messages.get(server.name.casefold())
-        if message_id is None:
-            await self._create_is_online_message(server)
-            return
-        msg = await self.is_online_messages_channel.fetch_message(message_id)
-        embed_data = await self._make_is_online_embed(server)
-        asyncio.create_task(msg.edit(**embed_data, allowed_mentions=discord.AllowedMentions.none()))
-        asyncio.create_task(self.clear_emojis_from_is_online_message())
+        try:
+            message_id = self.is_online_messages.get(server.name.casefold())
+            if message_id is None:
+                await self._create_is_online_message(server)
+                return
+            msg = await self.is_online_messages_channel.fetch_message(message_id)
+            embed_data = await self._make_is_online_embed(server)
+            await asyncio.gather(msg.edit(**embed_data, allowed_mentions=discord.AllowedMentions.none()), self.clear_emojis_from_is_online_message())
+        except discord.errors.NotFound as e:
+            log.warning("is_online_message %s not found!", msg_id)
 
     async def clear_emojis_from_is_online_message(self):
         for key, msg_id in self.is_online_messages.items():
             try:
                 await self._clear_emoji_from_msg(msg_id)
             except discord.errors.NotFound as e:
-                log.error(e, exc_info=True)
+                log.warning("is_online_message %s not found!", msg_id)
 
     async def _clear_emoji_from_msg(self, msg_id: int, all_reactions: bool = False):
         try:
@@ -561,11 +654,12 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                             await reaction.remove(user)
 
         except discord.errors.NotFound as e:
-            log.error(e, exc_info=True)
+            log.warning("is_online_message %s not found!", msg_id)
 
     def load_server_items(self):
         ServerItem.cog = self
         ServerItem.status_switch_signal.connect(self.send_server_notification)
+        ServerItem.update_is_online_message_signal.connect(self._update_is_online_messages)
         _out = []
         for server_name in self.server_names:
             server_adress = COGS_CONFIG.retrieve(self.config_name, f"{server_name.lower()}_address", typus=str, direct_fallback=None)
@@ -575,6 +669,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             log_folder = server_name
             if COGS_CONFIG.retrieve(self.config_name, f"{server_name.lower()}_exclude_logs", typus=bool, direct_fallback=False) is True:
                 log_folder = None
+
             _out.append(ServerItem(server_name, server_adress, log_folder))
         return sorted(_out, key=lambda x: x.priority)
 
@@ -582,6 +677,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

@@ -49,6 +49,14 @@ if TYPE_CHECKING:
     from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog
 from zipfile import ZipFile, ZIP_LZMA
 from antipetros_discordbot.abstracts.connect_signal import AbstractConnectSignal
+from pyparsing import (Word, alphanums, punc8bit, alphas, Literal, Optional, OneOrMore, oneOf, Group, nums, nestedExpr, delimitedList,
+                       dblQuotedString, quotedString, Forward, Suppress, SkipTo, ZeroOrMore, Combine, Regex, Keyword, CaselessLiteral,
+                       restOfLine, ParserElement, countedArray, CharsNotIn, cStyleComment, commaSeparatedList, cppStyleComment, LineEnd,
+                       LineStart, NotAny, removeQuotes, nestedExpr, CaselessKeyword, CaselessLiteral, FollowedBy)
+
+import pyparsing as pp
+import re
+from antipetros_discordbot.utility.sqldata_storager import general_db
 # endregion[Imports]
 
 # region [TODO]
@@ -120,6 +128,12 @@ class FlagCapturedSignal(AbstractConnectSignal):
         return await super().emit(server, flag_name, switched_to)
 
 
+class UpdateIsOnlineMessageSignal(AbstractConnectSignal):
+
+    async def emit(self, server: "ServerItem"):
+        return await super().emit(server)
+
+
 def fix_path(in_path: str) -> str:
     path_parts = in_path.split('/')
     fixed_path = '/' + '/'.join(path_parts[-4:])
@@ -135,6 +149,55 @@ def fix_info_dict(info_dict: dict) -> dict:
 def _transform_mod_name(mod_name: str):
     mod_name = mod_name.removeprefix('@')
     return mod_name
+
+
+pre_data_regex = re.compile(r"\={5,}.*?\={5,}", re.DOTALL)
+start_point_regex = re.compile(r"\d{4}/\d{2}/\d{2}\,\s\d{2}\:\d{2}\:\d{2}.*")
+newline_fix_regex = re.compile(r"\n\s*(?!\d{4}/\d{2}/\d{2}\,\s\d{2}\:\d{2}\:\d{2})")
+array_fix_regex = re.compile(r"((?<=\])\s*(?=\[))")
+array_ends_fix_regex = re.compile(r"((?<=\])\s*(?=\]))|((?<=\[)\s*(?=\[))")
+pre_whitespace_regex = re.compile(r"(?<=\d{4}/\d{2}/\d{2}\,\s\d{2}\:\d{2}\:\d{2})\s{2,}")
+
+
+def clean_log_text(text: str):
+    text = pre_data_regex.sub("", text, 1)
+    text = text[start_point_regex.search(text).start():]
+    text = newline_fix_regex.sub(" ", text)
+    text = array_fix_regex.sub(", ", text)
+    text = array_ends_fix_regex.sub("", text)
+    text = pre_whitespace_regex.sub(" ", text)
+    return text
+
+
+def log_grammar():
+    year = Word(nums)
+    month = Word(nums)
+    day = Word(nums)
+
+    hour = Word(nums)
+    minute = Word(nums)
+    second = Word(nums)
+    nano_second = Word(nums)
+
+    separator = Suppress('|')
+
+    antistasi_identifier = Suppress('Antistasi')
+
+    level = oneOf('Debug Info Error Warning')("log_level")
+
+    function = Suppress('File:') + Word(alphanums + '_')("function_name")
+
+    space = Suppress(' ')
+
+    message = ZeroOrMore(space) + restOfLine('message')
+
+    useless_datetime = Suppress(year + '/' + month + '/' + day + ', ' + hour + ':' + minute + ':' + second)
+
+    datetime_stamp = (year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second + ':' + nano_second)
+
+    antistasi_log_line = useless_datetime + Combine(datetime_stamp)("datetime_stamp") + separator + antistasi_identifier + separator + level + separator + function + separator + message
+
+    return antistasi_log_line
 
 
 class LogParser:
@@ -198,6 +261,22 @@ class LogParser:
             await asyncio.to_thread(weasy_html.write_png, bytefile, optimize_images=False, presentational_hints=False, resolution=96)
             bytefile.seek(0)
             return discord.File(bytefile, f"{self.server.name}_mods.png")
+
+    async def get_only_level(self, level: str):
+        _out = []
+        current_content_bytes = []
+        async for chunk in await self.server.newest_log_item.content_iter():
+            current_content_bytes.append(chunk)
+        current_content = b''.join(current_content_bytes).decode('utf-8', errors='ignore')
+        text = await asyncio.to_thread(clean_log_text, current_content)
+        grammar = log_grammar()
+        items = await asyncio.to_thread(grammar.searchString, text)
+        for item in items:
+            data = await asyncio.to_thread(item.asDict)
+            if data.get('log_level', '').casefold() == level.casefold():
+                _out.append(' | '.join(item))
+
+        return '\n'.join(_out)
 
     @property
     def mod_template(self):
@@ -410,6 +489,7 @@ class ServerItem:
 
     client = None
     status_switch_signal = StatusSwitchSignal()
+    update_is_online_message_signal = UpdateIsOnlineMessageSignal()
     schema = ServerSchema()
 
     def __init__(self, name: str, full_address: str, log_folder: str):
@@ -424,6 +504,7 @@ class ServerItem:
         self.log_parser = LogParser(self)
         self.battle_metrics_url = self.battle_metrics_mapping.get(self.name.casefold(), None)
         self.priority = self.server_priority_map.get(self.name.casefold(), 0)
+        self.on_notification_timeout = False
 
     @classmethod
     async def ensure_client(cls):
@@ -440,6 +521,10 @@ class ServerItem:
     @cached_property
     def config_name(self) -> str:
         return self.cog.config_name
+
+    @property
+    def notification_time_out(self):
+        return COGS_CONFIG.retrieve(self.config_name, 'notification_time_out_seconds', typus=int, direct_fallback=0)
 
     @property
     def sub_log_folder_name(self) -> str:
@@ -460,6 +545,10 @@ class ServerItem:
     @property
     def report_status_change(self) -> bool:
         return COGS_CONFIG.retrieve(self.config_name, f"{self.name.lower()}_report_status_change", typus=bool, direct_fallback=False)
+
+    @property
+    def show_off_status_change(self) -> bool:
+        return COGS_CONFIG.retrieve(self.config_name, "notify_if_switched_off_also", typus=bool, direct_fallback=False)
 
     @property
     def show_in_server_command(self) -> bool:
@@ -518,14 +607,33 @@ class ServerItem:
             status = ServerStatus.OFF
         log.info("Server %s is %s", self.name, status.name)
 
-        if self.report_status_change is True:
-            if self.previous_status not in {None, status}:
+        if all(
+            [self.report_status_change is True,
+             self.previous_status not in {None, status},
+             self.show_off_status_change is True or status is ServerStatus.ON]
+        ):
+            if self.on_notification_timeout is False:
                 await self.status_switch_signal.emit(self, status)
+
+                asyncio.create_task(self._reset_on_notification_timeout())
+            else:
+                log.debug("Status switch message for Server %s not send because server is on notification timeout", self.name)
+
+            if self.is_online_message_enabled is True:
+                await self.update_is_online_message_signal.emit(self)
         self.previous_status = status
         return status
 
+    async def _reset_on_notification_timeout(self):
+        self.on_notification_timeout = True
+        await asyncio.sleep(self.notification_time_out)
+        self.on_notification_timeout = False
+        log.debug("finished notification timeout for Server %s", self.name)
+
     async def get_info(self) -> a2s.SourceInfo:
-        return await a2s.ainfo(self.server_address.query_address, encoding=self.encoding)
+        info_data = await a2s.ainfo(self.server_address.query_address, encoding=self.encoding)
+        asyncio.create_task(general_db.insert_server_population(self, info_data.player_count))
+        return info_data
 
     async def get_rules(self) -> dict:
         return await a2s.arules(self.server_address.query_address)

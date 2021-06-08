@@ -161,10 +161,14 @@ class ErrorHandler(SubSupportBase):
         if ctx.channel.type is ChannelType.text:
             delete_after = 120
             creator_mention = self.bot.creator.mention
+        try:
+            fields = [self.bot.field_item(name='Error', value=f"`{error.original.__class__.__name__}`", inline=False)]
+        except AttributeError:
+            fields = [self.bot.field_item(name='Error', value=f"`{error.__class__.__name__}`", inline=False)]
         embed_data = await self.bot.make_generic_embed(title='Giddi Fucked up',
                                                        description=f"**• There is an bug in the code\nor\n• {creator_mention} forgot to set an Error handler!**\n{ZERO_WIDTH}\n> {creator_mention} will be automatically notified so he can fix it, but please message him with the circumstances of this error if you can.",
                                                        image="https://media.giphy.com/media/KsUKNNUEeryJa/giphy.gif",
-                                                       fields=[self.bot.field_item(name='Error', value=f"`{error.original.__class__.__name__}`", inline=False)],
+                                                       fields=fields,
                                                        thumbnail="https://i.postimg.cc/J0zSHgRH/sorry-thumbnail.png",
                                                        color='red')
         await ctx.reply(**embed_data, delete_after=delete_after, allowed_mentions=discord.AllowedMentions.none())

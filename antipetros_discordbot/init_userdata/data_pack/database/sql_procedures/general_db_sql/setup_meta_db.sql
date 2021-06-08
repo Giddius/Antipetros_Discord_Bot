@@ -94,3 +94,17 @@ SELECT COUNT(timestamp) AS usage_amount,
 FROM command_usage_tbl
 GROUP BY command_id
 ORDER BY usage_amount DESC;
+CREATE TABLE IF NOT EXISTS server_tbl (
+    "id" INTEGER NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL UNIQUE,
+    "address" TEXT NOT NULL,
+    "port" INTEGER NOT NULL,
+    "query_port" INTEGER NOT NULL UNIQUE,
+    UNIQUE("address", "port")
+);
+CREATE TABLE IF NOT EXISTS server_population_tbl (
+    "timestamp" DATETIME NOT NULL DEFAULT (datetime('now', 'utc')),
+    "server_id" INTEGER NOT NULL REFERENCES "server_tbl" ("id"),
+    "amount_players" INTEGER NOT NULL,
+    UNIQUE ("timestamp", "server_id")
+);

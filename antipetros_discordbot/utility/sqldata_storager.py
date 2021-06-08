@@ -146,6 +146,12 @@ class AioGeneralStorageSQLite:
     async def aio_vacuum(self):
         await self.db.aio_vacuum()
 
+    async def insert_server(self, server_item):
+        await self.db.aio_write('insert_server', (server_item.name, server_item.name, server_item.server_address.url, server_item.server_address.port, server_item.server_address.query_port))
+
+    async def insert_server_population(self, server_item, amount_players: int):
+        await self.db.aio_write('insert_server_population', (server_item.name, amount_players))
+
     async def insert_command_usage(self, command: Union[commands.Command, AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]):
         command_name = command.name
         await self.db.aio_write('insert_command_usage', (command_name,))

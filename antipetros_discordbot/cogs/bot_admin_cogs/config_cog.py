@@ -19,7 +19,7 @@ import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import delete_message_if_text_channel, loop_starter, make_other_source_code_images
 from antipetros_discordbot.utility.checks import log_invoker, owner_or_admin
-from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit
+from antipetros_discordbot.utility.gidtools_functions import pathmaker, readit, loadjson, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 
@@ -152,10 +152,10 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
     @property
     def all_alias_names(self):
         _out = []
-        for key, value in self.aliases.items():
+        for key, value in loadjson(self.alias_file).items():
             _out.append(key)
             _out += value
-        return _out
+        return set(_out)
 # endregion[Properties]
 
 # region [HelperMethods]
@@ -309,7 +309,6 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         Example:
             @AntiPetros add_alias flip_coin flip_it
         """
-        await self.refresh_command_aliases()
         new_alias = new_alias.casefold()
         if new_alias in self.all_alias_names:
             await ctx.send(f'Alias `{new_alias}` is already in use, either on this command or any other. Cannot be set as alias, aborting!')
@@ -321,57 +320,19 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         else:
             await ctx.send(f"error with adding alias `{new_alias}` to `{command.name}`, alias was **NOT** added!")
 
-    @ auto_meta_info_command(aliases=["profiling"])
-    @ owner_or_admin()
-    @ log_invoker(log, 'critical')
-    async def profiling_switch(self, ctx: commands.Context, action: str = "status"):
-        """
-        Turns log Profiling on or off, or reports if it is currently on or not.
+    @auto_meta_info_command()
+    @commands.is_owner()
+    async def toggle_config_access_logging(self, ctx: commands.Context):
+        current = os.getenv('LOG_CONFIG_RETRIEVE')
+        new = '0' if current == "1" else "1"
+        os.environ['LOG_CONFIG_RETRIEVE'] = new
+        as_text = 'OFF' if new == "0" else "ON"
+        await ctx.send(f"Config access loggin was turned {as_text}", delete_after=30)
+        await delete_message_if_text_channel(ctx)
 
-        Args:
-            action (str, optional): Needs to be one of "status", "enable", "disable", "switch". Defaults to "status".
-
-        Example:
-            @AntiPetros profiling_switch switch
-        """
-        action_map = {'status': self._report_profiling_enabled,
-                      'enable': partial(self._changed_profiling_enabled, new_status="1"),
-                      'disable': partial(self._changed_profiling_enabled, new_status="0"),
-                      'switch': self._changed_profiling_enabled}
-        if action.casefold() not in action_map:
-            raise ParameterErrorWithPossibleParameter('action', action, list(action_map.keys()))
-        await action_map.get(action)(ctx)
 # endregion [Commands]
 
 # region [Helper]
-
-    async def _report_profiling_enabled(self, ctx: commands.Context):
-        status = os.getenv('ANTIPETROS_PROFILING')
-        status = self.status_bool_string_map.get(status)
-        await ctx.send(f"Profiling is currently {status}", delete_after=120)
-        await delete_message_if_text_channel(ctx)
-
-    async def _changed_profiling_enabled(self, ctx: commands.Context, new_status: str = None):
-
-        current_status = os.getenv('ANTIPETROS_PROFILING')
-
-        if new_status == current_status:
-            status_string = self.status_bool_string_map(current_status)
-            await ctx.send(f"Profiling is already {status_string}!", delete_after=120)
-            await delete_message_if_text_channel(ctx)
-            return
-
-        if new_status is None:
-            change_to = "1" if current_status == "0" else "0"
-            BASE_CONFIG.set('profiling', "enable_profiling", change_to)
-            await ctx.send(f"Profiling has been {self.status_bool_string_map.get(change_to)}", delete_after=120)
-            await delete_message_if_text_channel(ctx)
-            return
-
-        BASE_CONFIG.set('profiling', "enable_profiling", new_status)
-        await ctx.send(f"Profiling has been {self.status_bool_string_map.get(new_status)}", delete_after=120)
-        await delete_message_if_text_channel(ctx)
-        return
 
     async def notify(self, event):
         roles = await self.get_notify_roles()

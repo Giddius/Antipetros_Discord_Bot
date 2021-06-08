@@ -96,6 +96,13 @@ class TokenError(AntiPetrosBaseError):
     __module__ = 'antipetros-discordbot'
 
 
+class TokenMissingError(TokenError):
+    def __init__(self, token_name):
+        self.token_name = token_name
+        self.msg = f"Token '{self.token_name}' is not set as env variable!"
+        super().__init__(self.msg)
+
+
 class DuplicateNameError(AntiPetrosBaseError):
     def __init__(self, name, container_name):
         self.msg = f"Name '{name}' is already in '{container_name}' and it does not allow duplicates."

@@ -99,6 +99,7 @@ class AntiPetrosBaseCommand(commands.Command):
     def __init__(self, func, **kwargs):
         self.name = func.__name__ if kwargs.get("name") is None else kwargs.get("name")
         self.extra_aliases = kwargs.pop("aliases", None)
+
         self.data_getters = {'meta_data': self.meta_data_provider.get_auto_provider(self),
                              'alias': self.alias_data_provider.get_auto_provider(self),
                              'source_code': self.source_code_data_provider.get_auto_provider(self)}
@@ -118,10 +119,49 @@ class AntiPetrosBaseCommand(commands.Command):
         self.handle_category_kwargs(kwargs.get('categories', []))
         self.module_object = sys.modules[func.__module__]
         self.data_setters['meta_data']("docstring", self.docstring)
+        self.only_debug = kwargs.get('only_debug', False)
+        self.specials = {self.experimental_notifier: kwargs.pop('experimental', False),
+                         self.logged_notifier: kwargs.get('logged', False)}
 
     @property
     def bot(self):
         return self.cog.bot
+
+    def set_logged(self, value: bool):
+        self.specials[self.logged_notifier] = value
+
+    async def experimental_notifier(self, ctx: commands.Context):
+        text = f"**It could be broken or be changed/removed any time. Feel free to play around with it and please give Feedback to {self.bot.creator.mention} if you can!**"
+        title = "WARNING THIS IS AN EXPERIMENTAL COMMAND"
+        description = text
+        thumbnail = "warning"
+        embed_data = await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail)
+        msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        ctx.extra_messages.append(msg)
+
+    async def logged_notifier(self, ctx: commands.Context):
+        title = "Logged"
+        description = "The usage of this command was logged with your username"
+        thumbnail = None
+        footer = None
+        embed_data = await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail, footer=footer)
+        msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        ctx.extra_messages.append(msg)
+
+    async def call_before_hooks(self, ctx: commands.Context):
+        if not hasattr(ctx, 'extra_messages'):
+            ctx.extra_messages = []
+        await super().call_before_hooks(ctx)
+
+        for special_coro, enabled in self.specials.items():
+            if enabled:
+                await special_coro(ctx)
+
+    async def call_after_hooks(self, ctx):
+        await super().call_after_hooks(ctx)
+        for extra_msg in ctx.extra_messages:
+            if extra_msg.channel.type is discord.ChannelType.text:
+                asyncio.create_task(extra_msg.delete(delay=60))
 
     @singledispatchmethod
     def handle_category_kwargs(self, categories: Any):
@@ -144,6 +184,8 @@ class AntiPetrosBaseCommand(commands.Command):
 
     @property
     def enabled(self):
+        if self.only_debug is True and self.bot.is_debug is False:
+            return False
         return dynamic_enabled_checker(self)
 
     @enabled.setter

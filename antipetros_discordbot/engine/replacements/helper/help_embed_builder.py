@@ -393,6 +393,14 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         inline = True
         return self.field_item(name=name, value=value, inline=inline)
 
+    @handler_method_only_commands
+    async def _handle_enabled(self):
+        attr_name = "enabled"
+        name = await self.handle_name(attr_name)
+        value = self.bool_symbol_map.get(getattr(self.in_object, attr_name))
+        inline = True
+        return self.field_item(name=name, value=value, inline=inline)
+
 
 class DefaultColorProvider(AbstractProvider):
     provides = 'color'

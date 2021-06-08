@@ -147,10 +147,16 @@ class AntiPetrosBot(commands.Bot):
         self.sessions = {}
         self.to_update_methods = []
         self.token = token
+
         self.support = None
         self.used_startup_message = None
         self._command_dict = None
         self.connect_counter = 0
+        self.special_prefixes = None
+        self.prefix_role_exceptions = None
+        self.use_invoke_by_role_and_mention = None
+        self.set_prefix_params()
+        self.to_update_methods.append(self.ToUpdateItem(self.update_prefix_params, [UpdateTypus.CONFIG, UpdateTypus.CYCLIC]))
         self.after_invoke(self.after_command_invocation)
 
         self._setup()
@@ -195,11 +201,14 @@ class AntiPetrosBot(commands.Bot):
             await self._check_if_all_cogs_ready()
 
         await self._make_command_dict()
-
+        await self.process_meta_data()
         self.setup_finished = True
-
         log.info("Bot is ready")
         log.info('%s End of Setup Procedures %s', '+-+' * 15, '+-+' * 15)
+
+        if os.getenv('CONFIG_FILL_RUN', '0') == '1':
+            await asyncio.sleep(30)
+            await self.close()
 
 
 # ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -266,6 +275,17 @@ class AntiPetrosBot(commands.Bot):
         update_item = self.ToUpdateItem(self._command_dict.update_commands, [UpdateTypus.COMMANDS, UpdateTypus.ALIAS, UpdateTypus.CONFIG, UpdateTypus.CYCLIC])
         if update_item not in self.to_update_methods:
             self.to_update_methods.append(update_item)
+
+    def set_prefix_params(self):
+        self.special_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+        self.prefix_role_exceptions = BASE_CONFIG.retrieve('prefix', 'invoke_by_role_exceptions', typus=List[str], direct_fallback=[])
+        self.use_invoke_by_role_and_mention = BASE_CONFIG.retrieve('prefix', 'invoke_by_role_and_mention', typus=bool, direct_fallback=True)
+
+    async def update_prefix_params(self):
+        self.special_prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+        self.prefix_role_exceptions = BASE_CONFIG.retrieve('prefix', 'invoke_by_role_exceptions', typus=List[str], direct_fallback=[])
+        self.use_invoke_by_role_and_mention = BASE_CONFIG.retrieve('prefix', 'invoke_by_role_and_mention', typus=bool, direct_fallback=True)
+        log.debug("prefix_params were updated")
 
 # endregion[Setup]
 

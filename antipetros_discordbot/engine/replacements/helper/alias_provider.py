@@ -52,14 +52,15 @@ class JsonAliasProvider:
     alias_data_file = pathmaker(APPDATA['documentation'], 'command_aliases.json')
     base_config = ParaStorageKeeper.get_config('base_config')
     punctuation_regex = re.compile(rf"[{re.escape(punctuation)}]")
+    default_alias_chars = BASE_CONFIG.retrieve('command_meta', 'base_alias_replacements', typus=List[str], direct_fallback='-')
 
     def __init__(self):
         if os.path.isfile(self.alias_data_file) is False:
             writejson({}, self.alias_data_file)
 
-    @property
-    def default_alias_chars(self) -> List[str]:
-        return self.base_config.retrieve('command_meta', 'base_alias_replacements', typus=List[str], direct_fallback='-')
+    @classmethod
+    async def update_default_alias_chars(cls):
+        cls.default_alias_chars = BASE_CONFIG.retrieve('command_meta', 'base_alias_replacements', typus=List[str], direct_fallback='-')
 
     @property
     def custom_alias_data(self) -> dict:

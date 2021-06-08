@@ -272,7 +272,25 @@ class ExtraHelpParameterConverter(Converter):
         return "Name of an Extra-Help-Parameter. Case-INsensitive.\nPossible Values: " + '\n'.join(name for name in ExtraHelpParameter.__members__)
 
 
-        # region[Main_Exec]
+class RoleOrIntConverter(Converter):
+
+    async def convert(self, ctx: commands.Context, argument):
+        if argument.isnumeric() is False or len(str(argument)) == 18:
+            log.debug('argument "%s" is not an pure integer', argument)
+            return await self.convert_to_role(ctx, argument)
+
+        return int(argument)
+
+    async def convert_to_role(self, ctx: commands.Context, argument):
+        if argument.isnumeric():
+            role = ctx.bot.get_antistasi_role(int(argument))
+        else:
+            role = ctx.bot.role_from_string(argument)
+        if role is None:
+            raise ParameterError("role", argument)
+        return role
+
+    # region[Main_Exec]
 if __name__ == '__main__':
     pass
 

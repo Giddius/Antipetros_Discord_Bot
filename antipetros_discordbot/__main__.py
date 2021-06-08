@@ -23,6 +23,7 @@ from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus
+from antipetros_discordbot.utility.gidtools_functions import writejson
 import json
 
 # endregion[Imports]
@@ -90,6 +91,7 @@ def configure_logger():
 
         return getattr(BASE_CONFIG, attr_name)('logging', key)
 
+    # writejson([n for n in logging.root.manager.loggerDict], "loggers.json", default=str)
     log_stdout = 'both' if from_config('log_also_to_stdout', 'getboolean') is True else 'file'
     log_level = from_config('logging_level', 'get')
     _log_file = glog.timestamp_log_folderer(os.getenv('APP_NAME'), APPDATA)
@@ -105,8 +107,9 @@ def configure_logger():
     if os.getenv('IS_DEV') == 'true':
         log_stdout = 'both'
 
-    _log = glog.main_logger(_log_file, log_level, other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata"], log_to=log_stdout, in_back_up=in_back_up)
-
+    _log = glog.main_logger(_log_file, log_level, other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata", "gidconfig", "discord.ext"], log_to=log_stdout, in_back_up=in_back_up)
+    gidconfig_logger = logging.getLogger('gidconfig')
+    gidconfig_logger.setLevel('DEBUG')
     asyncio_logger = logging.getLogger('asyncio')
     asyncio_logger.setLevel('WARNING')
     # asyncio_logger.addFilter(filter_asyncio_call)
@@ -215,12 +218,25 @@ def stop(member_id):
     raise NotImplementedError("not yet found good solution")
 
 
+@cli.command(name='fill-config-run')
+@ click.option('--token', '-t')
+@ click.option('--nextcloud-username', '-nu', default=None)
+@ click.option('--nextcloud-password', '-np', default=None)
+@ click.option('--github-token', '-gt', default=None)
+@ click.option('--battlemetrics-token', '-bt', default=None)
+def fill_config_run(token, nextcloud_username, nextcloud_password, github_token, battlemetrics_token):
+
+    os.environ['CONFIG_FILL_RUN'] = "1"
+    main(token=str(token), nextcloud_username=nextcloud_username, nextcloud_password=nextcloud_password, github_token=github_token, battlemetrics_token=battlemetrics_token)
+
+
 @ cli.command(name='run')
 @ click.option('--token', '-t')
 @ click.option('--nextcloud-username', '-nu', default=None)
 @ click.option('--nextcloud-password', '-np', default=None)
 @ click.option('--github-token', '-gt', default=None)
-def run(token, nextcloud_username, nextcloud_password, github_token):
+@ click.option('--battlemetrics-token', '-bt', default=None)
+def run(token, nextcloud_username, nextcloud_password, github_token, battlemetrics_token):
     """
     Standard way to start the bot and connect it to discord.
     takes the token as string and the key to decrypt the db also as string.
@@ -232,10 +248,10 @@ def run(token, nextcloud_username, nextcloud_password, github_token):
         nexctcloud_password([str]): password for dev_drive on nextcloud
     """
     os.environ['INFO_RUN'] = "0"
-    main(token=str(token), nextcloud_username=nextcloud_username, nextcloud_password=nextcloud_password, github_token=github_token)
+    main(token=str(token), nextcloud_username=nextcloud_username, nextcloud_password=nextcloud_password, github_token=github_token, battlemetrics_token=battlemetrics_token)
 
 
-def main(token: str, nextcloud_username: str = None, nextcloud_password: str = None, github_token: str = None):
+def main(token: str, nextcloud_username: str = None, nextcloud_password: str = None, github_token: str = None, battlemetrics_token: str = None):
     """
     Starts the Antistasi Discord Bot 'AntiPetros'.
 
@@ -267,6 +283,8 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
         os.environ['NEXTCLOUD_PASSWORD'] = nextcloud_password
     if github_token is not None:
         os.environ['GITHUB_TOKEN'] = github_token
+    if battlemetrics_token is not None:
+        os.environ['BATTLEMETRICS_TOKEN'] = battlemetrics_token
 
     os.environ['INFO_RUN'] = "0"
 
@@ -286,7 +304,7 @@ if __name__ == '__main__':
         load_dotenv("nextcloud.env")
         load_dotenv('ipc.env')
 
-        main(token=os.getenv('ANTIDEVTROS_TOKEN'), nextcloud_username=os.getenv('NX_USERNAME'), nextcloud_password=os.getenv("NX_PASSWORD"), github_token=os.getenv('GITHUB_TOKEN'))
+        main(token=os.getenv('ANTIDEVTROS_TOKEN'), nextcloud_username=os.getenv('NX_USERNAME'), nextcloud_password=os.getenv("NX_PASSWORD"), github_token=os.getenv('GITHUB_TOKEN'), battlemetrics_token=os.getenv('BATTLEMETRICS_TOKEN'))
     else:
         main()
 

@@ -6,7 +6,7 @@
 import os
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, flags
-from typing import List, TYPE_CHECKING, Union
+from typing import List, TYPE_CHECKING, Union, Optional
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import discord
@@ -21,6 +21,7 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPet
 from antipetros_discordbot.utility.data import IMAGE_EXTENSIONS
 from collections import UserDict
 import asyncio
+from antipetros_discordbot.utility.converters import RoleOrIntConverter
 import re
 from sortedcontainers import SortedDict, SortedList
 from discord.ext import commands
@@ -125,8 +126,10 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
     long_description = ""
     extra_info = ""
     required_config_data = {'base_config': {},
-                            'cogs_config': {"double_post_notification_channel": 645930607683174401,
-                                            "notify_double_post_in_channel": False}}
+                            'cogs_config': {"remove_double_posts_enabled": "no",
+                                            "double_post_notification_channel": "645930607683174401",
+                                            "notify_double_post_in_channel": "no",
+                                            "remove_double_posts_max_role_position": "8"}}
     required_folder = []
     required_files = []
     whitespace_regex = re.compile(r'\W')
@@ -138,7 +141,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         super().__init__(bot)
         self.ready = False
         self.msg_keeper = MessageRepostCacheDict()
-
+        self.notify_webhooks = ['https://discord.com/api/webhooks/851224329484238848/4VhRjxkMduUrus2jrZSehru_kE0j1EJtkV1i7uEzBVwwoAXu9LQI3BIToyTF8bPQz1el']
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
@@ -146,6 +149,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 # endregion[Init]
 
 # region [Setup]
+
 
     async def on_ready_setup(self):
 
@@ -161,7 +165,6 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
 # region [Properties]
 
-
     @property
     def notify_channel(self) -> discord.TextChannel:
         notification_channel_id = COGS_CONFIG.retrieve(self.config_name, 'double_post_notification_channel', typus=int, direct_fallback=645930607683174401)  # direct fallback is channel Bot-testing
@@ -171,15 +174,24 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
     def notify_double_post_in_channel(self) -> bool:
         return COGS_CONFIG.retrieve(self.config_name, 'notify_double_post_in_channel', typus=bool, direct_fallback=False)
 
+    @property
+    def remove_double_posts_enabled(self) -> bool:
+        return COGS_CONFIG.retrieve(self.config_name, 'remove_double_posts_enabled', typus=bool, direct_fallback=False)
+
+    @property
+    def remove_double_posts_max_role_position(self) -> bool:
+        return COGS_CONFIG.retrieve(self.config_name, 'remove_double_posts_max_role_position', typus=int, direct_fallback=8)
 
 # endregion[Properties]
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_message')
     async def remove_double_posts(self, msg: discord.Message):
         if any([self.ready is False, self.bot.setup_finished is False]):
+            log.debug("self.ready = %s, self.bot.setup_finished = %s", self.ready, self.bot.setup_finished)
+            return
+        if self.remove_double_posts_enabled is False:
             return
         if msg.channel.type is discord.ChannelType.private:
             return
@@ -188,18 +200,21 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         if msg.author.bot is True:
             return
 
-        if msg.author.top_role.position >= 8:
+        if msg.author.top_role.position > self.remove_double_posts_max_role_position:
+            log.debug("msg author top role position is %s and limit is %s", msg.author.top_role.position, self.remove_double_posts_max_role_position)
             return
-        log.debug("author top role has position < 8 -> %s", str(msg.author.top_role.position))
+
         if any(msg.content.startswith(prfx) for prfx in await self.bot.get_prefix(msg)):
             return
-        log.debug("Message is not an bot invocation")
+
         if await self.msg_keeper.handle_message(msg) is True:
             log.debug("Message has been determined to be a duplicate message")
             log.debug('Message content:\n%s', textwrap.indent(f'"{msg.content}"', ' ' * 8))
 
             if self.notify_double_post_in_channel is True:
                 asyncio.create_task(self._notify_double_post_to_channel(msg.content, msg.author, msg.channel, [await attachment.to_file() for attachment in msg.attachments]))
+            for w_url in self.notify_webhooks:
+                asyncio.create_task(self._notify_double_post_to_webhook(msg.content, msg.author, msg.channel, [await attachment.to_file() for attachment in msg.attachments], w_url))
 
             asyncio.create_task(self._message_double_post_author(msg.content, msg.author, msg.channel, [await attachment.to_file() for attachment in msg.attachments]))
 
@@ -211,7 +226,6 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 # endregion[Listener]
 
 # region [Commands]
-
 
     @flags.add_flag("--and-giddi", '-gid', type=bool, default=False)
     @flags.add_flag("--number-of-messages", '-n', type=int, default=99999999999)
@@ -235,9 +249,70 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         await ctx.send('done', delete_after=60)
         await delete_message_if_text_channel(ctx)
 
+    @auto_meta_info_command()
+    @commands.is_owner()
+    async def toggle_remove_double_posts(self, ctx: commands.Context, switch_to: bool = None):
+        """
+        Turns the remove_double_posts-listener on and off.
+
+        Args:
+            switch_to (bool, optional): what you want to switch the listener to, either `on` or `off`, if this is not provided it just automatically switches to the opposite it currently is. Defaults to None.
+
+        Example:
+            @AntiPetros toggle_remove_double_posts off
+        """
+        current_setting = self.remove_double_posts_enabled
+        if switch_to is not None:
+            if switch_to is current_setting:
+                setting_text = "enabled" if switch_to is True else "disabled"
+                asyncio.create_task(ctx.send(f"The `remove_double_posts`-listener is already **{setting_text}**", delete_after=120))
+                asyncio.create_task(delete_message_if_text_channel(ctx))
+                return
+        target_setting = not current_setting
+        target_setting_text = 'enabled' if target_setting is True else 'disabled'
+        asyncio.create_task(delete_message_if_text_channel(ctx))
+        await ctx.send(f"trying to switch the `remove_double_posts`-listener to `{target_setting_text}`", delete_after=30)
+
+        COGS_CONFIG.set(self.config_name, "remove_double_posts_enabled", str(target_setting))
+
+        new_text = 'enabled' if self.remove_double_posts_enabled is True else 'disabled'
+        await ctx.send(f"The `remove_double_posts`-listener was switched to `{new_text}`", delete_after=120)
+
+    @auto_meta_info_command()
+    @commands.is_owner()
+    async def set_remove_double_posts_max_role_position(self, ctx: commands.Context, new_max_position: RoleOrIntConverter):
+        """
+        Sets the max role position that still triggers the remove_double_posts check.
+
+        Args:
+            new_max_position (RoleOrIntConverter): can either be a position number, an Role-id or an Role-name, in the last two cases the position is the roles position.
+
+        Example:
+            @AntiPetros set_remove_double_posts_max_role_position 12
+        """
+        if isinstance(new_max_position, discord.Role):
+            new_max_position = new_max_position.position
+        COGS_CONFIG.set(self.config_name, "remove_double_posts_max_role_position", str(new_max_position))
+        asyncio.create_task(delete_message_if_text_channel(ctx))
+        level_display = await self._create_role_level_display(new_max_position)
+        embed_data = await self.bot.make_generic_embed(title=f"remove_double_posts_max_role_position was set to __{new_max_position}__",
+                                                       description=level_display,
+                                                       thumbnail=None)
+        await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none(), delete_after=120)
+
+
 # endregion[Commands]
 
 # region [Helper]
+
+
+    async def _create_role_level_display(self, new_level: int) -> str:
+        raw_all_roles = sorted(self.bot.antistasi_guild.roles, key=lambda x: x.position)
+        all_roles = {role.position: role.name for role in raw_all_roles}
+        max_len = max(len(role.name) for role in raw_all_roles)
+        text = f"Level: {'Name'.center(max_len+3)}\n{'='*max_len}\n"
+        text += '\n'.join(f"+ {key}: {value.center(max_len + 3)}" if key > new_level else f"- {key}: {value.center(max_len + 3)}{' '*(3-len(str(key)))}<--" for key, value in all_roles.items())
+        return CodeBlock(text, 'diff')
 
     async def _message_double_post_author(self, content: str, author: discord.Member, channel: discord.TextChannel, files: List[discord.File]):
         title = "Your Message was removed!"
@@ -281,6 +356,21 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         if files:
             await self.notify_channel.send(files=files, allowed_mentions=discord.AllowedMentions.none())
 
+    async def _notify_double_post_to_webhook(self, content: str, author: discord.Member, channel: discord.TextChannel, files: List[discord.File], webhook_url: str):
+        fields = [self.bot.field_item(name="Author", value=f"{author.mention} (`{author.name}`)", inline=False),
+                  self.bot.field_item(name="In Channel", value=channel.mention, inline=False),
+                  self.bot.field_item(name='Content', value=CodeBlock(textwrap.shorten(content, width=1000, placeholder="...[SHORTENED]"), 'fix'), inline=False)]
+        image = None
+        if len(files) > 0:
+            fields.append(self.bot.field_item(name='Attachments',
+                          value=f"The following attachment of the deleted message can be found attached to this message.\n{ListMarker.make_list([att_file.filename for att_file in files], indent=1)}", inline=False))
+            image = files.pop(0) if files[0].filename.split('.')[-1] in IMAGE_EXTENSIONS else None
+
+        embed_data = await self.bot.make_generic_embed(title='Double Post Deleted', fields=fields, image=image, thumbnail='warning')
+        if files:
+            embed_data['files'].append(files)
+        webhook = discord.Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(self.bot.aio_request_session))
+        await webhook.send(**embed_data, username="Double Post Notification", avatar_url="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Warning.svg/1200px-Warning.svg.png", allowed_mentions=discord.AllowedMentions.none())
 # endregion[Helper]
 
 # region [SpecialMethods]

@@ -317,7 +317,8 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
     antistasi_repo_identifier = "official-antistasi-community/A3-Antistasi"
 
     meta_status = CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
-    required_config_data = {'cogs_config': {"trigger_prefix": '##'},
+    required_config_data = {'cogs_config': {"trigger_prefix": '##',
+                                            'listen_for_github_request_in_message_enabled': 'no'},
                             'base_config': {}}
     github_webhook_channel_id = 596660987919204353
 
@@ -338,7 +339,9 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         BranchItem.rate_limit_hit.connect(self.notify_creator_rate_limit_hit)
         self.color = 'black'
         self.branches = []
-        self.github_request_regex = re.compile(rf"(?P<prefix>{self.trigger_prefix})(?P<branch_name>[\w\-\_\d]+(?:\/))?(?P<request_identifier>\w*\.?\w+)", re.IGNORECASE)
+        self.trigger_prefix = COGS_CONFIG.retrieve(self.config_name, 'trigger_prefix', typus=str, direct_fallback='##')
+        self.github_request_regex = re.compile(rf"(?:\s|\A)(?P<prefix>{self.trigger_prefix})(?P<branch_name>[\w\-\_\d]+(?:\/))?(?P<request_identifier>\w*\.?\w+)", re.IGNORECASE)
+        self.listen_for_github_request_in_message_enabled = None
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
@@ -347,10 +350,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [Properties]
 
-    @property
-    def trigger_prefix(self):
-        return COGS_CONFIG.retrieve(self.config_name, 'trigger_prefix', typus=str, direct_fallback='##')
-
 
 # endregion [Properties]
 
@@ -358,7 +357,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 
     async def on_ready_setup(self):
-
+        await self._update_listener_settings()
         for loop in self.loops.values():
             loop_starter(loop)
         await self.make_branches()
@@ -368,7 +367,9 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
     async def update(self, typus: UpdateTypus):
         if UpdateTypus.CONFIG in typus:
-            self.github_request_regex = re.compile(rf"(?P<prefix>{self.trigger_prefix})(?P<branch_name>[\w\-\_\d]+(?:\/))?(?P<request_identifier>\w*\.?\w+)", re.IGNORECASE)
+            await self._update_trigger_prefix_regex()
+        elif UpdateTypus.CYCLIC in typus:
+            await self._update_trigger_prefix_regex()
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
@@ -387,8 +388,9 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
     @commands.Cog.listener(name='on_message')
     async def listen_for_github_request_in_message(self, msg: discord.Message):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if any([self.ready, self.bot.setup_finished, self.listen_for_github_request_in_message_enabled is False]) is False:
             return
+
         if BranchItem.is_waiting_for_rate_limit_reset is True:
             return
 
@@ -399,13 +401,10 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         if author.bot is True:
             return
 
-        if channel.category.id != 639996196160798725:
-
-            return
-
         if channel.id == self.github_webhook_channel_id:
             await self.make_branches()
             return
+
         request_match = self.github_request_regex.search(msg.content)
         if not request_match:
             return
@@ -494,6 +493,13 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [HelperMethods]
 
+
+    async def _update_listener_settings(self):
+        self.listen_for_github_request_in_message_enabled = COGS_CONFIG.retrieve(self.config_name, 'listen_for_github_request_in_message_enabled', typus=bool, direct_fallback=False)
+
+    async def _update_trigger_prefix_regex(self):
+        self.trigger_prefix = COGS_CONFIG.retrieve(self.config_name, 'trigger_prefix', typus=str, direct_fallback='##')
+        self.github_request_regex = re.compile(rf"(?:\s|\A)(?P<prefix>{self.trigger_prefix})(?P<branch_name>[\w\-\_\d]+(?:\/))?(?P<request_identifier>\w*\.?\w+)", re.IGNORECASE)
 
     async def get_branch_names(self, pool):
         branches = await self.bot.loop.run_in_executor(pool, self.antistasi_repo.get_branches)

@@ -31,7 +31,7 @@ import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.misc import loop_starter
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, AntiPetrosBaseCommand
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -103,6 +103,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
     async def on_ready_setup(self):
         for loop in self.loops.values():
             loop_starter(loop)
+        self.bot.to_update_methods.append(self.bot.ToUpdateItem(AntiPetrosBaseCommand.alias_data_provider.update_default_alias_chars, [UpdateTypus.CONFIG, UpdateTypus.CYCLIC]))
         self.ready = await asyncio.sleep(0, True)
         log.debug('setup for cog "%s" finished', str(self))
 

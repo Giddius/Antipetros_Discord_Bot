@@ -198,7 +198,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
                 await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
         await ctx.message.delete()
 
-    @post_faq_by_number.command()
+    @post_faq_by_number.command(name="add_name")
     @allowed_channel_and_allowed_role()
     async def add_faq_name(self, ctx: commands.Context, faq_number: int, *, name: str):
         """
@@ -231,7 +231,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         writejson(faq_name_table_data, self.faq_name_data_file)
         await ctx.send(f"name `{name}` was assigned to faq number `{faq_number}` succesfully")
 
-    @post_faq_by_number.command()
+    @post_faq_by_number.command(name="remove_name")
     @allowed_channel_and_allowed_role()
     async def remove_faq_name(self, ctx: commands.Context, name_to_remove: str):
         name_to_remove = name_to_remove.casefold()
@@ -244,11 +244,16 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
         await ctx.send(f"name `{name_to_remove}` was removed as name for an faq item")
 
-    @post_faq_by_number.command()
+    @post_faq_by_number.command(name='list_names')
     @allowed_channel_and_allowed_role()
     async def list_faq_names(self, ctx: commands.Context):
-        text = '\n'.join([f"{key} -> {value}" for key, value in sorted(self.faq_name_table.items(), key=lambda x: x[1])])
-        await ctx.send(CodeBlock(text, 'fix'))
+        if self.faq_name_table:
+            # TODO Important, make as paginated embed to user DM.
+            text = '\n'.join([f"{key} -> {value}" for key, value in sorted(self.faq_name_table.items(), key=lambda x: x[1])])
+            text = CodeBlock(text, 'fix')
+        else:
+            text = "No stored FAQ Names"
+        await ctx.send(text, delete_after=120, allowed_mentions=discord.AllowedMentions.none())
 
 # endregion [Commands]
 

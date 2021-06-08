@@ -33,6 +33,7 @@ def set_env():
 
     else:
         os.environ['IS_DEV'] = 'false'
+    os.environ['LOG_CONFIG_RETRIEVE'] = '0'
     os.environ['PYTHONASYNCIODEBUG'] = "1"
     os.environ['ANTIPETRO_START_TIME'] = START_TIME.isoformat()
     os.environ['APP_NAME'] = metadata(__name__).get('name')
