@@ -207,7 +207,7 @@ class AntiPetrosBot(commands.Bot):
         log.info('%s End of Setup Procedures %s', '+-+' * 15, '+-+' * 15)
 
         if os.getenv('CONFIG_FILL_RUN', '0') == '1':
-            await asyncio.sleep(30)
+            await asyncio.sleep(10)
             await self.close()
 
 

@@ -523,7 +523,8 @@ def set_requirements(c):
     for req in REQUIREMENT_EXTRAS:
         _requirements.append(_get_version_from_freeze(c, req[0], req[1]))
     _requirements += REQUIREMENT_FIXED
-    os.remove(pigar_req_file)
+    _requirements = list(set(_requirements))
+
     os.chdir(os.getenv('WORKSPACEDIR'))
     with open('pyproject.toml', 'r') as f:
 
@@ -540,6 +541,7 @@ def set_requirements(c):
                                          'version': version.strip(),
                                          'url': get_package_url(c, name)})
     writejson(temp_stored_requirements, prod_file, sort_keys=False)
+    os.remove(pigar_req_file)
     os.chdir(old_cwd)
 
 

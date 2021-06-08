@@ -209,7 +209,7 @@ class LogParser:
         self.server = server_item
         self.current_log_item = None
         self.current_byte_position = 0
-        self.jinja_env = Environment(loader=BaseLoader)
+        self.jinja_env = Environment(loader=BaseLoader, enable_async=True)
         self._parsed_data = None
 
     def reset(self):
@@ -245,7 +245,7 @@ class LogParser:
             transformed_mod_name = await asyncio.sleep(0, _transform_mod_name(item))
             templ_data.append(self.mod_lookup_data.get(transformed_mod_name))
 
-        return await asyncio.to_thread(self.mod_template.render, req_mods=templ_data, server_name=self.server.name.replace('_', ' '))
+        return await self.mod_template.render_async(req_mods=templ_data, server_name=self.server.name.replace('_', ' '))
 
     async def get_mod_data_html_file(self) -> discord.File:
         with BytesIO() as bytefile:

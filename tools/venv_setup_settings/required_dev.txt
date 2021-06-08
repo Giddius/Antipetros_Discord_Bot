@@ -10,6 +10,7 @@ grip==4.5.2
 handout==1.1.2
 icecream==2.1.0
 invoke==1.5.0
+ipython
 isort==5.8.0
 language-tool-python==2.5.3
 markdown2==2.4.0
@@ -39,4 +40,3 @@ stdlib-list==0.8.0
 tomlkit==0.7.0
 vulture==2.3
 win10toast==0.9
-ipython

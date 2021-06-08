@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "flit_core.buildapi"
-requires = ["flit_core >=2,<4"]
+requires = ["flit_core ==2,<4"]
 
 # region [flit]
 
@@ -12,51 +12,64 @@ home-page = "https://github.com/Giddius/Antipetros_Discord_Bot"
 license = "MIT"
 module = "antipetros_discordbot"
 requires = [
-    "Jinja2>=2.11.2",
-    "Markdown>=3.3.4",
-    "Pillow>=8.1.2",
-    "PyGithub>=1.54.1",
-    "Pygments>=2.8.1",
-    "WeasyPrint>=52.2",
-    "aiohttp>=3.7.3",
-    "aiosqlite>=0.16.1",
-    "antistasi_template_checker>=0.1.1",
-    "arrow>=0.17.0",
-    "async_property>=0.2.1",
-    "asyncstdlib>=3.9.0",
-    "beautifulsoup4>=4.9.3",
-    "click>=7.1.2",
-    "cryptography>=3.3.1",
-    "dateparser>=1.0.0",
-    "dpytest>=0.0.22",
-    "emoji>=1.1.0",
-    "fuzzywuzzy>=0.18.0",
-    "gidappdata>=0.1.17",
-    "gidconfig>=0.2.12",
-    "gidlogger>=0.1.33",
-    "googletrans>=4.0.0rc1",
-    "humanize>=3.2.0",
-    "icecream>=2.0.0",
-    "imgkit>=1.1.0",
-    "marshmallow>=3.10.0",
-    "matplotlib>=3.3.3",
-    "psutil>=5.8.0",
-    "pyfiglet>=0.8.post1",
-    "python-youtube>=0.7.0",
-    "python_a2s>=1.3.0",
-    "python_dotenv>=0.15.0",
-    "pytz>=2020.5",
-    "rich>=9.13.0",
-    "tldextract>=3.1.0",
-    "validator_collection>=1.5.0",
-    "watchgod>=0.6",
-    "webdavclient3>=3.14.5",
-    "aiohttp>=3.7.3",
+    "Jinja2>=3.0.0",
+    "discord.py==1.7.1",
+    "Markdown==3.3.4",
+    "Pillow==8.2.0",
+    "PyGithub==1.54.1",
+    "Pygments==2.8.1",
+    "WeasyPrint==52.5",
+    "aiodav==0.1.4",
+    "aiohttp==3.7.4.post0",
+    "aiosqlite==0.17.0",
+    "antistasi_template_checker==0.1.1",
+    "arrow==1.0.3",
+    "async_property==0.2.1",
+    "asyncstdlib==3.9.1",
+    "beautifulsoup4==4.9.3",
+    "click==7.1.2",
+    "colormap==1.0.3",
+    "cryptography==3.4.7",
+    "dateparser==1.0.0",
+    "dpytest==0.0.23",
+    "emoji==1.2.0",
+    "ftfy==6.0.1",
+    "fuzzywuzzy==0.18.0",
+    "gidappdata==0.1.17",
+    "gidconfig==0.2.12",
+    "gidlogger==0.1.33",
+    "googletrans==4.0.0rc1",
+    "humanize==3.4.1",
+    "icecream==2.1.0",
+    "imgkit==1.2.2",
+    "inflect==5.3.0",
+    "marshmallow==3.11.1",
+    "matplotlib==3.4.1",
+    "natsort==7.1.1",
+    "psutil==5.8.0",
+    "pyfiglet==0.8.post1",
+    "pyparsing==2.4.7",
+    "python-youtube==0.8.1",
+    "python_a2s==1.3.0",
+    "python_dotenv",
+    "pytz==2021.1",
+    "rich==10.1.0",
+    "sortedcontainers==2.3.0",
+    "sqflint==0.3.2",
+    "validator_collection==1.5.0",
+    "watchgod==0.7",
+    "webdavclient3==3.14.5",
+    "discord-ext-ipc==2.0.0",
+    "discord-flags==2.1.1",
+    "discord-ext-ipc==2.0.0",
+    "python-Levenshtein==0.12.2",
+    "easydev==0.11.0",
 ]
-requires-python = ">=3.9"
+
+requires-python = "==3.9"
 
 [tools.flit.metadata.requires-extra]
-uvloop = ["uvloop>=0.15.2"]
+uvloop = ["uvloop==0.15.2"]
 
 [tool.flit.scripts]
 antipetrosbot = "antipetros_discordbot.__main__:cli"
