@@ -2,6 +2,7 @@
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands.errors import CommandError
 from datetime import datetime
+from typing import Any
 
 
 class AntiPetrosBaseError(Exception):
@@ -181,11 +182,20 @@ class NotAllowedMember(BaseExtendedCommandError):
 
 
 class ParameterError(BaseExtendedCommandError):
-    def __init__(self, parameter_name: str, parameter_value) -> None:
+    def __init__(self, parameter_name: str = None, parameter_value=None, error=None) -> None:
         self.name = parameter_name
         self.value = parameter_value
-        self.msg = f"'{self.value}' is not a valid input for '{self.name}'"
+        self._error = error
+        self.msg = f"'{self.value}' is not a valid input"
+        if self.name is not None:
+            self.msg += f" for '{self.name}'"
         super().__init__(self.msg)
+
+    @property
+    def error(self):
+        if self._error is None:
+            return self
+        return self._error
 
 
 class ParameterErrorWithPossibleParameter(BaseExtendedCommandError):

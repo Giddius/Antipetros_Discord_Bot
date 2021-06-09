@@ -487,7 +487,7 @@ async def dict_from_attached_json(attachment: discord.Attachment):
 
 
 async def antipetros_repo_rel_path(in_path: str):
-    in_path = pathmaker(in_path)
+    in_path = pathmaker(in_path).casefold()
     in_path_parts = in_path.split('/')
     while in_path_parts[0] != 'antipetros_discordbot':
         _ = in_path_parts.pop(0)

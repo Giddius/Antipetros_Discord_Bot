@@ -1,6 +1,5 @@
 PyGithub==1.54.1
 PyLaTeX==1.4.1
-PyQt5-stubs==5.15.2.0
 autopep8==1.5.6
 commonmark==0.9.1
 docstr-coverage==2.0.1
@@ -31,7 +30,6 @@ pipreqs==0.4.10
 pydeps==1.9.13
 pydoc-markdown==3.10.1
 pypandoc==1.5
-pyqt5-tools==5.15.2.3.0.2
 pyspellchecker==0.6.2
 python-magic==0.4.22
 rich==10.1.0

@@ -10,6 +10,7 @@
 import os
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
+import discord
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import asyncio
@@ -108,15 +109,25 @@ class CommandStatistician(SubSupportBase):
         log.debug("'%s' sub_support was RETIRED", str(self))
 
     async def execute_on_after_command_invocation(self, ctx):
+        # TODO better filter
+        # TODO no nested if-elif-else
+        # TODO keep returns low and no nested returns
         self.last_invocation = datetime.now(tz=timezone.utc)
         _command = ctx.command
-        if _command.name in ['shutdown', "get_command_stats", None, '']:
+        if _command.name in {'shutdown', "get_command_stats", None, ''}:
             return
-        if self.is_debug is False and str(_command.cog) not in ['GeneralDebugCog'] and ctx.channel.name.casefold() not in ['bot-testing']:
-            asyncio.create_task(self.general_db.insert_command_usage(_command), name=f"enter_command_usage_{_command.name}")
-        elif self.is_debug is True:
+        if ctx.channel.type is not discord.ChannelType.text:
+            return
+        if self.is_debug is True:
             asyncio.create_task(self.general_db.insert_command_usage(_command), name=f"debug_enter_command_usage_{_command.name}")
-
+        elif ctx.channel.name.casefold() not in {'bot-testing'}:
+            asyncio.create_task(self.general_db.insert_command_usage(_command), name=f"enter_command_usage_{_command.name}")
+        else:
+            if ctx.channel.name.casefold() not in {'bot-testing'}:
+                log.debug("command_invocation not recorded because channel: %s", ctx.channel.name)
+                return
+            log.debug("unable to record command invocation. name: %s, cog: %s, channel: %s, is_debug: %s", _command.name, _command.cog.name, ctx.channel.name, self.is_debug)
+            return
         log.debug("command invocations was recorded")
         await self.bot.commands_map.sort_commands(await self.get_command_frequency())
 

@@ -157,7 +157,7 @@ def update_launch():
 
 def restart():
     run_command(ANTIPETROS_STOP_CMD)
-    sleep(30)
+    sleep(10)
     run_command(ANTIPETROS_START_CMD)
 
 

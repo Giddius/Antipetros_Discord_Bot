@@ -13,7 +13,7 @@ import discord
 import textwrap
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import delete_message_if_text_channel
-from antipetros_discordbot.utility.checks import in_allowed_channels
+from antipetros_discordbot.utility.checks import in_allowed_channels, log_invoker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosFlagCommand, CommandCategory, auto_meta_info_command
@@ -232,6 +232,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
     @auto_meta_info_command(cls=AntiPetrosFlagCommand)
     @commands.is_owner()
     @in_allowed_channels()
+    @log_invoker(log, 'warning')
     async def purge_antipetros(self, ctx: commands.Context, **command_flags):
         """
         Removes all messages of the bot and optionally of giddi.
@@ -251,6 +252,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
     @auto_meta_info_command()
     @commands.is_owner()
+    @log_invoker(log, 'warning')
     async def toggle_remove_double_posts(self, ctx: commands.Context, switch_to: bool = None):
         """
         Turns the remove_double_posts-listener on and off.
@@ -280,6 +282,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
     @auto_meta_info_command()
     @commands.is_owner()
+    @log_invoker(log, 'warning')
     async def set_remove_double_posts_max_role_position(self, ctx: commands.Context, new_max_position: RoleOrIntConverter):
         """
         Sets the max role position that still triggers the remove_double_posts check.
@@ -299,6 +302,8 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
                                                        description=level_display,
                                                        thumbnail=None)
         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none(), delete_after=120)
+
+
 
 
 # endregion[Commands]

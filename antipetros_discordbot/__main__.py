@@ -301,7 +301,6 @@ if __name__ == '__main__':
     if os.getenv('IS_DEV') == 'true':
         load_dotenv('token.env')
         load_dotenv("nextcloud.env")
-        load_dotenv('ipc.env')
 
         main(token=os.getenv('ANTIDEVTROS_TOKEN'), nextcloud_username=os.getenv('NX_USERNAME'), nextcloud_password=os.getenv("NX_PASSWORD"), github_token=os.getenv('GITHUB_TOKEN'), battlemetrics_token=os.getenv('BATTLEMETRICS_TOKEN'))
     else:

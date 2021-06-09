@@ -24,7 +24,7 @@ from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
-from antipetros_discordbot.utility.converters import CommandConverter
+from antipetros_discordbot.utility.converters import CommandConverter, SeparatedListConverter, RoleOrIntConverter
 from pyyoutube import Api
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from marshmallow import Schema
@@ -185,6 +185,10 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
             with open('role_dump.json', 'w') as f:
                 f.write(schema.dumps(list(self.bot.antistasi_guild.roles), many=True))
             await ctx.send('done', delete_after=90, allowed_mentions=discord.AllowedMentions.none())
+
+    @auto_meta_info_command()
+    async def separated_list_converter_test(self, ctx: commands.Context, *, the_list: SeparatedListConverter(value_type=RoleOrIntConverter(), separator=',', strip_whitespace=True)):
+        await ctx.send(ListMarker.make_list(the_list), allowed_mentions=discord.AllowedMentions.none())
 
     # def cog_unload(self):
     #     log.debug("Cog '%s' UNLOADED!", str(self))

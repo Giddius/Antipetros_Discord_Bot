@@ -177,7 +177,7 @@ class AntiPetrosBaseCommand(commands.Command):
         categories.add_command(self)
 
     async def set_alias(self, new_alias: str):
-        self.data_setters['alias'](new_alias)
+        return self.data_setters['alias'](new_alias)
 
     async def get_source_code_image(self):
         return await asyncio.to_thread(self.data_getters['source_code'], typus='image')

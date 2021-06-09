@@ -11,6 +11,7 @@ import os
 import re
 from datetime import datetime
 from typing import Callable, TYPE_CHECKING, Union
+import inspect
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands import Converter, CommandError
 from googletrans import LANGUAGES
@@ -30,9 +31,10 @@ from antipetros_discordbot.utility.checks import (OnlyGiddiCheck, OnlyBobMurphyC
 from antipetros_discordbot.utility.misc import check_if_url, fix_url_prefix
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import ExtraHelpParameter, HelpCategory
+from functools import partial
 if TYPE_CHECKING:
     pass
-
+import asyncio
 # endregion[Imports]
 
 # region [TODO]
@@ -290,7 +292,46 @@ class RoleOrIntConverter(Converter):
             raise ParameterError("role", argument)
         return role
 
-    # region[Main_Exec]
+
+class SeparatedListConverter(Converter):
+
+    def __init__(self, value_type: Union[Callable, Converter] = str, separator: str = ',', strip_whitespace: bool = True):
+        self.value_type = value_type
+        self.separator = separator
+        self.strip_whitespace = strip_whitespace
+
+    async def get_parameter_name(self, ctx: commands.Context):
+        command = ctx.command
+        for param_name, param in command.clean_params.items():
+            if param.annotation is self:
+                return param_name
+            await asyncio.sleep(0)
+
+    async def convert(self, ctx: commands.Context, argument):
+        parts = argument.split(self.separator)
+        if self.strip_whitespace is True:
+            parts = list(map(lambda x: x.strip(), parts))
+        parts = [part for part in parts if part != '']
+        if parts == []:
+            raise ParameterError(parameter_name=await self.get_parameter_name(ctx), parameter_value=argument)
+
+        try:
+            if inspect.isclass(self.value_type) and issubclass(self.value_type, Converter):
+                instance = self.value_type()
+                return [await instance.convert(ctx, part) for part in parts]
+            if hasattr(self.value_type, 'convert'):
+                return [await self.value_type.convert(ctx, part) for part in parts]
+            else:
+                return list(map(self.value_type, parts))
+        except Exception as error:
+            if not isinstance(error, CommandError):
+                log.error(error, exc_info=True)
+                raise ParameterError(parameter_name=await self.get_parameter_name(ctx), parameter_value=argument, error=error)
+            else:
+                raise error
+
+
+# region[Main_Exec]
 if __name__ == '__main__':
     pass
 

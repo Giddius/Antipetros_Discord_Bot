@@ -307,6 +307,8 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         try:
             if msg.author.bot is True:
                 return
+            if msg.channel.type is not discord.ChannelType.text:
+                return
             for instruction in self.reaction_instructions:
                 asyncio.create_task(instruction(msg))
         except discord.errors.NotFound:

@@ -70,7 +70,7 @@ def get_cog_paths_from_folder(folder_name: str, files_to_exclude: list = None):
     return import_paths
 
 
-bot_admin_files_to_exclude = ["steam_cog.py"]
+bot_admin_files_to_exclude = []
 if BASE_CONFIG.retrieve('ipc', "use_ipc_server", typus=bool, direct_fallback=False) is False:
     bot_admin_files_to_exclude.append('ipc_cog.py')
 

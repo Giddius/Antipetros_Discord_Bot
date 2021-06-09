@@ -147,7 +147,7 @@ class AntiPetrosBot(commands.Bot):
         self.sessions = {}
         self.to_update_methods = []
         self.token = token
-
+        self.activity_update_task = None
         self.support = None
         self.used_startup_message = None
         self._command_dict = None
@@ -189,14 +189,15 @@ class AntiPetrosBot(commands.Bot):
         await self._ensure_guild_is_chunked()
         if self.connect_counter == 1:
             if platform.system() == 'Linux':
-                self.loop.add_signal_handler(signal.SIGINT, self.shutdown_mechanic)
-                self.loop.add_signal_handler(3, self.shutdown_mechanic)
+                self.loop.add_signal_handler(signal.SIGINT, self.shutdown_signal)
+                self.loop.add_signal_handler(3, self.shutdown_signal)
             else:
                 signal.signal(signal.SIGINT, self.shutdown_signal)
             await self._start_sessions()
             await self.send_startup_message()
             asyncio.create_task(self._start_watchers())
             await self.set_activity()
+            await self._make_stored_dicts()
             await self.to_all_as_tasks('on_ready_setup', True)
             await self._check_if_all_cogs_ready()
 
@@ -480,7 +481,9 @@ class AntiPetrosBot(commands.Bot):
                                                        fields=[self.bot.field_item(name='Is Debug Session', value=str(self.is_debug))])
             await channel.send(**embed_data, delete_after=60)
             return
-        channel = self.channel_from_name(BASE_CONFIG.get('startup_message', 'channel'))
+        guild = self.get_guild(self.get_antistasi_guild_id())
+        channel = discord.utils.get(guild.channels, name=BASE_CONFIG.retrieve('startup_message', 'channel', typus=str, direct_fallback='bot-testing'))
+
         delete_time = 60 if self.is_debug is True else BASE_CONFIG.getint('startup_message', 'delete_after')
         delete_time = None if delete_time <= 0 else delete_time
         title = f"**{BASE_CONFIG.get('startup_message', 'title').title()}**"
@@ -564,8 +567,14 @@ class AntiPetrosBot(commands.Bot):
         value = len([member.id for member in self.bot.antistasi_guild.members if member.status is discord.Status.online])
         text = f"{value} User currently in this Guild"
         await self.change_presence(activity=discord.Activity(type=actvity_type, name=text))
-        if self.ToUpdateItem(self.set_activity, [UpdateTypus.CYCLIC, UpdateTypus.MEMBERS]) not in self.to_update_methods:
-            self.to_update_methods.append(self.ToUpdateItem(self.set_activity, [UpdateTypus.CYCLIC, UpdateTypus.MEMBERS]))
+        # if self.ToUpdateItem(self.set_activity, [UpdateTypus.CYCLIC, UpdateTypus.MEMBERS]) not in self.to_update_methods:
+        #     self.to_update_methods.append(self.ToUpdateItem(self.set_activity, [UpdateTypus.CYCLIC, UpdateTypus.MEMBERS]))
+
+        self.activity_update_task = asyncio.create_task(self.update_activity())
+
+    async def update_activity(self):
+        await asyncio.sleep(300)
+        await self.set_activity()
 
     def get_cog(self, name: str):
         return {cog_name.casefold(): cog for cog_name, cog in self.__cogs.items()}.get(name.casefold())
@@ -598,14 +607,15 @@ class AntiPetrosBot(commands.Bot):
 
         log.info("closing sessions")
         await self._close_sessions()
-
-        # for task in asyncio.all_tasks():
-        #     try:
-        #         task.cancel()
-        #     except asyncio.CancelledError:
-        #         log.debug("task %s was cancelled", task.get_name())
-        #     finally:
-        #         log.debug("task %s was cancelled", task.get_name())
+        if self.activity_update_task is not None:
+            self.activity_update_task.cancel()
+        for task in asyncio.all_tasks():
+            try:
+                task.cancel()
+            except asyncio.CancelledError:
+                log.debug("task %s was cancelled", task.get_name())
+            finally:
+                log.debug("task %s was cancelled", task.get_name())
 
         await asyncio.sleep(5)
 
