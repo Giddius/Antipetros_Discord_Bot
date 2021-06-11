@@ -11,6 +11,7 @@ from typing import List, Optional
 import a2s
 from rich import print as rprint, inspect as rinspect
 # import requests
+from pprint import pformat
 # import pyperclip
 # import matplotlib.pyplot as plt
 # from bs4 import BeautifulSoup
@@ -178,6 +179,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # region [Setup]
 
     async def on_ready_setup(self):
+        await super().on_ready_setup()
         await asyncio.gather(*[general_db.insert_server(server) for server in self.server_items])
         await ServerItem.ensure_client()
         for loop_object in self.loops.values():
@@ -186,9 +188,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         for server in self.server_items:
             await server.is_online()
         await asyncio.gather(*[server.gather_log_items() for server in self.server_items])
-        for server in self.server_items:
-            if server.log_folder is not None:
-                _ = await server.get_mod_files()
+
         self.ready = await asyncio.sleep(5, True)
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -196,6 +196,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         await ServerItem.ensure_client()
         if UpdateTypus.CONFIG in typus:
             self.server_items = self.load_server_items()
+        await super().update(typus)
         log.debug('cog "%s" was updated', str(self))
 
     def _ensure_config_data(self):
@@ -445,9 +446,12 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         Example:
             @AntiPetros clear_all_is_online_messages
         """
-
+        self.is_online_message_loop.stop()
+        while self.is_online_message_loop.is_running() is True:
+            await asyncio.sleep(5)
         await asyncio.gather(*[self._delete_is_online_message(server) for server in self.server_items])
         await delete_message_if_text_channel(ctx)
+        self.is_online_message_loop.start()
 
     async def _parse_options(self, options_string: str):
         options_string = options_string.casefold().strip()
@@ -506,6 +510,12 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         COGS_CONFIG.set(self.config_name, f"{clean_server_name}_{clean_setting_name}", str(setting_value))
         await ctx.send(f"Setting `{clean_setting_name}` was set to `{setting_value}` for server `{server_name}`", allowed_mentions=discord.AllowedMentions.none())
 
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def set_servernotification_timeout(self, ctx: commands.Context, timeout_seconds: int):
+        COGS_CONFIG.set(self.config_name, "notification_time_out_seconds", timeout_seconds)
+        await ctx.send(f'Server notification timeout was set to {timeout_seconds} seconds', allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
+
     @auto_meta_info_command(only_debug=True)
     @owner_or_admin()
     async def debug_server_notification(self, ctx: commands.Context, server_name: str = "mainserver_1", new_prev_status: bool = False):
@@ -514,8 +524,19 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         await ctx.send(f"{server.pretty_name} is {server.previous_status}", allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
         await delete_message_if_text_channel(ctx)
 
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def add_mod_data(self, ctx: commands.Context, identifier: str, name: str, link: str):
+        identifier = identifier.removeprefix('@')
+        data = loadjson(APPDATA['mod_lookup.json'])
+        if identifier in data:
+            await ctx.send(f'Mod already in stored mod-data:\n{CodeBlock(pformat(data.get(identifier), "json"))}', allowed_mentions=discord.AllowedMentions.none(), delete_after=90)
+            return
 
-# endregion [Commands]
+        data[identifier] = {"name": name, "link": link}
+        writejson(data, APPDATA['mod_lookup.json'])
+        await ctx.send(f"`{identifier}` was added to the mod data")
+        await delete_message_if_text_channel(ctx, 30)
 
 # region [DataStorage]
 
@@ -632,8 +653,12 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             msg = await self.is_online_messages_channel.fetch_message(message_id)
             embed_data = await self._make_is_online_embed(server)
             await asyncio.gather(msg.edit(**embed_data, allowed_mentions=discord.AllowedMentions.none()), self.clear_emojis_from_is_online_message())
+            if server.previous_status is ServerStatus.ON and server.log_folder is not None:
+                await msg.add_reaction(self.bot.server_emoji)
+            else:
+                await self._clear_emoji_from_msg(msg.id, True)
         except discord.errors.NotFound as e:
-            log.warning("is_online_message %s not found!", msg_id)
+            log.warning("is_online_message for server %s not found!", server)
 
     async def clear_emojis_from_is_online_message(self):
         for key, msg_id in self.is_online_messages.items():

@@ -288,7 +288,7 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
     os.environ['INFO_RUN'] = "0"
 
     anti_petros_bot = AntiPetrosBot(token=token)
-
+    log.info("Connecting Bot")
     anti_petros_bot.run()
 
     log.info('~+~' * 20 + ' finished shutting down! ' + '~+~' * 20)

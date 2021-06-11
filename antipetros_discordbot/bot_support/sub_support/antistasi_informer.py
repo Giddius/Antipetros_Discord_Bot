@@ -225,6 +225,9 @@ class AntistasiInformer(SubSupportBase):
 
         return f"{base_url}/{self.antistasi_guild_id}/{channel_id}"
 
+    def get_message_link(self, channel: Union[int, str, discord.TextChannel], message_id: int):
+        return self.get_channel_link(channel) + f"/{message_id}"
+
     async def all_members_with_role(self, role: str) -> List[discord.Member]:
         role = await self.role_from_string(role)
         _out = []
@@ -239,7 +242,8 @@ class AntistasiInformer(SubSupportBase):
         log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self, typus: UpdateTypus) -> None:
-        if any(check_typus in typus for check_typus in [UpdateTypus.MEMBERS, UpdateTypus.ROLES, UpdateTypus.GUILD]):
+        if any(check_typus in typus for check_typus in [UpdateTypus.MEMBERS, UpdateTypus.ROLES, UpdateTypus.GUILD, UpdateTypus.RECONNECT, UpdateTypus.CYCLIC]):
+            self._antistasi_guild = None
             await self._make_stored_dicts()
         log.debug("'%s' sub_support was UPDATED", str(self))
 

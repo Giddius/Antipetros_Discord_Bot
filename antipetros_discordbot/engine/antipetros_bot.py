@@ -35,6 +35,7 @@ from antipetros_discordbot.utility.emoji_handling import is_unicode_emoji
 from antipetros_discordbot.engine.replacements import CommandCategory
 from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
 from antipetros_discordbot.utility.sqldata_storager import ChannelUsageResult
+from discord.client import _cleanup_loop, _cancel_tasks
 import signal
 import platform
 # endregion[Imports]
@@ -180,9 +181,12 @@ class AntiPetrosBot(commands.Bot):
 
     async def on_resumed(self):
         log.critical("Bot was reconnected and has resumed the session!")
+        self.connect_counter += 1
         await self._check_if_all_cogs_ready()
+        await self.to_all_as_tasks('update', False, typus=UpdateTypus.RECONNECT)
 
-    async def on_ready(self):
+    async def async_setup(self):
+        await self.wait_until_ready()
         log.info('%s has connected to Discord!', self.name)
         self.setup_finished = False
         self.connect_counter += 1
@@ -190,9 +194,7 @@ class AntiPetrosBot(commands.Bot):
         if self.connect_counter == 1:
             if platform.system() == 'Linux':
                 self.loop.add_signal_handler(signal.SIGINT, self.shutdown_signal)
-                self.loop.add_signal_handler(3, self.shutdown_signal)
-            else:
-                signal.signal(signal.SIGINT, self.shutdown_signal)
+                self.loop.add_signal_handler(3, self.shutdown_signal)  # 3 -> SIGQUIT
             await self._start_sessions()
             await self.send_startup_message()
             asyncio.create_task(self._start_watchers())
@@ -422,8 +424,9 @@ class AntiPetrosBot(commands.Bot):
         async for changes in awatch(APPDATA['config'], loop=self.loop):
             for change_typus, change_path in changes:
                 log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
-
-            await self.to_all_cogs('update', typus=UpdateTypus.CONFIG)
+                await asyncio.to_thread(COGS_CONFIG.read)
+                await asyncio.to_thread(BASE_CONFIG.read)
+            await self.to_all_as_tasks('update', typus=UpdateTypus.CONFIG)
 
     @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_alias_changes(self):
@@ -433,7 +436,7 @@ class AntiPetrosBot(commands.Bot):
             for change_typus, change_path in changes:
                 log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
 
-            await self.to_all_cogs('update', typus=UpdateTypus.ALIAS)
+            await self.to_all_as_tasks('update', typus=UpdateTypus.ALIAS)
 
 
 # endregion[Loops]
@@ -507,7 +510,7 @@ class AntiPetrosBot(commands.Bot):
             finally:
                 os.remove(self.shutdown_message_pickle_file)
 
-    async def to_all_as_tasks(self, command, wait, *args, **kwargs):
+    async def to_all_as_tasks(self, command: str, wait: bool, *args, **kwargs):
         all_tasks = []
         all_target_objects = [cog_object for cog_object in self.cogs.values()] + [subsupport for subsupport in self.subsupports]
         for target_object in all_target_objects:
@@ -623,10 +626,9 @@ class AntiPetrosBot(commands.Bot):
         await super().close()
         time.sleep(5)
 
-    def run(self, **kwargs):
-        if self.token is None:
-            raise RuntimeError("Discord Token is None")
-        super().run(self.token, bot=True, reconnect=True, **kwargs)
+    async def start(self, *args, **kwargs):
+        asyncio.create_task(self.async_setup())
+        await super().start(self.token, reconnect=True, bot=True)
 
     def __repr__(self):
         return f"{self.__class__.__name__}()"

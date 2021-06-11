@@ -4,6 +4,7 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
+import re
 import json
 from pprint import pformat
 from dotenv import load_dotenv
@@ -31,6 +32,7 @@ from marshmallow import Schema
 from rich import inspect as rinspect
 from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
 import ftfy
+from hashlib import blake2b
 import json
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -190,6 +192,12 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     async def separated_list_converter_test(self, ctx: commands.Context, *, the_list: SeparatedListConverter(value_type=RoleOrIntConverter(), separator=',', strip_whitespace=True)):
         await ctx.send(ListMarker.make_list(the_list), allowed_mentions=discord.AllowedMentions.none())
 
+    @auto_meta_info_command()
+    async def check_message_existing(self, ctx: commands.Context, channel_id: int, message_id: int):
+        try:
+            await ctx.send(await self.bot.get_message_directly(channel_id, message_id), allowed_mentions=discord.AllowedMentions.none())
+        except discord.errors.NotFound as e:
+            await ctx.send(e, allowed_mentions=discord.AllowedMentions.none())
     # def cog_unload(self):
     #     log.debug("Cog '%s' UNLOADED!", str(self))
 

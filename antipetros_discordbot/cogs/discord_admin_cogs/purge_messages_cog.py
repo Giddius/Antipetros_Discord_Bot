@@ -6,7 +6,7 @@
 import os
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, flags
-from typing import List, TYPE_CHECKING, Union
+from typing import List, TYPE_CHECKING, Union, Set
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import discord
@@ -29,6 +29,7 @@ from hashlib import blake2b
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
+from antipetros_discordbot.auxiliary_classes.hashed_message import HashedMessage
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
@@ -61,57 +62,52 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-class MessageRepostCacheDict(UserDict):
-    whitespace_regex = re.compile(r'\W')
-    removal_time_seconds = 1200
+class MessageRepostKeeper:
 
-    def clean_content(self, content: str) -> str:
-        cleaned_content = discord.utils.remove_markdown(content)
-        cleaned_content = self.whitespace_regex.sub('', cleaned_content)
-        return cleaned_content.casefold()
+    def __init__(self):
+        self.stored_messages = set()
 
-    async def hash_content(self, content: Union[str, bytes]) -> str:
-        if isinstance(content, str):
-            content = content.encode('utf-8', errors='ignore')
-        content_hash = blake2b(content).hexdigest()
-        return content_hash
-
-    async def handle_message(self, msg: discord.Message) -> bool:
-
-        member_id = msg.author.id
-        member_id_string = str(member_id)
-        text_content = msg.content
-        attachment_content = [await attachment.read() for attachment in msg.attachments]
-        cleaned_content = await asyncio.to_thread(self.clean_content, text_content)
-        all_content = [cleaned_content] + attachment_content
-        full_msg_hash = ""
-        for content_item in all_content:
-            full_msg_hash += await self.hash_content(content_item)
-
-        if full_msg_hash in set(self.data.get(member_id_string, [])):
+    async def handle_message(self, hashed_msg: HashedMessage) -> bool:
+        original_msg = await self.get_original_stored_message(hashed_msg)
+        if original_msg is not None:
+            await original_msg.reset_storage_time()
+            original_msg.amount_reposted += 1
             return True
 
-        await self.add(member_id_string, full_msg_hash)
-
+        self.stored_messages.add(hashed_msg)
+        log.debug("Hashed Message %s was added to from %s", hashed_msg, self)
         return False
 
-    async def add(self, member_id_string: str, hashed_content_item: str):
-        if member_id_string not in self.data:
-            self.data[member_id_string] = []
-        self.data[member_id_string].append(hashed_content_item)
-        asyncio.create_task(self._timed_removal(member_id_string, hashed_content_item))
-        log.debug('Added message to %s', str(self))
+    async def get_original_stored_message(self, hashed_msg: HashedMessage) -> HashedMessage:
+        if hashed_msg not in self.stored_messages:
+            return None
+        original = [stored_msg for stored_msg in self.stored_messages if stored_msg == hashed_msg][0]
+        if await original.message_exists() is False:
+            self.stored_messages.remove(original)
+            log.debug("Hashed Message %s was removed from %s, because it was deleted", hashed_msg, self)
+            return None
+        return original
 
-    async def _timed_removal(self, member_id_string: str, hashed_message: str):
-        await asyncio.sleep(self.removal_time_seconds)
-        self.data.get(member_id_string).remove(hashed_message)
-        if self.data.get(member_id_string) == []:
-            del self.data[member_id_string]
-            log.debug('Remove member_id_string from %s, member_id_string="%s"', str(self), member_id_string)
-        log.debug('Remove message from %s', str(self))
+    async def get_original_message_no_check(self, hashed_msg: HashedMessage) -> HashedMessage:
+        for stored_message in self.stored_messages:
+            if await asyncio.sleep(0, stored_message == hashed_msg):
+                return stored_message
+
+    async def remove_stored_message(self, hashed_msg: HashedMessage):
+        if hashed_msg in self.stored_messages:
+            self.stored_messages.remove(hashed_msg)
+            log.debug("Hashed Message %s was removed from %s", hashed_msg, self)
+
+    async def get_amount_reposted(self, hashed_msg: HashedMessage) -> int:
+        original = await self.get_original_message_no_check(hashed_msg)
+        return original.amount_reposted
+
+    async def get_message_link(self, hashed_msg: HashedMessage) -> str:
+        original = await self.get_original_message_no_check(hashed_msg)
+        return original.link
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(amount_keys={len(self.data.keys())}, amount_values={sum(len(value) for value in self.data.values())})"
+        return f"{self.__class__.__name__}(amount_stored_messages={len(self.stored_messages)})"
 
 
 class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "categories": CommandCategory.ADMINTOOLS}):
@@ -129,10 +125,16 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
                             'cogs_config': {"remove_double_posts_enabled": "no",
                                             "double_post_notification_channel": "645930607683174401",
                                             "notify_double_post_in_channel": "no",
-                                            "remove_double_posts_max_role_position": "8"}}
+                                            "remove_double_posts_max_role_position": "8",
+                                            "remove_double_post_timespan_minutes": "20",
+                                            "double_post_notification_webhook_urls": "",
+                                            "other_bot_prefixes": "",
+                                            "remove_double_post_is_dry_run": "yes"}}
     required_folder = []
     required_files = []
     whitespace_regex = re.compile(r'\W')
+    hashed_message_class = HashedMessage
+
 # endregion[ClassAttributes]
 
 # region [Init]
@@ -140,8 +142,10 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.ready = False
-        self.msg_keeper = MessageRepostCacheDict()
-        self.notify_webhooks = ['https://discord.com/api/webhooks/851224329484238848/4VhRjxkMduUrus2jrZSehru_kE0j1EJtkV1i7uEzBVwwoAXu9LQI3BIToyTF8bPQz1el']
+        self.msg_keeper = None
+        self._init_msg_keeper()
+        self._other_bot_prefixes = None
+        self._remove_double_post_is_dry_run = None
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
 
@@ -157,9 +161,17 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
+        if UpdateTypus.CONFIG in typus:
+            await self.hashed_message_class.update_store_for_minutes()
+            self._other_bot_prefixes = None
+            self._remove_double_post_is_dry_run = None
         log.debug('cog "%s" was updated', str(self))
 
+    def _init_msg_keeper(self):
+        self.hashed_message_class.bot = self.bot
+        self.hashed_message_class.config_name = self.config_name
+        self.msg_keeper = MessageRepostKeeper()
+        self.hashed_message_class.removal_signal.connect(self.msg_keeper.remove_stored_message)
 
 # endregion [Setup]
 
@@ -169,6 +181,10 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
     def notify_channel(self) -> discord.TextChannel:
         notification_channel_id = COGS_CONFIG.retrieve(self.config_name, 'double_post_notification_channel', typus=int, direct_fallback=645930607683174401)  # direct fallback is channel Bot-testing
         return self.bot.channel_from_id(notification_channel_id)
+
+    @property
+    def notify_webhooks(self) -> List[str]:
+        return COGS_CONFIG.retrieve(self.config_name, "double_post_notification_webhook_urls", typus=List[str], direct_fallback=[])
 
     @property
     def notify_double_post_in_channel(self) -> bool:
@@ -182,6 +198,17 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
     def remove_double_posts_max_role_position(self) -> bool:
         return COGS_CONFIG.retrieve(self.config_name, 'remove_double_posts_max_role_position', typus=int, direct_fallback=8)
 
+    @property
+    def other_bot_prefixes(self):
+        if self._other_bot_prefixes is None:
+            self._other_bot_prefixes = COGS_CONFIG.retrieve(self.config_name, 'other_bot_prefixes', typus=Set[str], direct_fallback=set())
+        return self._other_bot_prefixes
+
+    @property
+    def remove_double_post_is_dry_run(self):
+        if self._remove_double_post_is_dry_run is None:
+            self._remove_double_post_is_dry_run = COGS_CONFIG.retrieve(self.config_name, 'remove_double_post_is_dry_run', typus=bool, direct_fallback=True)
+        return self._remove_double_post_is_dry_run
 # endregion[Properties]
 
 # region [Listener]
@@ -206,22 +233,40 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
         if any(msg.content.startswith(prfx) for prfx in await self.bot.get_prefix(msg)):
             return
-
-        if await self.msg_keeper.handle_message(msg) is True:
+        if any(msg.content.startswith(prfx) for prfx in self.other_bot_prefixes):
+            return
+        hashed_msg = await self.hashed_message_class.from_message(msg)
+        if await self.msg_keeper.handle_message(hashed_msg) is True:
             log.debug("Message has been determined to be a duplicate message")
             log.debug('Message content:\n%s', textwrap.indent(f'"{msg.content}"', ' ' * 8))
-
+            amount_reposted = await self.msg_keeper.get_amount_reposted(hashed_msg)
+            log.debug("Message was reposted %s times", amount_reposted)
+            msg_link = await self.msg_keeper.get_message_link(hashed_msg)
             if self.notify_double_post_in_channel is True:
-                asyncio.create_task(self._notify_double_post_to_channel(msg.content, msg.author, msg.channel, [await attachment.to_file() for attachment in msg.attachments]))
+                asyncio.create_task(self._notify_double_post_to_channel(msg.content, msg.author, msg.channel, [await attachment.to_file() for attachment in msg.attachments], amount_reposted, msg_link))
             for w_url in self.notify_webhooks:
-                asyncio.create_task(self._notify_double_post_to_webhook(msg.content, msg.author, msg.channel, [await attachment.to_file() for attachment in msg.attachments], w_url))
+                asyncio.create_task(self._notify_double_post_to_webhook(msg.content, msg.author, msg.channel, [await attachment.to_file() for attachment in msg.attachments], amount_reposted, msg_link, w_url))
 
             asyncio.create_task(self._message_double_post_author(msg.content, msg.author, msg.channel, [await attachment.to_file() for attachment in msg.attachments]))
 
-            log.debug("requesting deletion of Message")
-            await msg.delete()
-            log.debug("Message has been deleted")
+            if self.remove_double_post_is_dry_run is False:
+                log.debug("requesting deletion of Message")
+                await msg.delete()
+                log.debug("Message has been deleted")
 
+    @commands.Cog.listener(name='on_message_edit')
+    async def remove_double_posts_update_edited(self, old_msg: discord.Message, new_msg: discord.Message):
+        if any([self.ready is False, self.bot.setup_finished is False]):
+            log.debug("self.ready = %s, self.bot.setup_finished = %s", self.ready, self.bot.setup_finished)
+            return
+        if self.remove_double_posts_enabled is False:
+            return
+
+        old_hashed_msg = await self.hashed_message_class.from_message(old_msg)
+        if old_hashed_msg in self.msg_keeper.stored_messages:
+            await self.msg_keeper.remove_stored_message(old_hashed_msg)
+            old_hashed_msg.removal_task.cancel()
+        await self.remove_double_posts(new_msg)
 
 # endregion[Listener]
 
@@ -304,8 +349,6 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none(), delete_after=120)
 
 
-
-
 # endregion[Commands]
 
 # region [Helper]
@@ -334,6 +377,9 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
             fields.append(self.bot.field_item(name='__**If you are asking for Help**__'.upper(),
                           value=f"Please only post once in the channel {embed_hyperlink('***HELP***', self.bot.get_channel_link('help'))} and be patient!", inline=False))
 
+        if self.remove_double_post_is_dry_run is True:
+            fields.append(self.bot.field_item(name="**__YOUR MESSAGE WAS NOT DELETED__**",
+                          value="As this feature is still in its `testing-phase`. If you think the bot made an error in flagging your post as double post, please contact `Giddi` or post in the `bot-commands` channel", inline=False))
         footer = {'text': "This has been logged and Admins have been notified"}
 
         embed_data = await self.bot.make_generic_embed(title=title, description=description, fields=fields, image=image, thumbnail='warning', footer=footer)
@@ -344,16 +390,19 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
             await author.send(files=files, allowed_mentions=discord.AllowedMentions.none())
         log.debug("Author %s has been notified", author.display_name)
 
-    async def _notify_double_post_to_channel(self, content: str, author: discord.Member, channel: discord.TextChannel, files: List[discord.File]):
+    async def _notify_double_post_to_channel(self, content: str, author: discord.Member, channel: discord.TextChannel, files: List[discord.File], amount_reposted: int, message_link: str):
         fields = [self.bot.field_item(name="Author", value=f"{author.mention} (`{author.name}`)", inline=False),
                   self.bot.field_item(name="In Channel", value=channel.mention, inline=False),
+                  self.bot.field_item(name='Times Reposted', value=amount_reposted, inline=False),
+                  self.bot.field_item(name='Original Message Link', value=embed_hyperlink('Original Message', message_link), inline=False),
                   self.bot.field_item(name='Content', value=CodeBlock(textwrap.shorten(content, width=1000, placeholder="...[SHORTENED]"), 'fix'), inline=False)]
         image = None
         if len(files) > 0:
             fields.append(self.bot.field_item(name='Attachments',
                           value=f"The following attachment of the deleted message can be found attached to this message.\n{ListMarker.make_list([att_file.filename for att_file in files], indent=1)}", inline=False))
             image = files.pop(0) if files[0].filename.split('.')[-1] in IMAGE_EXTENSIONS else None
-
+        if self.remove_double_post_is_dry_run is True:
+            fields.append(self.bot.field_item(name='**__MESSAGE WAS NOT DELETED__**', value="Reason: `Testing-phase`", inline=False))
         embed_data = await self.bot.make_generic_embed(title='Double Post Deleted', fields=fields, image=image, thumbnail='warning')
 
         await self.notify_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
@@ -361,16 +410,19 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         if files:
             await self.notify_channel.send(files=files, allowed_mentions=discord.AllowedMentions.none())
 
-    async def _notify_double_post_to_webhook(self, content: str, author: discord.Member, channel: discord.TextChannel, files: List[discord.File], webhook_url: str):
+    async def _notify_double_post_to_webhook(self, content: str, author: discord.Member, channel: discord.TextChannel, files: List[discord.File], amount_reposted: int, message_link: str, webhook_url: str):
         fields = [self.bot.field_item(name="Author", value=f"{author.mention} (`{author.name}`)", inline=False),
                   self.bot.field_item(name="In Channel", value=channel.mention, inline=False),
+                  self.bot.field_item(name='Times Reposted', value=amount_reposted, inline=False),
+                  self.bot.field_item(name='Original Message Link', value=embed_hyperlink('Original Message', message_link), inline=False),
                   self.bot.field_item(name='Content', value=CodeBlock(textwrap.shorten(content, width=1000, placeholder="...[SHORTENED]"), 'fix'), inline=False)]
         image = None
         if len(files) > 0:
             fields.append(self.bot.field_item(name='Attachments',
                           value=f"The following attachment of the deleted message can be found attached to this message.\n{ListMarker.make_list([att_file.filename for att_file in files], indent=1)}", inline=False))
             image = files.pop(0) if files[0].filename.split('.')[-1] in IMAGE_EXTENSIONS else None
-
+        if self.remove_double_post_is_dry_run is True:
+            fields.append(self.bot.field_item(name='**__MESSAGE WAS NOT DELETED__**', value="Reason: `Testing-phase`", inline=False))
         embed_data = await self.bot.make_generic_embed(title='Double Post Deleted', fields=fields, image=image, thumbnail='warning')
         if files:
             embed_data['files'].append(files)

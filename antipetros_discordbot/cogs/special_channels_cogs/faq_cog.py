@@ -81,6 +81,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [Init]
 
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.faq_items = {}
@@ -107,7 +108,9 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
+        super().on_ready_setup()
         FaqItem.bot = self.bot
         FaqItem.faq_channel = self.faq_channel
         FaqItem.question_parse_emoji = self.q_emoji
@@ -118,7 +121,10 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
+        if UpdateTypus.RECONNECT in typus or UpdateTypus.CONFIG in typus:
+            FaqItem.faq_channel = self.faq_channel
+            await self.collect_raw_faq_data
+        await super().update(typus)
         log.debug('cog "%s" was updated', str(self))
 
 
@@ -130,6 +136,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 # endregion [Loops]
 
 # region [Listener]
+
 
     @commands.Cog.listener(name='on_message')
     async def faq_message_added_listener(self, message):
@@ -160,10 +167,9 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [Commands]
 
-
     @auto_meta_info_group(aliases=['faq'], invoke_without_command=True, case_insensitive=True)
     @commands.cooldown(1, 5, commands.BucketType.channel)
-    async def post_faq_by_number(self, ctx, faq_numbers: commands.Greedy[Union[int, str]]):
+    async def post_faq_by_number(self, ctx: commands.Context, faq_numbers: commands.Greedy[Union[int, str]]):
         """
         Posts an FAQ as an embed on request.
 
@@ -192,8 +198,13 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
             faq_item = self.faq_items.get(faq_number)
             embed_data = await faq_item.to_embed_data()
             if ctx.message.reference is not None:
-
-                await ctx.send(**embed_data, reference=ctx.message.reference, allowed_mentions=discord.AllowedMentions.none())
+                try:
+                    reference = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+                    await ctx.send(**embed_data, reference=reference, allowed_mentions=discord.AllowedMentions.none())
+                except discord.errors.InvalidArgument:
+                    await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+                except discord.errors.HTTPException:
+                    await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
             else:
                 await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
         await ctx.message.delete()
@@ -269,6 +280,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [HelperMethods]
 
+
     @ universal_log_profiler
     async def collect_raw_faq_data(self):
         channel = self.faq_channel
@@ -292,6 +304,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

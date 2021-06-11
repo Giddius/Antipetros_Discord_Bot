@@ -17,7 +17,7 @@ from discord.ext import commands, tasks
 import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.checks import allowed_requester
-from antipetros_discordbot.utility.misc import make_config_name, sync_antipetros_repo_rel_path
+from antipetros_discordbot.utility.misc import make_config_name, sync_antipetros_repo_rel_path, loop_starter
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.schemas import AntiPetrosBaseCogSchema
 from antipetros_discordbot.auxiliary_classes.listener_object import ListenerObject
@@ -135,6 +135,7 @@ class AntiPetrosBaseCog(commands.Cog):
     schema = AntiPetrosBaseCogSchema()
 
     def __init__(self, bot: "AntiPetrosBot") -> None:
+        self.ready = False
         self.name = self.__class__.__name__
         self.config_name = make_config_name(self.name)
         self.bot = bot
@@ -223,17 +224,24 @@ class AntiPetrosBaseCog(commands.Cog):
             item.ensure()
 
     async def on_ready_setup(self):
+        for loop_name, loop in self.loops.items():
+            if loop.is_running is False:
+                loop.start()
+                log.info("loop %s, on Cog %s was started", loop_name, self.name)
+
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
-        log.debug('cog "%s" was updated', str(self))
+        for loop_name, loop in self.loops.items():
+            if loop.is_running() is False:
+                loop.start()
+                log.info("loop %s, on Cog %s was found to be closed and has been restarted", loop_name, self.name)
 
     def cog_unload(self):
         for loop_name, loop in self.loops.items():
             if loop.is_running() is True:
                 loop.cancel()
-                log.info("loop %s was cancelled", loop_name)
+                log.info("loop %s, on Cog %s was cancelled", loop_name. self.name)
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     def dump(self):

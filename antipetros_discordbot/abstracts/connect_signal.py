@@ -6,11 +6,10 @@ from typing import Callable
 class AbstractConnectSignal(ABC):
 
     def __init__(self) -> None:
-        self.targets = []
+        self.targets = set()
 
     def connect(self, target: Callable):
-        self.targets.append(target)
-        self.targets = list(set(self.targets))
+        self.targets.add(target)
 
     @abstractmethod
     async def emit(self, *args, **kwargs):

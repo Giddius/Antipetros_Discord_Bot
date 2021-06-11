@@ -548,7 +548,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         author = {"name": issue.user.login, "url": issue.user.html_url, "icon_url": issue.user.avatar_url}
         fields = [self.bot.field_item(name='State', value=issue.state, inline=False),
                   self.bot.field_item(name='Amount Comments', value=issue.comments, inline=True),
-                  self.bot.field_item(name='Labels', value=ListMarker.make_list([item.name for item in issue.labels]), inline=False)]
+                  self.bot.field_item(name='Labels', value=ListMarker.make_list([f"`{item.name}`" for item in issue.labels]), inline=False)]
         return await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail, url=url, timestamp=timestamp, fields=fields, author=author)
 
     async def make_branches(self):

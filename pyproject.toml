@@ -36,7 +36,7 @@ requires = [
     "ftfy==6.0.1",
     "fuzzywuzzy==0.18.0",
     "gidappdata==0.1.17",
-    "gidconfig==0.2.12",
+    "gidconfig==0.2.14",
     "gidlogger==0.1.33",
     "googletrans==4.0.0rc1",
     "humanize==3.4.1",

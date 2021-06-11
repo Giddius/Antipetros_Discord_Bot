@@ -127,6 +127,7 @@ class UpdateTypus(Flag):
     ALIAS = auto()
     DATE = auto()
     TIME = auto()
+    RECONNECT = auto()
     DATE_AND_TIME = DATE | TIME
 
     @classmethod

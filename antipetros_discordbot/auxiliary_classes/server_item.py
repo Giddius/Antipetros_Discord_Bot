@@ -27,7 +27,7 @@ from aiodav.client import Resource
 import gidlogger as glog
 from asyncio import Lock as AioLock
 from asyncstdlib import lru_cache as async_lru_cache
-from antipetros_discordbot.utility.gidtools_functions import bytes2human, loadjson, readit
+from antipetros_discordbot.utility.gidtools_functions import bytes2human, loadjson, readit, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.regexes import LOG_SPLIT_REGEX, MOD_TABLE_END_REGEX, MOD_TABLE_LINE_REGEX, MOD_TABLE_START_REGEX
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
@@ -201,19 +201,28 @@ def log_grammar():
 
 
 class LogParser:
-    mod_lookup_data = loadjson(APPDATA['mod_lookup.json'])
     new_campaign = NewCampaignSignal()
     flag_captured = FlagCapturedSignal()
 
     def __init__(self, server_item: "ServerItem") -> None:
+        self._mod_lookup_data = None
         self.server = server_item
         self.current_log_item = None
         self.current_byte_position = 0
         self.jinja_env = Environment(loader=BaseLoader, enable_async=True)
         self._parsed_data = None
 
+    @property
+    def mod_lookup_data(self):
+        if self._mod_lookup_data is None:
+            if os.path.isfile(pathmaker(APPDATA['fixed_data'], 'mod_lookup.json')) is False:
+                writejson({}, pathmaker(APPDATA['fixed_data'], 'mod_lookup.json'))
+            self._mod_lookup_data = loadjson(APPDATA['mod_lookup.json'])
+        return self._mod_lookup_data
+
     def reset(self):
         self._parsed_data = None
+        self._mod_lookup_data = None
 
     async def _parse_mod_data(self) -> list:
         if self._parsed_data is None:
@@ -233,19 +242,26 @@ class LogParser:
                         _out.append({key: value.strip() for key, value in line_match.groupdict().items()})
                     await asyncio.sleep(0)
 
-                items = [item.get('mod_dir') for item in _out if item.get('official') == 'false' and item.get("mod_name") not in ["@members", "@TaskForceEnforcer", "@utility"]]
+                items = [item.get('mod_dir') for item in _out if item.get('official') == 'false' and item.get("mod_name") not in {"@members", "@TaskForceEnforcer", "@utility"}]
                 self._parsed_data = sorted(items)
         return self._parsed_data
 
     async def _render_mod_data(self) -> str:
         mod_data = await self._parse_mod_data()
+        if mod_data is None:
+            await asyncio.sleep(30)
+            mod_data = await self._parse_mod_data()
 
-        templ_data = []
-        for item in mod_data:
-            transformed_mod_name = await asyncio.sleep(0, _transform_mod_name(item))
-            templ_data.append(self.mod_lookup_data.get(transformed_mod_name))
+        try:
+            templ_data = []
+            for item in mod_data:
+                transformed_mod_name = await asyncio.sleep(0, _transform_mod_name(item))
+                templ_data.append(self.mod_lookup_data.get(transformed_mod_name))
 
-        return await self.mod_template.render_async(req_mods=templ_data, server_name=self.server.name.replace('_', ' '))
+            return await self.mod_template.render_async(req_mods=templ_data, server_name=self.server.name.replace('_', ' '))
+        except TypeError as error:
+            log.critical("'%s', when parsing mod-data for Server '%s', for file '%s'", error, self.server.name, self.server.newest_log_item.name)
+            raise error
 
     async def get_mod_data_html_file(self) -> discord.File:
         with BytesIO() as bytefile:
@@ -595,7 +611,8 @@ class ServerItem:
         if old_newest_log_item is not self.newest_log_item:
             self.log_parser.reset()
             log.debug("invalidating parser cache of %s", self.name)
-            _ = await self.get_mod_files()
+            if self.log_folder is not None and self.previous_status is ServerStatus.ON:
+                asyncio.create_task(self.get_mod_files())
         log.info("Updated log_items for server %s", self.name)
 
     async def is_online(self) -> ServerStatus:
@@ -617,7 +634,7 @@ class ServerItem:
 
                 asyncio.create_task(self._reset_on_notification_timeout())
             else:
-                log.debug("Status switch message for Server %s not send because server is on notification timeout", self.name)
+                log.debug("Status switch message for Server %s not sent because server is on notification timeout", self.name)
 
             if self.is_online_message_enabled is True:
                 await self.update_is_online_message_signal.emit(self)
