@@ -262,9 +262,11 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         Removes all other emojis being assigned to the messages.
 
         """
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
+
         reaction_member = payload.member
+
         if payload.channel_id != self.is_online_messages_channel.id:
             return
         if payload.message_id not in set(self.is_online_messages.values()):

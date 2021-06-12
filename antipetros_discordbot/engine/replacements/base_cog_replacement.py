@@ -214,6 +214,10 @@ class AntiPetrosBaseCog(commands.Cog):
         return full_path
 
     @property
+    def completely_ready(self):
+        return self.bot.is_ready() is True and self.ready is True and self.bot.setup_finished is True
+
+    @property
     def github_wiki_link(self):
         wiki_base_url = os.getenv('WIKI_BASE_URL')
         full_path = '/'.join([wiki_base_url, self.name])

@@ -293,6 +293,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
             if len(message.attachments) > 0:
                 image = message.attachments[0]
             faq_item = FaqItem(content, created_at, jump_url, image)
+            _ = await faq_item.get_number_thumbnail()
             self.faq_items[faq_item.number] = faq_item
         max_faq_number = max(self.faq_items)
         if all(_num in self.faq_items for _num in range(1, max_faq_number + 1)):

@@ -26,6 +26,7 @@ import gidlogger as glog
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
+from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.utility.exceptions import FaqNumberParseError, FaqQuestionParseError, FaqAnswerParseError, ClassAttributesNotSetError
 # endregion[Imports]
 
@@ -175,6 +176,7 @@ class FaqItem:
         w, h = await asyncio.to_thread(draw.textsize, number_string, font=font)
         h += int(h * 0.01)
         await asyncio.to_thread(draw.text, ((width - w) / 2, (height - h) / 2), number_string, fill=self.bot.color('white').rgb, stroke_width=width // 25, stroke_fill=(0, 0, 0), font=font)
+
         return image
 
     async def to_embed_data(self):
@@ -189,7 +191,6 @@ class FaqItem:
 
     def __repr__(self):
         return f"{self.__class__.__name__}(number={self.number},question={self.question})"
-
 
         # region[Main_Exec]
 if __name__ == '__main__':

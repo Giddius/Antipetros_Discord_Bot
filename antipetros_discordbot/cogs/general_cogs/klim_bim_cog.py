@@ -146,6 +146,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
 # region [Commands]
 
+
     @ auto_meta_info_command()
     @ allowed_channel_and_allowed_role()
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -567,6 +568,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         await self.bot.message_creator(f"`{key}` <-> `{youtube_link}` was added to my Database!, by {ctx.author.name}")
         await delete_message_if_text_channel(ctx)
 
+
 # endregion [Commands]
 
 # region [DataStorage]
@@ -583,7 +585,6 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

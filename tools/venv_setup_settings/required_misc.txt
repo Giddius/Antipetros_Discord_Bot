@@ -4,6 +4,7 @@ PyPDF2==1.26.0
 WeasyPrint==52.5
 aiohttp==3.7.4.post0
 aiosqlite==0.17.0
+aiofiles
 antistasi-template-checker==0.1.1
 arrow==1.0.3
 async-property==0.2.1

@@ -9,6 +9,7 @@ Actual Bot class.
 import os
 import time
 import asyncio
+import shutil
 # * Third Party Imports --------------------------------------------------------------------------------->
 import aiohttp
 from inspect import getdoc
@@ -594,6 +595,14 @@ class AntiPetrosBot(commands.Bot):
         return self.schema.dump(self)
 # region [SpecialMethods]
 
+    def _clean_temp_folder(self):
+        for item in os.scandir(APPDATA["temp_files"]):
+            if item.is_file():
+                os.remove(item.path)
+
+            elif item.is_dir():
+                shutil.rmtree(item.path)
+
     async def _close_sessions(self):
         for session_name, session in self.sessions.items():
 
@@ -612,19 +621,20 @@ class AntiPetrosBot(commands.Bot):
         await self._close_sessions()
         if self.activity_update_task is not None:
             self.activity_update_task.cancel()
-        for task in asyncio.all_tasks():
-            try:
-                task.cancel()
-            except asyncio.CancelledError:
-                log.debug("task %s was cancelled", task.get_name())
-            finally:
-                log.debug("task %s was cancelled", task.get_name())
+        # for task in asyncio.all_tasks():
+        #     try:
+        #         task.cancel()
+        #     except asyncio.CancelledError:
+        #         log.debug("task %s was cancelled", task.get_name())
+        #     finally:
+        #         log.debug("task %s was cancelled", task.get_name())
 
         await asyncio.sleep(5)
 
         log.info("calling bot method super().close()")
         await super().close()
-        time.sleep(5)
+        self._clean_temp_folder()
+        time.sleep(2)
 
     async def start(self, *args, **kwargs):
         asyncio.create_task(self.async_setup())
