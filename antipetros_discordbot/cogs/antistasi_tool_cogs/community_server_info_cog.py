@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 # * Third Party Imports -->
 import a2s
+from textwrap import indent
 from rich import print as rprint, inspect as rinspect
 # import requests
 from pprint import pformat
@@ -48,7 +49,7 @@ from antipetros_discordbot.utility.sqldata_storager import general_db
 
 # region [TODO]
 
-# TODO: Refractor current online server out of method so it can be used with the loop and the command
+# TODO: Refractor all the current online msg methods and commands
 
 # endregion [TODO]
 
@@ -92,6 +93,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     required_files = [RequiredFile(already_notified_savefile, [], RequiredFile.FileType.JSON),
                       RequiredFile(is_online_messages_data_file, {}, RequiredFile.FileType.JSON),
                       RequiredFile(stored_reasons_data_file, {}, RequiredFile.FileType.JSON)]
+
     required_config_data = {'base_config': {},
                             'cogs_config': {"server_message_delete_after_seconds": "300",
                                             "server_names": "Mainserver_1, Mainserver_2, Testserver_1, Testserver_2, Eventserver, SOG_server_1, SOG_server_2",
@@ -263,7 +265,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         if any([self.ready, self.bot.setup_finished]) is False:
             return
         reaction_member = payload.member
-
         if payload.channel_id != self.is_online_messages_channel.id:
             return
         if payload.message_id not in set(self.is_online_messages.values()):
@@ -530,14 +531,19 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         identifier = identifier.removeprefix('@')
         data = loadjson(APPDATA['mod_lookup.json'])
         if identifier in data:
-            await ctx.send(f'Mod already in stored mod-data:\n{CodeBlock(pformat(data.get(identifier), "json"))}', allowed_mentions=discord.AllowedMentions.none(), delete_after=90)
+            existing = f"@{identifier}=\n{indent(pformat(data.get(identifier)),'    ')}"
+            await ctx.send(f'Mod already in stored mod-data:\n{CodeBlock(existing, "python")}', allowed_mentions=discord.AllowedMentions.none(), delete_after=90)
             return
 
         data[identifier] = {"name": name, "link": link}
         writejson(data, APPDATA['mod_lookup.json'])
         await ctx.send(f"`{identifier}` was added to the mod data")
         await delete_message_if_text_channel(ctx, 30)
-
+        for server in self.server_items:
+            try:
+                server.log_parser.reset()
+            except AttributeError:
+                log.debug("Server Item %s has not Attribute 'log_parser'", server)
 # region [DataStorage]
 
 # endregion [DataStorage]
@@ -660,12 +666,19 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         except discord.errors.NotFound as e:
             log.warning("is_online_message for server %s not found!", server)
 
+            data = self.is_online_messages.copy()
+            data.pop(server.name.casefold(), None)
+            writejson(data, self.is_online_messages_data_file)
+
     async def clear_emojis_from_is_online_message(self):
         for key, msg_id in self.is_online_messages.items():
             try:
                 await self._clear_emoji_from_msg(msg_id)
             except discord.errors.NotFound as e:
                 log.warning("is_online_message %s not found!", msg_id)
+                data = self.is_online_messages.copy()
+                data.pop(key, None)
+                writejson(data, self.is_online_messages_data_file)
 
     async def _clear_emoji_from_msg(self, msg_id: int, all_reactions: bool = False):
         try:

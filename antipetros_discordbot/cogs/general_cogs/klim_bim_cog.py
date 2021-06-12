@@ -522,10 +522,13 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         Example:
             @AntiPetros random_music
         """
-        data = self.youtube_links
-        selection = random.choice(list(data.keys()))
+        data = list(self.youtube_links.keys())
+
+        random.shuffle(data)
+
+        selection = random.choice(data)
         band, song_title = selection.split('-')
-        link = data.get(selection)
+        link = self.youtube_links.get(selection)
         await ctx.send(make_box(f"**Band:** {band.strip()}\n**Title:** {song_title.strip()}") + f"\n\n{link}", allowed_mentions=AllowedMentions.none())
 
     @auto_meta_info_command()

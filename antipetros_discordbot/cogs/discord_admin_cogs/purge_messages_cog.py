@@ -154,7 +154,6 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
 
         self.ready = True
@@ -353,7 +352,6 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
 # region [Helper]
 
-
     async def _create_role_level_display(self, new_level: int) -> str:
         raw_all_roles = sorted(self.bot.antistasi_guild.roles, key=lambda x: x.position)
         all_roles = {role.position: role.name for role in raw_all_roles}
@@ -365,8 +363,12 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
     async def _message_double_post_author(self, content: str, author: discord.Member, channel: discord.TextChannel, files: List[discord.File]):
         title = "Your Message was removed!"
         description = "**Your Message:**\n" + textwrap.indent(content.strip(), '> ')
-        fields = [self.bot.field_item(name='Reason', value="The Message is identical to a Message that was already posted by you in the __**Antistasi**__ Guild a short time ago", inline=False),
-                  self.bot.field_item(name='Posted in Channel', value=embed_hyperlink(channel.name, self.bot.get_channel_link(channel.id)), inline=False)]
+        fields = []
+        if self.remove_double_post_is_dry_run is True:
+            fields.append(self.bot.field_item(name="**__YOUR MESSAGE WAS NOT DELETED__**",
+                          value="As this feature is still in its `testing-phase`. If you think the bot made an error in flagging your post as double post, please contact `Giddi` or post in the `bot-commands` channel", inline=False))
+        fields += [self.bot.field_item(name='Reason', value="The Message is identical to a Message that was already posted by you in the __**Antistasi**__ Guild a short time ago", inline=False),
+                   self.bot.field_item(name='Posted in Channel', value=embed_hyperlink(channel.name, self.bot.get_channel_link(channel.id)), inline=False)]
         image = None
         if len(files) > 0:
             fields.append(self.bot.field_item(name='Attachments',
@@ -377,9 +379,6 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
             fields.append(self.bot.field_item(name='__**If you are asking for Help**__'.upper(),
                           value=f"Please only post once in the channel {embed_hyperlink('***HELP***', self.bot.get_channel_link('help'))} and be patient!", inline=False))
 
-        if self.remove_double_post_is_dry_run is True:
-            fields.append(self.bot.field_item(name="**__YOUR MESSAGE WAS NOT DELETED__**",
-                          value="As this feature is still in its `testing-phase`. If you think the bot made an error in flagging your post as double post, please contact `Giddi` or post in the `bot-commands` channel", inline=False))
         footer = {'text': "This has been logged and Admins have been notified"}
 
         embed_data = await self.bot.make_generic_embed(title=title, description=description, fields=fields, image=image, thumbnail='warning', footer=footer)

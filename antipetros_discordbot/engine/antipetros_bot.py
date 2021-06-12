@@ -426,7 +426,7 @@ class AntiPetrosBot(commands.Bot):
                 log.debug("%s ----> %s", str(change_typus).split('.')[-1].upper(), os.path.basename(change_path))
                 await asyncio.to_thread(COGS_CONFIG.read)
                 await asyncio.to_thread(BASE_CONFIG.read)
-            await self.to_all_as_tasks('update', typus=UpdateTypus.CONFIG)
+            await self.to_all_as_tasks('update', False, typus=UpdateTypus.CONFIG)
 
     @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_alias_changes(self):

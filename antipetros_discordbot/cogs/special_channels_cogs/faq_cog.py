@@ -110,12 +110,13 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 
     async def on_ready_setup(self):
-        super().on_ready_setup()
+        await super().on_ready_setup()
         FaqItem.bot = self.bot
         FaqItem.faq_channel = self.faq_channel
         FaqItem.question_parse_emoji = self.q_emoji
         FaqItem.answer_parse_emoji = self.a_emoji
         FaqItem.config_name = self.config_name
+        await asyncio.to_thread(FaqItem.set_background_image)
         await self.collect_raw_faq_data()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
@@ -123,7 +124,8 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
     async def update(self, typus: UpdateTypus):
         if UpdateTypus.RECONNECT in typus or UpdateTypus.CONFIG in typus:
             FaqItem.faq_channel = self.faq_channel
-            await self.collect_raw_faq_data
+            await asyncio.to_thread(FaqItem.set_background_image)
+            await self.collect_raw_faq_data()
         await super().update(typus)
         log.debug('cog "%s" was updated', str(self))
 
@@ -280,8 +282,6 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [HelperMethods]
 
-
-    @ universal_log_profiler
     async def collect_raw_faq_data(self):
         channel = self.faq_channel
         self.faq_items = {}

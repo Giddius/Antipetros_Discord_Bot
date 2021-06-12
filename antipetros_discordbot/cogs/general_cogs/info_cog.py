@@ -33,7 +33,7 @@ from pygments.formatters import HtmlFormatter, ImageFormatter
 from pygments.styles import get_style_by_name, get_all_styles
 from pygments.filters import get_all_filters
 # * Local Imports -->
-from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, owner_or_admin
+from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from icecream import ic
@@ -163,6 +163,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Listener]
 
+
     @commands.Cog.listener(name='on_member_join')
     async def update_time_sorted_member_ids_join(self, member):
         await self.make_time_sorted_guild_member_list()
@@ -175,6 +176,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(in_dm_allowed=False)
@@ -307,6 +309,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
     @auto_meta_info_command(hidden=True, categories=CommandCategory.ADMINTOOLS)
     @owner_or_admin(False)
+    @log_invoker(log, 'info')
     async def info_other(self, ctx: commands.Context, member_id: int):
         """
         Same as `info_me`, but about other Users.
@@ -330,7 +333,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                     'Roles': ('\n'.join(role.mention for role in sorted(member.roles, key=lambda x: x.position, reverse=True) if "everyone" not in role.name.casefold()), False),
                     'Account Created': (member.created_at.strftime("%H:%M:%S on the %Y.%b.%d"), True),
                     'Joined Antistasi Guild': (member.joined_at.strftime("%H:%M:%S on %a the %Y.%b.%d"), True),
-                    'Join Position': (self.time_sorted_guild_member_list.get(member), True),
+                    'Join Position': (self.time_sorted_guild_member_list.index(member) + 1, True),
                     'Permissions': (permissions, False)}
             fields = []
             for key, value in data.items():
@@ -344,6 +347,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [Commands]
 
 # region [HelperMethods]
+
 
     async def make_time_sorted_guild_member_list(self):
         log.debug("Updating time_sorted_guild_member_id_list.")
