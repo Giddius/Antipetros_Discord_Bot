@@ -7,7 +7,12 @@ import os
 import re
 import json
 from pprint import pformat
+import random
 from dotenv import load_dotenv
+from io import StringIO, BytesIO
+import asyncio
+import tempfile
+import webbrowser
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands, flags, tasks
@@ -15,14 +20,15 @@ from emoji import demojize, emojize, emoji_count
 from emoji.unicode_codes import EMOJI_UNICODE_ENGLISH
 from webdav3.client import Client
 from typing import TYPE_CHECKING
+from weasyprint import HTML, CSS
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.misc import generate_bot_data
+from antipetros_discordbot.utility.misc import generate_bot_data, delete_message_if_text_channel
 from antipetros_discordbot.utility.gidtools_functions import writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command
+from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, ContextAskAnswer
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command, AntiPetrosBaseCommand
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.converters import CommandConverter, SeparatedListConverter, RoleOrIntConverter
@@ -30,12 +36,14 @@ from pyyoutube import Api
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from marshmallow import Schema
 from rich import inspect as rinspect
+from rich.console import Console
 from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
 import ftfy
 from hashlib import blake2b
 import json
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+    from antipetros_discordbot.engine.replacements.context_replacement import AntiPetrosBaseContext
 # endregion [Imports]
 
 # region [Logging]
@@ -198,6 +206,56 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
             await ctx.send(await self.bot.get_message_directly(channel_id, message_id), allowed_mentions=discord.AllowedMentions.none())
         except discord.errors.NotFound as e:
             await ctx.send(e, allowed_mentions=discord.AllowedMentions.none())
+
+    @auto_meta_info_command()
+    async def check_context(self, ctx: commands.Context):
+        async with ctx.continous_typing():
+            await ctx.send(str(self.bot))
+            await ctx.send(self.bot.creator.mention)
+
+            console = Console(soft_wrap=True, record=True)
+            rinspect(ctx, console=console, help=True, all=True)
+
+    @auto_meta_info_command()
+    async def check_ask_confirmation(self, ctx):
+        answer = await ctx.ask_confirmation("this is a test of the confirmation-method", 60.0)
+        await ctx.send(str(answer))
+        await delete_message_if_text_channel(ctx)
+
+    @auto_meta_info_command(clear_invocation=True)
+    async def check_ask_selection(self, ctx: commands.Context):
+        faq_cog = self.bot.cogs.get('FaqCog')
+
+        options = [ctx.option_item(faq_item, name=faq_item.number, description=lambda x:CodeBlock(x.question, "fix"), emoji=faq_item.number) for faq_item in list(faq_cog.faq_items.values())[:10]]
+
+        emojis = list(self.bot.antistasi_guild.emojis)
+        random.shuffle(emojis)
+        answer = await ctx.ask_selection(description="this is a test of the selection-method", options=options, update_time_left=True, timeout=350)
+        if answer in {ContextAskAnswer.NOANSWER, ContextAskAnswer.CANCELED}:
+            await ctx.send(answer.name)
+            return
+        await ctx.send(answer.answer)
+
+    @auto_meta_info_command()
+    async def check_ask_input(self, ctx: commands.Context):
+        validator = re.compile(r"\*\*.*?\*\*")
+        answer = await ctx.ask_input(description='this is a test', validator=validator, case_insensitive=True, timeout=60)
+        await ctx.send(answer)
+
+    @auto_meta_info_command()
+    async def check_voice_channel_members(self, ctx: commands.Context, voice_channel: discord.VoiceChannel):
+        await ctx.send(ListMarker.make_list(member.mention for member in voice_channel.members))
+
+    @auto_meta_info_command()
+    async def check_rpc(self, ctx: commands.Context):
+        info = await self.bot.application_info()
+        from rich import inspect as rinspect
+        from rich.console import Console
+
+        temp_console = Console(soft_wrap=True, record=True)
+        rinspect(info, all=True, console=temp_console)
+
+        await self.bot.split_to_messages(ctx, temp_console.export_text(), in_codeblock=True, syntax_highlighting="python")
     # def cog_unload(self):
     #     log.debug("Cog '%s' UNLOADED!", str(self))
 

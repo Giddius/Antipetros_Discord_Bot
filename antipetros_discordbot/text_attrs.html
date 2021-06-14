@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<head>
+<meta charset="UTF-8">
+<style>
+.r1 {color: #000080; text-decoration-color: #000080}
+.r2 {color: #000080; text-decoration-color: #000080; font-weight: bold}
+.r3 {color: #ff00ff; text-decoration-color: #ff00ff; font-weight: bold}
+.r4 {color: #000000; text-decoration-color: #000000}
+.r5 {color: #008000; text-decoration-color: #008000}
+.r6 {color: #008080; text-decoration-color: #008080}
+.r7 {font-weight: bold}
+.r8 {color: #008080; text-decoration-color: #008080; font-weight: bold}
+.r9 {color: #808000; text-decoration-color: #808000; font-style: italic}
+.r10 {color: #808000; text-decoration-color: #808000; font-weight: bold}
+.r11 {color: #000000; text-decoration-color: #000000; font-weight: bold}
+.r12 {color: #ff0000; text-decoration-color: #ff0000; font-style: italic}
+.r13 {color: #00ff00; text-decoration-color: #00ff00; font-style: italic}
+.r14 {color: #808000; text-decoration-color: #808000}
+.r15 {color: #00ffff; text-decoration-color: #00ffff; font-style: italic}
+.r16 {color: #800000; text-decoration-color: #800000; font-weight: bold}
+.r17 {color: #7f7f7f; text-decoration-color: #7f7f7f}
+.r18 {color: #7f7f7f; text-decoration-color: #7f7f7f; font-weight: bold}
+.r19 {color: #800080; text-decoration-color: #800080; font-style: italic}
+.r20 {color: #bf7fbf; text-decoration-color: #bf7fbf; font-style: italic}
+.r21 {color: #7fbf7f; text-decoration-color: #7fbf7f}
+.r22 {color: #7fff7f; text-decoration-color: #7fff7f; font-style: italic}
+.r23 {color: #7fbfbf; text-decoration-color: #7fbfbf; font-weight: bold}
+.r24 {color: #bf7fbf; text-decoration-color: #bf7fbf}
+.r25 {color: #ff7fff; text-decoration-color: #ff7fff}
+.r26 {color: #bfbf7f; text-decoration-color: #bfbf7f}
+body {
+    color: #000000;
+    background-color: #ffffff;
+}
+</style>
+</head>
+<html>
+<body>
+    <code>
+        <pre style="font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span class="r1">┌────────────────────── </span><span class="r2">&lt;</span><span class="r3">class</span><span class="r4"> </span><span class="r5">'matplotlib.text.Text'</span><span class="r2">&gt;</span><span class="r1"> ───────────────────────┐</span>
+<span class="r1">│</span> <span class="r6">Handle storing and drawing of text in window or data coordinates.</span>           <span class="r1">│</span>
+<span class="r1">│</span>                                                                             <span class="r1">│</span>
+<span class="r1">│</span> <span class="r5">┌─────────────────────────────────────────────────────────────────────────┐</span> <span class="r1">│</span>
+<span class="r1">│</span> <span class="r5">│</span> Text<span class="r7">(</span><span class="r8">254</span>, <span class="r8">2</span>, <span class="r5">'Google'</span><span class="r7">)</span>                                                  <span class="r5">│</span> <span class="r1">│</span>
+<span class="r1">│</span> <span class="r5">└─────────────────────────────────────────────────────────────────────────┘</span> <span class="r1">│</span>
+<span class="r1">│</span>                                                                             <span class="r1">│</span>
+<span class="r1">│</span>                               <span class="r9">axes</span> = <span class="r7">&lt;</span><span class="r3">AxesSubplot:</span><span class="r10">title</span><span class="r4">=</span><span class="r11">{</span><span class="r5">'center'</span><span class="r4">:</span><span class="r5">'Top </span>     <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r5">Referrers to the Antistasi Repo (Last </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r5">14 days)'</span><span class="r11">}</span><span class="r7">&gt;</span>                            <span class="r1">│</span>
+<span class="r1">│</span>                            <span class="r9">clipbox</span> = <span class="r7">&lt;</span><span class="r3">matplotlib.transforms.TransformedBbox</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r4">object at </span><span class="r8">0x0000021C9D7F6E80</span><span class="r7">&gt;</span>          <span class="r1">│</span>
+<span class="r1">│</span>                             <span class="r9">figure</span> = <span class="r7">&lt;</span><span class="r3">Figure</span><span class="r4"> size 64</span><span class="r8">0x480</span><span class="r4"> with </span><span class="r8">1</span><span class="r4"> Axes</span><span class="r7">&gt;</span>      <span class="r1">│</span>
+<span class="r1">│</span>                          <span class="r9">mouseover</span> = <span class="r12">False</span>                                  <span class="r1">│</span>
+<span class="r1">│</span>                              <span class="r9">stale</span> = <span class="r13">True</span>                                   <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">sticky_edges</span> = _XYPair<span class="r7">(</span><span class="r14">x</span>=<span class="r7">[]</span>, <span class="r14">y</span>=<span class="r7">[])</span>                    <span class="r1">│</span>
+<span class="r1">│</span>                             <span class="r9">zorder</span> = <span class="r8">3</span>                                      <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">add_callback</span> = <span class="r15">def </span><span class="r16">add_callback</span><span class="r7">(</span>func<span class="r7">)</span>:                <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Add a callback function that will be </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">called whenever one of the</span>             <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`.Artist`'s properties changes.</span>        <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">contains</span> = <span class="r15">def </span><span class="r16">contains</span><span class="r7">(</span>mouseevent<span class="r7">)</span>:              <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Return whether the mouse event </span>        <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">occurred inside the axis-aligned</span>       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">bounding-box of the text.</span>              <span class="r1">│</span>
+<span class="r1">│</span>                     <span class="r9">convert_xunits</span> = <span class="r15">def </span><span class="r16">convert_xunits</span><span class="r7">(</span>x<span class="r7">)</span>: <span class="r17">Convert *x* </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">using the unit type of the xaxis.</span>      <span class="r1">│</span>
+<span class="r1">│</span>                     <span class="r9">convert_yunits</span> = <span class="r15">def </span><span class="r16">convert_yunits</span><span class="r7">(</span>y<span class="r7">)</span>: <span class="r17">Convert *y* </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">using the unit type of the yaxis.</span>      <span class="r1">│</span>
+<span class="r1">│</span>                               <span class="r9">draw</span> = <span class="r15">def </span><span class="r16">draw</span><span class="r7">(</span>renderer<span class="r7">)</span>: <span class="r17">Draw the Artist </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r18">(</span><span class="r17">and its children</span><span class="r18">)</span><span class="r17"> using the given </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">renderer.</span>                              <span class="r1">│</span>
+<span class="r1">│</span>                            <span class="r9">findobj</span> = <span class="r15">def </span><span class="r16">findobj</span><span class="r7">(</span><span class="r14">match</span>=<span class="r19">None</span>,                <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r14">include_self</span>=<span class="r13">True</span><span class="r7">)</span>: <span class="r17">Find artist </span>       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">objects.</span>                               <span class="r1">│</span>
+<span class="r1">│</span>                 <span class="r9">format_cursor_data</span> = <span class="r15">def </span><span class="r16">format_cursor_data</span><span class="r7">(</span>data<span class="r7">)</span>: <span class="r17">Return a</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">string representation of *data*.</span>       <span class="r1">│</span>
+<span class="r1">│</span>                     <span class="r9">get_agg_filter</span> = <span class="r15">def </span><span class="r16">get_agg_filter</span><span class="r7">()</span>: <span class="r17">Return filter </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">function to be used for agg filter.</span>    <span class="r1">│</span>
+<span class="r1">│</span>                          <span class="r9">get_alpha</span> = <span class="r15">def </span><span class="r16">get_alpha</span><span class="r7">()</span>:                       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Return the alpha value used for </span>       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">blending - not supported on all</span>        <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">backends.</span>                              <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">get_animated</span> = <span class="r15">def </span><span class="r16">get_animated</span><span class="r7">()</span>: <span class="r17">Return whether the</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">artist is animated.</span>                    <span class="r1">│</span>
+<span class="r1">│</span>                     <span class="r9">get_bbox_patch</span> = <span class="r15">def </span><span class="r16">get_bbox_patch</span><span class="r7">()</span>:                  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Return the bbox Patch, or </span><span class="r20">None</span><span class="r17"> if the </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`.patches.FancyBboxPatch`</span>              <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">is not made.</span>                           <span class="r1">│</span>
+<span class="r1">│</span>                              <span class="r9">get_c</span> = <span class="r15">def </span><span class="r16">get_c</span><span class="r7">()</span>: <span class="r17">Alias for `get_color`.</span>    <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">get_children</span> = <span class="r15">def </span><span class="r16">get_children</span><span class="r7">()</span>: <span class="r17">Return a list of </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the child `.Artist`\s of this </span>         <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`.Artist`.</span>                             <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">get_clip_box</span> = <span class="r15">def </span><span class="r16">get_clip_box</span><span class="r7">()</span>: <span class="r17">Return the </span>        <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">clipbox.</span>                               <span class="r1">│</span>
+<span class="r1">│</span>                        <span class="r9">get_clip_on</span> = <span class="r15">def </span><span class="r16">get_clip_on</span><span class="r7">()</span>: <span class="r17">Return whether the </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">artist uses clipping.</span>                  <span class="r1">│</span>
+<span class="r1">│</span>                      <span class="r9">get_clip_path</span> = <span class="r15">def </span><span class="r16">get_clip_path</span><span class="r7">()</span>: <span class="r17">Return the clip </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">path.</span>                                  <span class="r1">│</span>
+<span class="r1">│</span>                          <span class="r9">get_color</span> = <span class="r15">def </span><span class="r16">get_color</span><span class="r7">()</span>: <span class="r17">Return the color of </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the text.</span>                              <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">get_contains</span> = <span class="r15">def </span><span class="r16">get_contains</span><span class="r7">()</span>: <span class="r18">[</span><span class="r17">*Deprecated*</span><span class="r18">]</span><span class="r17"> </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Return the custom contains function of</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the artist if set, or *</span><span class="r20">None</span><span class="r17">*.</span>          <span class="r1">│</span>
+<span class="r1">│</span>                    <span class="r9">get_cursor_data</span> = <span class="r15">def </span><span class="r16">get_cursor_data</span><span class="r7">(</span>event<span class="r7">)</span>: <span class="r17">Return the</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">cursor data for a given event.</span>         <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">get_family</span> = <span class="r15">def </span><span class="r16">get_family</span><span class="r7">()</span>: <span class="r17">Alias for </span>           <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`get_fontfamily`.</span>                      <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">get_figure</span> = <span class="r15">def </span><span class="r16">get_figure</span><span class="r7">()</span>: <span class="r17">Return the `.Figure`</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">instance the artist belongs to.</span>        <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">get_font</span> = <span class="r15">def </span><span class="r16">get_font</span><span class="r7">()</span>: <span class="r17">Alias for </span>             <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`get_fontproperties`.</span>                  <span class="r1">│</span>
+<span class="r1">│</span>                <span class="r9">get_font_properties</span> = <span class="r15">def </span><span class="r16">get_font_properties</span><span class="r7">()</span>: <span class="r17">Alias for </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`get_fontproperties`.</span>                  <span class="r1">│</span>
+<span class="r1">│</span>                     <span class="r9">get_fontfamily</span> = <span class="r15">def </span><span class="r16">get_fontfamily</span><span class="r7">()</span>: <span class="r17">Return the list </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">of font families used for font lookup.</span> <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">get_fontname</span> = <span class="r15">def </span><span class="r16">get_fontname</span><span class="r7">()</span>: <span class="r17">Return the font </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">name as a string.</span>                      <span class="r1">│</span>
+<span class="r1">│</span>                 <span class="r9">get_fontproperties</span> = <span class="r15">def </span><span class="r16">get_fontproperties</span><span class="r7">()</span>: <span class="r17">Return the </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`.font_manager.FontProperties`.</span>        <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">get_fontsize</span> = <span class="r15">def </span><span class="r16">get_fontsize</span><span class="r7">()</span>: <span class="r17">Return the font </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">size as an integer.</span>                    <span class="r1">│</span>
+<span class="r1">│</span>                      <span class="r9">get_fontstyle</span> = <span class="r15">def </span><span class="r16">get_fontstyle</span><span class="r7">()</span>: <span class="r17">Return the font </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">style as a string.</span>                     <span class="r1">│</span>
+<span class="r1">│</span>                    <span class="r9">get_fontvariant</span> = <span class="r15">def </span><span class="r16">get_fontvariant</span><span class="r7">()</span>: <span class="r17">Return the font</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">variant as a string.</span>                   <span class="r1">│</span>
+<span class="r1">│</span>                     <span class="r9">get_fontweight</span> = <span class="r15">def </span><span class="r16">get_fontweight</span><span class="r7">()</span>: <span class="r17">Return the font </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">weight as a string or a number.</span>        <span class="r1">│</span>
+<span class="r1">│</span>                            <span class="r9">get_gid</span> = <span class="r15">def </span><span class="r16">get_gid</span><span class="r7">()</span>: <span class="r17">Return the group id.</span>    <span class="r1">│</span>
+<span class="r1">│</span>                             <span class="r9">get_ha</span> = <span class="r15">def </span><span class="r16">get_ha</span><span class="r7">()</span>: <span class="r17">Alias for </span>               <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`get_horizontalalignment`.</span>             <span class="r1">│</span>
+<span class="r1">│</span>            <span class="r9">get_horizontalalignment</span> = <span class="r15">def </span><span class="r16">get_horizontalalignment</span><span class="r7">()</span>:         <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Return the horizontal alignment as a </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">string.  Will be one of</span>                <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r21">'left'</span><span class="r17">, </span><span class="r21">'center'</span><span class="r17"> or </span><span class="r21">'right'</span><span class="r17">.</span>           <span class="r1">│</span>
+<span class="r1">│</span>                      <span class="r9">get_in_layout</span> = <span class="r15">def </span><span class="r16">get_in_layout</span><span class="r7">()</span>:                   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Return boolean flag, ``</span><span class="r22">True</span><span class="r17">`` if </span>      <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">artist is included in layout</span>           <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">calculations.</span>                          <span class="r1">│</span>
+<span class="r1">│</span>                          <span class="r9">get_label</span> = <span class="r15">def </span><span class="r16">get_label</span><span class="r7">()</span>: <span class="r17">Return the label used</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">for this artist in the legend.</span>         <span class="r1">│</span>
+<span class="r1">│</span>                <span class="r9">get_math_fontfamily</span> = <span class="r15">def </span><span class="r16">get_math_fontfamily</span><span class="r7">()</span>: <span class="r17">Return the </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">font family name for math text </span>        <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">rendered by Matplotlib.</span>                <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">get_name</span> = <span class="r15">def </span><span class="r16">get_name</span><span class="r7">()</span>: <span class="r17">Alias for </span>             <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`get_fontname`.</span>                        <span class="r1">│</span>
+<span class="r1">│</span>                   <span class="r9">get_path_effects</span> = <span class="r15">def </span><span class="r16">get_path_effects</span><span class="r7">()</span>:                <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">get_picker</span> = <span class="r15">def </span><span class="r16">get_picker</span><span class="r7">()</span>: <span class="r17">Return the picking </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">behavior of the artist.</span>                <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">get_position</span> = <span class="r15">def </span><span class="r16">get_position</span><span class="r7">()</span>: <span class="r17">Return the </span><span class="r18">(</span><span class="r17">x, y</span><span class="r18">)</span><span class="r17"> </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">position of the text.</span>                  <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">get_prop_tup</span> = <span class="r15">def </span><span class="r16">get_prop_tup</span><span class="r7">(</span><span class="r14">renderer</span>=<span class="r19">None</span><span class="r7">)</span>:       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Return a hashable tuple of properties.</span> <span class="r1">│</span>
+<span class="r1">│</span>                     <span class="r9">get_rasterized</span> = <span class="r15">def </span><span class="r16">get_rasterized</span><span class="r7">()</span>: <span class="r17">Return whether </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the artist is to be rasterized.</span>        <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">get_rotation</span> = <span class="r15">def </span><span class="r16">get_rotation</span><span class="r7">()</span>: <span class="r17">Return the text </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">angle in degrees between </span><span class="r23">0</span><span class="r17"> and </span><span class="r23">360</span><span class="r17">.</span>    <span class="r1">│</span>
+<span class="r1">│</span>                  <span class="r9">get_rotation_mode</span> = <span class="r15">def </span><span class="r16">get_rotation_mode</span><span class="r7">()</span>: <span class="r17">Return the </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">text rotation mode.</span>                    <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">get_size</span> = <span class="r15">def </span><span class="r16">get_size</span><span class="r7">()</span>: <span class="r17">Alias for </span>             <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`get_fontsize`.</span>                        <span class="r1">│</span>
+<span class="r1">│</span>                  <span class="r9">get_sketch_params</span> = <span class="r15">def </span><span class="r16">get_sketch_params</span><span class="r7">()</span>: <span class="r17">Return the </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">sketch parameters for the artist.</span>      <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">get_snap</span> = <span class="r15">def </span><span class="r16">get_snap</span><span class="r7">()</span>: <span class="r17">Return the snap </span>       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">setting.</span>                               <span class="r1">│</span>
+<span class="r1">│</span>                        <span class="r9">get_stretch</span> = <span class="r15">def </span><span class="r16">get_stretch</span><span class="r7">()</span>: <span class="r17">Return the font </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">stretch as a string or a number.</span>       <span class="r1">│</span>
+<span class="r1">│</span>                          <span class="r9">get_style</span> = <span class="r15">def </span><span class="r16">get_style</span><span class="r7">()</span>: <span class="r17">Alias for </span>            <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`get_fontstyle`.</span>                       <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">get_text</span> = <span class="r15">def </span><span class="r16">get_text</span><span class="r7">()</span>: <span class="r17">Return the text </span>       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">string.</span>                                <span class="r1">│</span>
+<span class="r1">│</span>                      <span class="r9">get_tightbbox</span> = <span class="r15">def </span><span class="r16">get_tightbbox</span><span class="r7">(</span>renderer<span class="r7">)</span>: <span class="r17">Like </span>     <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`.Artist.get_window_extent`, but </span>      <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">includes any clipping.</span>                 <span class="r1">│</span>
+<span class="r1">│</span>                      <span class="r9">get_transform</span> = <span class="r15">def </span><span class="r16">get_transform</span><span class="r7">()</span>: <span class="r17">Return the </span>       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`.Transform` instance used by this </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">artist.</span>                                <span class="r1">│</span>
+<span class="r1">│</span>         <span class="r9">get_transform_rotates_text</span> = <span class="r15">def </span><span class="r16">get_transform_rotates_text</span><span class="r7">()</span>:      <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Return whether rotations of the </span>       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">transform affect the text direction.</span>   <span class="r1">│</span>
+<span class="r1">│</span> <span class="r9">get_transformed_clip_path_and_affine</span> <span class="r15">def </span>                                   <span class="r1">│</span>
+<span class="r1">│</span>                                    = <span class="r16">get_transformed_clip_path_and_affine</span><span class="r7">(…</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Return the clip path with the </span>         <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">non-affine part of its</span>                 <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">transformation applied, and the </span>       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">remaining affine part of its</span>           <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">transformation.</span>                        <span class="r1">│</span>
+<span class="r1">│</span>              <span class="r9">get_unitless_position</span> = <span class="r15">def </span><span class="r16">get_unitless_position</span><span class="r7">()</span>: <span class="r17">Return </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the </span><span class="r18">(</span><span class="r17">x, y</span><span class="r18">)</span><span class="r17"> unitless position of the </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">text.</span>                                  <span class="r1">│</span>
+<span class="r1">│</span>                            <span class="r9">get_url</span> = <span class="r15">def </span><span class="r16">get_url</span><span class="r7">()</span>: <span class="r17">Return the url.</span>         <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">get_usetex</span> = <span class="r15">def </span><span class="r16">get_usetex</span><span class="r7">()</span>: <span class="r17">Return whether this </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`Text` object uses TeX for rendering.</span>  <span class="r1">│</span>
+<span class="r1">│</span>                             <span class="r9">get_va</span> = <span class="r15">def </span><span class="r16">get_va</span><span class="r7">()</span>: <span class="r17">Alias for </span>               <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`get_verticalalignment`.</span>               <span class="r1">│</span>
+<span class="r1">│</span>                        <span class="r9">get_variant</span> = <span class="r15">def </span><span class="r16">get_variant</span><span class="r7">()</span>: <span class="r17">Alias for </span>          <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`get_fontvariant`.</span>                     <span class="r1">│</span>
+<span class="r1">│</span>              <span class="r9">get_verticalalignment</span> = <span class="r15">def </span><span class="r16">get_verticalalignment</span><span class="r7">()</span>:           <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Return the vertical alignment as a </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">string.  Will be one of</span>                <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r21">'top'</span><span class="r17">, </span><span class="r21">'center'</span><span class="r17">, </span><span class="r21">'bottom'</span><span class="r17">, </span><span class="r21">'baseline'</span><span class="r17"> </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">or </span><span class="r21">'center_baseline'</span><span class="r17">.</span>                  <span class="r1">│</span>
+<span class="r1">│</span>                        <span class="r9">get_visible</span> = <span class="r15">def </span><span class="r16">get_visible</span><span class="r7">()</span>: <span class="r17">Return the </span>         <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">visibility.</span>                            <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">get_weight</span> = <span class="r15">def </span><span class="r16">get_weight</span><span class="r7">()</span>: <span class="r17">Alias for </span>           <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`get_fontweight`.</span>                      <span class="r1">│</span>
+<span class="r1">│</span>                  <span class="r9">get_window_extent</span> = <span class="r15">def </span><span class="r16">get_window_extent</span><span class="r7">(</span><span class="r14">renderer</span>=<span class="r19">None</span>,   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r14">dpi</span>=<span class="r19">None</span><span class="r7">)</span>: <span class="r17">Return the `.Bbox` bounding</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the text, in display units.</span>            <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">get_wrap</span> = <span class="r15">def </span><span class="r16">get_wrap</span><span class="r7">()</span>: <span class="r17">Return whether the </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">text can be wrapped.</span>                   <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">get_zorder</span> = <span class="r15">def </span><span class="r16">get_zorder</span><span class="r7">()</span>: <span class="r17">Return the artist's </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">zorder.</span>                                <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">have_units</span> = <span class="r15">def </span><span class="r16">have_units</span><span class="r7">()</span>: <span class="r17">Return whether units</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">are set on any axis.</span>                   <span class="r1">│</span>
+<span class="r1">│</span>                   <span class="r9">is_transform_set</span> = <span class="r15">def </span><span class="r16">is_transform_set</span><span class="r7">()</span>: <span class="r17">Return whether</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the Artist has an explicitly set </span>      <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">transform.</span>                             <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">pchanged</span> = <span class="r15">def </span><span class="r16">pchanged</span><span class="r7">()</span>: <span class="r17">Call all of the </span>       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">registered callbacks.</span>                  <span class="r1">│</span>
+<span class="r1">│</span>                               <span class="r9">pick</span> = <span class="r15">def </span><span class="r16">pick</span><span class="r7">(</span>mouseevent<span class="r7">)</span>: <span class="r17">Process a pick </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">event.</span>                                 <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">pickable</span> = <span class="r15">def </span><span class="r16">pickable</span><span class="r7">()</span>: <span class="r17">Return whether the </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">artist is pickable.</span>                    <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">properties</span> = <span class="r15">def </span><span class="r16">properties</span><span class="r7">()</span>: <span class="r17">Return a dictionary </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">of all the properties of the artist.</span>   <span class="r1">│</span>
+<span class="r1">│</span>                             <span class="r9">remove</span> = <span class="r15">def </span><span class="r16">remove</span><span class="r7">()</span>: <span class="r17">Remove the artist from </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the figure if possible.</span>                <span class="r1">│</span>
+<span class="r1">│</span>                    <span class="r9">remove_callback</span> = <span class="r15">def </span><span class="r16">remove_callback</span><span class="r7">(</span>oid<span class="r7">)</span>: <span class="r17">Remove a </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">callback based on its observer id.</span>     <span class="r1">│</span>
+<span class="r1">│</span>                                <span class="r9">set</span> = <span class="r15">def </span><span class="r16">set</span><span class="r7">(</span>**kwargs<span class="r7">)</span>: <span class="r17">A property batch </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">setter.  Pass *kwargs* to set </span>         <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">properties.</span>                            <span class="r1">│</span>
+<span class="r1">│</span>                     <span class="r9">set_agg_filter</span> = <span class="r15">def </span><span class="r16">set_agg_filter</span><span class="r7">(</span>filter_func<span class="r7">)</span>: <span class="r17">Set </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the agg filter.</span>                        <span class="r1">│</span>
+<span class="r1">│</span>                          <span class="r9">set_alpha</span> = <span class="r15">def </span><span class="r16">set_alpha</span><span class="r7">(</span>alpha<span class="r7">)</span>: <span class="r17">Set the alpha </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">value used for blending - not </span>         <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">supported on all backends.</span>             <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">set_animated</span> = <span class="r15">def </span><span class="r16">set_animated</span><span class="r7">(</span>b<span class="r7">)</span>: <span class="r17">Set whether the </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">artist is intended to be used in an </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">animation.</span>                             <span class="r1">│</span>
+<span class="r1">│</span>                <span class="r9">set_backgroundcolor</span> = <span class="r15">def </span><span class="r16">set_backgroundcolor</span><span class="r7">(</span>color<span class="r7">)</span>: <span class="r17">Set </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the background color of the text by </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">updating the bbox.</span>                     <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">set_bbox</span> = <span class="r15">def </span><span class="r16">set_bbox</span><span class="r7">(</span>rectprops<span class="r7">)</span>: <span class="r17">Draw a </span>       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">bounding box around self.</span>              <span class="r1">│</span>
+<span class="r1">│</span>                              <span class="r9">set_c</span> = <span class="r15">def </span><span class="r16">set_c</span><span class="r7">(</span>color<span class="r7">)</span>: <span class="r17">Alias for </span>           <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_color`.</span>                           <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">set_clip_box</span> = <span class="r15">def </span><span class="r16">set_clip_box</span><span class="r7">(</span>clipbox<span class="r7">)</span>: <span class="r17">Set the </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">artist's clip `.Bbox`.</span>                 <span class="r1">│</span>
+<span class="r1">│</span>                        <span class="r9">set_clip_on</span> = <span class="r15">def </span><span class="r16">set_clip_on</span><span class="r7">(</span>b<span class="r7">)</span>: <span class="r17">Set whether the </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">artist uses clipping.</span>                  <span class="r1">│</span>
+<span class="r1">│</span>                      <span class="r9">set_clip_path</span> = <span class="r15">def </span><span class="r16">set_clip_path</span><span class="r7">(</span>path,                <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r14">transform</span>=<span class="r19">None</span><span class="r7">)</span>: <span class="r17">Set the artist's clip</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">path.</span>                                  <span class="r1">│</span>
+<span class="r1">│</span>                          <span class="r9">set_color</span> = <span class="r15">def </span><span class="r16">set_color</span><span class="r7">(</span>color<span class="r7">)</span>: <span class="r17">Set the </span>         <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">foreground color of the text</span>           <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">set_contains</span> = <span class="r15">def </span><span class="r16">set_contains</span><span class="r7">(</span>picker<span class="r7">)</span>:              <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r18">[</span><span class="r17">*Deprecated*</span><span class="r18">]</span><span class="r17"> Define a custom </span>        <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">contains test for the artist.</span>          <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">set_family</span> = <span class="r15">def </span><span class="r16">set_family</span><span class="r7">(</span>fontname<span class="r7">)</span>: <span class="r17">Alias for </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_fontfamily`.</span>                      <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">set_figure</span> = <span class="r15">def </span><span class="r16">set_figure</span><span class="r7">(</span>fig<span class="r7">)</span>: <span class="r17">Set the `.Figure`</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">instance the artist belongs to.</span>        <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">set_font</span> = <span class="r15">def </span><span class="r16">set_font</span><span class="r7">(</span>fp<span class="r7">)</span>: <span class="r17">Alias for </span>           <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_fontproperties`.</span>                  <span class="r1">│</span>
+<span class="r1">│</span>                <span class="r9">set_font_properties</span> = <span class="r15">def </span><span class="r16">set_font_properties</span><span class="r7">(</span>fp<span class="r7">)</span>: <span class="r17">Alias for</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_fontproperties`.</span>                  <span class="r1">│</span>
+<span class="r1">│</span>                     <span class="r9">set_fontfamily</span> = <span class="r15">def </span><span class="r16">set_fontfamily</span><span class="r7">(</span>fontname<span class="r7">)</span>:          <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Set the font family.  May be either a </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">single string, or a list of</span>            <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">strings in decreasing priority.  Each </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">string may be either a real font</span>       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">name or a generic font class name.  If</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the latter, the specific font</span>          <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">names will be looked up in the </span>        <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">corresponding rcParams.</span>                <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">set_fontname</span> = <span class="r15">def </span><span class="r16">set_fontname</span><span class="r7">(</span>fontname<span class="r7">)</span>: <span class="r17">Alias for </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_family`.</span>                          <span class="r1">│</span>
+<span class="r1">│</span>                 <span class="r9">set_fontproperties</span> = <span class="r15">def </span><span class="r16">set_fontproperties</span><span class="r7">(</span>fp<span class="r7">)</span>: <span class="r17">Set the </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">font properties that control the text.</span> <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">set_fontsize</span> = <span class="r15">def </span><span class="r16">set_fontsize</span><span class="r7">(</span>fontsize<span class="r7">)</span>: <span class="r17">Set the </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">font size.</span>                             <span class="r1">│</span>
+<span class="r1">│</span>                    <span class="r9">set_fontstretch</span> = <span class="r15">def </span><span class="r16">set_fontstretch</span><span class="r7">(</span>stretch<span class="r7">)</span>: <span class="r17">Set the </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">font stretch </span><span class="r18">(</span><span class="r17">horizontal condensation </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">or expansion</span><span class="r18">)</span><span class="r17">.</span>                         <span class="r1">│</span>
+<span class="r1">│</span>                      <span class="r9">set_fontstyle</span> = <span class="r15">def </span><span class="r16">set_fontstyle</span><span class="r7">(</span>fontstyle<span class="r7">)</span>: <span class="r17">Set the </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">font style.</span>                            <span class="r1">│</span>
+<span class="r1">│</span>                    <span class="r9">set_fontvariant</span> = <span class="r15">def </span><span class="r16">set_fontvariant</span><span class="r7">(</span>variant<span class="r7">)</span>: <span class="r17">Set the </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">font variant.</span>                          <span class="r1">│</span>
+<span class="r1">│</span>                     <span class="r9">set_fontweight</span> = <span class="r15">def </span><span class="r16">set_fontweight</span><span class="r7">(</span>weight<span class="r7">)</span>: <span class="r17">Set the </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">font weight.</span>                           <span class="r1">│</span>
+<span class="r1">│</span>                            <span class="r9">set_gid</span> = <span class="r15">def </span><span class="r16">set_gid</span><span class="r7">(</span>gid<span class="r7">)</span>: <span class="r17">Set the </span><span class="r18">(</span><span class="r17">group</span><span class="r18">)</span><span class="r17"> id </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">for the artist.</span>                        <span class="r1">│</span>
+<span class="r1">│</span>                             <span class="r9">set_ha</span> = <span class="r15">def </span><span class="r16">set_ha</span><span class="r7">(</span>align<span class="r7">)</span>: <span class="r17">Alias for </span>          <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_horizontalalignment`.</span>             <span class="r1">│</span>
+<span class="r1">│</span>            <span class="r9">set_horizontalalignment</span> = <span class="r15">def </span><span class="r16">set_horizontalalignment</span><span class="r7">(</span>align<span class="r7">)</span>:    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Set the horizontal alignment to one of</span> <span class="r1">│</span>
+<span class="r1">│</span>                      <span class="r9">set_in_layout</span> = <span class="r15">def </span><span class="r16">set_in_layout</span><span class="r7">(</span>in_layout<span class="r7">)</span>:          <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Set if artist is to be included in </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">layout calculations,</span>                   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">E.g. </span>                                  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">:doc:`</span><span class="r24">/tutorials/intermediate/</span><span class="r25">constra…</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`.Figure.tight_layout</span><span class="r18">()</span><span class="r17">`, and</span>          <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">``fig.savefig</span><span class="r18">(</span><span class="r17">fname, </span>                  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r26">bbox_inches</span><span class="r17">=</span><span class="r21">'tight'</span><span class="r18">)</span><span class="r17">``.</span>                <span class="r1">│</span>
+<span class="r1">│</span>                          <span class="r9">set_label</span> = <span class="r15">def </span><span class="r16">set_label</span><span class="r7">(</span>s<span class="r7">)</span>: <span class="r17">Set a label that </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">will be displayed in the legend.</span>       <span class="r1">│</span>
+<span class="r1">│</span>                    <span class="r9">set_linespacing</span> = <span class="r15">def </span><span class="r16">set_linespacing</span><span class="r7">(</span>spacing<span class="r7">)</span>: <span class="r17">Set the </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">line spacing as a multiple of the font</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">size.</span>                                  <span class="r1">│</span>
+<span class="r1">│</span>                             <span class="r9">set_ma</span> = <span class="r15">def </span><span class="r16">set_ma</span><span class="r7">(</span>align<span class="r7">)</span>: <span class="r17">Alias for </span>          <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_multialignment`.</span>                  <span class="r1">│</span>
+<span class="r1">│</span>                <span class="r9">set_math_fontfamily</span> = <span class="r15">def </span><span class="r16">set_math_fontfamily</span><span class="r7">(</span>fontfamily<span class="r7">)</span>:   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Set the font family for math text </span>     <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">rendered by Matplotlib.</span>                <span class="r1">│</span>
+<span class="r1">│</span>                 <span class="r9">set_multialignment</span> = <span class="r15">def </span><span class="r16">set_multialignment</span><span class="r7">(</span>align<span class="r7">)</span>: <span class="r17">Set the</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">text alignment for multiline texts.</span>    <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">set_name</span> = <span class="r15">def </span><span class="r16">set_name</span><span class="r7">(</span>fontname<span class="r7">)</span>: <span class="r17">Alias for </span>     <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_fontname`.</span>                        <span class="r1">│</span>
+<span class="r1">│</span>                   <span class="r9">set_path_effects</span> = <span class="r15">def </span><span class="r16">set_path_effects</span><span class="r7">(</span>path_effects<span class="r7">)</span>:    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Set the path effects.</span>                  <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">set_picker</span> = <span class="r15">def </span><span class="r16">set_picker</span><span class="r7">(</span>picker<span class="r7">)</span>: <span class="r17">Define the </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">picking behavior of the artist.</span>        <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">set_position</span> = <span class="r15">def </span><span class="r16">set_position</span><span class="r7">(</span>xy<span class="r7">)</span>: <span class="r17">Set the </span><span class="r18">(</span><span class="r17">*x*, </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">*y*</span><span class="r18">)</span><span class="r17"> position of the text.</span>             <span class="r1">│</span>
+<span class="r1">│</span>                     <span class="r9">set_rasterized</span> = <span class="r15">def </span><span class="r16">set_rasterized</span><span class="r7">(</span>rasterized<span class="r7">)</span>: <span class="r17">Force </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">rasterized </span><span class="r18">(</span><span class="r17">bitmap</span><span class="r18">)</span><span class="r17"> drawing for vector</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">graphics output.</span>                       <span class="r1">│</span>
+<span class="r1">│</span>                       <span class="r9">set_rotation</span> = <span class="r15">def </span><span class="r16">set_rotation</span><span class="r7">(</span>s<span class="r7">)</span>: <span class="r17">Set the rotation </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">of the text.</span>                           <span class="r1">│</span>
+<span class="r1">│</span>                  <span class="r9">set_rotation_mode</span> = <span class="r15">def </span><span class="r16">set_rotation_mode</span><span class="r7">(</span>m<span class="r7">)</span>: <span class="r17">Set text </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">rotation mode.</span>                         <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">set_size</span> = <span class="r15">def </span><span class="r16">set_size</span><span class="r7">(</span>fontsize<span class="r7">)</span>: <span class="r17">Alias for </span>     <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_fontsize`.</span>                        <span class="r1">│</span>
+<span class="r1">│</span>                  <span class="r9">set_sketch_params</span> = <span class="r15">def </span><span class="r16">set_sketch_params</span><span class="r7">(</span><span class="r14">scale</span>=<span class="r19">None</span>,      <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r14">length</span>=<span class="r19">None</span>, <span class="r14">randomness</span>=<span class="r19">None</span><span class="r7">)</span>: <span class="r17">Set the</span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">sketch parameters.</span>                     <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">set_snap</span> = <span class="r15">def </span><span class="r16">set_snap</span><span class="r7">(</span>snap<span class="r7">)</span>: <span class="r17">Set the snapping </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">behavior.</span>                              <span class="r1">│</span>
+<span class="r1">│</span>                        <span class="r9">set_stretch</span> = <span class="r15">def </span><span class="r16">set_stretch</span><span class="r7">(</span>stretch<span class="r7">)</span>: <span class="r17">Alias for </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_fontstretch`.</span>                     <span class="r1">│</span>
+<span class="r1">│</span>                          <span class="r9">set_style</span> = <span class="r15">def </span><span class="r16">set_style</span><span class="r7">(</span>fontstyle<span class="r7">)</span>: <span class="r17">Alias for </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_fontstyle`.</span>                       <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">set_text</span> = <span class="r15">def </span><span class="r16">set_text</span><span class="r7">(</span>s<span class="r7">)</span>: <span class="r17">Set the text string </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">*s*.</span>                                   <span class="r1">│</span>
+<span class="r1">│</span>                      <span class="r9">set_transform</span> = <span class="r15">def </span><span class="r16">set_transform</span><span class="r7">(</span>t<span class="r7">)</span>: <span class="r17">Set the artist </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">transform.</span>                             <span class="r1">│</span>
+<span class="r1">│</span>         <span class="r9">set_transform_rotates_text</span> = <span class="r15">def </span><span class="r16">set_transform_rotates_text</span><span class="r7">(</span>t<span class="r7">)</span>:     <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Whether rotations of the transform </span>    <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">affect the text direction.</span>             <span class="r1">│</span>
+<span class="r1">│</span>                            <span class="r9">set_url</span> = <span class="r15">def </span><span class="r16">set_url</span><span class="r7">(</span>url<span class="r7">)</span>: <span class="r17">Set the url for the </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">artist.</span>                                <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">set_usetex</span> = <span class="r15">def </span><span class="r16">set_usetex</span><span class="r7">(</span>usetex<span class="r7">)</span>:                <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Parameters</span>                             <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">----------</span>                             <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">usetex : bool or </span><span class="r20">None</span>                  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">    Whether to render using TeX, </span>      <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">``</span><span class="r20">None</span><span class="r17">`` means to use</span>                  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">    :rc:`text.usetex`.</span>                 <span class="r1">│</span>
+<span class="r1">│</span>                             <span class="r9">set_va</span> = <span class="r15">def </span><span class="r16">set_va</span><span class="r7">(</span>align<span class="r7">)</span>: <span class="r17">Alias for </span>          <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_verticalalignment`.</span>               <span class="r1">│</span>
+<span class="r1">│</span>                        <span class="r9">set_variant</span> = <span class="r15">def </span><span class="r16">set_variant</span><span class="r7">(</span>variant<span class="r7">)</span>: <span class="r17">Alias for </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_fontvariant`.</span>                     <span class="r1">│</span>
+<span class="r1">│</span>              <span class="r9">set_verticalalignment</span> = <span class="r15">def </span><span class="r16">set_verticalalignment</span><span class="r7">(</span>align<span class="r7">)</span>: <span class="r17">Set </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the vertical alignment.</span>                <span class="r1">│</span>
+<span class="r1">│</span>                        <span class="r9">set_visible</span> = <span class="r15">def </span><span class="r16">set_visible</span><span class="r7">(</span>b<span class="r7">)</span>: <span class="r17">Set the artist's </span>  <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">visibility.</span>                            <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">set_weight</span> = <span class="r15">def </span><span class="r16">set_weight</span><span class="r7">(</span>weight<span class="r7">)</span>: <span class="r17">Alias for </span>     <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">`set_fontweight`.</span>                      <span class="r1">│</span>
+<span class="r1">│</span>                           <span class="r9">set_wrap</span> = <span class="r15">def </span><span class="r16">set_wrap</span><span class="r7">(</span>wrap<span class="r7">)</span>: <span class="r17">Set whether the </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">text can be wrapped.</span>                   <span class="r1">│</span>
+<span class="r1">│</span>                              <span class="r9">set_x</span> = <span class="r15">def </span><span class="r16">set_x</span><span class="r7">(</span>x<span class="r7">)</span>: <span class="r17">Set the *x* position of </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the text.</span>                              <span class="r1">│</span>
+<span class="r1">│</span>                              <span class="r9">set_y</span> = <span class="r15">def </span><span class="r16">set_y</span><span class="r7">(</span>y<span class="r7">)</span>: <span class="r17">Set the *y* position of </span> <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the text.</span>                              <span class="r1">│</span>
+<span class="r1">│</span>                         <span class="r9">set_zorder</span> = <span class="r15">def </span><span class="r16">set_zorder</span><span class="r7">(</span>level<span class="r7">)</span>:                 <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Set the zorder for the artist.  </span>       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Artists with lower zorder</span>              <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">values are drawn first.</span>                <span class="r1">│</span>
+<span class="r1">│</span>                     <span class="r9">stale_callback</span> = <span class="r15">def </span><span class="r16">stale_callback</span><span class="r7">(</span>self, val<span class="r7">)</span>:         <span class="r1">│</span>
+<span class="r1">│</span>                             <span class="r9">update</span> = <span class="r15">def </span><span class="r16">update</span><span class="r7">(</span>kwargs<span class="r7">)</span>: <span class="r17">Update this </span>       <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">artist's properties from the dict </span>     <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">*props*.</span>                               <span class="r1">│</span>
+<span class="r1">│</span>          <span class="r9">update_bbox_position_size</span> = <span class="r15">def </span>                                   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r16">update_bbox_position_size</span><span class="r7">(</span>renderer<span class="r7">)</span>:   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">Update the location and the size of </span>   <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">the bbox.</span>                              <span class="r1">│</span>
+<span class="r1">│</span>                        <span class="r9">update_from</span> = <span class="r15">def </span><span class="r16">update_from</span><span class="r7">(</span>other<span class="r7">)</span>: <span class="r17">Copy </span>          <span class="r1">│</span>
+<span class="r1">│</span>                                      <span class="r17">properties from *other* to *self*.</span>     <span class="r1">│</span>
+<span class="r1">└─────────────────────────────────────────────────────────────────────────────┘</span>
+</pre>
+    </code>
+</body>
+</html>

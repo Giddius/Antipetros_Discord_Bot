@@ -109,6 +109,10 @@ class AntistasiInformer(SubSupportBase):
         return "https://avatars0.githubusercontent.com/u/53788409?s=200&v=4"
 
     @cached_property
+    def salute_emoji(self):
+        return discord.utils.get(self.antistasi_guild.emojis, id=755173152752926753)
+
+    @cached_property
     def bertha_emoji(self) -> discord.Emoji:
         return discord.utils.get(self.antistasi_guild.emojis, id=829666475035197470)
 

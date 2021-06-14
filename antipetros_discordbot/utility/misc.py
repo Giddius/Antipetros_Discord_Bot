@@ -305,13 +305,13 @@ async def async_split_camel_case_string(string):
     return ''.join(_out).strip()
 
 
-def split_camel_case_string(string):
+def split_camel_case_string(string, filler=' '):
     _out = []
     for char in string:
         if char == char.upper():
-            char = ' ' + char
+            char = filler + char
         _out.append(char)
-    return ''.join(_out).strip()
+    return ''.join(_out).strip(filler)
 
 
 def save_bin_file(path, data):

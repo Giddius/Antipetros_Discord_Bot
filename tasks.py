@@ -857,6 +857,9 @@ def archive_scratches(c):
 
 @task
 def new_cog(c, name, category="general"):
+    name = name.removesuffix('_cog')
+    category = category.removesuffix('_cogs')
+
     code_template_environment = Environment(loader=FileSystemLoader(pathmaker(THIS_FILE_DIR, "dev_tools_and_scripts", "template_handling", "templates")))
     folder_name = category.lower().replace(' ', '_') + '_cogs'
     folder_path = pathmaker(FOLDER.get('cogs'), folder_name)

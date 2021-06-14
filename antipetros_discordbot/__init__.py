@@ -25,14 +25,7 @@ def set_env():
     """
     old_cd = os.getcwd()
     os.chdir(MAIN_DIR)
-    dev_indicator_env_path = os.path.normpath(os.path.join(MAIN_DIR, '../tools/_project_devmeta.env'))
 
-    if os.path.isfile(dev_indicator_env_path):
-        load_dotenv(dev_indicator_env_path)
-        os.environ['IS_DEV'] = 'true'
-
-    else:
-        os.environ['IS_DEV'] = 'false'
     os.environ['LOG_CONFIG_RETRIEVE'] = '0'
     os.environ['PYTHONASYNCIODEBUG'] = "1"
     os.environ['ANTIPETRO_START_TIME'] = START_TIME.isoformat()

@@ -57,6 +57,7 @@ from antipetros_discordbot.utility.checks import dynamic_enabled_checker
 from antipetros_discordbot.schemas import AntiPetrosBaseCommandSchema
 from antipetros_discordbot.engine.replacements.command_replacements.command_category import CommandCategory
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel
 # endregion[Imports]
 
 # region [TODO]
@@ -120,15 +121,16 @@ class AntiPetrosBaseCommand(commands.Command):
         self.module_object = sys.modules[func.__module__]
         self.data_setters['meta_data']("docstring", self.docstring)
         self.only_debug = kwargs.get('only_debug', False)
-        self.specials = {self.experimental_notifier: kwargs.pop('experimental', False),
-                         self.logged_notifier: kwargs.get('logged', False)}
+        self.clear_invocation = kwargs.get('clear_invocation', False)
+        self.notifications = {self.experimental_notifier: kwargs.pop('experimental', False),
+                              self.logged_notifier: kwargs.get('logged', False)}
 
     @property
     def bot(self):
         return self.cog.bot
 
     def set_logged(self, value: bool):
-        self.specials[self.logged_notifier] = value
+        self.notifications[self.logged_notifier] = value
 
     async def experimental_notifier(self, ctx: commands.Context):
         text = f"**It could be broken or be changed/removed any time. Feel free to play around with it and please give Feedback to {self.bot.creator.mention} if you can!**"
@@ -136,8 +138,7 @@ class AntiPetrosBaseCommand(commands.Command):
         description = text
         thumbnail = "warning"
         embed_data = await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail)
-        msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-        ctx.extra_messages.append(msg)
+        await ctx.temp_send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     async def logged_notifier(self, ctx: commands.Context):
         title = "Logged"
@@ -145,23 +146,22 @@ class AntiPetrosBaseCommand(commands.Command):
         thumbnail = None
         footer = None
         embed_data = await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail, footer=footer)
-        msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-        ctx.extra_messages.append(msg)
+        await ctx.temp_send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     async def call_before_hooks(self, ctx: commands.Context):
-        if not hasattr(ctx, 'extra_messages'):
-            ctx.extra_messages = []
         await super().call_before_hooks(ctx)
 
-        for special_coro, enabled in self.specials.items():
+        for notification_coro, enabled in self.notifications.items():
             if enabled:
-                await special_coro(ctx)
+                await notification_coro(ctx)
+        if await self.can_run(ctx) is True:
+            await ctx.add_temp_reaction(self.bot.salute_emoji)
 
     async def call_after_hooks(self, ctx):
         await super().call_after_hooks(ctx)
-        for extra_msg in ctx.extra_messages:
-            if extra_msg.channel.type is discord.ChannelType.text:
-                asyncio.create_task(extra_msg.delete(delay=60))
+        await ctx.delete_temp_items()
+        if self.clear_invocation is True:
+            asyncio.create_task(delete_message_if_text_channel(ctx))
 
     @singledispatchmethod
     def handle_category_kwargs(self, categories: Any):

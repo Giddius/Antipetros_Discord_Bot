@@ -33,7 +33,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.cogs import BOT_ADMIN_COG_PATHS, DISCORD_ADMIN_COG_PATHS, DEV_COG_PATHS
 from datetime import datetime
 from antipetros_discordbot.utility.emoji_handling import is_unicode_emoji
-from antipetros_discordbot.engine.replacements import CommandCategory
+from antipetros_discordbot.engine.replacements import CommandCategory, AntiPetrosBaseContext
 from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
 from antipetros_discordbot.utility.sqldata_storager import ChannelUsageResult
 from discord.client import _cleanup_loop, _cancel_tasks
@@ -216,6 +216,7 @@ class AntiPetrosBot(commands.Bot):
 
 
 # ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
 
     def add_self_to_classes(self):
         ChannelUsageResult.bot = self
@@ -416,7 +417,6 @@ class AntiPetrosBot(commands.Bot):
 
 # region [Loops]
 
-
     @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_config_changes(self):
         # TODO: How to make sure they are also correctly restarted, regarding all loops on the bot
@@ -443,7 +443,6 @@ class AntiPetrosBot(commands.Bot):
 # endregion[Loops]
 
 # region [Helper]
-
 
     @staticmethod
     def _get_intents():
@@ -594,6 +593,9 @@ class AntiPetrosBot(commands.Bot):
     def dump(self):
         return self.schema.dump(self)
 # region [SpecialMethods]
+
+    async def get_context(self, message, *, cls=AntiPetrosBaseContext):
+        return await super().get_context(message, cls=cls)
 
     def _clean_temp_folder(self):
         for item in os.scandir(APPDATA["temp_files"]):

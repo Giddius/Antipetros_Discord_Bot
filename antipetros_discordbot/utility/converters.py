@@ -10,6 +10,7 @@
 import os
 import re
 from datetime import datetime
+from collections import defaultdict
 from typing import Callable, TYPE_CHECKING, Union
 import inspect
 # * Third Party Imports --------------------------------------------------------------------------------->
@@ -30,7 +31,7 @@ from antipetros_discordbot.utility.checks import (OnlyGiddiCheck, OnlyBobMurphyC
                                                   HasAttachmentCheck, OnlyGiddiCheck, OnlyBobMurphyCheck)
 from antipetros_discordbot.utility.misc import check_if_url, fix_url_prefix
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.enums import ExtraHelpParameter, HelpCategory
+from antipetros_discordbot.utility.enums import ExtraHelpParameter, HelpCategory, GithubLabelOperator
 from functools import partial
 if TYPE_CHECKING:
     pass
@@ -329,6 +330,63 @@ class SeparatedListConverter(Converter):
                 raise ParameterError(parameter_name=await self.get_parameter_name(ctx), parameter_value=argument, error=error)
             else:
                 raise error
+
+
+class GitHubLabelConverter(Converter):
+    _possible_params = None
+
+    @classmethod
+    async def get_possible_params(cls, default_labels):
+        if cls._possible_params is None:
+            cls._possible_params = [label.name for label in default_labels.values()]
+
+        return cls._possible_params
+
+    async def convert(self, ctx: commands.Context, argument: str):
+        _out = []
+
+        labels = ctx.cog.labels
+        for in_label in argument.split(';'):
+            in_label = in_label.strip()
+            if in_label != '' and in_label.casefold() in set(labels):
+                _out.append(labels.get(in_label.casefold()))
+
+        return _out
+
+
+class GithubLabelOperatorConverter(Converter):
+    operator_mapping = {'+': GithubLabelOperator.AND,
+                        'and': GithubLabelOperator.AND,
+                        '=': GithubLabelOperator.AND,
+                        '==': GithubLabelOperator.AND,
+                        '~': GithubLabelOperator.OR,
+                        '*': GithubLabelOperator.OR,
+                        '|': GithubLabelOperator.OR,
+                        'or': GithubLabelOperator.OR,
+                        '-': GithubLabelOperator.NOT,
+                        'not': GithubLabelOperator.NOT,
+                        '!': GithubLabelOperator.NOT,
+                        '!=': GithubLabelOperator.NOT,
+                        'notany': GithubLabelOperator.NOT_ANY,
+                        '!*': GithubLabelOperator.NOT_ANY}
+
+    _possible_params = None
+
+    @classmethod
+    async def get_possible_params(cls):
+        if cls._possible_params is None:
+            possible_params_dict = defaultdict(list)
+            for key, value in cls.operator_mapping.items():
+                possible_params_dict[value.name].append(key)
+
+            cls._possible_params = [f"{key} -> {', '.join(value)}" for key, value in possible_params_dict.items()]
+        return cls._possible_params
+
+    async def convert(self, ctx: commands.Context, argument: str):
+        if argument.casefold() not in self.operator_mapping:
+            raise ParameterErrorWithPossibleParameter('label_operator', argument, await self.get_possible_params())
+        query_argument = argument.casefold().replace('-', '').replace('_', '') if argument != '-' and argument != '_' else argument.casefold()
+        return self.operator_mapping.get(query_argument)
 
 
 # region[Main_Exec]

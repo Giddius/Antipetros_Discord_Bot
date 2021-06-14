@@ -2,7 +2,14 @@
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands.errors import CommandError
 from datetime import datetime
-from typing import Any
+from typing import Any, TYPE_CHECKING, Union
+from antipetros_discordbot.utility.misc import split_camel_case_string
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
+from discord.ext import commands
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+    from antipetros_discordbot.engine.replacements import AntiPetrosBaseContext
 
 
 class AntiPetrosBaseError(Exception):
@@ -111,7 +118,18 @@ class DuplicateNameError(AntiPetrosBaseError):
 
 
 class BaseExtendedCommandError(CommandError):
-    pass
+    error_handler_name_prefix = '_handle'
+
+    @classmethod
+    @property
+    def error_name(cls):
+        return cls.__name__
+
+    @classmethod
+    @property
+    def error_handler_name(cls):
+        name = '_'.join([cls.error_handler_name_prefix, split_camel_case_string(cls.error_name, filler='_')]).casefold()
+        return name
 
 
 class MissingAttachmentError(BaseExtendedCommandError):
@@ -183,12 +201,12 @@ class NotAllowedMember(BaseExtendedCommandError):
 
 class ParameterError(BaseExtendedCommandError):
     def __init__(self, parameter_name: str = None, parameter_value=None, error=None) -> None:
-        self.name = parameter_name
-        self.value = parameter_value
+        self.parameter_name = parameter_name
+        self.parameter_value = parameter_value
         self._error = error
-        self.msg = f"'{self.value}' is not a valid input"
+        self.msg = f"'{self.parameter_value}' is not a valid input"
         if self.name is not None:
-            self.msg += f" for '{self.name}'"
+            self.msg += f" for '{self.parameter_name}'"
         super().__init__(self.msg)
 
     @property
@@ -200,11 +218,17 @@ class ParameterError(BaseExtendedCommandError):
 
 class ParameterErrorWithPossibleParameter(BaseExtendedCommandError):
     def __init__(self, parameter_name: str, parameter_value, possible_parameter: list):
-        self.name = parameter_name
-        self.value = parameter_value
+        self.parameter_name = parameter_name
+        self.parameter_value = parameter_value
         self.possible_parameter = possible_parameter
-        self.msg = f"'{self.value}' is not a valid input for '{self.name}'\nPossible values are:\n" + "\n".join(f"\t`{item}`" for item in self.possible_parameter)
+        self.error_embed_title = f"'{self.parameter_value}' is not a valid input for '{self.parameter_name}'"
+        self.error_embed_description = f"Possible values are:\n\n{CodeBlock(ListMarker.make_list([f'{item}' for item in self.possible_parameter], indent=1), 'python')}"
+        self.msg = f"'{self.parameter_value}' is not a valid input for '{self.parameter_name}'\nPossible values are:\n" + "\n".join(f"\t{item}" for item in self.possible_parameter)
         super().__init__(self.msg)
+
+    async def to_embed(self, ctx: Union[commands.Context, "AntiPetrosBaseContext"], bot: "AntiPetrosBot"):
+        embed_data = await bot.make_generic_embed(title=self.error_embed_title, description=self.error_embed_description, thumbnail="error", author=ctx.author)
+        return embed_data
 
 
 class ParseDiceLineError(BaseExtendedCommandError):

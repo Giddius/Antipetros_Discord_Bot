@@ -25,7 +25,7 @@ import gidlogger as glog
 from rich import inspect as rinspect
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, async_split_camel_case_string
-from antipetros_discordbot.utility.exceptions import MissingAttachmentError, NotNecessaryRole, IsNotTextChannelError, NotNecessaryDmId, NotAllowedChannelError, NotNecessaryRole, ParseDiceLineError, NameInUseError, CustomEmojiError
+from antipetros_discordbot.utility.exceptions import MissingAttachmentError, NotNecessaryRole, IsNotTextChannelError, NotNecessaryDmId, NotAllowedChannelError, NotNecessaryRole, ParseDiceLineError, NameInUseError, CustomEmojiError, ParameterErrorWithPossibleParameter
 from antipetros_discordbot.utility.gidtools_functions import loadjson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -146,8 +146,14 @@ class ErrorHandler(SubSupportBase):
         print('!' * 50)
         print(repr(error.__traceback__))
         print("!" * 50)
+        if hasattr(error, 'error_handler_name'):
+            print(error.error_handler_name)
+        if hasattr(error, 'error_handler_name') and hasattr(self, error.error_handler_name):
+            handle_meth = getattr(self, error.error_handler_name)
+        else:
+            handle_meth = self.error_handle_table.get(type(error), self._default_handle_error)
 
-        await self.error_handle_table.get(type(error), self._default_handle_error)(ctx, error, error_traceback)
+        await handle_meth(ctx, error, error_traceback)
         if ctx.channel.type is ChannelType.text and ctx.command is not None:
             log.error("Error '%s' was caused by '%s' on the content '%s' with args '%s' and traceback --> %s", error.__class__.__name__, ctx.author.name, ctx.message.content, ctx.args, error_traceback)
             if self.delete_invoking_messages is True:
@@ -173,6 +179,12 @@ class ErrorHandler(SubSupportBase):
                                                        color='red')
         await ctx.reply(**embed_data, delete_after=delete_after, allowed_mentions=discord.AllowedMentions.none())
         await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error)), file=await self._make_traceback_file(error_traceback))
+
+    async def _handle_parameter_error_with_possible_parameter(self, ctx, error, error_traceback):
+        embed_data = await error.to_embed(ctx=ctx, bot=self.bot)
+        await ctx.send(**embed_data)
+        help_command = self.bot.get_command('help')
+        await help_command(ctx, in_object=ctx.command)
 
     async def _handle_name_in_use_error(self, ctx, error, error_traceback):
         await ctx.send(embed=await self.bot.make_error_embed(ctx, error), delete_after=60)

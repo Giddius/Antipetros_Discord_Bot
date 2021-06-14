@@ -141,7 +141,6 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-        self.ready = False
         self.msg_keeper = None
         self._init_msg_keeper()
         self._other_bot_prefixes = None

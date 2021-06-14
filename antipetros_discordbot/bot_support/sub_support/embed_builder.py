@@ -265,7 +265,9 @@ class EmbedBuilder(SubSupportBase):
 
         files = []
         title = kwargs.get('title', self.default_title)
-        url = kwargs.get('url', discord.Embed.Empty)
+        url = kwargs.get('url', None)
+        if url is None:
+            url = discord.Embed.Empty
 
         generic_embed = Embed(title=title,
                               description=str(kwargs.get('description', self.default_description)),
@@ -300,6 +302,9 @@ class EmbedBuilder(SubSupportBase):
 
         _out = {"embed": generic_embed}
         files = [file_item for file_item in files if file_item is not None]
+        files += kwargs.get('files', [])
+        if kwargs.get('file', None) is not None:
+            files.append(kwargs.get('file'))
         # if len(files) == 1:
         #     _out["file"] = files[0]
         # elif len(files) > 1:

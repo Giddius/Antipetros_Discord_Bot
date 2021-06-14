@@ -298,6 +298,7 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
 # region [Main_Exec]
 
 if __name__ == '__main__':
+
     if os.getenv('IS_DEV') == 'true':
         load_dotenv('token.env')
         load_dotenv("nextcloud.env")

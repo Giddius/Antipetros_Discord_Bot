@@ -38,6 +38,7 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, Command
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker
 from antipetros_discordbot.auxiliary_classes.server_item import ServerItem, ServerStatus
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
+from antipetros_discordbot.utility.emoji_handling import NUMERIC_EMOJIS, ALPHABET_EMOJIS, CHECK_MARK_BUTTON_EMOJI, CHECK_MARK_BUTTON_EMOJI, CROSS_MARK_BUTTON_EMOJI
 from collections import deque
 from antipetros_discordbot.utility.exceptions import TokenMissingError
 if TYPE_CHECKING:
@@ -89,10 +90,11 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     is_online_messages_data_file = pathmaker(APPDATA["json_data"], "is_online_messages.json")
     stored_reasons_data_file = pathmaker(APPDATA["json_data"], "stored_reasons.json")
     server_address_verification_regex = re.compile(r"^(?P<address>[\w\-\.\d]+)\:(?P<port>\d+)$", re.IGNORECASE)
-
+    get_logs_message_data_file = pathmaker(APPDATA['json_data'], 'get_logs_message_data.json')
     required_files = [RequiredFile(already_notified_savefile, [], RequiredFile.FileType.JSON),
                       RequiredFile(is_online_messages_data_file, {}, RequiredFile.FileType.JSON),
-                      RequiredFile(stored_reasons_data_file, {}, RequiredFile.FileType.JSON)]
+                      RequiredFile(stored_reasons_data_file, {}, RequiredFile.FileType.JSON),
+                      RequiredFile(get_logs_message_data_file, {}, RequiredFile.FileType.JSON)]
 
     required_config_data = {'base_config': {},
                             'cogs_config': {"server_message_delete_after_seconds": "300",
@@ -127,6 +129,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         self.color = 'yellow'
         self.latest_sever_notification_msg_id = None
         self.ready = False
+        self.get_logs_message = None
 
         self.meta_data_setter('docstring', self.docstring)
         glog.class_init_notification(log, self)
@@ -176,6 +179,15 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     @property
     def stored_reasons(self) -> dict:
         return {f'{self.reason_keyword_identifier}{key.casefold()}': value for key, value in loadjson(self.stored_reasons_data_file).items()}
+
+    @property
+    def get_logs_message_channel(self):
+        channel_name = 'bot-testing'
+        return self.bot.channel_from_name(channel_name)
+
+    @property
+    def get_logs_message_data(self):
+        return loadjson(self.get_logs_message_data_file)
 # endregion [Properties]
 
 # region [Setup]
@@ -191,7 +203,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             await server.is_online()
         await asyncio.gather(*[server.gather_log_items() for server in self.server_items])
 
-        self.ready = await asyncio.sleep(5, True)
+        self.get_logs_message = await self._check_get_logs_message()
+
+        self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
@@ -253,6 +267,41 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Loops]
 
 # region [Listener]
+
+    @commands.Cog.listener(name="on_raw_reaction_add")
+    async def get_logs_message_reaction_listener(self, payload: discord.RawReactionActionEvent):
+        if self.completely_ready is False:
+            return
+
+        reaction_member = payload.member
+
+        if payload.channel_id != self.get_logs_message_channel.id:
+
+            return
+        if payload.message_id != self.get_logs_message_data.get('message_id'):
+
+            return
+        if reaction_member.bot is True:
+
+            return
+
+        if str(payload.emoji) not in NUMERIC_EMOJIS:
+            asyncio.create_task(self.get_logs_message.remove_reaction(payload.emoji, reaction_member))
+            return
+        mapping_index = NUMERIC_EMOJIS.index(str(payload.emoji))
+
+        if str(mapping_index) not in self.get_logs_message_data.get('server_mapping'):
+            asyncio.create_task(self.get_logs_message.remove_reaction(payload.emoji, reaction_member))
+            return
+
+        server_name = self.get_logs_message_data.get('server_mapping').get(str(mapping_index))
+
+        server = await self._get_server_by_name(server_name)
+
+        embed_data = await server.newest_log_item.content_embed()
+
+        await payload.member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        asyncio.create_task(self.get_logs_message.remove_reaction(payload.emoji, reaction_member))
 
     @commands.Cog.listener(name='on_raw_reaction_add')
     async def is_online_mod_list_reaction_listener(self, payload: discord.RawReactionActionEvent):
@@ -551,6 +600,36 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
+    async def _check_get_logs_message(self):
+        msg_id = self.get_logs_message_data.get('message_id', None)
+        if msg_id is None:
+            return await self._create_get_logs_message()
+
+        try:
+            return await self.get_logs_message_channel.fetch_message(msg_id)
+        except discord.errors.NotFound:
+            return await self._create_get_logs_message()
+
+    async def _create_get_logs_message(self):
+        title = "get logs"
+        description = "React with the emoji for the server you want to get the newest log file"
+
+        server_mapping = {}
+        fields = []
+        for index, server in enumerate([item for item in self.server_items if item.log_folder is not None]):
+
+            emoji = NUMERIC_EMOJIS[index]
+            fields.append(self.bot.field_item(name=server.pretty_name, value=emoji, inline=False))
+            server_mapping[index] = server.name.casefold()
+
+        embed_data = await self.bot.make_generic_embed(title=title, description=description, fields=fields)
+
+        msg = await self.get_logs_message_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        for emoji_index in server_mapping:
+            await msg.add_reaction(NUMERIC_EMOJIS[emoji_index])
+        writejson({'message_id': msg.id, 'server_mapping': server_mapping}, self.get_logs_message_data_file)
+        return msg
 
     async def _send_to_dm(self, member: discord.Member, server: ServerItem):
         try:
