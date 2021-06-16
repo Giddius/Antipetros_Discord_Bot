@@ -8,6 +8,7 @@ CHECK_MARK_BUTTON_EMOJI = "✅"
 
 CROSS_MARK_BUTTON_EMOJI = "❎"
 
+CANCEL_EMOJI = "🛑"
 
 NUMERIC_EMOJIS = ["1️⃣",
                   "2️⃣",

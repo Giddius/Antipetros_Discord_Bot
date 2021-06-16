@@ -34,6 +34,7 @@ from antipetros_discordbot.utility.misc import alt_seconds_to_pretty
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
+from antipetros_discordbot.auxiliary_classes.asking_items import AskSelectionOption, AskSelectionOptionsMapping
 # endregion[Imports]
 
 # region [TODO]
@@ -61,110 +62,6 @@ log.info(glog.imported(__name__))
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
-
-
-class AskSelectionOption:
-
-    def __init__(self, item, emoji: Optional[Union[str, discord.Emoji]] = None, name: Optional[str] = None, description: Optional[Union[str, Callable]] = None):
-        self.item = item
-        self.emoji = emoji
-        self._description = description
-        self._name = name
-
-    @cached_property
-    def name(self):
-        if self._name is not None:
-            return self._name
-        if isinstance(self.item, str):
-            return self.item
-        if hasattr(self.item, "name"):
-            return self.item.name
-
-        return str(self.item)
-
-    @cached_property
-    def description(self):
-        if self._description is None:
-            return ZERO_WIDTH
-
-        if isinstance(self._description, str):
-            return self._description
-
-        if callable(self._description):
-            try:
-                return self._description(self.item)
-            except Exception as error:
-                log.debug("error in retrieving %s description for %s, error: %s", self.__class__.__name__, self.name, error)
-                return ZERO_WIDTH
-
-
-class AskSelectionOptionsMapping(collections.abc.Mapping):
-
-    def __init__(self, default_emojis: Optional[list[Union[str, discord.Emoji]]] = None):
-        self.options = {}
-        self.default_emoji_list = list(default_emojis) if default_emojis is not None else []
-        self.default_emoji_list += ALPHABET_EMOJIS.copy()
-
-    def add_option(self, option: AskSelectionOption):
-
-        if isinstance(option.emoji, int) and 0 < option.emoji < 11:
-            key = NUMERIC_EMOJIS[option.emoji - 1]
-
-        elif isinstance(option.emoji, str) and len(option.emoji) == 1 and option.emoji[0].isalpha():
-            key = letter_to_emoji(option.emoji[0])
-
-        else:
-            key = option.emoji
-
-        if key is None:
-            key = self.default_emoji_list.pop(0)
-        option.emoji = key
-        self.options[str(key)] = option
-
-    def add_many_options(self, options: Iterable[AskSelectionOption]):
-        for option in options:
-            self.add_option(option)
-
-    def get(self, key, default=None):
-        return self.options.get(str(key), default)
-
-    def __iter__(self):
-        return iter(self.options)
-
-    def __contains__(self, o: object) -> bool:
-        if isinstance(o, (str, discord.Emoji, discord.PartialEmoji)):
-            return str(o) in self.options
-        return NotImplemented
-
-    def __len__(self):
-        return len(self.options)
-
-    def __getitem__(self, key):
-        return self.options[str(key)]
-
-    def __setitem__(self, key, value):
-        self.options[str(key)] = value
-
-    async def asyncio_items(self):
-        for key, value in self.options.items():
-            yield key, value
-            await asyncio.sleep(0)
-
-    def values(self):
-        return self.options.values()
-
-    def items(self):
-        return self.options.items()
-
-    def get_result(self, key):
-        return self.options.get(str(key)).item
-
-    async def to_fields(self):
-        fields = []
-        async for key, option in self.asyncio_items():
-            option_description = option.description
-            fields.append(await asyncio.sleep(0, EmbedFieldItem(name=f"***Press {key} for `{option.name}`***", value=f"{option_description}", inline=False)))
-        return fields
 
 
 class AntiPetrosBaseContext(commands.Context):
@@ -242,9 +139,11 @@ class AntiPetrosBaseContext(commands.Context):
             asyncio.create_task(self.trigger_typing())
         return _out
 
-    async def reply(self, content=None, allowed_mentions=discord.AllowedMentions.none(), mention_author=False, ** kwargs):
+    async def reply(self, content=None, mention_author=False, ** kwargs):
 
-        _out = await self.message.reply(content, allowed_mentions=allowed_mentions, mention_author=mention_author, ** kwargs)
+        allowed_mentions = kwargs.pop('allowed_mentions', discord.AllowedMentions.none())
+        allowed_mentions.replied_user = mention_author
+        _out = await self.message.reply(content, allowed_mentions=allowed_mentions, ** kwargs)
         if self.use_continous_typing is True:
             asyncio.create_task(self.trigger_typing())
         return _out

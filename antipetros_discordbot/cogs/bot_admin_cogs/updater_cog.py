@@ -75,7 +75,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
     meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
 
     required_config_data = {'base_config': {},
-                            'cogs_config': {}}
+                            'cogs_config': {"update_timeout_seconds": "60"}}
 
     required_files = []
     required_folder = []
@@ -88,17 +88,20 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         super().__init__(bot)
         self.ready = False
         self.meta_data_setter('docstring', self.docstring)
+        self.typus_on_timeout = {typus: False for typus in UpdateTypus}
+
         glog.class_init_notification(log, self)
 
 # endregion [Init]
 
 # region [Properties]
-
+    @property
+    def update_timeout(self):
+        return COGS_CONFIG.retrieve(self.config_name, 'update_timeout_seconds', typus=int, direct_fallback=60)
 
 # endregion [Properties]
 
 # region [Setup]
-
 
     async def on_ready_setup(self):
         for loop in self.loops.values():
@@ -231,12 +234,20 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
 # region [HelperMethods]
 
+    async def remove_typus_from_timeout(self, typus: UpdateTypus):
+        await asyncio.sleep(self.update_timeout)
+        if typus in self.typus_on_timeout:
+            self.typus_on_timeout[typus] = False
 
     async def send_update_signal(self, typus: UpdateTypus):
+        if typus in self.typus_on_timeout and self.typus_on_timeout.get(typus) is True:
+            log.debug("%s not sent because it is on timeout", str(typus))
+            return
         all_tasks = await self.bot.to_all_as_tasks("update", False, typus=typus)
         if all_tasks:
             await asyncio.wait(all_tasks, return_when="ALL_COMPLETED")
-
+        self.typus_on_timeout[typus] = True
+        asyncio.create_task(self.remove_typus_from_timeout(typus))
 # endregion [HelperMethods]
 
 # region [SpecialMethods]

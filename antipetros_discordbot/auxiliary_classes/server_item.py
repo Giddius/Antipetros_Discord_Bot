@@ -49,6 +49,7 @@ if TYPE_CHECKING:
     from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog
 from zipfile import ZipFile, ZIP_LZMA
 from antipetros_discordbot.abstracts.connect_signal import AbstractConnectSignal
+from antipetros_discordbot.abstracts.database_serializeable import DatabaseSerializeable
 from pyparsing import (Word, alphanums, punc8bit, alphas, Literal, Optional, OneOrMore, oneOf, Group, nums, nestedExpr, delimitedList,
                        dblQuotedString, quotedString, Forward, Suppress, SkipTo, ZeroOrMore, Combine, Regex, Keyword, CaselessLiteral,
                        restOfLine, ParserElement, countedArray, CharsNotIn, cStyleComment, commaSeparatedList, cppStyleComment, LineEnd,
@@ -520,7 +521,7 @@ class ServerItem:
         self.log_parser = LogParser(self)
         self.battle_metrics_url = self.battle_metrics_mapping.get(self.name.casefold(), None)
         self.priority = self.server_priority_map.get(self.name.casefold(), 0)
-        self.on_notification_timeout = False
+        self.on_notification_timeout = {ServerStatus.ON: False, ServerStatus.OFF: False}
 
     @classmethod
     async def ensure_client(cls):
@@ -629,10 +630,10 @@ class ServerItem:
              self.previous_status not in {None, status},
              self.show_off_status_change is True or status is ServerStatus.ON]
         ):
-            if self.on_notification_timeout is False:
+            if self.on_notification_timeout.get(status) is False:
                 await self.status_switch_signal.emit(self, status)
 
-                asyncio.create_task(self._reset_on_notification_timeout())
+                asyncio.create_task(self._reset_on_notification_timeout(status))
             else:
                 log.debug("Status switch message for Server %s not sent because server is on notification timeout", self.name)
 
@@ -641,11 +642,11 @@ class ServerItem:
         self.previous_status = status
         return status
 
-    async def _reset_on_notification_timeout(self):
-        self.on_notification_timeout = True
+    async def _reset_on_notification_timeout(self, status: ServerStatus):
+        self.on_notification_timeout[status] = True
         await asyncio.sleep(self.notification_time_out)
-        self.on_notification_timeout = False
-        log.debug("finished notification timeout for Server %s", self.name)
+        self.on_notification_timeout[status] = False
+        log.debug("finished notification timeout for Server %s and status %s", self.name, str(status))
 
     async def get_info(self) -> a2s.SourceInfo:
         info_data = await a2s.ainfo(self.server_address.query_address, encoding=self.encoding)

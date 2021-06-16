@@ -19,6 +19,6 @@ class AbstractConnectSignal(ABC):
     async def _emit_to_targets(self, *args, **kwargs):
         for target in self.targets:
             if asyncio.iscoroutinefunction(target):
-                await target(*args, **kwargs)
+                asyncio.create_task(target(*args, **kwargs))
             else:
                 target(*args, **kwargs)

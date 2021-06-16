@@ -19,13 +19,13 @@ from discord.ext import commands, flags, tasks
 from emoji import demojize, emojize, emoji_count
 from emoji.unicode_codes import EMOJI_UNICODE_ENGLISH
 from webdav3.client import Client
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 from weasyprint import HTML, CSS
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import generate_bot_data, delete_message_if_text_channel
-from antipetros_discordbot.utility.gidtools_functions import writejson
+from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson, pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, ContextAskAnswer
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command, AntiPetrosBaseCommand
@@ -36,11 +36,13 @@ from pyyoutube import Api
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from marshmallow import Schema
 from rich import inspect as rinspect
+from itertools import chain
 from rich.console import Console
 from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
 import ftfy
 from hashlib import blake2b
 import json
+from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation, AskInput, AskFile, AskInputManyAnswers
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
     from antipetros_discordbot.engine.replacements.context_replacement import AntiPetrosBaseContext
@@ -93,8 +95,24 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         self.antipetros_member = None
         self.edit_embed_message = None
         self.general_db = general_db
-
+        self.attachment_type_file = pathmaker(APPDATA['debug'], "attachment_types.json")
+        if os.path.isfile(self.attachment_type_file) is False:
+            writejson([], self.attachment_type_file)
         glog.class_init_notification(log, self)
+
+    @commands.Cog.listener(name='on_message')
+    async def collect_attachment_types(self, message: discord.Message):
+        collected_types = []
+        if message.attachments is not None and len(message.attachments) > 0:
+            for attachment in message.attachments:
+                collected_types.append(attachment.content_type)
+
+        data = loadjson(self.attachment_type_file).copy()
+        data += collected_types
+        data = list(set(data))
+
+        writejson(data, self.attachment_type_file)
+        log.debug("collected attachment data types %s", ','.join(collected_types))
 
     async def on_ready_setup(self):
 
@@ -259,10 +277,78 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     # def cog_unload(self):
     #     log.debug("Cog '%s' UNLOADED!", str(self))
 
+    @auto_meta_info_command()
+    async def concept_report(self, ctx: commands.Context):
+        log.critical("%s concept report run was started by %s %s", "!" * 10, ctx.author.name, "!" * 10)
+
+        async def error_answers(answer):
+            if answer is confirmation.CANCELED or answer is confirmation.DECLINED:
+                await channel.send('Report was canceled')
+
+            elif answer is confirmation.NOANSWER:
+                await channel.send("report timed out")
+        if ctx.channel.type is discord.ChannelType.private:
+            channel = ctx.channel
+        else:
+            channel = await ctx.author.create_dm() if ctx.author.dm_channel is None else ctx.author.dm_channel
+        author = ctx.author
+        await delete_message_if_text_channel(ctx)
+        confirmation = AskConfirmation(timeout=300, author=author, channel=channel)
+        confirmation.description = "Do you want to report another player?"
+        answer = await confirmation.ask()
+        if answer in confirmation.error_answers or answer is confirmation.DECLINED:
+            await error_answers(answer)
+            return
+
+        input_question = AskInput(timeout=300, author=author, channel=channel)
+        input_question.description = "please state the name of the player"
+
+        player_name = await input_question.ask()
+
+        if player_name in input_question.error_answers:
+            await error_answers(player_name)
+            return
+
+        files = []
+        hook_files = []
+        sec_input_question = AskInputManyAnswers(author=author, channel=channel, timeout=500)
+        sec_input_question.description = "Please send your report"
+        report = await sec_input_question.ask()
+        if report in sec_input_question.error_answers:
+            await error_answers(report)
+            return
+        if len(report) >= (self.bot.max_message_length - 100):
+            with StringIO() as stringfile:
+                stringfile.write(report)
+                stringfile.seek(0)
+                files.append(discord.File(stringfile, 'report.txt'))
+                stringfile.seek(0)
+                stringfile.write(report)
+                stringfile.seek(0)
+                hook_files.append(discord.File(stringfile, 'report.txt'))
+            report = 'SEE FILE'
+        file_input = AskFile(author=author, channel=channel, timeout=300)
+
+        file_answer = await file_input.ask()
+        if file_answer is file_input.CANCELED or file_answer is file_input.NOANSWER:
+            await error_answers(file_input)
+            return
+        log.info(file_answer)
+
+        for attachment in file_answer:
+            files.append(await attachment.to_file())
+
+        for attachment in file_answer:
+            hook_files.append(await attachment.to_file())
+        await self.bot.channel_from_id(645930607683174401).send(f"Report Concerning: `{player_name}`\n\nReport:\n>>> {report}", allowed_mentions=discord.AllowedMentions.none(), files=files)
+        webhook = discord.Webhook.from_url("https://discord.com/api/webhooks/854749192189640734/kd3tmI17bErnc6egy8ObrdfV6-Rm79hkPxNFxBjeZDSp4wNv4llJ8EG-9_z_6Awv8Jeu", adapter=discord.AsyncWebhookAdapter(self.bot.aio_request_session))
+        await webhook.send(f"Report from {author.mention}\n\nReport Concerning: `{player_name}`\n\nReport:\n>>> {report}", allowed_mentions=discord.AllowedMentions.none(), username="REPORT", avatar_url="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Warning.svg/1200px-Warning.svg.png", files=hook_files)
+
     async def cog_check(self, ctx):
-        if ctx.author.id == 576522029470056450:
-            return True
-        return False
+        # if ctx.author.id == 576522029470056450:
+        #     return True
+        # return False
+        return True
 
 
 def setup(bot):

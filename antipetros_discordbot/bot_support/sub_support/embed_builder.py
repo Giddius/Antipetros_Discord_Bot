@@ -10,15 +10,15 @@
 import os
 from io import BytesIO
 from random import randint
-from typing import List, Union
+from typing import List, Union, Optional, Callable, Iterable, TYPE_CHECKING
 from inspect import getmembers
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import asyncio
 # * Third Party Imports --------------------------------------------------------------------------------->
 import arrow
 import PIL.Image
 import discord
-from pytz import timezone
+from pytz import timezone as pytz_timezone
 from discord import File
 from discord import Color as DiscordColor
 from discord import Embed
@@ -36,11 +36,15 @@ from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 import re
+from antipetros_discordbot.auxiliary_classes.asking_items import AskingTypus
+if TYPE_CHECKING:
+    pass
 
 # endregion[Imports]
 
 # region [TODO]
 
+# TODO: Redo that Whole thing!
 
 # endregion [TODO]
 
@@ -353,6 +357,30 @@ class EmbedBuilder(SubSupportBase):
         embed.set_author(**self.special_authors.get('bot_author'))
         return embed
 
+    async def make_asking_embed(self, typus: AskingTypus, timeout: int, description: str, fields: Optional[list] = None, **kwargs):
+        defaults_table = {
+            AskingTypus.CONFIRMATION: {"title": "Confirmation Required", "thumbnail": "question"},
+            AskingTypus.SELECTION: {"title": "Please Select", "thumbnail": "question"},
+            AskingTypus.INPUT: {"title": "Input Required", "thumbnail": "question"},
+            AskingTypus.FILE: {"title": "File Input", "thumbnail": "question"},
+        }
+        fields = fields if fields is not None else []
+        title = defaults_table.get(typus).get('title') if kwargs.get('title', None) is None else kwargs.get("title")
+        thumbnail = defaults_table.get(typus).get("thumbnail") if kwargs.get('thumbnail', None) is None else kwargs.get("thumbnail")
+        embed_data = await self.bot.make_generic_embed(title=title,
+                                                       description=description,
+                                                       thumbnail=thumbnail,
+                                                       fields=fields,
+                                                       footer=kwargs.get('footer', {'text': "Times out at -> "}),
+                                                       timestamp=kwargs.get('timestamp', datetime.now(tz=timezone.utc) + timedelta(seconds=timeout)),
+                                                       color=kwargs.get('color', None),
+                                                       image=kwargs.get('image', None),
+                                                       author=kwargs.get("author", "not_set"),
+                                                       url=kwargs.get('url', None),
+                                                       files=kwargs.get('files', []),
+                                                       file=kwargs.get('file', None))
+        return embed_data
+
     def collect_embed_build_recipes(self):
         self.embed_build_recipes = {}
         # for method_name, method_object in getmembers(self.__class__, iscoroutinefunction):
@@ -449,7 +477,7 @@ class EmbedBuilder(SubSupportBase):
         optional!
         "default_timestamp": ""
         """
-        return loadjson(self.default_embed_data_file).get('default_timestamp', datetime.now(tz=timezone("Europe/Berlin")))
+        return loadjson(self.default_embed_data_file).get('default_timestamp', datetime.now(tz=timezone.utc))
 
     @ property
     def default_type(self):

@@ -84,7 +84,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Init]
 
-
     def __init__(self, bot: "AntiPetrosBot"):
         self.listeners_enabled = {'stop_the_reaction_petros_listener': False}
         super().__init__(bot)
@@ -131,6 +130,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Properties]
 
+
     @property
     def alive_phrases(self):
         if os.path.isfile(self.alive_phrases_file) is False:
@@ -141,7 +141,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Properties]
 
 # region [Listener]
-
 
     @commands.Cog.listener(name='on_reaction_add')
     async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):
@@ -158,7 +157,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Listener]
 
 # region[Commands]
-
 
     @auto_meta_info_command()
     @owner_or_admin()
@@ -395,11 +393,14 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
             text += f"NAME: {cog_name}, CONFIG_NAME: {cog_object.config_name}\n{'-'*10}\n"
         await self.bot.split_to_messages(ctx, text, in_codeblock=True, syntax_highlighting='fix')
 
-
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def tell_is_dev_value(self, ctx: commands.Context):
+        await ctx.send(f"from os.getenv = {os.getenv('IS_DEV')}", delete_after=120)
+        await ctx.send(f"from self.bot.is_debug = {self.bot.is_debug}", delete_after=120)
 # endregion[Commands]
 
 # region [Helper]
-
 
     async def _update_listener_enabled(self):
         for listener_name in self.listeners_enabled:
@@ -409,6 +410,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Helper]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

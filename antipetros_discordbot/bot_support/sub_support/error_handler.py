@@ -143,9 +143,6 @@ class ErrorHandler(SubSupportBase):
         if hasattr(error, 'original'):
             error_traceback = ''.join(traceback.format_tb(error.original.__traceback__)) + f"\n\n{'+'*50}\n{error.__cause__}\n{'+'*50}"
 
-        print('!' * 50)
-        print(repr(error.__traceback__))
-        print("!" * 50)
         if hasattr(error, 'error_handler_name'):
             print(error.error_handler_name)
         if hasattr(error, 'error_handler_name') and hasattr(self, error.error_handler_name):
@@ -177,7 +174,7 @@ class ErrorHandler(SubSupportBase):
                                                        fields=fields,
                                                        thumbnail="https://i.postimg.cc/J0zSHgRH/sorry-thumbnail.png",
                                                        color='red')
-        await ctx.reply(**embed_data, delete_after=delete_after, allowed_mentions=discord.AllowedMentions.none())
+        await ctx.send(**embed_data, delete_after=delete_after, allowed_mentions=discord.AllowedMentions.none())
         await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error)), file=await self._make_traceback_file(error_traceback))
 
     async def _handle_parameter_error_with_possible_parameter(self, ctx, error, error_traceback):

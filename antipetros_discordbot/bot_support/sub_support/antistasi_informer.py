@@ -187,6 +187,12 @@ class AntistasiInformer(SubSupportBase):
         for user_item in self.blacklisted_users:
             yield user_item.get('id')
 
+    async def ensure_dm_channel(self, target: Union[discord.Member, discord.User]) -> discord.DMChannel:
+        _out = target.dm_channel
+        if _out is None:
+            _out = await target.create_dm()
+        return _out
+
     async def get_message_directly(self, channel_id: int, message_id: int) -> discord.Message:
         channel = self.channel_from_id(channel_id)
         return await channel.fetch_message(message_id)

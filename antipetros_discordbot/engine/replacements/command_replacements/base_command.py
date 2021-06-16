@@ -123,11 +123,16 @@ class AntiPetrosBaseCommand(commands.Command):
         self.only_debug = kwargs.get('only_debug', False)
         self.clear_invocation = kwargs.get('clear_invocation', False)
         self.notifications = {self.experimental_notifier: kwargs.pop('experimental', False),
-                              self.logged_notifier: kwargs.get('logged', False)}
+                              self.logged_notifier: kwargs.get('logged', False),
+                              self.confirm_command_received_notifier: kwargs.get('confirm_command_received', False)}
 
     @property
     def bot(self):
         return self.cog.bot
+
+    @property
+    def confirm_command_received_emoji(self):
+        return self.bot.salute_emoji
 
     def set_logged(self, value: bool):
         self.notifications[self.logged_notifier] = value
@@ -148,14 +153,15 @@ class AntiPetrosBaseCommand(commands.Command):
         embed_data = await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail, footer=footer)
         await ctx.temp_send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
+    async def confirm_command_received_notifier(self, ctx: commands.Context):
+        await ctx.add_temp_reaction(self.confirm_command_received_emoji)
+
     async def call_before_hooks(self, ctx: commands.Context):
         await super().call_before_hooks(ctx)
 
         for notification_coro, enabled in self.notifications.items():
             if enabled:
                 await notification_coro(ctx)
-        if await self.can_run(ctx) is True:
-            await ctx.add_temp_reaction(self.bot.salute_emoji)
 
     async def call_after_hooks(self, ctx):
         await super().call_after_hooks(ctx)

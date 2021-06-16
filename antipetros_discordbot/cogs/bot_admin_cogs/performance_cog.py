@@ -277,9 +277,9 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
             embed.set_image(url=_url)
         await ctx.send(embed=embed, file=_file)
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(clear_invocation=True, confirm_command_received=True)
     @owner_or_admin()
-    async def report(self, ctx):
+    async def performance_statistic(self, ctx):
         """
         Reports all collected metrics as Graph.
 
@@ -293,13 +293,11 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         except StatisticsError as error:
             # TODO: make as error embed
             await ctx.send('not enough data points collected to report!', delete_after=120)
-            await delete_message_if_text_channel(ctx)
 
 
 # endregion[Commands]
 
 # region [Helper]
-
 
     async def format_graph(self, amount_data: int):
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
@@ -408,7 +406,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 
 # region [SpecialMethods]
-
 
     def __str__(self) -> str:
         return self.qualified_name

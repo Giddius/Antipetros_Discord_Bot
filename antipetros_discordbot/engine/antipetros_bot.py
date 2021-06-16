@@ -36,6 +36,7 @@ from antipetros_discordbot.utility.emoji_handling import is_unicode_emoji
 from antipetros_discordbot.engine.replacements import CommandCategory, AntiPetrosBaseContext
 from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
 from antipetros_discordbot.utility.sqldata_storager import ChannelUsageResult
+from antipetros_discordbot.auxiliary_classes.asking_items import AbstractUserAsking
 from discord.client import _cleanup_loop, _cancel_tasks
 import signal
 import platform
@@ -220,6 +221,7 @@ class AntiPetrosBot(commands.Bot):
 
     def add_self_to_classes(self):
         ChannelUsageResult.bot = self
+        AbstractUserAsking.bot = self
 
     async def _start_sessions(self):
         self.sessions = {}
