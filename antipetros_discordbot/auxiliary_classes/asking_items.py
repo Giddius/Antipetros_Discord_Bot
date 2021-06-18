@@ -63,11 +63,12 @@ import discord
 
 import gidlogger as glog
 from antipetros_discordbot.utility.misc import alt_seconds_to_pretty
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
 from antipetros_discordbot.utility.emoji_handling import NUMERIC_EMOJIS, ALPHABET_EMOJIS, CHECK_MARK_BUTTON_EMOJI, CROSS_MARK_BUTTON_EMOJI, letter_to_emoji, CANCEL_EMOJI
 from antipetros_discordbot.utility.exceptions import MissingNeededAttributeError, NeededClassAttributeNotSet
 from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import better_shorten, async_better_shorten, alternative_better_shorten
+
 if TYPE_CHECKING:
     pass
 
@@ -218,6 +219,11 @@ class AskSelectionOptionsMapping(collections.abc.Mapping):
     def values(self):
         return self.options.values()
 
+    async def asyncio_values(self):
+        for value in self.options.values():
+            yield value
+            await asyncio.sleep(0)
+
     def items(self):
         return self.options.items()
 
@@ -240,7 +246,7 @@ class AbstractUserAsking(ABC):
     FINISHED = AskAnswer.FINISHED
     cancel_emoji = CANCEL_EMOJI
     cancel_phrase = "!CANCEL!"
-    none_phrase = "!NONE!"
+    finished_phrase = "🆗"
     confirm_emoji = CHECK_MARK_BUTTON_EMOJI
     decline_emoji = CROSS_MARK_BUTTON_EMOJI
     error_answers = {AskAnswer.CANCELED, AskAnswer.NOANSWER}
@@ -340,12 +346,15 @@ class AbstractUserAsking(ABC):
                 await self.ask_message.delete()
         except discord.errors.Forbidden:
             log.debug("unable to delete message, because it is Forbidden")
-
+        except discord.errors.NotFound:
+            log.debug("unable to delete message, because the message is not found")
         try:
             if self.channel.type is discord.ChannelType.text:
                 await self.ask_message.clear_reactions()
         except discord.errors.Forbidden:
             log.debug("unable to delete reactions, because it is Forbidden")
+        except discord.errors.NotFound:
+            log.debug("unable to delete reactions, because the message is not found")
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}"
@@ -385,9 +394,16 @@ class AskInput(AbstractUserAsking):
     wait_for_event = 'message'
     typus = AskingTypus.INPUT
 
-    def __init__(self, author: Union[int, discord.Member, discord.User], channel: Union[int, discord.DMChannel, discord.TextChannel], timeout: int = 300, delete_question: bool = False, validator: Callable = None) -> None:
+    def __init__(self,
+                 author: Union[int, discord.Member, discord.User],
+                 channel: Union[int, discord.DMChannel, discord.TextChannel],
+                 timeout: int = 300,
+                 delete_question: bool = False,
+                 delete_answers: bool = False) -> None:
         super().__init__(timeout=timeout, author=author, channel=channel, delete_question=delete_question)
-        self.validator = self.default_validator if validator is None else validator
+        self.validator = self.default_validator
+        self.delete_answers = delete_answers
+        self.answer_messages = []
 
     async def make_fields(self):
         fields = await super().make_fields()
@@ -398,15 +414,23 @@ class AskInput(AbstractUserAsking):
         return content != ""
 
     async def transform_answer(self, answer):
+        self.answer_messages.append(answer)
         if answer.content == self.cancel_phrase:
             return self.CANCELED
+
         return answer.content
 
     def check_if_answer(self, message: discord.Message):
         checks = [message.author.id == self.author.id,
                   message.channel.id == self.channel.id]
+        if all(checks):
+            return self.validator(message.content) is True or message.content == self.cancel_phrase
 
-        return all(checks) and self.validator(message.content) is True
+    async def after_ask(self):
+        await super().after_ask()
+        if self.delete_answers is True and self.channel.type is not discord.ChannelType.private:
+            for answer in self.answer_messages:
+                await answer.delete()
 
     async def transform_ask_message(self):
         pass
@@ -420,19 +444,22 @@ class AskFile(AbstractUserAsking):
     def __init__(self, author: Union[int, discord.Member, discord.User], channel: Union[int, discord.DMChannel, discord.TextChannel], timeout: int = 300, delete_question: bool = False, file_validator: Callable = None) -> None:
         super().__init__(author=author, channel=channel, timeout=timeout, delete_question=delete_question)
         self.file_validator = self.default_file_validator if file_validator is None else file_validator
+        self.collected_attachments = []
 
     async def make_fields(self):
-        fields = await super().make_fields()
-        fields = [fields[0], self.bot.field_item(name=f"Type {self.cancel_phrase} to cancel", value=ZERO_WIDTH, inline=False)]
-        fields.append(self.bot.field_item(name="If you do not want to Attach a file, type `!NONE!", value=ZERO_WIDTH, inline=False))
+        fields = [self.bot.field_item(name="Attached Files", value="None", inline=False)]
+        super_fields = await super().make_fields()
+        fields += [super_fields[0], self.bot.field_item(name=f"Type {self.cancel_phrase} to cancel", value=ZERO_WIDTH, inline=False)]
+        fields.append(self.bot.field_item(name="Maximum amount of attachments", value=10, inline=False))
+        fields.append(self.bot.field_item(name=f"If you are done, attaching Files, send a message only containin {self.finished_phrase}", value=ZERO_WIDTH, inline=False))
         fields.append(self.bot.field_item(name="allowed File Types", value=','.join(f"`{ftype}`" for ftype in self.allowed_file_types), inline=False))
         return fields
 
     async def transform_answer(self, answer):
         if answer.content == self.cancel_phrase:
             return self.CANCELED
-        if answer.content == self.none_phrase and answer.attachments == []:
-            return []
+        if answer.content == self.finished_phrase and answer.attachments == []:
+            return AskAnswer.FINISHED
 
         return answer.attachments
 
@@ -450,7 +477,7 @@ class AskFile(AbstractUserAsking):
                   message.channel.id == self.channel.id]
 
         if all(checks):
-            if message.content not in {self.none_phrase, self.cancel_phrase} and not message.attachments:
+            if message.content not in {self.finished_phrase, self.cancel_phrase} and not message.attachments:
                 return False
 
             return all(checks) and self.file_validator(message.attachments) is True
@@ -458,19 +485,47 @@ class AskFile(AbstractUserAsking):
     async def transform_ask_message(self):
         pass
 
+    async def update_ask_embed_data(self):
+        if self.collected_attachments:
+            embed = self.ask_embed_data.get('embed')
+            embed.remove_field(0)
+            new_text = ListMarker.make_list([f"`{attachment.filename}`" for attachment in self.collected_attachments])
+            new_text = alternative_better_shorten(new_text, max_length=1000, shorten_side='left', split_on='\n')
+            embed.insert_field_at(0, name='Stored Attachments', value=new_text, inline=False)
+            await self.ask_message.edit(**self.ask_embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+    async def ask(self, **kwargs):
+        self.ask_embed_data = await self.make_ask_embed(**kwargs)
+        self.ask_message = await self.channel.send(**self.ask_embed_data)
+        await self.transform_ask_message()
+        while True:
+            answer = await self._ask_mechanism()
+            transformed_answer = await self.transform_answer(answer)
+            if transformed_answer is self.CANCELED:
+                return transformed_answer
+            if transformed_answer is self.FINISHED:
+                break
+
+            self.collected_attachments += transformed_answer
+
+            if len(self.collected_attachments) == 10:
+                break
+        return self.collected_attachments
+
 
 class AskInputManyAnswers(AskInput):
-    finished_phrase = "🆗"
 
-    def __init__(self, author: Union[int, discord.Member, discord.User], channel: Union[int, discord.DMChannel, discord.TextChannel], timeout: int = 500, validator: Callable = None) -> None:
-        super().__init__(author=author, channel=channel, timeout=timeout, validator=validator)
+    def __init__(self, author: Union[int, discord.Member, discord.User], channel: Union[int, discord.DMChannel, discord.TextChannel], timeout: int = 500, delete_question: bool = False, delete_answers: bool = False) -> None:
+        super().__init__(author=author, channel=channel, timeout=timeout, delete_question=delete_question, delete_answers=delete_answers)
         self.collected_text = []
 
     async def transform_answer(self, answer):
+        self.answer_messages.append(answer)
         if answer.content == self.cancel_phrase:
             return self.CANCELED
         if answer.content == self.finished_phrase:
             return self.FINISHED
+
         return answer.content
 
     async def make_fields(self):
@@ -505,3 +560,36 @@ class AskInputManyAnswers(AskInput):
 
             self.collected_text.append(transformed_answer)
         return '\n'.join(self.collected_text)
+
+
+class AskSelection(AbstractUserAsking):
+    typus = AskingTypus.SELECTION
+    option_item = AskSelectionOption
+    wait_for_event = 'raw_reaction_add'
+
+    def __init__(self, author: Union[int, discord.Member, discord.User], channel: Union[int, discord.DMChannel, discord.TextChannel], timeout: int = 300, delete_question: bool = False, default_emojis: list[str, discord.Emoji] = None) -> None:
+        super().__init__(author, channel, timeout=timeout, delete_question=delete_question)
+        self.options = AskSelectionOptionsMapping(default_emojis=default_emojis)
+
+    async def make_fields(self):
+        fields = await self.options.to_fields()
+        fields += await super().make_fields()
+        return fields
+
+    def check_if_answer(self, payload: discord.RawReactionActionEvent):
+
+        checks = [payload.message_id == self.ask_message.id,
+                  payload.user_id == self.author.id,
+                  payload.emoji in self.options or str(payload.emoji) == self.cancel_emoji]
+        return all(checks)
+
+    async def transform_ask_message(self):
+        for emoji in self.options:
+            await self.ask_message.add_reaction(emoji)
+        await self.ask_message.add_reaction(self.cancel_emoji)
+
+    async def transform_answer(self, answer: discord.RawReactionActionEvent):
+        answer_emoji = str(answer.emoji)
+        if answer_emoji == self.cancel_emoji:
+            return self.CANCELED
+        return self.options.get_result(answer_emoji)

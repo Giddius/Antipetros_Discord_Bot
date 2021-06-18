@@ -335,7 +335,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             return
 
         server_item = await self._server_from_is_online_message_id(message.id)
-        if server_item.previous_status is ServerStatus.OFF or server_item.log_folder is None:
+        if server_item.current_status is ServerStatus.OFF or server_item.log_folder is None:
             asyncio.create_task(message.remove_reaction(payload.emoji, reaction_member))
             return
 
@@ -568,13 +568,19 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         COGS_CONFIG.set(self.config_name, "notification_time_out_seconds", timeout_seconds)
         await ctx.send(f'Server notification timeout was set to {timeout_seconds} seconds', allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
 
-    @auto_meta_info_command(only_debug=True)
+    @auto_meta_info_command()
     @owner_or_admin()
     async def debug_server_notification(self, ctx: commands.Context, server_name: str = "mainserver_1", new_prev_status: bool = False):
         server = await self._get_server_by_name(server_name)
-        server.previous_status = ServerStatus(new_prev_status)
-        await ctx.send(f"{server.pretty_name} is {server.previous_status}", allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
+        server.status.add_new_status = ServerStatus(new_prev_status)
+        await ctx.send(f"{server.pretty_name} is {server.current_status}", allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
         await delete_message_if_text_channel(ctx)
+
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def tell_all_status(self, ctx: commands.Context):
+        for server in self.server_items:
+            await ctx.send(f"{server.name} --> {server.current_status} -> Timeouts: ServerStatus.ON = {server.on_notification_timeout.get(ServerStatus.ON)}, ServerStatus.OFF = {server.on_notification_timeout.get(ServerStatus.OFF)}")
 
     @auto_meta_info_command()
     @owner_or_admin()
@@ -679,15 +685,15 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
     async def _make_is_online_embed(self, server: ServerItem):
         description = ZERO_WIDTH
-        if server.previous_status is ServerStatus.OFF:
+        if server.current_status is ServerStatus.OFF:
             description = 'is ***OFFLINE***'
         elif server.log_folder is not None:
             description = f"Click the {self.bot.server_emoji} emoji to get the current Mod List"
 
-        color = 'green' if server.previous_status is ServerStatus.ON else 'red'
-        thumbnail = self.server_logos.get(server.name.casefold(), self.server_symbol) if server.previous_status is ServerStatus.ON else self.server_symbol_off
+        color = 'green' if server.current_status is ServerStatus.ON else 'red'
+        thumbnail = self.server_logos.get(server.name.casefold(), self.server_symbol) if server.current_status is ServerStatus.ON else self.server_symbol_off
         fields = []
-        if server.previous_status is ServerStatus.ON:
+        if server.current_status is ServerStatus.ON:
             info_data = await server.get_info()
             fields.append(self.bot.field_item(name='ON', value="☑️", inline=True))
             fields.append(self.bot.field_item(name="Server Address", value=server.server_address.url, inline=True))
@@ -723,7 +729,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def _create_is_online_message(self, server: ServerItem):
         embed_data = await self._make_is_online_embed(server)
         msg = await self.is_online_messages_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-        if server.log_folder is not None and server.previous_status is ServerStatus.ON:
+        if server.log_folder is not None and server.current_status is ServerStatus.ON:
             await msg.add_reaction(self.bot.server_emoji)
         else:
             await self._clear_emoji_from_msg(msg.id, True)
@@ -740,7 +746,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             msg = await self.is_online_messages_channel.fetch_message(message_id)
             embed_data = await self._make_is_online_embed(server)
             await asyncio.gather(msg.edit(**embed_data, allowed_mentions=discord.AllowedMentions.none()), self.clear_emojis_from_is_online_message())
-            if server.previous_status is ServerStatus.ON and server.log_folder is not None:
+            if server.current_status is ServerStatus.ON and server.log_folder is not None:
                 await msg.add_reaction(self.bot.server_emoji)
             else:
                 await self._clear_emoji_from_msg(msg.id, True)

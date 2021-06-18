@@ -117,7 +117,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         FaqItem.answer_parse_emoji = self.a_emoji
         FaqItem.config_name = self.config_name
         await asyncio.to_thread(FaqItem.set_background_image)
-        await self.collect_raw_faq_data()
+        asyncio.create_task(self.collect_raw_faq_data())
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -125,7 +125,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         if UpdateTypus.RECONNECT in typus or UpdateTypus.CONFIG in typus:
             FaqItem.faq_channel = self.faq_channel
             await asyncio.to_thread(FaqItem.set_background_image)
-            await self.collect_raw_faq_data()
+            asyncio.create_task(self.collect_raw_faq_data())
         await super().update(typus)
         log.debug('cog "%s" was updated', str(self))
 
@@ -295,11 +295,13 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
             faq_item = FaqItem(content, created_at, jump_url, image)
             _ = await faq_item.get_number_thumbnail()
             self.faq_items[faq_item.number] = faq_item
+            await asyncio.sleep(0.5)
+        await asyncio.sleep(5)
         max_faq_number = max(self.faq_items)
         if all(_num in self.faq_items for _num in range(1, max_faq_number + 1)):
             log.info('FAQ items collected: %s', max_faq_number)
         else:
-            raise KeyError(f"Not all FAQ Items where collected, missing: {', '.join(_num for _num in range(1,max_faq_number+1) if _num not in self.faq_items)}")
+            raise KeyError(f"Not all FAQ Items where collected, missing: {', '.join(str(_num) for _num in range(1,max_faq_number+1) if _num not in self.faq_items)}")
 
 
 # endregion [HelperMethods]

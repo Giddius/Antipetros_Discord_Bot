@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING
 from datetime import datetime, timezone
 from functools import cached_property, total_ordering
 from dateparser import parse as date_parse
-from collections import namedtuple
+from collections import namedtuple, deque
 from async_property import async_property, async_cached_property
 from aiodav import Client as AioWebdavClient
 from aiodav.client import Resource
@@ -49,14 +49,13 @@ if TYPE_CHECKING:
     from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog
 from zipfile import ZipFile, ZIP_LZMA
 from antipetros_discordbot.abstracts.connect_signal import AbstractConnectSignal
-from antipetros_discordbot.abstracts.database_serializeable import DatabaseSerializeable
 from pyparsing import (Word, alphanums, punc8bit, alphas, Literal, Optional, OneOrMore, oneOf, Group, nums, nestedExpr, delimitedList,
                        dblQuotedString, quotedString, Forward, Suppress, SkipTo, ZeroOrMore, Combine, Regex, Keyword, CaselessLiteral,
                        restOfLine, ParserElement, countedArray, CharsNotIn, cStyleComment, commaSeparatedList, cppStyleComment, LineEnd,
                        LineStart, NotAny, removeQuotes, nestedExpr, CaselessKeyword, CaselessLiteral, FollowedBy)
 
 import pyparsing as pp
-import re
+
 from antipetros_discordbot.utility.sqldata_storager import general_db
 # endregion[Imports]
 
@@ -102,6 +101,25 @@ class ServerStatus(Enum):
                 return cls.ON
             return cls.OFF
         return super()._missing_(value)
+
+
+class ServerStatusDeque(deque):
+
+    def __init__(self):
+        super().__init__(maxlen=2)
+        self.append(None)
+        self.append(None)
+
+    @property
+    def current_status(self) -> ServerStatus:
+        return self[1]
+
+    @property
+    def previous_status(self) -> ServerStatus:
+        return self[0]
+
+    def add_new_status(self, status: ServerStatus):
+        self.append(status)
 
 
 @unique
@@ -517,7 +535,7 @@ class ServerItem:
         self.server_address = ServerAddress(full_address)
         self.log_folder = log_folder
         self.log_items = SortedList()
-        self.previous_status = None
+        self.status = ServerStatusDeque()
         self.log_parser = LogParser(self)
         self.battle_metrics_url = self.battle_metrics_mapping.get(self.name.casefold(), None)
         self.priority = self.server_priority_map.get(self.name.casefold(), 0)
@@ -538,6 +556,14 @@ class ServerItem:
     @cached_property
     def config_name(self) -> str:
         return self.cog.config_name
+
+    @property
+    def previous_status(self):
+        return self.status.previous_status
+
+    @property
+    def current_status(self):
+        return self.status.current_status
 
     @property
     def notification_time_out(self):
@@ -562,10 +588,6 @@ class ServerItem:
     @property
     def report_status_change(self) -> bool:
         return COGS_CONFIG.retrieve(self.config_name, f"{self.name.lower()}_report_status_change", typus=bool, direct_fallback=False)
-
-    @property
-    def show_off_status_change(self) -> bool:
-        return COGS_CONFIG.retrieve(self.config_name, "notify_if_switched_off_also", typus=bool, direct_fallback=False)
 
     @property
     def show_in_server_command(self) -> bool:
@@ -617,30 +639,30 @@ class ServerItem:
         log.info("Updated log_items for server %s", self.name)
 
     async def is_online(self) -> ServerStatus:
+        log.debug("for Server %s before checking status, previous status is %s", self, str(self.previous_status))
         try:
             check_data = await self.get_info()
-            status = ServerStatus.ON
+            self.status.add_new_status(ServerStatus.ON)
             self.official_name = check_data.server_name
         except asyncio.exceptions.TimeoutError:
-            status = ServerStatus.OFF
-        log.info("Server %s is %s", self.name, status.name)
+            self.status.add_new_status(ServerStatus.OFF)
+        log.info("Server %s is %s", self.name, self.current_status.name)
 
-        if all(
-            [self.report_status_change is True,
-             self.previous_status not in {None, status},
-             self.show_off_status_change is True or status is ServerStatus.ON]
-        ):
-            if self.on_notification_timeout.get(status) is False:
-                await self.status_switch_signal.emit(self, status)
+        if all([self.report_status_change is True,
+                self.previous_status not in {None, self.current_status}]):
+            log.debug("Server Status %s is on timeout %s", str(self.current_status), self.on_notification_timeout.get(self.current_status))
+            if self.on_notification_timeout.get(self.current_status) is False:
+                log.debug("Server %s status notification for status %s is not on timeout", self, str(self.current_status))
+                await self.status_switch_signal.emit(self, self.current_status)
 
-                asyncio.create_task(self._reset_on_notification_timeout(status))
+                asyncio.create_task(self._reset_on_notification_timeout(self.current_status))
             else:
                 log.debug("Status switch message for Server %s not sent because server is on notification timeout", self.name)
 
             if self.is_online_message_enabled is True:
                 await self.update_is_online_message_signal.emit(self)
-        self.previous_status = status
-        return status
+
+        return self.current_status
 
     async def _reset_on_notification_timeout(self, status: ServerStatus):
         self.on_notification_timeout[status] = True

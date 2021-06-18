@@ -64,7 +64,7 @@ from antipetros_discordbot.engine.replacements import auto_meta_info_command, An
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
-
+from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation, AskInput, AskInputManyAnswers, AskFile, AskAnswer
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 
 if TYPE_CHECKING:
@@ -111,7 +111,8 @@ class ReportCog(AntiPetrosBaseCog):
     long_description = ""
     extra_info = ""
     required_config_data = {'base_config': {},
-                            'cogs_config': {"report_webhook_urls": ""}}
+                            'cogs_config': {"report_webhook_urls": "",
+                                            "report_channel_anonymized": "bot-testing"}}
     required_folder = []
     required_files = []
 
@@ -129,8 +130,14 @@ class ReportCog(AntiPetrosBaseCog):
 # region [Properties]
 
     def report_webhook_urls(self):
-        return COGS_CONFIG.get(self.config_name, "report_webhook_urls", typus=List[str], default_fallback=[])
+        return COGS_CONFIG.retrieve(self.config_name, "report_webhook_urls", typus=List[str], default_fallback=[])
 
+    def report_channel_anonymized(self):
+        channel = COGS_CONFIG.retrieve(self.config_name, "report_channel_anonymized", typus=str, default_fallback="bot-testing")
+        if channel.isnumeric():
+            return self.bot.channel_from_id(int(channel))
+        else:
+            return self.bot.channel_from_name(channel)
 
 # endregion [Properties]
 
@@ -160,14 +167,16 @@ class ReportCog(AntiPetrosBaseCog):
 
 # region [Commands]
 
-
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(True)
     async def report(self, ctx: commands.Context):
         author = ctx.author
         channel = await self.bot.ensure_dm_channel(author)
         await delete_message_if_text_channel(ctx)
-
+        if ctx.channel.type is discord.ChannelType.private:
+            channel = ctx.channel
+        else:
+            channel = await ctx.author.create_dm() if ctx.author.dm_channel is None else ctx.author.dm_channel
 
 # endregion [Commands]
 
@@ -182,7 +191,6 @@ class ReportCog(AntiPetrosBaseCog):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx: commands.Context):
         return True

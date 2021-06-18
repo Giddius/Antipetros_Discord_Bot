@@ -30,6 +30,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_help
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
 from antipetros_discordbot.auxiliary_classes.hashed_message import HashedMessage
+from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation, AskFile, AskInput, AskInputManyAnswers, AskAnswer, AskSelectionOptionsMapping, AskSelectionOption, AskSelection
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
@@ -292,6 +293,44 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         await ctx.channel.purge(limit=command_flags.get('number_of_messages'), check=is_antipetros, bulk=True)
         await ctx.send('done', delete_after=60)
         await delete_message_if_text_channel(ctx)
+
+    @auto_meta_info_command(clear_invocation=True, experimental=True)
+    @commands.is_owner()
+    @log_invoker(log, 'warning')
+    async def remove_double_posts_settings(self, ctx: commands.Context):
+        setting_ask = AskSelection(author=ctx.author, channel=ctx.channel, timeout=300, delete_question=True)
+        setting_ask.description = "Select a Setting you want to change."
+        setting_ask.options.add_option(setting_ask.option_item(item="switch on/off"))
+        setting_ask.options.add_option(setting_ask.option_item(item="change max triggered Role"))
+        answer = await setting_ask.ask()
+        if answer in {setting_ask.CANCELED, setting_ask.NOANSWER}:
+            return
+
+        if answer == "switch on/off":
+            current_setting = self.remove_double_posts_enabled
+            current_setting_text = "Enabled" if current_setting is True else "Disabled"
+            future_setting_text = "Disabled" if current_setting is True else "Enabled"
+
+            confirmation_ask = AskConfirmation(ctx.author, ctx.channel, timeout=300, delete_question=True)
+            confirmation_ask.description = f"Double Post Remover is currently **{current_setting_text.upper()}**.\nDo you want to set it to ***{future_setting_text}***?"
+            answer = await confirmation_ask.ask()
+            if answer in {confirmation_ask.CANCELED, confirmation_ask.DECLINED, confirmation_ask.NOANSWER}:
+                return
+            COGS_CONFIG.set(self.config_name, "remove_double_posts_enabled", str(not current_setting))
+            await ctx.send(f"Double Post Remover is now **{future_setting_text}**!")
+            return
+
+        if answer == "change max triggered Role":
+            input_ask = AskInput(ctx.author, ctx.channel, timeout=300, delete_question=True, delete_answers=True)
+            def validator(x): return any([x.isnumeric(), x in self.bot.roles_name_dict])
+            input_ask.validator = validator
+            level_display = await self._create_role_level_display(self.remove_double_posts_max_role_position)
+            input_ask.description = f"Please enter either the position number of the new max role, a role id or a role Name!\n Currently set to \n{level_display}."
+            answer = await input_ask.ask()
+            if answer in {input_ask.CANCELED, input_ask.NOANSWER}:
+                return
+            answer = await RoleOrIntConverter().convert(ctx, answer)
+            await self.set_remove_double_posts_max_role_position(ctx, answer)
 
     @auto_meta_info_command()
     @commands.is_owner()

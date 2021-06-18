@@ -166,5 +166,5 @@ def launch():
 
 
 if __name__ == '__main__':
-    launch()
-    # restart()
+    # launch()
+    restart()
