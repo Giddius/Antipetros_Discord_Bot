@@ -1,6 +1,7 @@
 # * Third Party Imports -->
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands.errors import CommandError
+import discord
 from datetime import datetime
 from typing import Any, TYPE_CHECKING, Union
 from antipetros_discordbot.utility.misc import split_camel_case_string
@@ -143,6 +144,17 @@ class MissingAttachmentError(BaseExtendedCommandError):
         super().__init__(self.msg)
 
 
+class WrongAttachmentTypeError(BaseExtendedCommandError):
+    def __init__(self, ctx, attachment: discord.Attachment, allowed_content_types: set):
+        self.ctx = ctx
+        self.command = self.ctx.command
+        self.attachment = attachment
+        self.attachment_content_type = self.attachment.content_type
+        self.allowed_content_types = allowed_content_types
+        self.msg = f"The Attachment `{self.attachment.filename}` has the wrong content_type(`{self.attachment_content_type}`. Allowed content_types: {', '.join(self.allowed_content_types)}"
+        super().__init__(self.msg)
+
+
 class NotAllowedChannelError(BaseExtendedCommandError):
     def __init__(self, ctx, allowed_channels):
         self.ctx = ctx
@@ -258,4 +270,19 @@ class GithubRateLimitUsedUp(BaseExtendedCommandError):
     def __init__(self, reset_time: datetime):
         self.reset_time = reset_time
         self.msg = "Rate Limit for github is used up, this action is not usable until " + self.reset_time.strftime("%Y-%m-%d %H:%M:%S UTC") + ", as the rate-limit resets at that time!"
+        super().__init__(self.msg)
+
+
+class AskCanceledError(BaseExtendedCommandError):
+    def __init__(self, ask_object, answer):
+        self.ask_object = ask_object
+        self.answer = answer
+        self.msg = "Question was canceled by User"
+        super().__init__(self.msg)
+
+
+class AskTimeoutError(BaseExtendedCommandError):
+    def __init__(self, ask_object):
+        self.ask_object = ask_object
+        self.msg = "No Answer received"
         super().__init__(self.msg)

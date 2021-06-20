@@ -130,7 +130,7 @@ class EssentialCommandsKeeper(SubSupportBase):
 
         await self.bot.close()
 
-    async def split_to_messages(self, ctx, message, split_on='\n', in_codeblock=False, syntax_highlighting='json'):
+    async def split_to_messages(self, target: discord.abc.Messageable, message, split_on='\n', in_codeblock=False, syntax_highlighting='json'):
         _out = ''
         chunks = message.split(split_on)
         for chunk in chunks:
@@ -139,12 +139,14 @@ class EssentialCommandsKeeper(SubSupportBase):
             else:
                 if in_codeblock is True:
                     _out = f"```{syntax_highlighting}\n{_out}\n```"
-                await ctx.send(_out)
                 await asyncio.sleep(1)
+                await target.send(_out)
+
                 _out = ''
         if in_codeblock is True:
             _out = f"```{syntax_highlighting}\n{_out}\n```"
-        await ctx.send(_out)
+        await asyncio.sleep(1)
+        await target.send(_out)
 
     async def process_meta_data(self):
         docstring_regex = re.compile(r"(?P<description>.*?)(?P<args>args\:.*?(?=example\:)?)?(?P<example>example\:.*?)?(?P<extra_info>info\:.*)?$", re.IGNORECASE | re.DOTALL)

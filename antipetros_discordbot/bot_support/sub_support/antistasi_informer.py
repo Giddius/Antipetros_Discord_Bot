@@ -122,7 +122,7 @@ class AntistasiInformer(SubSupportBase):
 
     @cached_property
     def server_emoji(self) -> discord.Emoji:
-        return discord.utils.get(self.bot_testing_guild.emojis, id=845740762900856838)
+        return discord.utils.get(self.bot_testing_guild.emojis, id=855915156881408000)
 
     @cached_property
     def antistasi_invite_url(self) -> str:
@@ -166,6 +166,7 @@ class AntistasiInformer(SubSupportBase):
 
     @cached_property
     def bot_testing_guild(self) -> discord.Guild:
+        _id = BASE_CONFIG.retrieve('debug', "testing_guild_id", typus=int, direct_fallback=837389179025096764)
         guild = self.bot.get_guild(837389179025096764)
         return guild
 

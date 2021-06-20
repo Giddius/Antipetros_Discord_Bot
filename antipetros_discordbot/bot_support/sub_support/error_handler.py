@@ -143,15 +143,13 @@ class ErrorHandler(SubSupportBase):
         if hasattr(error, 'original'):
             error_traceback = ''.join(traceback.format_tb(error.original.__traceback__)) + f"\n\n{'+'*50}\n{error.__cause__}\n{'+'*50}"
 
-        if hasattr(error, 'error_handler_name'):
-            print(error.error_handler_name)
         if hasattr(error, 'error_handler_name') and hasattr(self, error.error_handler_name):
             handle_meth = getattr(self, error.error_handler_name)
         else:
             handle_meth = self.error_handle_table.get(type(error), self._default_handle_error)
 
-        await handle_meth(ctx, error, error_traceback)
-        if ctx.channel.type is ChannelType.text and ctx.command is not None:
+        log_error = await handle_meth(ctx, error, error_traceback)
+        if ctx.channel.type is ChannelType.text and ctx.command is not None and log_error is not False:
             log.error("Error '%s' was caused by '%s' on the content '%s' with args '%s' and traceback --> %s", error.__class__.__name__, ctx.author.name, ctx.message.content, ctx.args, error_traceback)
             if self.delete_invoking_messages is True:
                 await ctx.message.delete()
@@ -176,6 +174,14 @@ class ErrorHandler(SubSupportBase):
                                                        color='red')
         await ctx.send(**embed_data, delete_after=delete_after, allowed_mentions=discord.AllowedMentions.none())
         await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error)), file=await self._make_traceback_file(error_traceback))
+
+    async def _handle_ask_canceled_error(self, ctx, error, error_traceback):
+        await error.ask_object.channel.send(error.msg, delete_after=90)
+        return False
+
+    async def _handle_ask_timeout_error(self, ctx, error, error_traceback):
+        await error.ask_object.channel.send(error.msg, delete_after=90)
+        return False
 
     async def _handle_parameter_error_with_possible_parameter(self, ctx, error, error_traceback):
         embed_data = await error.to_embed(ctx=ctx, bot=self.bot)
@@ -258,7 +264,8 @@ class ErrorHandler(SubSupportBase):
 
     async def _handle_command_on_cooldown(self, ctx, error, error_traceback):
         # TODO: get normal sentence from BucketType, with dynamical stuff (user_name, channel_name,...)
-        msg = await self.transform_error_msg(f"Command '{ctx.command.name}' is on cooldown for '{error.cooldown.type.name.upper()}'. \n{ZERO_WIDTH}\nYou can try again in '{await async_seconds_to_pretty_normal(int(round(error.retry_after, 0)))}'\n{ZERO_WIDTH}")
+        again_time = await async_seconds_to_pretty_normal(int(round(error.retry_after, 0)))
+        msg = await self.transform_error_msg(f"Command '{ctx.command.name}' is on cooldown for '{error.cooldown.type.name.upper()}'. \n{ZERO_WIDTH}\nYou can try again in '{again_time}'\n{ZERO_WIDTH}")
         if self.cooldown_data.in_data(ctx, error) is True:
             await ctx.message.delete()
             await ctx.author.send(msg)
@@ -287,11 +294,13 @@ class ErrorHandler(SubSupportBase):
         embed.add_field(name="kwargs", value=ctx.kwargs, inline=False)
 
         if ctx.command is not None:
-            embed.set_footer(text=f"Command: `{ctx.command.name}`\n{ZERO_WIDTH}\n By User: `{ctx.author.name}`\n{ZERO_WIDTH}\n Error: `{await async_split_camel_case_string(error.__class__.__name__)}`\n{ZERO_WIDTH}\n{ZERO_WIDTH}")
+            err_name = await async_split_camel_case_string(error.__class__.__name__)
+            embed.set_footer(text=f"Command: `{ctx.command.name}`\n{ZERO_WIDTH}\n By User: `{ctx.author.name}`\n{ZERO_WIDTH}\n Error: `{err_name}`\n{ZERO_WIDTH}\n{ZERO_WIDTH}")
             embed.add_field(name='command used', value=ctx.command.name, inline=False)
 
         else:
-            embed.set_footer(text=f"text: {ctx.message.content}\n{ZERO_WIDTH}\n By User: `{ctx.author.name}`\n{ZERO_WIDTH}\n Error: `{await async_split_camel_case_string(error.__class__.__name__)}`\n{ZERO_WIDTH}\n{ZERO_WIDTH}")
+            err_name = await async_split_camel_case_string(error.__class__.__name__)
+            embed.set_footer(text=f"text: {ctx.message.content}\n{ZERO_WIDTH}\n By User: `{ctx.author.name}`\n{ZERO_WIDTH}\n Error: `{err_name}`\n{ZERO_WIDTH}\n{ZERO_WIDTH}")
         embed.add_field(name='invoking user', value=ctx.author.name, inline=False)
         error_type = error.__class__.__name__ if not hasattr(error, 'original') else error.original.__class__.__name__
         embed.add_field(name='error type', value=error_type, inline=False)

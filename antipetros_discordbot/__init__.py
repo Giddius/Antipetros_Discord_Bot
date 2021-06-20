@@ -48,3 +48,4 @@ def set_env():
 
 
 set_env()
+os.environ['COLLECT_ATTACHMENT_TYPES_ENABLED'] = "0"

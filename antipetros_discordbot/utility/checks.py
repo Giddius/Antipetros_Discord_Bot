@@ -14,7 +14,7 @@ from discord.ext import commands
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.exceptions import IsNotDMChannelError, IsNotTextChannelError, MissingAttachmentError, NotAllowedChannelError, NotAllowedMember, NotNecessaryRole
+from antipetros_discordbot.utility.exceptions import IsNotDMChannelError, IsNotTextChannelError, MissingAttachmentError, NotAllowedChannelError, NotAllowedMember, NotNecessaryRole, WrongAttachmentTypeError
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_OPTION_NAMES, COG_CHECKER_ATTRIBUTE_NAMES
 
@@ -167,6 +167,17 @@ class HasAttachmentCheck(BaseAntiPetrosCheck):
         return True
 
 
+class HasImageAttachment(HasAttachmentCheck):
+    allowed_content_types = {"image/jpeg", "image/png"}
+
+    async def __call__(self, ctx: commands.Context):
+        await super().__call__(ctx)
+        for attachment in ctx.message.attachments:
+            if attachment.content_type not in self.allowed_content_types:
+                raise WrongAttachmentTypeError(ctx, attachment, self.allowed_content_types)
+        return True
+
+
 def in_allowed_channels():
     def predicate(ctx: commands.Context):
         cog = ctx.cog
@@ -243,6 +254,10 @@ PURGE_CHECK_TABLE = {'is_bot': purge_check_is_bot,
 
 def has_attachments(min_amount_attachments: int = 1):
     return commands.check(HasAttachmentCheck(min_amount_attachments))
+
+
+def has_image_attachment(min_amount_attachments: int = 1):
+    return commands.check(HasImageAttachment(min_amount_attachments))
 
 
 def is_not_giddi(ctx: commands.Context):

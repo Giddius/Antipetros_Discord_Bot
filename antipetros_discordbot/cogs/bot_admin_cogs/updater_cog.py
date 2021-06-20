@@ -216,9 +216,10 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
     @commands.Cog.listener(name="on_message")
     async def on_message_listener(self, msg: discord.Message):
         if any([self.ready, self.bot.setup_finished]) is False:
+            log.critical("somethings not ready -> updater_cog_ready: %s, bot_finished_setup: %s", self.ready, self.bot.setup_finished)
             return
         if hasattr(self.bot, 'record_channel_usage'):
-            asyncio.create_task(self.bot.record_channel_usage(msg))
+            await asyncio.create_task(self.bot.record_channel_usage(msg))
 
 # endregion [Listener]
 

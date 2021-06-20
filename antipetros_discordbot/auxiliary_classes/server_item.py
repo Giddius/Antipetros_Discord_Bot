@@ -639,7 +639,7 @@ class ServerItem:
         log.info("Updated log_items for server %s", self.name)
 
     async def is_online(self) -> ServerStatus:
-        log.debug("for Server %s before checking status, previous status is %s", self, str(self.previous_status))
+        log.debug("for Server %s before checking status, previous status is %s", self, str(self.current_status))
         try:
             check_data = await self.get_info()
             self.status.add_new_status(ServerStatus.ON)

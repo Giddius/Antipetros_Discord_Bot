@@ -53,11 +53,11 @@ from importlib.util import find_spec, module_from_spec, spec_from_file_location
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from importlib.machinery import SourceFileLoader
 import collections.abc
-
+import inspect
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
 
 import discord
-
+from discord.ext import commands
 
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
@@ -66,7 +66,7 @@ from antipetros_discordbot.utility.misc import alt_seconds_to_pretty
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
 from antipetros_discordbot.utility.emoji_handling import NUMERIC_EMOJIS, ALPHABET_EMOJIS, CHECK_MARK_BUTTON_EMOJI, CROSS_MARK_BUTTON_EMOJI, letter_to_emoji, CANCEL_EMOJI
-from antipetros_discordbot.utility.exceptions import MissingNeededAttributeError, NeededClassAttributeNotSet
+from antipetros_discordbot.utility.exceptions import MissingNeededAttributeError, NeededClassAttributeNotSet, AskCanceledError, AskTimeoutError
 from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import better_shorten, async_better_shorten, alternative_better_shorten
 
 if TYPE_CHECKING:
@@ -245,7 +245,7 @@ class AbstractUserAsking(ABC):
     NOANSWER = AskAnswer.NOANSWER
     FINISHED = AskAnswer.FINISHED
     cancel_emoji = CANCEL_EMOJI
-    cancel_phrase = "!CANCEL!"
+    cancel_phrase = CANCEL_EMOJI
     finished_phrase = "🆗"
     confirm_emoji = CHECK_MARK_BUTTON_EMOJI
     decline_emoji = CROSS_MARK_BUTTON_EMOJI
@@ -254,15 +254,20 @@ class AbstractUserAsking(ABC):
     bot = None
     mandatoy_attributes = ['bot']
 
-    def __init__(self, author: Union[int, discord.Member, discord.User], channel: Union[int, discord.DMChannel, discord.TextChannel], timeout: int = 300, delete_question: bool = False) -> None:
+    def __init__(self,
+                 author: Union[int, discord.Member, discord.User],
+                 channel: Union[int, discord.DMChannel, discord.TextChannel],
+                 timeout: int = 300,
+                 delete_question: bool = False,
+                 error_on: Union[bool, list[AskAnswer], AskAnswer] = False) -> None:
         for c_attr_name in self.mandatoy_attributes:
             if getattr(self, c_attr_name) is None:
                 raise NeededClassAttributeNotSet(c_attr_name, self.__class__.__name__)
         self.timeout = timeout
         self.channel = self._ensure_channel(channel)
         self.author = self._ensure_author(author)
-
         self.delete_question = delete_question
+        self.error_on = self._ensure_error_on(error_on)
         self.title = None
         self.description = ZERO_WIDTH
         self.thumbnail = None
@@ -270,6 +275,17 @@ class AbstractUserAsking(ABC):
         self.ask_message = None
         self.ask_embed_data = None
         self.end_time = datetime.now(tz=timezone.utc) + timedelta(seconds=timeout)
+
+    def _ensure_error_on(self, error_on: Union[bool, list[AskAnswer], AskAnswer]) -> frozenset:
+        if isinstance(error_on, list):
+            return frozenset(error_on)
+        if isinstance(error_on, AskAnswer):
+            return frozenset([error_on])
+        if isinstance(error_on, bool):
+            if error_on is True:
+                return frozenset(self.error_answers)
+            if error_on is False:
+                return frozenset()
 
     def _ensure_author(self, author: Union[int, discord.Member, discord.User]) -> Union[discord.Member, discord.User]:
         if isinstance(self.channel, discord.DMChannel):
@@ -285,6 +301,23 @@ class AbstractUserAsking(ABC):
         if isinstance(channel, (discord.TextChannel, discord.DMChannel)):
             return channel
         return self.bot.channel_from_id(channel)
+
+    @classmethod
+    def from_context(cls, ctx: commands.Context, **kwargs):
+        author = ctx.author
+        channel = ctx.channel
+        return cls(author=author, channel=channel, **kwargs)
+
+    @classmethod
+    def from_other_asking(cls, other: "AbstractUserAsking", **kwargs):
+        author = other.author
+        channel = other.channel
+        for param in list(inspect.signature(cls.__init__).parameters.keys()):
+            if param not in {'self', 'author', 'channel'} and param not in kwargs:
+                if hasattr(other, param):
+                    kwargs[param] = getattr(other, param)
+
+        return cls(author=author, channel=channel, **kwargs)
 
     @classmethod
     @property
@@ -306,6 +339,12 @@ class AbstractUserAsking(ABC):
     async def transform_ask_message(self):
         ...
 
+    async def on_cancel(self, answer):
+        if AskAnswer.CANCELED in self.error_on:
+            raise AskCanceledError(self, answer)
+
+        return self.CANCELED
+
     async def make_fields(self):
         return [self.bot.field_item(name="Time to answer", value=alt_seconds_to_pretty(int(self.timeout)), inline=False),
                 self.bot.field_item(name=f"{self.cancel_emoji} to Cancel", value=ZERO_WIDTH, inline=False)]
@@ -314,6 +353,9 @@ class AbstractUserAsking(ABC):
         return await self.bot.make_asking_embed(typus=self.typus, timeout=self.timeout, description=self.description, fields=await self.make_fields(), title=self.title, **kwargs)
 
     async def on_timeout(self):
+        if AskAnswer.NOANSWER in self.error_on:
+            raise AskTimeoutError(self)
+
         return self.NOANSWER
 
     @abstractmethod
@@ -364,18 +406,23 @@ class AskConfirmation(AbstractUserAsking):
     wait_for_event = 'raw_reaction_add'
     typus = AskingTypus.CONFIRMATION
 
-    def __init__(self, author: Union[int, discord.Member, discord.User], channel: Union[int, discord.DMChannel, discord.TextChannel], timeout: int = 300, delete_question: bool = False) -> None:
-        super().__init__(timeout=timeout, author=author, channel=channel, delete_question=delete_question)
+    def __init__(self,
+                 author: Union[int, discord.Member, discord.User],
+                 channel: Union[int, discord.DMChannel, discord.TextChannel],
+                 timeout: int = 300,
+                 delete_question: bool = False,
+                 error_on: Union[bool, list[AskAnswer], AskAnswer] = False) -> None:
+        super().__init__(timeout=timeout, author=author, channel=channel, delete_question=delete_question, error_on=error_on)
 
     @cached_property
     def answer_table(self):
-        return {self.cancel_emoji: self.CANCELED,
-                self.confirm_emoji: self.ACCEPTED,
+        return {self.confirm_emoji: self.ACCEPTED,
                 self.decline_emoji: self.DECLINED}
 
     async def transform_answer(self, answer):
-
         answer_emoji = str(answer.emoji)
+        if answer_emoji == self.cancel_emoji:
+            return await self.on_cancel(answer)
         return self.answer_table.get(answer_emoji)
 
     def check_if_answer(self, payload: discord.RawReactionActionEvent):
@@ -399,9 +446,11 @@ class AskInput(AbstractUserAsking):
                  channel: Union[int, discord.DMChannel, discord.TextChannel],
                  timeout: int = 300,
                  delete_question: bool = False,
-                 delete_answers: bool = False) -> None:
-        super().__init__(timeout=timeout, author=author, channel=channel, delete_question=delete_question)
-        self.validator = self.default_validator
+                 delete_answers: bool = False,
+                 validator: Callable = None,
+                 error_on: Union[bool, list[AskAnswer], AskAnswer] = False) -> None:
+        super().__init__(timeout=timeout, author=author, channel=channel, delete_question=delete_question, error_on=error_on)
+        self.validator = self.default_validator if validator is None else validator
         self.delete_answers = delete_answers
         self.answer_messages = []
 
@@ -416,7 +465,7 @@ class AskInput(AbstractUserAsking):
     async def transform_answer(self, answer):
         self.answer_messages.append(answer)
         if answer.content == self.cancel_phrase:
-            return self.CANCELED
+            return await self.on_cancel(answer)
 
         return answer.content
 
@@ -428,9 +477,14 @@ class AskInput(AbstractUserAsking):
 
     async def after_ask(self):
         await super().after_ask()
-        if self.delete_answers is True and self.channel.type is not discord.ChannelType.private:
+        if self.delete_answers is True:
             for answer in self.answer_messages:
-                await answer.delete()
+                try:
+                    await answer.delete()
+                except discord.errors.NotFound:
+                    log.debug("Unable to delete answer %s, because it was not found", answer)
+                except discord.errors.Forbidden:
+                    log.debug("Unable to delete answer %s, because it is Forbidden", answer)
 
     async def transform_ask_message(self):
         pass
@@ -441,10 +495,19 @@ class AskFile(AbstractUserAsking):
     wait_for_event = 'message'
     allowed_file_types = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mp3', 'tiff', 'tga'}
 
-    def __init__(self, author: Union[int, discord.Member, discord.User], channel: Union[int, discord.DMChannel, discord.TextChannel], timeout: int = 300, delete_question: bool = False, file_validator: Callable = None) -> None:
-        super().__init__(author=author, channel=channel, timeout=timeout, delete_question=delete_question)
+    def __init__(self,
+                 author: Union[int, discord.Member, discord.User],
+                 channel: Union[int, discord.DMChannel, discord.TextChannel],
+                 timeout: int = 300,
+                 delete_question: bool = False,
+                 delete_answers: bool = False,
+                 file_validator: Callable = None,
+                 error_on: Union[bool, list[AskAnswer], AskAnswer] = False) -> None:
+        super().__init__(author=author, channel=channel, timeout=timeout, delete_question=delete_question, error_on=error_on)
+        self.delete_answers = delete_answers
         self.file_validator = self.default_file_validator if file_validator is None else file_validator
         self.collected_attachments = []
+        self.answer_messages = []
 
     async def make_fields(self):
         fields = [self.bot.field_item(name="Attached Files", value="None", inline=False)]
@@ -456,8 +519,10 @@ class AskFile(AbstractUserAsking):
         return fields
 
     async def transform_answer(self, answer):
+        self.answer_messages.append(answer)
         if answer.content == self.cancel_phrase:
-            return self.CANCELED
+            return await self.on_cancel(answer)
+
         if answer.content == self.finished_phrase and answer.attachments == []:
             return AskAnswer.FINISHED
 
@@ -512,17 +577,34 @@ class AskFile(AbstractUserAsking):
                 break
         return self.collected_attachments
 
+    async def after_ask(self):
+        await super().after_ask()
+        if self.delete_answers is True:
+            for answer in self.answer_messages:
+                try:
+                    await answer.delete()
+                except discord.errors.NotFound:
+                    log.debug("Unable to delete answer %s, because it was not found", answer)
+                except discord.errors.Forbidden:
+                    log.debug("Unable to delete answer %s, because it is Forbidden", answer)
+
 
 class AskInputManyAnswers(AskInput):
 
-    def __init__(self, author: Union[int, discord.Member, discord.User], channel: Union[int, discord.DMChannel, discord.TextChannel], timeout: int = 500, delete_question: bool = False, delete_answers: bool = False) -> None:
-        super().__init__(author=author, channel=channel, timeout=timeout, delete_question=delete_question, delete_answers=delete_answers)
+    def __init__(self,
+                 author: Union[int, discord.Member, discord.User],
+                 channel: Union[int, discord.DMChannel, discord.TextChannel],
+                 timeout: int = 500,
+                 delete_question: bool = False,
+                 delete_answers: bool = False,
+                 error_on: Union[bool, list[AskAnswer], AskAnswer] = False) -> None:
+        super().__init__(author=author, channel=channel, timeout=timeout, delete_question=delete_question, delete_answers=delete_answers, error_on=error_on)
         self.collected_text = []
 
     async def transform_answer(self, answer):
         self.answer_messages.append(answer)
         if answer.content == self.cancel_phrase:
-            return self.CANCELED
+            return await self.on_cancel(answer)
         if answer.content == self.finished_phrase:
             return self.FINISHED
 
@@ -567,8 +649,14 @@ class AskSelection(AbstractUserAsking):
     option_item = AskSelectionOption
     wait_for_event = 'raw_reaction_add'
 
-    def __init__(self, author: Union[int, discord.Member, discord.User], channel: Union[int, discord.DMChannel, discord.TextChannel], timeout: int = 300, delete_question: bool = False, default_emojis: list[str, discord.Emoji] = None) -> None:
-        super().__init__(author, channel, timeout=timeout, delete_question=delete_question)
+    def __init__(self,
+                 author: Union[int, discord.Member, discord.User],
+                 channel: Union[int, discord.DMChannel, discord.TextChannel],
+                 timeout: int = 300,
+                 delete_question: bool = False,
+                 default_emojis: list[str, discord.Emoji] = None,
+                 error_on: Union[bool, list[AskAnswer], AskAnswer] = False) -> None:
+        super().__init__(author, channel, timeout=timeout, delete_question=delete_question, error_on=error_on)
         self.options = AskSelectionOptionsMapping(default_emojis=default_emojis)
 
     async def make_fields(self):
@@ -591,5 +679,5 @@ class AskSelection(AbstractUserAsking):
     async def transform_answer(self, answer: discord.RawReactionActionEvent):
         answer_emoji = str(answer.emoji)
         if answer_emoji == self.cancel_emoji:
-            return self.CANCELED
+            return await self.on_cancel(answer)
         return self.options.get_result(answer_emoji)

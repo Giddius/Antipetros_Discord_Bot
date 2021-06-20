@@ -298,7 +298,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
     @commands.is_owner()
     @log_invoker(log, 'warning')
     async def remove_double_posts_settings(self, ctx: commands.Context):
-        setting_ask = AskSelection(author=ctx.author, channel=ctx.channel, timeout=300, delete_question=True)
+        setting_ask = AskSelection(author=ctx.author, channel=ctx.channel, timeout=300, delete_question=True, error_on=[AskSelection.CANCELED, AskSelection.NOANSWER])
         setting_ask.description = "Select a Setting you want to change."
         setting_ask.options.add_option(setting_ask.option_item(item="switch on/off"))
         setting_ask.options.add_option(setting_ask.option_item(item="change max triggered Role"))
@@ -325,7 +325,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
             def validator(x): return any([x.isnumeric(), x in self.bot.roles_name_dict])
             input_ask.validator = validator
             level_display = await self._create_role_level_display(self.remove_double_posts_max_role_position)
-            input_ask.description = f"Please enter either the position number of the new max role, a role id or a role Name!\n Currently set to \n{level_display}."
+            input_ask.description = f"{level_display}"
             answer = await input_ask.ask()
             if answer in {input_ask.CANCELED, input_ask.NOANSWER}:
                 return

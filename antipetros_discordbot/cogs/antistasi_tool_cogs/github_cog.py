@@ -325,7 +325,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [Init]
 
-
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.github_client = Github(os.getenv('GITHUB_TOKEN'))
@@ -353,7 +352,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # endregion [Properties]
 
 # region [Setup]
-
 
     async def on_ready_setup(self):
         await self._update_listener_settings()
@@ -422,7 +420,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command()
     async def github_rate_limit_left(self, ctx: commands.Context):
@@ -572,7 +569,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         Example:
             @AntiPetros open_github_issues 7 bug
         """
-        log.debug(f"{since_days_ago=} <-> {label_operator=} <-> {labels=} ->> for command 'open_github_issues'")
 
         if labels is None:
             open_issues = await asyncio.to_thread(self.antistasi_repo.get_issues, state='open', since=datetime.now(timezone.utc) - timedelta(days=since_days_ago))
@@ -626,7 +622,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # endregion [DataStorage]
 
 # region [HelperMethods]
-
 
     async def get_labels(self):
         labels = await asyncio.to_thread(self.antistasi_repo.get_labels)

@@ -6,6 +6,7 @@
 import os
 import re
 import json
+from datetime import datetime, timedelta, timezone
 from pprint import pformat
 import random
 from dotenv import load_dotenv
@@ -13,6 +14,11 @@ from io import StringIO, BytesIO
 import asyncio
 import tempfile
 import webbrowser
+from discord.ext.commands import Greedy
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageEnhance
+from itertools import chain
+import inspect
+from typing import Optional
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
 from discord.ext import commands, flags, tasks
@@ -32,6 +38,7 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_me
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.converters import CommandConverter, SeparatedListConverter, RoleOrIntConverter
+from antipetros_discordbot.utility.checks import has_attachments, has_image_attachment
 from pyyoutube import Api
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from marshmallow import Schema
@@ -102,6 +109,8 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
     @commands.Cog.listener(name='on_message')
     async def collect_attachment_types(self, message: discord.Message):
+        if os.getenv("COLLECT_ATTACHMENT_TYPES_ENABLED", "0") != "1":
+            return
         collected_types = []
         if message.attachments is not None and len(message.attachments) > 0:
             for attachment in message.attachments:
@@ -183,7 +192,8 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     async def taken_colors(self, ctx: commands.Context):
         taken = []
         for cog_name, cog_object in sorted(self.bot.cogs.items(), key=lambda x: (x[1].color != 'default', x[1].color)):
-            await ctx.send(f"{cog_name} | {await self.bot.get_color_emoji(cog_object.color)} | {cog_object.color}")
+            color_emoji = await self.bot.get_color_emoji(cog_object.color)
+            await ctx.send(f"{cog_name} | {color_emoji} | {cog_object.color}")
             if cog_object.color in taken and cog_object.color != 'default':
                 await ctx.send(f"duplicate color {cog_object.color}")
             taken.append(cog_object.color)
@@ -343,6 +353,122 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         await self.bot.channel_from_id(645930607683174401).send(f"Report Concerning: `{player_name}`\n\nReport:\n>>> {report}", allowed_mentions=discord.AllowedMentions.none(), files=files)
         webhook = discord.Webhook.from_url("https://discord.com/api/webhooks/854749192189640734/kd3tmI17bErnc6egy8ObrdfV6-Rm79hkPxNFxBjeZDSp4wNv4llJ8EG-9_z_6Awv8Jeu", adapter=discord.AsyncWebhookAdapter(self.bot.aio_request_session))
         await webhook.send(f"Report from {author.mention}\n\nReport Concerning: `{player_name}`\n\nReport:\n>>> {report}", allowed_mentions=discord.AllowedMentions.none(), username="REPORT", avatar_url="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Warning.svg/1200px-Warning.svg.png", files=hook_files)
+
+    @auto_meta_info_command()
+    async def get_server_stati(self, ctx: commands.Context, channel: discord.TextChannel):
+        await ctx.send(f'collecting all messages from channel {channel.name}')
+
+        msgs = []
+        counter = 0
+        async for message in channel.history(limit=None, oldest_first=True):
+            async with ctx.typing():
+                serialized_message = {"author": {'id': message.author.id, 'name': message.author.name},
+                                      "content": message.content,
+                                      "created_at": message.created_at.isoformat(),
+                                      "edited_at": None}
+                if message.edited_at is not None:
+                    serialized_message['edited_at'] = message.edited_at.isoformat()
+                msgs.append(serialized_message)
+                counter += 1
+                if counter % 100 == 0:
+                    await ctx.send(f"collected message number {counter}", delete_after=120)
+                await asyncio.sleep(0)
+        writejson(msgs, 'all_server_status_messages.json', sort_keys=False, default=str)
+        await ctx.send(f'done, collected {len(msgs)} messages from channel {channel.name}', delete_after=120)
+
+    @auto_meta_info_command()
+    async def create_emoji_list(self, ctx: commands.Context):
+
+        await ctx.send('starting command emoji-list', store=True)
+        guild = self.bot.bot_testing_guild
+        await ctx.send(f"bot-testing-guild is {guild.name}", store=True)
+
+        category_name = 'data'
+
+        category_channel = guild.get_channel(855904969962029098)
+        await ctx.send(f"category {category_channel.name} found!", store=True)
+        channel_name = "emoji-list"
+        await ctx.send(f"creating channel {channel_name}", store=True)
+        channel = await guild.create_text_channel(name=channel_name, topic="just and easy way to get emoji id's.", category=category_channel)
+        await ctx.send(f"channel {channel.mention} created!", store=True)
+        to_post = []
+        await ctx.send("collecting emoji data", store=True)
+        for emoji in chain(guild.emojis, self.bot.antistasi_guild.emojis):
+            text = f"{str(emoji)} | name: {emoji.name} | id: {emoji.id} | guild_name: {emoji.guild.name} | created_at: {emoji.created_at.isoformat(timespec='seconds')} | animated: {emoji.animated} | url: <{emoji.url}> | roles: {emoji.roles}"
+            text += '\n' + '─' * 25
+            to_post.append(text)
+            await asyncio.sleep(0)
+
+        await ctx.send(f"posting emoji data for {len(to_post)} emojis in {channel.mention}", store=True)
+        await self.bot.split_to_messages(channel, '\n'.join(to_post), in_codeblock=False, split_on='─' * 25)
+        await ctx.send("finished", store=True)
+        await ctx.delete_stored_messages(delay=30)
+        await delete_message_if_text_channel(ctx)
+
+    @auto_meta_info_command()
+    async def server_info_check(self, ctx: commands.Context):
+        cog = self.bot.get_cog("CommunityServerInfoCog")
+        for s_name in ['mainserver_1', 'mainserver_2']:
+            server_item = await cog._get_server_by_name(s_name)
+            info = await server_item.get_info()
+            info_dict = {name: value for name, value in inspect.getmembers(info) if not name.startswith('__')}
+            with StringIO() as stringfile:
+                stringfile.write(json.dumps(info_dict, indent=4, sort_keys=False, default=str))
+                stringfile.seek(0)
+                file = discord.File(stringfile, f"server_info_{s_name}.json")
+            await ctx.send(file=file)
+
+    async def _get_as_pil_image(self, attachment: discord.Attachment) -> Image.Image:
+        with BytesIO() as bytefile:
+            await attachment.save(bytefile)
+            bytefile.seek(0)
+            _image = Image.open(bytefile)
+            _image.load()
+        return _image
+
+    def _resize_image(self, image: Image.Image, contrast: float, repeat_enhance: int, color_factor: float) -> Image.Image:
+        width, height = image.size
+        log.debug("Old width %s, old height %s", width, height)
+        if width > height:
+            factor = 218 / width
+            new_size = (218, height * factor)
+        else:
+            factor = 218 / height
+            new_size = (width * factor, 218)
+        log.debug("new size is %s", new_size)
+
+        image_contrast = ImageEnhance.Contrast(image)
+        image = image_contrast.enhance(contrast)
+        image_color = ImageEnhance.Color(image)
+        image = image_color.enhance(color_factor)
+        for i in range(repeat_enhance):
+            image = image.filter(ImageFilter.DETAIL)
+            image = image.filter(ImageFilter.SHARPEN)
+            image = image.filter(ImageFilter.EDGE_ENHANCE)
+        image.thumbnail(size=new_size, resample=Image.LANCZOS)
+        return image
+
+    async def _remove_emoji(self, emoji: discord.Emoji, delay: int = 120):
+        await asyncio.sleep(delay)
+        await emoji.delete()
+        log.info("emoji %s was deleted", emoji)
+
+    @auto_meta_info_command()
+    @has_image_attachment(1)
+    async def new_emoji(self, ctx: commands.Context, contrast: float, repeat_enhance: int, color_factor: float, *, names: str = None):
+        names = [] if names is None else [name for name in names.split() if name != ""]
+        for attachment in ctx.message.attachments:
+            name = attachment.filename.casefold() if not names else names.pop(0).casefold()
+            image = await self._get_as_pil_image(attachment)
+            mod_image = await asyncio.to_thread(self._resize_image, image, contrast, repeat_enhance, color_factor)
+            with BytesIO() as bytefile:
+                mod_image.save(bytefile, format="PNG")
+                bytefile.seek(0)
+                byte_image = bytefile.read()
+
+            emoji = await self.bot.bot_testing_guild.create_custom_emoji(name=name, image=byte_image)
+            await ctx.send(emoji)
+            asyncio.create_task(self._remove_emoji(emoji))
 
     async def cog_check(self, ctx):
         # if ctx.author.id == 576522029470056450:
