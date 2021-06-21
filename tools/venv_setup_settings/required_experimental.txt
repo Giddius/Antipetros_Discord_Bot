@@ -21,7 +21,7 @@ pyexlatex==0.14.0
 pytl==0.2.4
 pyvis==0.1.9
 tabulate==0.8.9
+tortoise-orm
 twitchAPI==2.3.2
 vendorize==0.2.1
 wikitextparser==0.47.4
-tortoise-orm

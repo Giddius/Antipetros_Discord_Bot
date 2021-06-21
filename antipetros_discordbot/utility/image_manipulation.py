@@ -5,7 +5,8 @@
 """
 
 # region[Imports]
-
+import asyncio
+from io import BytesIO
 import os
 import discord
 from discord.ext import commands, tasks
@@ -83,6 +84,36 @@ def find_min_fontsize(font_file, text_lines: list, image_width: int, image_heigh
         sizes.append(font_size - 1)
         font_size = 16
     return ImageFont.truetype(font_file, min(sizes))
+
+
+async def asset_as_pil_image(asset: discord.Asset) -> Image.Image:
+    with BytesIO() as bytefile:
+        await asset.save(bytefile)
+        bytefile.seek(0)
+        _image = await asyncio.to_thread(Image.open, bytefile)
+        await asyncio.to_thread(_image.load)
+    return _image
+
+
+def resize_image_to_emoji_size(image: Image.Image) -> Image.Image:
+    width, height = image.size
+    log.debug("Old width %s, old height %s", width, height)
+    if width >= height:
+        factor = 218 / width
+        new_size = (218, height * factor)
+    else:
+        factor = 218 / height
+        new_size = (width * factor, 218)
+    image.thumbnail(size=new_size, resample=Image.LANCZOS)
+    log.debug("finished making image to thumbnail size")
+    return image
+
+
+def image_to_bytes(image: Image.Image) -> bytes:
+    with BytesIO() as bytefile:
+        image.save(bytefile, 'PNG')
+        bytefile.seek(0)
+        return bytefile.read()
 
 # region[Main_Exec]
 

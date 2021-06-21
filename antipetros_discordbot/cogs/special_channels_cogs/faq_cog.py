@@ -122,7 +122,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        if UpdateTypus.RECONNECT in typus or UpdateTypus.CONFIG in typus:
+        if UpdateTypus.RECONNECT in typus:
             FaqItem.faq_channel = self.faq_channel
             await asyncio.to_thread(FaqItem.set_background_image)
             asyncio.create_task(self.collect_raw_faq_data())

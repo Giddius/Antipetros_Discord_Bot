@@ -40,7 +40,10 @@ from antipetros_discordbot.auxiliary_classes.server_item import ServerItem, Serv
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.emoji_handling import NUMERIC_EMOJIS, ALPHABET_EMOJIS, CHECK_MARK_BUTTON_EMOJI, CHECK_MARK_BUTTON_EMOJI, CROSS_MARK_BUTTON_EMOJI
 from collections import deque
-from antipetros_discordbot.utility.exceptions import TokenMissingError
+from antipetros_discordbot.utility.exceptions import TokenMissingError, AskCanceledError
+from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation, AskFile, AskInput, AskInputManyAnswers, AskAnswer, AskSelectionOptionsMapping, AskSelectionOption, AskSelection
+
+
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 import re
@@ -136,7 +139,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [Properties]
 
-
     @property
     def battlemetrics_auth(self):
         if os.getenv('BATTLEMETRICS_TOKEN') is None:
@@ -177,7 +179,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     def stored_reasons(self) -> dict:
         return {f'{self.reason_keyword_identifier}{key.casefold()}': value for key, value in loadjson(self.stored_reasons_data_file).items()}
 
-
+    @property
+    def notification_time_out(self):
+        return COGS_CONFIG.retrieve(self.config_name, 'notification_time_out_seconds', typus=int, direct_fallback=0)
 # endregion [Properties]
 
 # region [Setup]
@@ -219,7 +223,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Setup]
 
 # region [Loops]
-
 
     @tasks.loop(minutes=5, seconds=30, reconnect=True)
     async def update_logs_loop(self):
@@ -461,14 +464,77 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         await delete_message_if_text_channel(ctx)
         self.is_online_message_loop.start()
 
-    async def _parse_options(self, options_string: str):
-        options_string = options_string.casefold().strip()
-        option_parts = list(map(lambda x: x.strip(), options_string.split(',')))
-        _out = {}
-        for option_pair in option_parts:
-            key, value = map(lambda x: x.strip(), option_pair.split('>'))
-            _out[key.casefold()] = value
-        return _out
+    @auto_meta_info_command(clear_invocation=True, experimental=True)
+    @owner_or_admin()
+    @log_invoker(log, 'warning')
+    async def server_notification_settings(self, ctx: commands.Context):
+        await delete_message_if_text_channel(ctx)
+        selection_question = AskSelection.from_context(ctx, timeout=300, delete_question=True, error_on=True)
+        selection_question.description = "Please select the settings you want to change"
+        for option in ["notification timeout", "enable/disable status change report", "enable/disable is_online message", "is_online_messages_channel"]:
+            selection_question.options.add_option(selection_question.option_item(option))
+        answer = await selection_question.ask()
+
+        if answer == "notification timeout":
+            input_question = AskInput.from_other_asking(selection_question, delete_answers=True)
+            input_question.description = f"Current timeout is **{self.notification_time_out} seconds**.\nPlease the new value in seconds you want to set!"
+            input_question.validator(lambda x: x.isnumeric())
+            notification_answer = await input_question.ask()
+            COGS_CONFIG.set(self.config_name, "notification_time_out_seconds", str(notification_answer))
+            await ctx.send(f"notification timeout has been set to {self.notification_time_out} seconds!", delete_after=120)
+            return
+
+        elif answer == "is_online_messages_channel":
+            input_question = AskInput.from_other_asking(selection_question, delete_answers=True)
+            input_question.description = f"Currently the is_online messages are posted in the channel {self.is_online_messages_channel.mention}(`{self.is_online_messages_channel.name}`).\n\nPlease enter the name of the channel you want to set this setting to!"
+            input_question.validator = lambda x: x.casefold() in self.bot.channels_name_dict
+            selected_channel_name = await input_question.ask()
+            COGS_CONFIG.set(self.config_name, "is_online_messages_channel", selected_channel_name.casefold())
+            await ctx.send(f"Channel for `is_online messages` has been set to {self.is_online_messages_channel.mention}(`{self.is_online_messages_channel.name}`!\n rebuilding `is_online messages` now!", delete_after=120)
+            await self.clear_all_is_online_messages(ctx)
+            await ctx.send("cleared all is online messages, resending with next loop iteration (max 2 min)", delete_after=120)
+            return
+
+        else:
+            server_selection = AskSelection.from_other_asking(selection_question)
+            server_selection.description = f"Please select the server for which you want to change the setting `{answer}`"
+            for server in self.server_items:
+                server_selection.options.add_option(server_selection.option_item(server))
+            selected_server = await server_selection.ask()
+
+        if answer == "enable/disable status change report":
+            current_value = COGS_CONFIG.retrieve(self.config_name, f"{selected_server.name.lower()}_report_status_change", typus=bool, direct_fallback=False)
+            current_value_text = "ENABLED" if current_value is True else "DISABLED"
+            inverse_value_text = "DISABLE" if current_value is True else "ENABLE"
+            inverse_set_value = "no" if current_value is True else "yes"
+            confirm_question = AskConfirmation.from_other_asking(selection_question)
+
+            confirm_question.description = f"The setting `status change report` is currently **{current_value_text}** for Server `{selected_server.pretty_name}`.\nDo you want to `{inverse_value_text}` it?"
+            confirm_answer = await confirm_question.ask()
+            if confirm_answer is confirm_question.ACCEPTED:
+                COGS_CONFIG.set(self.config_name, f"{selected_server.name.lower()}_report_status_change", inverse_set_value)
+                await ctx.send(f"The Server `{selected_server.pretty_name}` has the setting `status change report` now set to **{inverse_value_text}D**", delete_after=120)
+                return
+            else:
+                raise AskCanceledError(confirm_question, confirm_answer)
+
+        elif answer == "enable/disable is_online message":
+            current_value = COGS_CONFIG.retrieve(self.config_name, f"{selected_server.name.lower()}_is_online_message_enabled", typus=bool, direct_fallback=True)
+            current_value_text = "ENABLED" if current_value is True else "DISABLED"
+            inverse_value_text = "DISABLE" if current_value is True else "ENABLE"
+            inverse_set_value = "no" if current_value is True else "yes"
+            confirm_question = AskConfirmation.from_other_asking(selection_question)
+
+            confirm_question.description = f"The setting `show in is-online-message` is currently **{current_value_text}** for Server `{selected_server.pretty_name}`.\nDo you want to `{inverse_value_text}` it?"
+            confirm_answer = await confirm_question.ask()
+            if confirm_answer is confirm_question.ACCEPTED:
+                COGS_CONFIG.set(self.config_name, f"{selected_server.name.lower()}_is_online_message_enabled", inverse_set_value)
+                await ctx.send(f"The Server `{selected_server.pretty_name}` has the setting `show in is-online-message` now set to **{inverse_value_text}D**!\n rebuilding `is-online-messages` now!", delete_after=120)
+                await self.clear_all_is_online_messages(ctx)
+                await ctx.send("cleared all is online messages, resending with next loop iteration (max 2 min)", delete_after=120)
+                return
+            else:
+                raise AskCanceledError(confirm_question, confirm_answer)
 
     @auto_meta_info_command(only_debug=True)
     @owner_or_admin()
@@ -518,7 +584,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [HelperMethods]
 
-
     async def _get_log_by_time(self, server_item: ServerItem, timestamp: datetime) -> discord.File:
         timestamp = timestamp.astimezone(timezone.utc)
         for log_item in server_item.log_items:
@@ -545,7 +610,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         except IndexError as e:
             log.error(e, exc_info=True)
             log.warning("Requesting log files to dm lead to an IndexError with Server %s", server.name)
-            await member.send(f"Sorry there was an Error in getting the Mod data, please let {self.bot.creator.name} know!", allowed_mentions=discord.AllowedMentions.none())
+
+            asyncio.create_task(server.gather_log_items())
+            await member.send("Sorry there was an Error in getting the Mod data, please try again in a minute or so", allowed_mentions=discord.AllowedMentions.none())
 
     async def _server_from_is_online_message_id(self, message_id: int) -> ServerItem:
         server_name = {str(value): key for key, value in self.is_online_messages.items()}.get(str(message_id))
@@ -694,7 +761,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

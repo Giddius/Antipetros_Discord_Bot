@@ -259,7 +259,7 @@ class AbstractUserAsking(ABC):
                  channel: Union[int, discord.DMChannel, discord.TextChannel],
                  timeout: int = 300,
                  delete_question: bool = False,
-                 error_on: Union[bool, list[AskAnswer], AskAnswer] = False) -> None:
+                 error_on: Union[bool, list[AskAnswer], AskAnswer, frozenset[AskAnswer]] = False) -> None:
         for c_attr_name in self.mandatoy_attributes:
             if getattr(self, c_attr_name) is None:
                 raise NeededClassAttributeNotSet(c_attr_name, self.__class__.__name__)
@@ -276,7 +276,9 @@ class AbstractUserAsking(ABC):
         self.ask_embed_data = None
         self.end_time = datetime.now(tz=timezone.utc) + timedelta(seconds=timeout)
 
-    def _ensure_error_on(self, error_on: Union[bool, list[AskAnswer], AskAnswer]) -> frozenset:
+    def _ensure_error_on(self, error_on: Union[bool, list[AskAnswer], AskAnswer, frozenset[AskAnswer]]) -> frozenset:
+        if isinstance(error_on, frozenset):
+            return error_on
         if isinstance(error_on, list):
             return frozenset(error_on)
         if isinstance(error_on, AskAnswer):
@@ -286,6 +288,7 @@ class AbstractUserAsking(ABC):
                 return frozenset(self.error_answers)
             if error_on is False:
                 return frozenset()
+        log.critical("error_on=%s", error_on)
 
     def _ensure_author(self, author: Union[int, discord.Member, discord.User]) -> Union[discord.Member, discord.User]:
         if isinstance(self.channel, discord.DMChannel):
@@ -316,7 +319,6 @@ class AbstractUserAsking(ABC):
             if param not in {'self', 'author', 'channel'} and param not in kwargs:
                 if hasattr(other, param):
                     kwargs[param] = getattr(other, param)
-
         return cls(author=author, channel=channel, **kwargs)
 
     @classmethod
@@ -379,17 +381,12 @@ class AbstractUserAsking(ABC):
         await self.transform_ask_message()
         answer = await self._ask_mechanism()
 
-        await self.after_ask()
-        return await self.transform_answer(answer)
+        try:
+            return await self.transform_answer(answer)
+        finally:
+            await self.after_ask()
 
     async def after_ask(self):
-        try:
-            if self.delete_question is True:
-                await self.ask_message.delete()
-        except discord.errors.Forbidden:
-            log.debug("unable to delete message, because it is Forbidden")
-        except discord.errors.NotFound:
-            log.debug("unable to delete message, because the message is not found")
         try:
             if self.channel.type is discord.ChannelType.text:
                 await self.ask_message.clear_reactions()
@@ -397,6 +394,13 @@ class AbstractUserAsking(ABC):
             log.debug("unable to delete reactions, because it is Forbidden")
         except discord.errors.NotFound:
             log.debug("unable to delete reactions, because the message is not found")
+        try:
+            if self.delete_question is True:
+                await self.ask_message.delete()
+        except discord.errors.Forbidden:
+            log.debug("unable to delete message, because it is Forbidden")
+        except discord.errors.NotFound:
+            log.debug("unable to delete message, because the message is not found")
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}"
@@ -428,13 +432,14 @@ class AskConfirmation(AbstractUserAsking):
     def check_if_answer(self, payload: discord.RawReactionActionEvent):
         checks = [payload.user_id == self.author.id,
                   payload.channel_id == self.channel.id,
-                  str(payload.emoji) in self.answer_table]
+                  str(payload.emoji) in self.answer_table or str(payload.emoji) == self.cancel_emoji]
 
         return all(checks)
 
     async def transform_ask_message(self):
         for emoji in self.answer_table:
             await self.ask_message.add_reaction(emoji)
+        await self.ask_message.add_reaction(self.cancel_emoji)
 
 
 class AskInput(AbstractUserAsking):
@@ -477,6 +482,7 @@ class AskInput(AbstractUserAsking):
 
     async def after_ask(self):
         await super().after_ask()
+
         if self.delete_answers is True:
             for answer in self.answer_messages:
                 try:

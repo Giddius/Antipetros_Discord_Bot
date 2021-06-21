@@ -21,7 +21,7 @@ from antipetros_discordbot.utility.misc import loop_starter
 
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
-
+from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import alternative_better_shorten
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -68,7 +68,8 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
     long_description = ""
     extra_info = ""
     required_config_data = {'base_config': {},
-                            'cogs_config': {}}
+                            'cogs_config': {"notify_member_ids": "",
+                                            "notify_channel": "bot-testing"}}
 
     registered_workshop_items_file = pathmaker(APPDATA['json_data'], 'registered_steam_workshop_items.json')
 
@@ -120,19 +121,23 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
         for member_id in member_ids:
             members.append(self.bot.get_antistasi_member(member_id))
         return list(set(members))
+
+    @property
+    def notify_channel(self):
+        channel_name = COGS_CONFIG.retrieve(self.config_name, 'notify_channel', typus=str, direct_fallback="bot-testing")
+        return self.bot.channel_from_name(channel_name)
+
 # endregion [Properties]
 
 # region [Setup]
 
     async def on_ready_setup(self):
-        for loop_object in self.loops.values():
-            loop_starter(loop_object)
+        await super().on_ready_setup()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
-        log.debug('cog "%s" was updated', str(self))
+        await super().update(typus)
 
 
 # endregion [Setup]
@@ -172,13 +177,15 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
             saved = await self._add_item_to_registered_items(item)
             if saved is False:
                 await ctx.send(f'Item "{item.title}" with id "{item.id}" already registered!')
-                return
+                continue
             req_value = '\n'.join([f"**{req_name}**\n{req_link}" for req_name, req_link in item.requirements]) if len(item.requirements) > 0 else 'No Requirements'
+            req_value = alternative_better_shorten(req_value, 1000, ensure_space_around_placeholder=True)
             fields = [self.bot.field_item(name="Last Updated:", value=item.updated, inline=False),
                       self.bot.field_item(name='Requirements:', value=req_value, inline=False),
                       self.bot.field_item(name="Size:", value=item.size, inline=False)]
 
-            embed_data = await self.bot.make_generic_embed(author={'name': "link to steam workshop page 🔗", 'url': item.url, 'icon_url': item.image_link}, title=item.title, description="was added to registered Workshop Items", image=item.image_link,
+            author = {'name': "link to steam workshop page 🔗", 'url': item.url, 'icon_url': item.image_link} if item.image_link is not None else {'name': "link to steam workshop page 🔗", 'url': item.url}
+            embed_data = await self.bot.make_generic_embed(author=author, title=item.title, description="was added to registered Workshop Items", image=item.image_link,
                                                            fields=fields, thumbnail=None)
 
             await ctx.send(**embed_data)
@@ -204,6 +211,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
         log.info(f"{new_item.title} had an update")
         for member in self.notify_members:
             await member.send(f"{new_item.title} had an update")
+        await self.notify_channel.send(f"{new_item.title} had an update")
 
     async def _add_item_to_registered_items(self, item):
         data = loadjson(self.registered_workshop_items_file)
@@ -253,8 +261,12 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
         return title.text
 
     async def _get_updated(self, in_soup: BeautifulSoup):
-        updated_data = in_soup.findAll("div", {"class": "detailsStatRight"})[2]
-        return await self._parse_update_date(updated_data.text)
+        try:
+            updated_data = in_soup.findAll("div", {"class": "detailsStatRight"})[2]
+            return await self._parse_update_date(updated_data.text)
+        except IndexError:
+            updated_data = in_soup.findAll("div", {"class": "detailsStatRight"})[1]
+            return await self._parse_update_date(updated_data.text)
 
     async def _get_requirements(self, in_soup: BeautifulSoup):
         _out = []
@@ -269,10 +281,13 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
         return _out
 
     async def _get_image_link(self, in_soup: BeautifulSoup):
-        image = in_soup.find_all('div', {'class': "workshopItemPreviewImageMain"})[0].find_all('a')[0].get('onclick')
-        match = self.image_link_regex.search(image)
-        if match:
-            return match.group('image_link')
+        try:
+            image = in_soup.find_all('div', {'class': "workshopItemPreviewImageMain"})[0].find_all('a')[0].get('onclick')
+            match = self.image_link_regex.search(image)
+            if match:
+                return match.group('image_link')
+        except IndexError:
+            return None
 
     async def _get_item_size(self, in_soup: BeautifulSoup):
         size = in_soup.findAll("div", {"class": "detailsStatRight"})[0]

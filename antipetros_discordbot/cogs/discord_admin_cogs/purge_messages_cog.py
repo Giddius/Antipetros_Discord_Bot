@@ -21,7 +21,7 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPet
 from antipetros_discordbot.utility.data import IMAGE_EXTENSIONS
 from collections import UserDict
 import asyncio
-from antipetros_discordbot.utility.converters import RoleOrIntConverter
+from antipetros_discordbot.utility.converters import RoleOrIntConverter, UrlConverter
 import re
 from sortedcontainers import SortedDict, SortedList
 from discord.ext import commands
@@ -302,9 +302,9 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         setting_ask.description = "Select a Setting you want to change."
         setting_ask.options.add_option(setting_ask.option_item(item="switch on/off"))
         setting_ask.options.add_option(setting_ask.option_item(item="change max triggered Role"))
+        setting_ask.options.add_option(setting_ask.option_item(item="Add report Webhook"))
+        setting_ask.options.add_option(setting_ask.option_item(item="Remove report Webhook"))
         answer = await setting_ask.ask()
-        if answer in {setting_ask.CANCELED, setting_ask.NOANSWER}:
-            return
 
         if answer == "switch on/off":
             current_setting = self.remove_double_posts_enabled
@@ -320,17 +320,35 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
             await ctx.send(f"Double Post Remover is now **{future_setting_text}**!")
             return
 
-        if answer == "change max triggered Role":
-            input_ask = AskInput(ctx.author, ctx.channel, timeout=300, delete_question=True, delete_answers=True)
+        elif answer == "change max triggered Role":
+            input_ask = AskInput(ctx.author, ctx.channel, timeout=300, delete_question=True, delete_answers=True, error_on=True)
             def validator(x): return any([x.isnumeric(), x in self.bot.roles_name_dict])
             input_ask.validator = validator
             level_display = await self._create_role_level_display(self.remove_double_posts_max_role_position)
             input_ask.description = f"{level_display}"
             answer = await input_ask.ask()
-            if answer in {input_ask.CANCELED, input_ask.NOANSWER}:
-                return
             answer = await RoleOrIntConverter().convert(ctx, answer)
             await self.set_remove_double_posts_max_role_position(ctx, answer)
+
+        elif answer == "Add report Webhook":
+            input_ask = AskInput(ctx.author, ctx.channel, timeout=300, delete_question=True, delete_answers=True, error_on=True)
+            input_ask.description = "Please enter a valid Webhook url"
+            answer = await input_ask.ask()
+            answer = await UrlConverter().convert(ctx, answer)
+            webhooks = self.notify_webhooks.copy()
+            webhooks.append(answer)
+            COGS_CONFIG.set(self.config_name, "double_post_notification_webhook_urls", ', '.join(webhooks))
+            await ctx.send(f"Webhook {answer} was added to the webhooks.\nCurrently set webhooks:\n" + '\n'.join(f"`{hook}`" for hook in webhooks))
+
+        elif answer == "Remove report Webhook":
+            selection_ask = AskSelection(ctx.author, ctx.channel, delete_question=True, error_on=True)
+            selection_ask.description = "Please select the corresponding emoji to the Webhook you want to remove"
+            for item in self.notify_webhooks:
+                selection_ask.options.add_option(selection_ask.option_item(item=item))
+            answer = await selection_ask.ask()
+            webhooks = [hook for hook in self.notify_webhooks if hook != answer]
+            COGS_CONFIG.set(self.config_name, "double_post_notification_webhook_urls", ', '.join(webhooks))
+            await ctx.send(f"Webhook {answer} was removed from the webhooks.\nCurrently set webhooks:\n" + '\n'.join(f"`{hook}`" for hook in webhooks))
 
     @auto_meta_info_command()
     @commands.is_owner()
