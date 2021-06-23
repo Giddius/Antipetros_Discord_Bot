@@ -228,7 +228,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def update_logs_loop(self):
         if any([self.ready, self.bot.setup_finished]) is False:
             return
-        log.info("updating Server Items")
+
         await asyncio.gather(*[server.gather_log_items() for server in self.server_items])
         log.info("Server Items updated")
         member = self.oversize_notification_user
@@ -568,7 +568,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             try:
                 server.log_parser.reset()
             except AttributeError:
-                log.debug("Server Item %s has not Attribute 'log_parser'", server)
+                log.debug("Server Item %s has no Attribute 'log_parser'", server)
 
     @auto_meta_info_command(clear_invocation=True)
     @owner_or_admin()

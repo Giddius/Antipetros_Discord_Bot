@@ -440,8 +440,8 @@ class AskConfirmation(AbstractUserAsking):
 
     async def transform_ask_message(self):
         for emoji in self.answer_table:
-            await self.ask_message.add_reaction(emoji)
-        await self.ask_message.add_reaction(self.cancel_emoji)
+            asyncio.create_task(self.ask_message.add_reaction(emoji))
+        asyncio.create_task(self.ask_message.add_reaction(self.cancel_emoji))
 
 
 class AskInput(AbstractUserAsking):
@@ -681,8 +681,8 @@ class AskSelection(AbstractUserAsking):
 
     async def transform_ask_message(self):
         for emoji in self.options:
-            await self.ask_message.add_reaction(emoji)
-        await self.ask_message.add_reaction(self.cancel_emoji)
+            asyncio.create_task(self.ask_message.add_reaction(emoji))
+        asyncio.create_task(self.ask_message.add_reaction(self.cancel_emoji))
 
     async def transform_answer(self, answer: discord.RawReactionActionEvent):
         answer_emoji = str(answer.emoji)

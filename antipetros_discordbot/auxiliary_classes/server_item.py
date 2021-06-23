@@ -639,20 +639,18 @@ class ServerItem:
         log.info("Updated log_items for server %s", self.name)
 
     async def is_online(self) -> ServerStatus:
-        log.debug("for Server %s before checking status, previous status is %s", self, str(self.current_status))
         try:
             check_data = await self.get_info()
             self.status.add_new_status(ServerStatus.ON)
             self.official_name = check_data.server_name
         except asyncio.exceptions.TimeoutError:
             self.status.add_new_status(ServerStatus.OFF)
-        log.info("Server %s is %s", self.name, self.current_status.name)
 
         if all([self.report_status_change is True,
                 self.previous_status not in {None, self.current_status}]):
-            log.debug("Server Status %s is on timeout %s", str(self.current_status), self.on_notification_timeout.get(self.current_status))
+            log.info("Server %s was switched %s", self, self.current_status.name)
             if self.on_notification_timeout.get(self.current_status) is False:
-                log.debug("Server %s status notification for status %s is not on timeout", self, str(self.current_status))
+
                 await self.status_switch_signal.emit(self, self.current_status)
 
                 asyncio.create_task(self._reset_on_notification_timeout(self.current_status))

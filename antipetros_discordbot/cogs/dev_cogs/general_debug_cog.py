@@ -470,6 +470,10 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
             await ctx.send(emoji)
             asyncio.create_task(self._remove_emoji(emoji))
 
+    @auto_meta_info_command()
+    async def tell_allowed_channels(self, ctx: commands.Context, command: CommandConverter):
+        await ctx.send(command.allowed_channels)
+
     async def cog_check(self, ctx):
         # if ctx.author.id == 576522029470056450:
         #     return True

@@ -5,6 +5,7 @@
 # * Standard Library Imports -->
 import gc
 import os
+import random
 import re
 import sys
 import json
@@ -135,10 +136,18 @@ class ReportItem:
         else:
             return False
 
+    def no_bot_invocation_validator(self, text: str):
+
+        for prefix in self.cog.bot.all_prefixes_for_check:
+            if text.startswith(prefix):
+                return False
+        return True
+
     async def _ask_for_target(self):
         input_ask = AskInput(author=self.author, channel=self.channel, timeout=600, delete_question=True, delete_answers=True, error_on=True)
         input_ask.description = "Who do you want to make a report about? Please only specify one Person, Best practice is to use the name, with discriminator(eg: `Giddi#5858`)\nYou can get this full name by clicking on the user!"
 
+        input_ask.validator = self.no_bot_invocation_validator
         answer = await input_ask.ask()
         if answer.casefold() in self.cog.bot.members_name_dict and await self._confirm_target_member(answer) is True:
             return
@@ -179,6 +188,7 @@ class ReportItem:
 
         input_ask = AskInput(self.author, self.channel, timeout=600, delete_question=True, delete_answers=True, error_on=True)
         input_ask.description = "Please describe where exactly the incident happend."
+        input_ask.validator = self.no_bot_invocation_validator
         if main_answer == "discord_channel":
             input_ask.description = "Please input the name of the channel where the incident happened. It will only accept an answer if it is an existing channel."
             input_ask.validator = lambda x: x.casefold() in self.cog.bot.channels_name_dict
@@ -197,6 +207,7 @@ class ReportItem:
     async def _ask_time(self):
         input_ask = AskInput(self.author, self.channel, timeout=600, delete_question=True, delete_answers=True, error_on=True)
         input_ask.description = "Please enter the approximate time the incident happened.eg: `One hour ago` or `12:00 on the 24.1.2020`"
+        input_ask.validator = self.no_bot_invocation_validator
         answer = await input_ask.ask()
         base_datetime = datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
 
@@ -205,6 +216,7 @@ class ReportItem:
     async def _ask_public_text_helper(self):
         input_ask = AskInput(self.author, self.channel, timeout=1500, delete_answers=True, delete_question=True, error_on=True)
         input_ask.description = "Please input a brief text that will be publicly visible. Be carefull not to insert anything identifying.\nMax size of this text is 950 characters.\n\n***If you do not want to enter a public text, enter `None`!***"
+        input_ask.validator = self.no_bot_invocation_validator
         return await input_ask.ask()
 
     async def _ask_public_text(self):
@@ -218,6 +230,7 @@ class ReportItem:
     async def _ask_text(self):
         input_ask = AskInputManyAnswers(self.author, self.channel, timeout=1500, delete_question=True, delete_answers=True, error_on=True)
         input_ask.description = "Please describe the Incident. Try to be brief, but clear!\n\n **⚠️ Attachments can be added later in the process! ⚠️**"
+        input_ask.validator = self.no_bot_invocation_validator
         answer = await input_ask.ask()
         self.text = answer
 
@@ -302,6 +315,12 @@ class ReportItem:
         embed_data['files'] = []
         return embed_data
 
+    async def send_random_delayed_anonymized_report(self):
+        wait_seconds = random.randint(30, 180)
+        await asyncio.sleep(wait_seconds)
+        anonymized_embed_data = await self.anonymized_report_embed()
+        await self.cog.report_channel_anonymized.send(**anonymized_embed_data, allowed_mentions=discord.AllowedMentions.none())
+
     async def collect_report(self):
         await self._ask_for_target()
         await self._ask_for_location()
@@ -316,8 +335,7 @@ class ReportItem:
             for attachment_file in self.files:
                 file = await attachment_file.to_file(spoiler=True)
                 await self.cog.report_channel_anonymized.send(f"Report ID: {self.report_id}", file=file, reference=summary_message.to_reference(fail_if_not_exists=False))
-            anonymized_embed_data = await self.anonymized_report_embed()
-            await self.cog.report_channel_anonymized.send(**anonymized_embed_data, allowed_mentions=discord.AllowedMentions.none())
+            asyncio.create_task(self.send_random_delayed_anonymized_report())
         else:
             await self.channel.send("report was canceled", allowed_mentions=discord.AllowedMentions.none())
 
@@ -372,6 +390,7 @@ class ReportCog(AntiPetrosBaseCog):
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         await super().on_ready_setup()
 
@@ -397,9 +416,9 @@ class ReportCog(AntiPetrosBaseCog):
 
 # region [Commands]
 
-
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(True)
+    @commands.cooldown(1, 300, commands.BucketType.user)
     async def report(self, ctx: commands.Context):
         if self.bot.is_debug is True:
             log.info("Report started by Member %s", ctx.author)
@@ -420,7 +439,6 @@ class ReportCog(AntiPetrosBaseCog):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx: commands.Context):
         return True

@@ -17,7 +17,7 @@ import gidlogger as glog
 from antipetros_discordbot.utility.exceptions import IsNotDMChannelError, IsNotTextChannelError, MissingAttachmentError, NotAllowedChannelError, NotAllowedMember, NotNecessaryRole, WrongAttachmentTypeError
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_OPTION_NAMES, COG_CHECKER_ATTRIBUTE_NAMES
-
+from antipetros_discordbot.auxiliary_classes.all_item import AllItem
 # endregion[Imports]
 
 # region [TODO]
@@ -71,15 +71,17 @@ class BaseAntiPetrosCheck:
             return True
         if channel.type is discord.ChannelType.text:
             allowed_channels = self.allowed_channels(command)
-            if allowed_channels != {'all'} and channel.name.casefold() not in allowed_channels:
+            if allowed_channels != {'all'} and allowed_channels != {AllItem()} and channel.name.casefold() not in allowed_channels:
+                log.debug("invoking channel: %s", channel.name.casefold())
+                log.debug("allowed channels: %s", allowed_channels)
                 raise NotAllowedChannelError(ctx, allowed_channels)
 
         allowed_roles = self.allowed_roles(command)
-        if allowed_roles != {'all'} and all(role.name.casefold() not in allowed_roles for role in member.roles):
+        if allowed_roles != {'all'} and allowed_roles != {AllItem()} and all(role.name.casefold() not in allowed_roles for role in member.roles):
             raise NotNecessaryRole(ctx, allowed_roles)
 
         allowed_members = self.allowed_members(command)
-        if allowed_members != {'all'} and member not in allowed_members:
+        if allowed_members != {'all'} and allowed_members != {AllItem()} and member not in allowed_members:
             raise NotAllowedMember(allowed_members)
         return True
 
@@ -111,7 +113,8 @@ class AllowedChannelAndAllowedRoleCheck(BaseAntiPetrosCheck):
         allowed_channel_names = getattr(command.cog, COG_CHECKER_ATTRIBUTE_NAMES.get('channels'))
         if callable(allowed_channel_names):
             allowed_channel_names = allowed_channel_names(command)
-        allowed_channel_names.append('bot-testing')
+        if len(allowed_channel_names) != 1 and allowed_channel_names[0] != 'all':
+            allowed_channel_names.append('bot-testing')
         return set(map(lambda x: x.casefold(), allowed_channel_names))
 
     def allowed_roles(self, command: commands.Command):

@@ -219,7 +219,6 @@ class AntiPetrosBot(commands.Bot):
 
 # ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-
     def add_self_to_classes(self) -> None:
         ChannelUsageResult.bot = self
         AbstractUserAsking.bot = self
@@ -407,6 +406,19 @@ class AntiPetrosBot(commands.Bot):
         return sorted_prefixes
 
     @property
+    def all_prefixes_for_check(self) -> list[str]:
+        prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
+        for role in self.member.roles:
+            if role.name.casefold() not in ['dev helper'] and role is not self.everyone_role:
+                prefixes.append(role.mention)
+                prefixes.append(role.mention.replace('<@', '<@!'))
+        prefixes.append(self.member.mention)
+        prefixes.append(self.member.mention.replace('<@', '<@!'))
+        sorted_prefixes = sorted(list(set(prefixes)), key=lambda x: (str(self.id) in x, x.startswith('<'), is_unicode_emoji(x)), reverse=True)
+
+        return sorted_prefixes
+
+    @property
     def version(self) -> VersionItem:
         version_string = os.getenv('ANTIPETROS_VERSION')
         return VersionItem.from_string(version_string)
@@ -419,6 +431,7 @@ class AntiPetrosBot(commands.Bot):
 # endregion[Properties]
 
 # region [Loops]
+
 
     @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_config_changes(self) -> None:
@@ -446,6 +459,7 @@ class AntiPetrosBot(commands.Bot):
 # endregion[Loops]
 
 # region [Helper]
+
 
     @staticmethod
     def _get_intents() -> discord.Intents:

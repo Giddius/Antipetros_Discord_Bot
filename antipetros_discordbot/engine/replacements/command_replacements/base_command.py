@@ -359,7 +359,7 @@ class AntiPetrosBaseCommand(commands.Command):
         allowed_channels = []
         for check in self.checks:
             if hasattr(check, "allowed_channels"):
-                allowed_channels += check.allowed_channels(self)
+                allowed_channels += list(check.allowed_channels(self))
         if allowed_channels == []:
             return []
         if len(allowed_channels) > 1 and 'all' in allowed_channels:
@@ -373,7 +373,7 @@ class AntiPetrosBaseCommand(commands.Command):
         allowed_roles = []
         for check in self.checks:
             if hasattr(check, "allowed_roles"):
-                allowed_roles += check.allowed_roles(self)
+                allowed_roles += list(check.allowed_roles(self))
         if allowed_roles == []:
             return []
         if len(allowed_roles) > 1 and 'all' in allowed_roles:
@@ -397,7 +397,7 @@ class AntiPetrosBaseCommand(commands.Command):
         allowed_members = []
         for check in self.checks:
             if hasattr(check, "allowed_members"):
-                allowed_members += check.allowed_members(self)
+                allowed_members += list(check.allowed_members(self))
         if allowed_members == []:
             return set([self.bot.member_by_name('all')])
         if len(allowed_members) > 1 and 'all' in allowed_members:

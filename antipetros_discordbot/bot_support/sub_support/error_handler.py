@@ -267,7 +267,10 @@ class ErrorHandler(SubSupportBase):
         again_time = await async_seconds_to_pretty_normal(int(round(error.retry_after, 0)))
         msg = await self.transform_error_msg(f"Command '{ctx.command.name}' is on cooldown for '{error.cooldown.type.name.upper()}'. \n{ZERO_WIDTH}\nYou can try again in '{again_time}'\n{ZERO_WIDTH}")
         if self.cooldown_data.in_data(ctx, error) is True:
-            await ctx.message.delete()
+            try:
+                await ctx.message.delete()
+            except discord.errors.Forbidden:
+                pass
             await ctx.author.send(msg)
             return
         await self.cooldown_data.add(ctx, error)
@@ -275,7 +278,10 @@ class ErrorHandler(SubSupportBase):
                                                        thumbnail="cooldown",
                                                        description=msg)
         await ctx.reply(**embed_data, delete_after=error.retry_after)
-        await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except discord.errors.Forbidden:
+            pass
 
     async def _make_traceback_file(self, error_traceback: str):
         bytes_traceback = await asyncio.to_thread(error_traceback.encode, encoding='utf-8', errors='ignore')
