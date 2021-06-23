@@ -80,7 +80,7 @@ async def async_better_shorten(in_text: str, max_length: int, shorten_side: str 
     return '\n'.join(new_text_lines).strip() + placeholder if shorten_side == 'right' else placeholder + '\n'.join(reversed(new_text_lines)).strip()
 
 
-def alternative_better_shorten(in_text: str, max_length: int, shorten_side: str = "right", placeholder: str = '...', clean_before: bool = True, ensure_space_around_placeholder: bool = False, split_on: str = '/s') -> str:
+def alternative_better_shorten(in_text: str, max_length: int, shorten_side: str = "right", placeholder: str = '...', clean_before: bool = True, ensure_space_around_placeholder: bool = False, split_on: str = ' ') -> str:
     if shorten_side.casefold() not in {"left", "right"}:
         raise ValueError(shorten_side)
 

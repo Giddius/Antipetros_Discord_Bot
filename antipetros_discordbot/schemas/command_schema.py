@@ -41,7 +41,7 @@ from discord.ext import commands, tasks
 
 
 import gidlogger as glog
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, post_dump, pre_dump
 
 # endregion[Imports]
 
@@ -95,6 +95,11 @@ class AntiPetrosBaseCommandSchema(Schema):
                       'github_link',
                       'github_wiki_link',
                       'cog_name')
+
+    @post_dump
+    def command_category_to_dict(self, in_data, **kwargs):
+        in_data['categories'] = {item.get('name'): item for item in in_data['categories']}
+        return in_data
 
 
 # region[Main_Exec]

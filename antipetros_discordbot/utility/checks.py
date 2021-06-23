@@ -201,10 +201,8 @@ def log_invoker(logger, level: str = 'info'):
     # TODO: make as before invoke hook and not check!
     def predicate(ctx):
         ctx.command.set_logged(True)
-        channel_name = ctx.channel.name if ctx.channel.type is discord.ChannelType.text else 'DM'
-        getattr(logger, level)("command '%s' as '%s' -- invoked by: name: '%s', id: %s -- in channel: '%s' -- raw invoking message: '%s'",
-                               ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, channel_name, ctx.message.content)
-
+        getattr(logger, level)("!!DEPRECATED!! PLEASE REMOVE THE DECORATOR 'log_invoker' from '%s' in cog '%s' !!DEPRECATED!!",
+                               ctx.command.name, ctx.command.cog_name if hasattr(ctx.command, 'cog_name') else "NO_COG")
         return True
 
     return commands.check(predicate)

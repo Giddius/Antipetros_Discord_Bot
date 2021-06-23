@@ -262,7 +262,7 @@ class EmbedBuilder(SubSupportBase):
     async def make_generic_embed(self, author: Union[str, dict, discord.Member] = None, footer: Union[str, dict] = None, fields: List[EmbedFieldItem] = None, **kwargs):
         if isinstance(author, str):
             author = self.special_authors.get(author, self.default_author) if author != 'not_set' else None
-        elif isinstance(author, discord.Member):
+        elif isinstance(author, (discord.Member, discord.User)):
             author = {"name": author.display_name, "icon_url": author.avatar_url}
         if isinstance(footer, str):
             footer = self.special_footers.get(footer, self.default_footer) if footer != 'not_set' else None

@@ -144,6 +144,9 @@ class AntiPetrosBaseCommand(commands.Command):
         thumbnail = "warning"
         embed_data = await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail)
         await ctx.temp_send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        channel_name = ctx.channel.name if ctx.channel.type is discord.ChannelType.text else 'DM'
+        log.critical("command '%s' as '%s' -- invoked by: name: '%s', id: %s -- in channel: '%s' -- raw invoking message: '%s'",
+                     ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, channel_name, ctx.message.content)
 
     async def logged_notifier(self, ctx: commands.Context):
         title = "Logged"

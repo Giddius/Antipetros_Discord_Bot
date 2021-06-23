@@ -40,7 +40,7 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 BASE_CONFIG.save()
 COGS_CONFIG.save()
-
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion [Constants]
 
 # region [Logging]
@@ -178,9 +178,11 @@ def command_info_run(output_file, verbose):
 
     collected in `/docs/resources/data` as `commands_data.json`
     """
+    old_cwd = os.getcwd()
+    os.chdir(THIS_FILE_DIR)
     load_dotenv('token.env')
     load_dotenv("nextcloud.env")
-
+    os.chdir(old_cwd)
     os.environ['INFO_RUN'] = "1"
     os.environ['INFO_RUN_DUMP_FOLDER'] = output_file
     if verbose is False:

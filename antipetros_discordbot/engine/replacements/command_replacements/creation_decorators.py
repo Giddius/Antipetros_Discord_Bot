@@ -5,7 +5,7 @@
 """
 
 # region [Imports]
-
+from typing import Iterable, Callable, Optional, Any, AnyStr, Awaitable, Coroutine, ContextManager, TYPE_CHECKING, Union, Iterator
 import gc
 import os
 import unicodedata
@@ -14,6 +14,9 @@ from discord.ext import commands, tasks
 import gidlogger as glog
 from .base_group import AntiPetrosBaseGroup
 from .base_command import AntiPetrosBaseCommand
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.replacements import CommandCategory
 
 # endregion[Imports]
 
@@ -41,7 +44,16 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 # endregion[Constants]
 
 
-def auto_meta_info_command(name=None, cls=None, **attrs):
+def auto_meta_info_command(name=None,
+                           cls=None,
+                           aliases: Iterable[str] = None,
+                           categories: list["CommandCategory"] = None,
+                           only_debug: bool = None,
+                           clear_invocation: bool = None,
+                           experimental: bool = None,
+                           confirm_command_received: bool = None,
+                           logged: bool = None,
+                           ** attrs):
     """
     EXTENDED_BY_GIDDI
     -----------------
@@ -81,6 +93,20 @@ def auto_meta_info_command(name=None, cls=None, **attrs):
     """
     if cls is None:
         cls = AntiPetrosBaseCommand
+    if aliases is not None:
+        attrs['aliases'] = aliases
+    if categories is not None:
+        attrs['categories'] = categories
+    if only_debug is not None:
+        attrs['only_debug'] = only_debug
+    if clear_invocation is not None:
+        attrs['clear_invocation'] = clear_invocation
+    if experimental is not None:
+        attrs['experimental'] = experimental
+    if confirm_command_received is not None:
+        attrs['confirm_command_received'] = confirm_command_received
+    if logged is not None:
+        attrs['logged'] = logged
 
     def decorator(func):
 

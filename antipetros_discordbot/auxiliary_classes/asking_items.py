@@ -382,25 +382,27 @@ class AbstractUserAsking(ABC):
         answer = await self._ask_mechanism()
 
         try:
-            return await self.transform_answer(answer)
+            _out = await self.transform_answer(answer)
         finally:
             await self.after_ask()
+
+        return _out
 
     async def after_ask(self):
         try:
             if self.channel.type is discord.ChannelType.text:
                 await self.ask_message.clear_reactions()
         except discord.errors.Forbidden:
-            log.debug("unable to delete reactions, because it is Forbidden")
+            pass
         except discord.errors.NotFound:
-            log.debug("unable to delete reactions, because the message is not found")
+            pass
         try:
             if self.delete_question is True:
                 await self.ask_message.delete()
         except discord.errors.Forbidden:
-            log.debug("unable to delete message, because it is Forbidden")
+            pass
         except discord.errors.NotFound:
-            log.debug("unable to delete message, because the message is not found")
+            pass
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}"
@@ -488,9 +490,9 @@ class AskInput(AbstractUserAsking):
                 try:
                     await answer.delete()
                 except discord.errors.NotFound:
-                    log.debug("Unable to delete answer %s, because it was not found", answer)
+                    continue
                 except discord.errors.Forbidden:
-                    log.debug("Unable to delete answer %s, because it is Forbidden", answer)
+                    continue
 
     async def transform_ask_message(self):
         pass
@@ -499,7 +501,7 @@ class AskInput(AbstractUserAsking):
 class AskFile(AbstractUserAsking):
     typus = AskingTypus.FILE
     wait_for_event = 'message'
-    allowed_file_types = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mp3', 'tiff', 'tga'}
+    allowed_file_types = frozenset({'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mp3', 'tiff', 'tga', 'txt', 'md', 'log', 'rpt'})
 
     def __init__(self,
                  author: Union[int, discord.Member, discord.User],
@@ -590,9 +592,9 @@ class AskFile(AbstractUserAsking):
                 try:
                     await answer.delete()
                 except discord.errors.NotFound:
-                    log.debug("Unable to delete answer %s, because it was not found", answer)
+                    continue
                 except discord.errors.Forbidden:
-                    log.debug("Unable to delete answer %s, because it is Forbidden", answer)
+                    continue
 
 
 class AskInputManyAnswers(AskInput):
@@ -630,7 +632,7 @@ class AskInputManyAnswers(AskInput):
             embed = self.ask_embed_data.get('embed')
             embed.remove_field(0)
             new_text = alternative_better_shorten('\n'.join(self.collected_text), max_length=1000, shorten_side='left')
-            log.debug("new_text has a len of %s", len(new_text))
+
             embed.insert_field_at(0, name='Stored text', value=new_text, inline=False)
             await self.ask_message.edit(**self.ask_embed_data, allowed_mentions=discord.AllowedMentions.none())
 

@@ -96,7 +96,10 @@ class AntistasiInformer(SubSupportBase):
             await self.antistasi_guild.chunk(cache=True)
         for cat in ['channels', 'members', 'roles']:
             attr = getattr(self.antistasi_guild, cat)
-            name_attr_dict = {item.name.casefold(): item for item in attr}
+            name_attr_dict = {item.name.casefold(): item for item in attr} | {item.mention: item for item in attr}
+            if cat == "members":
+                name_attr_dict |= {str(item).casefold(): item for item in attr}
+
             setattr(self, f"{cat}_name_dict", name_attr_dict)
             log.info("created '%s_name_dict' fresh", cat)
 

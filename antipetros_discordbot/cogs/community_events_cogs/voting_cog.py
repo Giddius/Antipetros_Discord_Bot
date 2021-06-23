@@ -33,7 +33,6 @@ from io import BytesIO
 from textwrap import dedent
 
 
-from icecream import ic
 # import requests
 # import pyperclip
 # import matplotlib.pyplot as plt
@@ -132,7 +131,6 @@ class VoteItem:
                  allowed_roles: Iterable[discord.Role] = None,
                  allowed_members: Iterable[discord.Member] = None,
                  after_report: bool = False,
-                 progress_diagram: bool = True,
                  emoji_list: Iterable[discord.Emoji] = None):
         self.allowed_emojis: frozenset[Union[str, discord.Emoji]] = None
         self.emoji_list = self.default_emojis.copy() if emoji_list is None else emoji_list
@@ -141,7 +139,6 @@ class VoteItem:
         self.allowed_roles = set(allowed_roles) if allowed_roles is not None else allowed_roles
         self.allowed_members = set(allowed_members) if allowed_members is not None else allowed_members
         self.after_report = after_report
-        self.progress_diagram = progress_diagram
 
         self.embed_parameter = {"title": "Vote",
                                 "description": ZERO_WIDTH,
@@ -154,6 +151,8 @@ class VoteItem:
         self.add_votes_task: asyncio.Task = None
         self.update_embed_loop_task: asyncio.Task = None
         self.votes = {}
+        for emoji, option in self.options.items():
+            self.votes[f'start_for_{str(option)}'] = option
 
     def set_description(self, description: str):
         self.embed_parameter['description'] = description
@@ -181,9 +180,10 @@ class VoteItem:
 
     async def add_votes(self):
         while True:
+            asyncio.create_task(self.update_embed())
             vote_member, emoji = await self.queue.get()
             self.votes[vote_member] = await self.emoji_to_item(emoji)
-            await self.update_embed()
+            asyncio.create_task(self.update_embed())
 
     async def update_embed_loop(self):
         while True:
@@ -202,8 +202,12 @@ class VoteItem:
     async def after_vote(self):
         await self.vote_message.clear_reactions()
         self.add_votes_task.cancel()
+        await self.update_embed(final=True)
+        if self.after_report is True:
+            diagram = await self.get_diagram_image()
+            await self.vote_message.channel.send(file=diagram, allowed_mentions=discord.AllowedMentions.none())
 
-    async def get_progress_diagram_image(self):
+    async def get_diagram_image(self):
         data = []
         for option in self.options.values():
             value = len([item for item in self.votes.values() if item is option])
@@ -231,33 +235,28 @@ class VoteItem:
         timestamp = self.end_at
         return await self.bot.make_generic_embed(fields=fields, footer=footer, timestamp=timestamp, image=image, **self.embed_parameter)
 
-    async def update_embed(self):
+    async def update_embed(self, final: bool = False):
         embed = self.vote_message.embeds[0]
         embed.remove_field(-1)
         data = []
         for option in self.options.values():
-            data.append((str(option), len([item for item in self.votes.values() if item is option])))
+            data.append((str(option), len([item for item in self.votes.values() if item is option]) - 1))
         temp_results = ListMarker.make_list([f"{subdata[0]} -> {subdata[1]}" for subdata in data])
         temp_results = alternative_better_shorten(temp_results, max_length=100, shorten_side="left")
-        embed.add_field(name="Temporary Result", value=temp_results, inline=False)
+        if final is True:
+            embed.add_field(name="Final Result", value=temp_results, inline=False)
+            embed.set_footer(text=discord.Embed.Empty, icon_url=discord.Embed.Empty)
+        else:
+            embed.add_field(name="Temporary Result", value=temp_results, inline=False)
         await self.vote_message.edit(embed=embed)
 
-        if self.progress_diagram is True:
-            image_file = await self.get_progress_diagram_image()
-            await self.diagram_message.delete()
-            self.diagram_message = await self.vote_message.channel.send(file=image_file)
-
-    async def post_vote(self, channel: discord.TextChannel):
+    async def start_vote(self, channel: discord.TextChannel):
 
         embed_data = await self.embed_data()
         self.vote_message = await channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
         for emoji in self.options:
             await self.vote_message.add_reaction(emoji)
-
-        if self.progress_diagram is True:
-            image_file = await self.get_progress_diagram_image()
-            self.diagram_message = await channel.send(file=image_file)
 
         self.add_votes_task = asyncio.create_task(self.add_votes())
 
@@ -296,6 +295,7 @@ class VotingCog(AntiPetrosBaseCog):
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         await super().on_ready_setup()
         VoteItem.bot = self.bot
@@ -314,12 +314,16 @@ class VotingCog(AntiPetrosBaseCog):
 
 # region [Listener]
 
+
     @commands.Cog.listener(name="on_raw_reaction_add")
     async def check_for_vote_listener(self, payload: discord.RawReactionActionEvent):
         if self.ready is False or self.bot.setup_finished is False:
             return
+        if payload.member is None:  # This means we are in a DM channel
+            return
         if payload.member.bot is True:
             return
+
         if payload.message_id not in {vote.vote_message.id for vote in self.running_votes}:
             return
 
@@ -333,16 +337,17 @@ class VotingCog(AntiPetrosBaseCog):
 
 # region [Commands]
 
+
     @auto_meta_info_command()
-    async def check_vote(self, ctx: commands.Context):
+    async def check_vote(self, ctx: commands.Context, minutes: int = 5):
         options = [VoteOptionItem(item="yes", emoji=CHECK_MARK_BUTTON_EMOJI),
                    VoteOptionItem(item="no", emoji=CROSS_MARK_BUTTON_EMOJI),
                    VoteOptionItem(item="wait", emoji=CANCEL_EMOJI)]
-        vote = VoteItem(options=options, end_at=datetime.now(tz=timezone.utc) + timedelta(minutes=5))
-        await vote.post_vote(ctx.channel)
+        vote = VoteItem(options=options, end_at=datetime.now(tz=timezone.utc) + timedelta(minutes=minutes), after_report=True)
+        await vote.start_vote(ctx.channel)
         self.running_votes.add(vote)
 
-        await asyncio.sleep(60)
+        await discord.utils.sleep_until(vote.end_at)
         await vote.after_vote()
 
 
