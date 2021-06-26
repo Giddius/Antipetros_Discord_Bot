@@ -101,9 +101,7 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
         super().__init__(bot)
         self.rules_messages = {}
         self.color = "gold"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
+
 
 # endregion [Init]
 
@@ -118,12 +116,13 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
 # region [Setup]
 
     async def on_ready_setup(self):
+        await super().on_ready_setup()
         asyncio.create_task(self.get_rules_messages())
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
+        await super().update(typus=typus)
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]

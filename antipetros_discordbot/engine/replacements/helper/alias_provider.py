@@ -9,7 +9,7 @@
 import gc
 import os
 import unicodedata
-from typing import Callable, Callable, List, Tuple, Union
+from typing import Callable, Callable, List, Tuple, Union, Iterable
 from functools import partial
 from discord.ext import commands, tasks
 import gidlogger as glog
@@ -79,13 +79,17 @@ class JsonAliasProvider:
         if isinstance(command, commands.Command):
             command = command.name
         all_aliases = [] if extra_aliases is None else list(extra_aliases)
-        all_aliases = all_aliases + self._get_default_aliases(command) + self._get_custom_aliases(command)
+        all_aliases += self._get_custom_aliases(command)
+        all_aliases = all_aliases + self._get_default_aliases(command, all_aliases)
         return list(set(map(lambda x: x.casefold(), all_aliases)))
 
-    def _get_default_aliases(self, command: Union[str, commands.Command]) -> List[str]:
+    def _get_default_aliases(self, command: Union[str, commands.Command], extra_aliases: Iterable[str]) -> List[str]:
         if isinstance(command, commands.Command):
             command = command.name
-        return [command.replace('_', char) for char in self.default_alias_chars if command.replace('_', char) != command]
+        _out = [command.replace('_', char) for char in self.default_alias_chars if command.replace('_', char) != command]
+        for extra_alias in extra_aliases:
+            _out += [extra_alias.replace('_', char) for char in self.default_alias_chars]
+        return _out
 
     def _get_custom_aliases(self, command: Union[str, commands.Command]) -> List[str]:
         if isinstance(command, commands.Command):

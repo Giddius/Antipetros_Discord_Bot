@@ -362,12 +362,12 @@ class ReportCog(AntiPetrosBaseCog):
 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-        self.ready = False
-        glog.class_init_notification(log, self)
+
 
 # endregion [Init]
 
 # region [Properties]
+
     @property
     def report_webhook_urls(self):
         return COGS_CONFIG.retrieve(self.config_name, "report_webhook_urls", typus=List[str], direct_fallback=[])
@@ -389,7 +389,6 @@ class ReportCog(AntiPetrosBaseCog):
 # endregion [Properties]
 
 # region [Setup]
-
 
     async def on_ready_setup(self):
         await super().on_ready_setup()
@@ -416,6 +415,7 @@ class ReportCog(AntiPetrosBaseCog):
 
 # region [Commands]
 
+
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(True)
     @commands.cooldown(1, 300, commands.BucketType.user)
@@ -439,6 +439,7 @@ class ReportCog(AntiPetrosBaseCog):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx: commands.Context):
         return True

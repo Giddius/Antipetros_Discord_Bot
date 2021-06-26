@@ -90,10 +90,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         self.latest_who_is_triggered_time = datetime.utcnow()
         self.reaction_remove_ids = []
         self.color = "olive"
-        self.ready = False
 
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
 # endregion[Init]
 
 # region [Setup]
@@ -106,16 +103,16 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
                 COGS_CONFIG.set(self.config_name, option, "yes")
 
     async def on_ready_setup(self):
-        # self.garbage_clean_loop.start()
+        await super().on_ready_setup()
         reaction_remove_ids = [self.bot.id] + [_id for _id in self.bot.owner_ids]
         self.reaction_remove_ids = set(reaction_remove_ids)
         asyncio.create_task(self._update_listener_enabled())
-        for loop in self.loops.values():
-            loop_starter(loop)
+
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
+        await super().update(typus=typus)
         if UpdateTypus.CONFIG in typus:
             asyncio.create_task(self._update_listener_enabled())
         log.debug('cog "%s" was updated', str(self))

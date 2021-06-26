@@ -99,9 +99,6 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         self.all_configs = [BASE_CONFIG, COGS_CONFIG]
         self.aliases = {}
         self.color = "orange"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
 
 
 # endregion[Init]
@@ -113,13 +110,12 @@ class ConfigCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': 
         standard setup async method.
         The Bot calls this method on all cogs when he has succesfully connected.
         """
-        for loop in self.loops.values():
-            loop_starter(loop)
+        await super().on_ready_setup()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
+        await super().update(typus=typus)
         log.debug('cog "%s" was updated', str(self))
 
 

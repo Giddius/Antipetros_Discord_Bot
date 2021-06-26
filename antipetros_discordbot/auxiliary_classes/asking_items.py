@@ -29,7 +29,7 @@ import importlib
 import subprocess
 import unicodedata
 
-from io import BytesIO
+from io import BytesIO, IOBase
 from abc import ABC, abstractmethod
 from copy import copy, deepcopy
 from enum import Enum, Flag, auto
@@ -37,7 +37,7 @@ from time import time, sleep
 from pprint import pprint, pformat
 from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
 from timeit import Timer
-from typing import Union, Callable, Iterable, Optional, TYPE_CHECKING
+from typing import Union, Callable, Iterable, Optional, TYPE_CHECKING, IO
 from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
 from zipfile import ZipFile
 from datetime import tzinfo, datetime, timezone, timedelta
@@ -104,6 +104,13 @@ if __name__ == '__main__':
     pass
 
 # endregion[Main_Exec]
+
+
+async def try_add_reaction(message: discord.Message, reaction: Union[str, discord.Emoji, discord.PartialEmoji]):
+    try:
+        await message.add_reaction(reaction)
+    except discord.errors.NotFound:
+        log.debug("Unable to add reaction %s , for ask-item as message is not found, most likely already answered", reaction)
 
 
 class AskAnswer(Enum):
@@ -276,6 +283,15 @@ class AbstractUserAsking(ABC):
         self.ask_embed_data = None
         self.end_time = datetime.now(tz=timezone.utc) + timedelta(seconds=timeout)
 
+    def set_description(self, description: str):
+        self.description = description
+
+    def set_title(self, title: str):
+        self.title = title
+
+    def set_thumbnail(self, thumbnail: Union[str, bytes, discord.File, IO]):
+        self.thumbnail = thumbnail
+
     def _ensure_error_on(self, error_on: Union[bool, list[AskAnswer], AskAnswer, frozenset[AskAnswer]]) -> frozenset:
         if isinstance(error_on, frozenset):
             return error_on
@@ -440,8 +456,8 @@ class AskConfirmation(AbstractUserAsking):
 
     async def transform_ask_message(self):
         for emoji in self.answer_table:
-            asyncio.create_task(self.ask_message.add_reaction(emoji))
-        asyncio.create_task(self.ask_message.add_reaction(self.cancel_emoji))
+            asyncio.create_task(try_add_reaction(self.ask_message, emoji))
+        asyncio.create_task(try_add_reaction(self.ask_message, self.cancel_emoji))
 
 
 class AskInput(AbstractUserAsking):
@@ -681,8 +697,8 @@ class AskSelection(AbstractUserAsking):
 
     async def transform_ask_message(self):
         for emoji in self.options:
-            asyncio.create_task(self.ask_message.add_reaction(emoji))
-        asyncio.create_task(self.ask_message.add_reaction(self.cancel_emoji))
+            asyncio.create_task(try_add_reaction(self.ask_message, emoji))
+        asyncio.create_task(try_add_reaction(self.ask_message, self.cancel_emoji))
 
     async def transform_answer(self, answer: discord.RawReactionActionEvent):
         answer_emoji = str(answer.emoji)

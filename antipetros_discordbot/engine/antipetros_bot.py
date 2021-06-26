@@ -226,8 +226,9 @@ class AntiPetrosBot(commands.Bot):
     async def _start_sessions(self) -> None:
         self.sessions = {}
         if self.sessions.get('aio_request_session', None) is None or self.sessions.get('aio_request_session', None).closed is True:
-            self.sessions['aio_request_session'] = aiohttp.ClientSession(connector=aiohttp.TCPConnector(enable_cleanup_closed=True))
-            self.aio_request_session = self.sessions.get("aio_request_session")
+            self.aio_request_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(enable_cleanup_closed=True))
+            self.sessions['aio_request_session'] = self.aio_request_session
+
         log.info("Session '%s' was started", repr(self.sessions['aio_request_session']))
 
     async def _ensure_guild_is_chunked(self) -> None:

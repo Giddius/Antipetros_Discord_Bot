@@ -4,7 +4,7 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import asyncio
-
+import re
 # * Third Party Imports --------------------------------------------------------------------------------->
 from jinja2 import BaseLoader, Environment
 import discord
@@ -76,27 +76,29 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
     q_emoji = "🇶"
     a_emoji = "🇦"
 
+    number_split_regex = re.compile(r"\s|,")
 
 # endregion [ClassAttributes]
 
 # region [Init]
 
-
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.faq_items = {}
         self.color = "honeydew"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
+        self.trigger_regex = re.compile(rf"(?:faq)|(?:\<#{self.faq_channel_id}\>)\s*(?P<numbers>(?:\d+[\s\,]*)+)", re.IGNORECASE)
 
 # endregion [Init]
 
 # region [Properties]
 
     @property
+    def faq_channel_id(self) -> int:
+        return COGS_CONFIG.retrieve(self.config_name, 'faq_channel_id', typus=int, direct_fallback=673410398510383115)
+
+    @property
     def faq_channel(self):
-        channel_id = COGS_CONFIG.retrieve(self.config_name, 'faq_channel_id', typus=int, direct_fallback=673410398510383115)
+        channel_id = self.faq_channel_id
         return self.bot.channel_from_id(channel_id)
 
     @property
@@ -122,11 +124,12 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
+        await super().update(typus=typus)
         if UpdateTypus.RECONNECT in typus:
             FaqItem.faq_channel = self.faq_channel
             await asyncio.to_thread(FaqItem.set_background_image)
             asyncio.create_task(self.collect_raw_faq_data())
-        await super().update(typus)
+
         log.debug('cog "%s" was updated', str(self))
 
 
@@ -134,11 +137,27 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [Loops]
 
-
 # endregion [Loops]
 
 # region [Listener]
 
+    @commands.Cog.listener(name='on_message')
+    async def faq_message_trigger_listener(self, message: discord.Message):
+        content = message.content
+
+        content_match = self.trigger_regex.search(content)
+        if content_match:
+            numbers = [number for number in map(lambda x: x.strip(), self.number_split_regex.split(content_match.group("numbers"))) if number]
+            for number in numbers:
+                try:
+                    faq_number = int(number)
+                    faq_item = self.faq_items.get(faq_number, None)
+                    embed_data = await faq_item.to_embed_data()
+                    reference = None if message.reference is None else message.reference.resolved
+                    await message.channel.send(**embed_data, reference=reference, allowed_mentions=discord.AllowedMentions.none())
+                except ValueError:
+                    log.debug('unable to transform the string "%s" to int for "faq_message_trigger_listener"', number)
+                await asyncio.sleep(0)
 
     @commands.Cog.listener(name='on_message')
     async def faq_message_added_listener(self, message):

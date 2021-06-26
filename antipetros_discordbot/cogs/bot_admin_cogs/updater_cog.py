@@ -86,15 +86,14 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
+
         self.typus_on_timeout = {typus: False for typus in UpdateTypus}
 
-        glog.class_init_notification(log, self)
 
 # endregion [Init]
 
 # region [Properties]
+
     @property
     def update_timeout(self):
         return COGS_CONFIG.retrieve(self.config_name, 'update_timeout_seconds', typus=int, direct_fallback=60)
@@ -104,13 +103,13 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 # region [Setup]
 
     async def on_ready_setup(self):
-        for loop in self.loops.values():
-            loop_starter(loop)
+        await super().on_ready_setup()
         self.bot.to_update_methods.append(self.bot.ToUpdateItem(AntiPetrosBaseCommand.alias_data_provider.update_default_alias_chars, [UpdateTypus.CONFIG, UpdateTypus.CYCLIC]))
         self.ready = await asyncio.sleep(0, True)
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
+        await super().update(typus=typus)
         for to_update_item in self.bot.to_update_methods:
             if any(trigger in typus for trigger in to_update_item.typus_triggers):
                 await to_update_item.function()
@@ -132,6 +131,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 # endregion [Loops]
 
 # region [Listener]
+
 
     @commands.Cog.listener(name="on_guild_channel_delete")
     async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):
@@ -234,6 +234,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
 
     async def remove_typus_from_timeout(self, typus: UpdateTypus):
         await asyncio.sleep(self.update_timeout)

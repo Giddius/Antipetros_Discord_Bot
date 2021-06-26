@@ -3,6 +3,7 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
+import asyncio
 from datetime import datetime
 from collections import namedtuple
 import re
@@ -102,13 +103,12 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.color = "white"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
+
 
 # endregion [Init]
 
 # region [Properties]
+
 
     @property
     def registered_workshop_items(self):
@@ -138,26 +138,28 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 
     async def update(self, typus: UpdateTypus):
         await super().update(typus)
-
+        log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
 
 # region [Loops]
 
+    async def _check_item(self, item):
+        log.debug("checking steam_workshop_item '%s' for possible update", item.title)
+        new_item = await self._get_fresh_item_data(item.id)
+        updated_new = datetime.strptime(new_item.updated, self.date_time_format)
+        updated_old = datetime.strptime(item.updated, self.date_time_format)
+
+        if updated_new > updated_old:
+            await self._update_item_in_registered_items(item, new_item)
+            await self.notify_update(item, new_item)
 
     @tasks.loop(minutes=5, reconnect=True)
     async def check_for_updates(self):
         if any([self.ready, self.bot.setup_finished]) is False:
             return
         for item in self.registered_workshop_items:
-            log.debug("checking steam_workshop_item '%s' for possible update", item.title)
-            new_item = await self._get_fresh_item_data(item.id)
-            updated_new = datetime.strptime(new_item.updated, self.date_time_format)
-            updated_old = datetime.strptime(item.updated, self.date_time_format)
-            log.debug("comapring time '%s' new, to '%s' old", updated_new.strftime(self.date_time_format), updated_old.strftime(self.date_time_format))
-            if updated_new > updated_old:
-                await self._update_item_in_registered_items(item, new_item)
-                await self.notify_update(item, new_item)
+            asyncio.create_task(self._check_item(item))
 
 # endregion [Loops]
 
@@ -265,6 +267,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
             updated_data = in_soup.findAll("div", {"class": "detailsStatRight"})[2]
             return await self._parse_update_date(updated_data.text)
         except IndexError:
+
             updated_data = in_soup.findAll("div", {"class": "detailsStatRight"})[1]
             return await self._parse_update_date(updated_data.text)
 

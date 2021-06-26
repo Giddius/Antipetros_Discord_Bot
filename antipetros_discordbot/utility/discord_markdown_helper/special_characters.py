@@ -44,6 +44,16 @@ class ListMarker:
         return '\n'.join(f"{formatting}{ZERO_WIDTH}{indent_unit*indent}{symbol} {item}{formatting}" for item in in_data)
 
     @classmethod
+    def make_numbered_list(cls, in_data, number_suffix: str = '.', indent: int = 0, formatting: str = None) -> str:
+        indent_unit = SPECIAL_SPACE * 8
+        formatting = '' if formatting is None else formatting
+        _items = []
+        for number, item in enumerate(in_data):
+            number = number + 1
+            _items.append(f"{formatting}{ZERO_WIDTH}{indent_unit*indent}{number}{number_suffix} {item}{formatting}")
+        return '\n'.join(_items)
+
+    @classmethod
     def _column_symbol_generator(cls, amount_columns: int, seperator: str):
         while True:
             for i in range(amount_columns - 1):

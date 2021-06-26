@@ -123,9 +123,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         super().__init__(bot)
         self.time_sorted_guild_member_list = []
         self.color = "red"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
+
 
 # endregion [Init]
 
@@ -144,6 +142,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # region [Setup]
 
     async def on_ready_setup(self):
+        await super().on_ready_setup()
         if self.bot.antistasi_guild.chunked is False:
             await self.bot.antistasi_guild.chunk(cache=True)
         await self.make_time_sorted_guild_member_list()
@@ -151,6 +150,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
+        await super().update(typus=typus)
         await self.make_time_sorted_guild_member_list()
         log.debug('cog "%s" was updated', str(self))
 

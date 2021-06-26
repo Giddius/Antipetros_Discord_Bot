@@ -14,9 +14,10 @@ import unicodedata
 import discord
 from enum import Enum, auto, unique
 import os
+from textwrap import indent, dedent
 import re
 from asyncstdlib import map as async_map
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union, Iterable, Callable, Any, IO, Optional
 from datetime import datetime, timezone
 from functools import cached_property, total_ordering
 from dateparser import parse as date_parse
@@ -29,7 +30,7 @@ from asyncio import Lock as AioLock
 from asyncstdlib import lru_cache as async_lru_cache
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, loadjson, readit, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.utility.regexes import LOG_SPLIT_REGEX, MOD_TABLE_END_REGEX, MOD_TABLE_LINE_REGEX, MOD_TABLE_START_REGEX
+from antipetros_discordbot.utility.regexes import LOG_SPLIT_REGEX, MOD_TABLE_END_REGEX, MOD_TABLE_LINE_REGEX, MOD_TABLE_START_REGEX, REAL_LOG_TIME_REGEX
 from antipetros_discordbot.utility.nextcloud import get_nextcloud_options
 from antipetros_discordbot.utility.misc import SIZE_CONV_BY_SHORT_NAME
 from antipetros_discordbot.utility.exceptions import NeededClassAttributeNotSet
@@ -103,23 +104,21 @@ class ServerStatus(Enum):
         return super()._missing_(value)
 
 
-class ServerStatusDeque(deque):
+class ServerStatusDeque:
 
     def __init__(self):
-        super().__init__(maxlen=2)
-        self.append(None)
-        self.append(None)
+        self.deque = deque([None, None], maxlen=2)
 
     @property
     def current_status(self) -> ServerStatus:
-        return self[1]
+        return self.deque[1]
 
     @property
     def previous_status(self) -> ServerStatus:
-        return self[0]
+        return self.deque[0]
 
     def add_new_status(self, status: ServerStatus):
-        self.append(status)
+        self.deque.append(status)
 
 
 @unique
@@ -360,6 +359,12 @@ class LogFileItem:
         self.created = date_parse(self.info.get("created"), settings={'TIMEZONE': 'UTC'}) if self.info.get("created") is not None else self._date_time_from_name()
         self.created_in_seconds = int(self.created.timestamp())
 
+    async def get_first_logged_correct_time(self):
+        content = await self.get_content()
+        time_match = REAL_LOG_TIME_REGEX.search(content)
+        if time_match:
+            return datetime(**{key: int(value) for key, value in time_match.groupdict().items()}).replace(tzinfo=timezone.utc)
+
     async def collect_info(self) -> None:
         async with self.lock:
             self.info = await self.resource_item.info()
@@ -415,6 +420,12 @@ class LogFileItem:
 
     async def content_iter(self):
         return await self.resource_item.client.download_iter(self.path)
+
+    async def get_content(self):
+        byte_data = b""
+        async for chunk in await self.content_iter():
+            byte_data += chunk
+        return byte_data.decode('utf-8', errors='ignore')
 
     async def content_embed(self):
         await self.collect_info()
@@ -493,7 +504,7 @@ class ServerAddress:
         return (self.url, self.query_port)
 
     def __str__(self) -> str:
-        return f"{self.url}:{self.port}:{self.query_port}"
+        return f"{self.__class__.__name__}(url={self.url}, port={self.port}, query_port={self.query_port})"
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.full_address})"
@@ -502,13 +513,14 @@ class ServerAddress:
 class ServerItem:
     pretty_name_regex = re.compile(r"(?P<name>[a-z]+)\_?(?P<server>server)\_?(?P<number>\d)?", re.IGNORECASE)
     timeout = 3.0
-    battle_metrics_mapping = {'mainserver_1': "https://www.battlemetrics.com/servers/arma3/10560386",
-                              'mainserver_2': "https://www.battlemetrics.com/servers/arma3/10561000",
-                              'testserver_1': "https://www.battlemetrics.com/servers/arma3/4789978",
-                              'testserver_2': "https://www.battlemetrics.com/servers/arma3/9851037",
-                              'eventserver': "https://www.battlemetrics.com/servers/arma3/9552734",
-                              'sog_server_1': "https://www.battlemetrics.com/servers/arma3/11406516",
-                              'sog_server_2': "https://www.battlemetrics.com/servers/arma3/11406517"}
+    battlemetrics_base_url = "https://www.battlemetrics.com/servers/arma3"
+    battle_metrics_mapping = {'mainserver_1': "10560386",
+                              'mainserver_2': "11460213",
+                              'testserver_1': "4789978",
+                              'testserver_2': "9851037",
+                              'eventserver': "9552734",
+                              'sog_server_1': "11406516",
+                              'sog_server_2': "11406517"}
 
     server_priority_map = {"mainserver_1": 1,
                            "mainserver_2": 2,
@@ -537,9 +549,11 @@ class ServerItem:
         self.log_items = SortedList()
         self.status = ServerStatusDeque()
         self.log_parser = LogParser(self)
-        self.battle_metrics_url = self.battle_metrics_mapping.get(self.name.casefold(), None)
+        self.battle_metrics_id = self.battle_metrics_mapping.get(self.name.casefold(), None)
+        self.battle_metrics_url = '/'.join([self.battlemetrics_base_url, self.battle_metrics_id])
         self.priority = self.server_priority_map.get(self.name.casefold(), 0)
         self.on_notification_timeout = {ServerStatus.ON: False, ServerStatus.OFF: False}
+        self.last_restart_request_received = None
 
     @classmethod
     async def ensure_client(cls):
@@ -552,6 +566,15 @@ class ServerItem:
         html_file = await self.log_parser.get_mod_data_html_file()
         image_file = await self.log_parser.get_mod_data_image_file()
         return ModFileItem(html=html_file, image=image_file)
+
+    async def get_last_restarted_at(self) -> Union[datetime, None]:
+        if self.log_folder is None:
+            return None
+        for log_item in self.log_items:
+            restart_datetime = await log_item.get_first_logged_correct_time()
+            if restart_datetime is not None:
+                return restart_datetime
+            await asyncio.sleep()
 
     @cached_property
     def config_name(self) -> str:
@@ -582,8 +605,11 @@ class ServerItem:
         return f"{self.base_log_folder_name}/{self.log_folder}/{self.sub_log_folder_name}/"
 
     @property
-    def newest_log_item(self) -> LogFileItem:
-        return self.log_items[0]
+    def newest_log_item(self) -> Union[LogFileItem, None]:
+        try:
+            return self.log_items[0]
+        except IndexError as error:
+            log.warning("getting 'newest_log_item' for Server %s resulted in an IndexError", self.name)
 
     @property
     def report_status_change(self) -> bool:
@@ -626,7 +652,7 @@ class ServerItem:
         log.info("Gathered %s Log_file_items for Server %s", len(self.log_items), self.name)
 
     async def update_log_items(self) -> None:
-        old_newest_log_item = deepcopy(self.newest_log_item)
+        old_newest_log_item = self.newest_log_item
         old_items = set(self.log_items)
         await self.gather_log_items()
         for item in set(self.log_items).difference(old_items):
@@ -641,26 +667,32 @@ class ServerItem:
     async def is_online(self) -> ServerStatus:
         try:
             check_data = await self.get_info()
-            self.status.add_new_status(ServerStatus.ON)
+            status = ServerStatus.ON
             self.official_name = check_data.server_name
+
         except asyncio.exceptions.TimeoutError:
-            self.status.add_new_status(ServerStatus.OFF)
+            status = ServerStatus.OFF
 
-        if all([self.report_status_change is True,
-                self.previous_status not in {None, self.current_status}]):
+        self.status.add_new_status(status)
+        log.debug(self.log_state_data)
+        if self.report_status_change is True and self.previous_status is not None and self.previous_status is not self.current_status:
             log.info("Server %s was switched %s", self, self.current_status.name)
-            if self.on_notification_timeout.get(self.current_status) is False:
-
-                await self.status_switch_signal.emit(self, self.current_status)
-
-                asyncio.create_task(self._reset_on_notification_timeout(self.current_status))
-            else:
-                log.debug("Status switch message for Server %s not sent because server is on notification timeout", self.name)
-
-            if self.is_online_message_enabled is True:
-                await self.update_is_online_message_signal.emit(self)
+            asyncio.create_task(self._handle_status_change())
 
         return self.current_status
+
+    async def _handle_status_change(self):
+        if self.on_notification_timeout.get(self.current_status) is False:
+            log.warning("emiting status_switch_signal for server %s, current_status %s", self.name, self.current_status)
+            await self.status_switch_signal.emit(self, self.current_status)
+            asyncio.create_task(self._reset_on_notification_timeout(self.current_status))
+
+        else:
+
+            log.debug("Status switch message for Server %s not sent because server is on notification timeout", self.name)
+
+        if self.is_online_message_enabled is True:
+            asyncio.create_task(self.update_is_online_message_signal.emit(self))
 
     async def _reset_on_notification_timeout(self, status: ServerStatus):
         self.on_notification_timeout[status] = True
@@ -669,7 +701,7 @@ class ServerItem:
         log.debug("finished notification timeout for Server %s and status %s", self.name, str(status))
 
     async def get_info(self) -> a2s.SourceInfo:
-        info_data = await a2s.ainfo(self.server_address.query_address, encoding=self.encoding)
+        info_data = await a2s.ainfo(self.server_address.query_address, timeout=5.0, encoding=self.encoding)
         asyncio.create_task(general_db.insert_server_population(self, info_data.player_count))
         return info_data
 
@@ -711,6 +743,12 @@ class ServerItem:
 
     async def dump(self):
         return self.schema.dump(self)
+
+    @property
+    def log_state_data(self):
+        on_notification_timeout_pretty = {str(key): value for key, value in self.on_notification_timeout.items()}
+        text = f"Server {self.name}: 'previous_status'={self.previous_status} <> 'current_status'={self.current_status} <> 'on_notification_timeout'={on_notification_timeout_pretty}"
+        return text
 
     def __str__(self) -> str:
         return self.name

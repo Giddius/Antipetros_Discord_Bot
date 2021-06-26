@@ -8,6 +8,7 @@ import os
 from typing import List, Optional, TYPE_CHECKING, Union
 from datetime import datetime, timedelta, timezone
 import asyncio
+from functools import cached_property
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
@@ -105,10 +106,11 @@ class BranchItem:
     answer_time = 180
     code_extensions = {'sqf', 'cpp', 'hpp', 'txt', 'json', 'ps1', 'yml', 'fsm', 'ext', 'sqm'}
     code_highlighter_style = DraculaStyle
+    _main_branch_name = None
 
     def __init__(self, branch_name: str, branch: github.Branch) -> None:
         self.name = branch_name
-        self.files = defaultdict(list)
+        self.files = None
         self.branch = branch
         self.url = self.antistasi_repo.html_url + '/tree/' + self.name
 
@@ -116,8 +118,18 @@ class BranchItem:
     async def async_init(cls, branch_name: str):
         branch = await asyncio.to_thread(cls.antistasi_repo.get_branch, branch_name)
         branch_item = cls(branch_name, branch)
-        await branch_item.gather_files()
+        if branch_name == cls.main_branch_name:
+            log.debug("branch_name=%s, main_branch_name=%s, !branch is main branch! -> loading files", branch_name, cls.main_branch_name)
+            asyncio.create_task(branch_item.gather_files())
+
         return branch_item
+
+    @classmethod
+    @property
+    def main_branch_name(cls):
+        if cls._main_branch_name is None:
+            cls._main_branch_name = cls.antistasi_repo.default_branch
+        return cls._main_branch_name
 
     @classmethod
     @property
@@ -266,6 +278,8 @@ class BranchItem:
         return thumbnail, content_file
 
     async def request_file(self, file_name: str, msg: discord.Message):
+        if self.files is None:
+            await self.gather_files()
         file_paths = self.files.get(file_name.casefold(), None)
         if file_paths is None:
             alternative = fuzzprocess.extractOne(file_name, set(self.files))[0]
@@ -298,10 +312,10 @@ class BranchItem:
             await msg.channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none(), reference=msg.to_reference(fail_if_not_exists=False))
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.name})"
+        return f"{self.__class__.__name__}(name={self.name}, branch={self.branch})"
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(branch_name={self.name}, amount_files={len(set(reduce(lambda x,y:x+y,self.files.values())))})"
+        return f"{self.__class__.__name__}(branch_name={self.name}, branch={self.branch})"
 
 
 class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.DEVTOOLS}):
@@ -340,9 +354,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         self.github_request_regex = re.compile(rf"(?:\s|\A)(?P<prefix>{self.trigger_prefix})(?P<branch_name>[\w\-\_\d]+(?:\/))?(?P<request_identifier>\w*\.?\w+)", re.IGNORECASE)
         self.listen_for_github_request_in_message_enabled = None
         self.labels = {}
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
+
 
 # endregion [Init]
 
@@ -354,17 +366,17 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # region [Setup]
 
     async def on_ready_setup(self):
+        await super().on_ready_setup()
         await self._update_listener_settings()
-        for loop in self.loops.values():
-            loop_starter(loop)
         await self.make_branches()
-        self.labels = await self.get_labels()
+        await self.get_labels()
         self.ready = True
 
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        self.labels = await self.get_labels()
+        await super().update(typus=typus)
+        asyncio.create_task(self.get_labels())
         if UpdateTypus.CONFIG in typus:
             await self._update_trigger_prefix_regex()
         elif UpdateTypus.CYCLIC in typus:
@@ -436,7 +448,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
                 return name[:1].upper() + name[1:]
             else:
                 return name
-        referrers = await asyncio.to_thread(self.antistasi_repo.get_top_referrers)
+        referrers = self.antistasi_repo.get_top_referrers()
         fig, ax = plt.subplots()
         max_color_val = 256
         max_count = max([item.count for item in referrers])
@@ -472,7 +484,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         ax.invert_yaxis()
 
         with BytesIO() as bytefile:
-            await asyncio.to_thread(fig.savefig, bytefile, format='png', dpi=250)
+            fig.savefig(bytefile, format='png', dpi=250)
 
             bytefile.seek(0)
             file = discord.File(bytefile, 'top_github_referrers.png')
@@ -524,7 +536,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         ax.invert_yaxis()
 
         with BytesIO() as bytefile:
-            await asyncio.to_thread(fig.savefig, bytefile, format='png', dpi=250)
+            fig.savefig(bytefile, format='png', dpi=250)
 
             bytefile.seek(0)
             file = discord.File(bytefile, 'popular_files.png')
@@ -543,6 +555,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         """
         fields = []
         for branch in sorted(self.branches, key=lambda x: x.latest_commit_date, reverse=True)[:24]:
+
             fields.append(self.bot.field_item(name=branch.name,
                                               value=ListMarker.make_list(symbol='arrow_down',
                                                                          in_data=[f"`{branch.latest_commit_date.date().strftime('%Y-%m-%d')}`",
@@ -625,7 +638,8 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
     async def get_labels(self):
         labels = await asyncio.to_thread(self.antistasi_repo.get_labels)
-        return {label.name.casefold(): label for label in labels}
+        self.labels = {label.name.casefold(): label for label in labels}
+        return self.labels
 
     async def _update_listener_settings(self):
         self.listen_for_github_request_in_message_enabled = COGS_CONFIG.retrieve(self.config_name, 'listen_for_github_request_in_message_enabled', typus=bool, direct_fallback=False)
@@ -634,11 +648,11 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         self.trigger_prefix = COGS_CONFIG.retrieve(self.config_name, 'trigger_prefix', typus=str, direct_fallback='##')
         self.github_request_regex = re.compile(rf"(?:\s|\A)(?P<prefix>{self.trigger_prefix})(?P<branch_name>[\w\-\_\d]+(?:\/))?(?P<request_identifier>\w*\.?\w+)", re.IGNORECASE)
 
-    async def get_branch_names(self, pool):
-        branches = await self.bot.loop.run_in_executor(pool, self.antistasi_repo.get_branches)
+    async def get_branch_names(self, min_date: datetime):
+        branches = await asyncio.to_thread(self.antistasi_repo.get_branches)
         for branch in branches:
-            latest_commit_data = await self.bot.loop.run_in_executor(pool, lambda x: x.commit.commit.author.date, branch)
-            if latest_commit_data > (datetime.now() - timedelta(days=90)):
+            latest_commit_data = await asyncio.to_thread(lambda x: x.commit.commit.author.date, branch)
+            if latest_commit_data > min_date:
 
                 yield await asyncio.sleep(0, branch.name)
 
@@ -686,9 +700,9 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
     async def make_branches(self):
         self.branches = []
-        with ThreadPoolExecutor() as pool:
-            async for branch_name in self.get_branch_names(pool):
-                asyncio.create_task(self._branch_creation_helper(branch_name))
+        min_date = datetime.now() - timedelta(days=90)
+        async for branch_name in self.get_branch_names(min_date=min_date):
+            asyncio.create_task(self._branch_creation_helper(branch_name))
 
     async def _branch_creation_helper(self, branch_name):
         self.branches.append(await BranchItem.async_init(branch_name))

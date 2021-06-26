@@ -219,15 +219,12 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.color = "cyan"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-
-        glog.class_init_notification(log, self)
 
 
 # endregion [Init]
 
 # region [Properties]
+
 
     @property
     def message_delete_after(self):
@@ -263,12 +260,12 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # region [Setup]
 
     async def on_ready_setup(self):
-        for loop in self.loops.values():
-            loop_starter(loop)
+        await super().on_ready_setup()
         self.ready = await asyncio.sleep(5, True)
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
+        await super().update(typus=typus)
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
@@ -283,7 +280,6 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_group(categories=[CommandCategory.META], case_insensitive=False, invoke_without_command=True)
     async def help(self, ctx: commands.Context, *, in_object: Union[CommandConverter, CogConverter] = None):
@@ -323,6 +319,7 @@ class HelpCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # endregion [DataStorage]
 
 # region [Embeds]
+
 
     async def general_help(self, ctx: commands.Context):
         builder = GeneralHelpEmbedBuilder(self.bot, ctx)

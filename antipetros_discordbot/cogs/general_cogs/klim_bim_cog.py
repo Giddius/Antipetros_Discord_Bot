@@ -106,10 +106,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
             'd100': {'sides': 100}
         }
         self.color = 'green'
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
 
-        glog.class_init_notification(log, self)
 
 # endregion [Init]
 
@@ -124,11 +121,12 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 # region [Setup]
 
     async def on_ready_setup(self):
+        await super().on_ready_setup()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
+        await super().update(typus=typus)
         log.debug('cog "%s" was updated', str(self))
 
 

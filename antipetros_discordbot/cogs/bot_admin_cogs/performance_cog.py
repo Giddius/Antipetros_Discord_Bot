@@ -106,10 +106,8 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
                                      'memory': COGS_CONFIG.get(self.config_name, 'memory_graph_formatting'),
                                      'cpu': COGS_CONFIG.get(self.config_name, 'cpu_graph_formatting')}
 
-        self.ready = False
         self.general_db = general_db
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
+
 
 # endregion[Init]
 
@@ -117,8 +115,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     async def on_ready_setup(self):
         _ = psutil.cpu_percent(interval=None)
-        for loop in self.loops.values():
-            loop_starter(loop)
+        await super().on_ready_setup()
 
         plt.style.use('dark_background')
         await self.format_graph(10)
@@ -126,7 +123,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         self.ready = True
 
     async def update(self, typus: UpdateTypus):
-        return
+        await super().update(typus=typus)
         log.debug('cog "%s" was updated', str(self))
 
 # endregion[Setup]
@@ -277,7 +274,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
             embed.set_image(url=_url)
         await ctx.send(embed=embed, file=_file)
 
-    @auto_meta_info_command(clear_invocation=True, confirm_command_received=True)
+    @auto_meta_info_command(clear_invocation=True, confirm_command_received=True, aliases=['performance'])
     @owner_or_admin()
     async def performance_statistic(self, ctx):
         """
@@ -298,6 +295,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 # endregion[Commands]
 
 # region [Helper]
+
 
     async def format_graph(self, amount_data: int):
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
@@ -406,6 +404,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 
 # region [SpecialMethods]
+
 
     def __str__(self) -> str:
         return self.qualified_name

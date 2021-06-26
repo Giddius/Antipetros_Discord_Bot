@@ -78,21 +78,20 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.color = "brown"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
 
 
 # endregion[Init]
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
+        await super().on_ready_setup()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
+        await super().update(typus=typus)
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
@@ -108,6 +107,7 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 # endregion[Loops]
 
 # region [Commands]
+
 
     @ auto_meta_info_command()
     @owner_or_admin()
@@ -126,9 +126,8 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
             await msg.delete()
         await ctx.message.delete()
 
-    @auto_meta_info_command(aliases=['clr-scrn'])
-    @owner_or_admin()
-    @log_invoker(log, "critical")
+    @auto_meta_info_command(aliases=['clr-scrn'], logged=True)
+    @owner_or_admin(True)
     async def the_bots_new_clothes(self, ctx: commands.Context, delete_after: int = None):
         """
         Sends about a page worth of empty message to a channel, looks like channel got purged.
@@ -144,7 +143,7 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
         msg = ZERO_WIDTH * 20 + '\n'
         await ctx.send('THE BOTS NEW CLOTHES' + (msg * 60), delete_after=delete_after)
 
-        await ctx.message.delete()
+        await delete_message_if_text_channel(ctx)
 
     @auto_meta_info_command()
     @owner_or_admin()
@@ -256,6 +255,7 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 # endregion[Helper]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

@@ -253,6 +253,16 @@ class AioGeneralStorageSQLite:
     async def update_category_channel_deleted(self, category_channel_id: int):
         await self.db.aio_write("updated_category_channels_deleted", (category_channel_id, True))
 
+    async def get_server_population(self, server):
+        result = await self.db.aio_query("get_server_population", (server.name,), row_factory=True)
+        timestamps = []
+        amount_players = []
+        for row in result:
+            timestamps.append(await asyncio.sleep(0, datetime.strptime(row['timestamp'], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)))
+            amount_players.append(await asyncio.sleep(0, row['amount_players']))
+            await asyncio.sleep(0)
+        return timestamps, amount_players
+
     async def get_category_channel_ids(self):
         result = await self.db.aio_query("get_all_category_channel_ids", row_factory=True)
         return [row['id'] for row in result]

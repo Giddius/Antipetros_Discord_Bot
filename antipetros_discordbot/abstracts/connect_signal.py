@@ -9,7 +9,8 @@ class AbstractConnectSignal(ABC):
         self.targets = set()
 
     def connect(self, target: Callable):
-        self.targets.add(target)
+        if target not in self.targets:
+            self.targets.add(target)
 
     @abstractmethod
     async def emit(self, *args, **kwargs):

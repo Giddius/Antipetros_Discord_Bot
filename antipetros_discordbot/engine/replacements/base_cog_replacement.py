@@ -229,11 +229,9 @@ class AntiPetrosBaseCog(commands.Cog):
 
     async def on_ready_setup(self):
         for loop_name, loop in self.loops.items():
-            if loop.is_running is False:
+            if loop.is_running() is False:
                 loop.start()
                 log.info("loop %s, on Cog %s was started", loop_name, self.name)
-
-        log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
         for loop_name, loop in self.loops.items():

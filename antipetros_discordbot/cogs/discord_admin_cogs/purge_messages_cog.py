@@ -146,8 +146,6 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         self._init_msg_keeper()
         self._other_bot_prefixes = None
         self._remove_double_post_is_dry_run = None
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
 
 
 # endregion[Init]
@@ -155,11 +153,12 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 # region [Setup]
 
     async def on_ready_setup(self):
-
+        await super().on_ready_setup()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
+        await super().update(typus=typus)
         if UpdateTypus.CONFIG in typus:
             await self.hashed_message_class.update_store_for_minutes()
             self._other_bot_prefixes = None

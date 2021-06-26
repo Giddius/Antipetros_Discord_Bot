@@ -70,3 +70,20 @@ LOG_SCRAPE_REGEX = re.compile(r"""(?P<year>\d\d\d\d).?(?P<month>[01]\d).?(?P<day
                               (?P<message>[^\s].*)""", re.VERBOSE)
 
 PROFILING_REGEX = re.compile(r"\<PROFILING\>\smodule\:\s*?(?P<module>.*?)\,\s*?function\:\s(?P<function>.*?)\,\s*?time_taken\:\s*?(?P<time_taken>[\d\.]+).*?\</PROFILING\>", re.IGNORECASE)
+
+
+REAL_LOG_TIME_REGEX = re.compile(r"""(?:\d{4}/\d{2}/\d{2},\s\d{2}:\d{2}:\d{2})
+                                    \s+
+                                    (?P<year>\d{4})
+                                    -
+                                    (?P<month>\d{2})
+                                    -
+                                    (?P<day>\d{2})
+                                    \s
+                                    (?P<hour>\d{2})
+                                    :
+                                    (?P<minute>\d{2})
+                                    :
+                                    (?P<second>\d{2})
+                                    :
+                                    (?:\d{3})""", re.VERBOSE)

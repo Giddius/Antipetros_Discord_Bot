@@ -35,7 +35,7 @@ from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, ContextAskAnswer
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command, AntiPetrosBaseCommand
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker, Seperators
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.converters import CommandConverter, SeparatedListConverter, RoleOrIntConverter
 from antipetros_discordbot.utility.checks import has_attachments, has_image_attachment
@@ -94,6 +94,8 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     public = False
     meta_status = CogMetaStatus.WORKING | CogMetaStatus.OPEN_TODOS | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.DOCUMENTATION_MISSING | CogMetaStatus.FOR_DEBUG
 
+    helper_ids = {173877651923009537, 176345767957495808, 320739533417218048, 558324646521602059, 563758194376179737, 346595708180103170}
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.ready = False
@@ -103,6 +105,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         self.edit_embed_message = None
         self.general_db = general_db
         self.attachment_type_file = pathmaker(APPDATA['debug'], "attachment_types.json")
+        self.helper = set()
         if os.path.isfile(self.attachment_type_file) is False:
             writejson([], self.attachment_type_file)
         glog.class_init_notification(log, self)
@@ -123,8 +126,14 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         writejson(data, self.attachment_type_file)
         log.debug("collected attachment data types %s", ','.join(collected_types))
 
-    async def on_ready_setup(self):
+    async def get_helper(self):
+        self.helper = []
+        for helper_id in self.helper_ids:
+            self.helper.append(await self.bot.fetch_antistasi_member(helper_id))
+        self.helper = set(self.helper)
 
+    async def on_ready_setup(self):
+        await self.get_helper()
         self.bob_user = await self.bot.fetch_antistasi_member(346595708180103170)
         for member in self.bot.antistasi_guild.members:
             if member.bot is True:
@@ -473,6 +482,23 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     @auto_meta_info_command()
     async def tell_allowed_channels(self, ctx: commands.Context, command: CommandConverter):
         await ctx.send(command.allowed_channels)
+
+    @auto_meta_info_command()
+    async def tell_helper(self, ctx: commands.Context):
+        text = '\n'.join(str(member) for member in self.helper)
+
+        await ctx.send(text, allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
+
+    @auto_meta_info_command()
+    async def ping_helper(self, ctx: commands.Context, *, text: str = None):
+        msg = ' | '.join(helper.mention for helper in self.helper) + f' | {self.bot.creator.mention}'
+        if text is not None:
+            msg = f"***{text}***\n{Seperators.make_line()}\n\n{msg}"
+        reference = None
+        if ctx.message.reference is not None:
+            reference = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+        await ctx.send(msg, allowed_mentions=discord.AllowedMentions.all(), reference=reference)
+        await delete_message_if_text_channel(ctx)
 
     async def cog_check(self, ctx):
         # if ctx.author.id == 576522029470056450:

@@ -287,9 +287,7 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
         TeamItem.config_name = self.config_name
         TeamItem.bot = self.bot
         self.color = "yellowgreen"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
+
 
 # endregion [Init]
 
@@ -301,12 +299,14 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
 # region [Setup]
 
     async def on_ready_setup(self):
+        await super().on_ready_setup()
         await self.bot.antistasi_guild.chunk(cache=True)
         await self._load_team_items()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
+        await super().update(typus=typus)
         await self.bot.antistasi_guild.chunk(cache=True)
         log.debug('cog "%s" was updated', str(self))
 
