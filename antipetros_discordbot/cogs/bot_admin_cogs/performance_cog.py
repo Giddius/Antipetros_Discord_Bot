@@ -67,7 +67,7 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-DATA_COLLECT_INTERVALL = 60 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 600  # seconds
+DATA_COLLECT_INTERVALL = 60 if os.getenv('IS_DEV', '0').casefold() in ['yes', 'true', '1'] else 600  # seconds
 
 # endregion[Constants]
 
@@ -112,6 +112,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 # endregion[Init]
 
 # region [Setup]
+
 
     async def on_ready_setup(self):
         _ = psutil.cpu_percent(interval=None)
@@ -296,7 +297,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Helper]
 
-
     async def format_graph(self, amount_data: int):
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
         if amount_data <= 3600 // DATA_COLLECT_INTERVALL:
@@ -404,7 +404,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 
 # region [SpecialMethods]
-
 
     def __str__(self) -> str:
         return self.qualified_name
