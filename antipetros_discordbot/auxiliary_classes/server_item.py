@@ -378,6 +378,8 @@ class IsOnlineMessage:
         if self.online_status is None:
             await self.server.is_online()
         if self.online_status is ServerStatus.OFF:
+            embed_fields.append(EmbedFieldItem(name="Is __OFFLINE__", value=ZERO_WIDTH, inline=True))
+            embed_fields.append(EmbedFieldItem(name="ON", value="❌", inline=True))
             return embed_fields
 
         info_data = await self.server.get_info()
