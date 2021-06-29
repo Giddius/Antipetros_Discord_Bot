@@ -159,7 +159,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [Properties]
 
-
     @property
     def battlemetrics_auth(self):
         if os.getenv('BATTLEMETRICS_TOKEN') is None:
@@ -223,6 +222,10 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                 'webhooks': self.request_restart_notification_webhooks}
 
     @property
+    def restart_request_timeout(self):
+        return COGS_CONFIG.retrieve(self.config_name, "restart_request_timeout_minutes", typus=int, direct_fallback=5)
+
+    @property
     def is_online_interaction_emojis(self):
         emojis = {'request_mod_data': 'armahosts',
                   'request_restart': 'bertha'}
@@ -271,7 +274,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Setup]
 
 # region [Loops]
-
 
     @ tasks.loop(minutes=4, reconnect=True)
     async def update_logs_loop(self):
@@ -673,7 +675,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [HelperMethods]
 
-
     async def clear_all_is_online_messages_mechanism(self):
         self.halt_is_online_update = True
         if self.is_online_message_loop.is_running() is True:
@@ -726,7 +727,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             await channel.send('Canceled!')
             return
         await channel.send('Contacting an admin now for the restart, he will then contact you. Please be patient!')
-        if server_item.last_restart_request_received is not None and server_item.last_restart_request_received + timedelta(minutes=5) >= datetime.now(tz=timezone.utc):
+        if server_item.last_restart_request_received is not None and server_item.last_restart_request_received + timedelta(minutes=self.restart_request_timeout) >= datetime.now(tz=timezone.utc):
             await channel.send('Already received a restart request in the last 5 min')
             return
         now = datetime.now(tz=timezone.utc)
