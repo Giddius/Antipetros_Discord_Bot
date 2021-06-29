@@ -14,8 +14,8 @@ from typing import Tuple
 import re
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord import Embed, ChannelType
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process as fuzzprocess
+from rapidfuzz import fuzz
+from rapidfuzz import process as fuzzprocess
 from discord.ext import commands
 import discord
 import asyncio
@@ -137,7 +137,7 @@ class ErrorHandler(SubSupportBase):
         log.error(f"{event_method} - '{arg_string}' - '{kwarg_string}'", exc_info=True)
 
     async def execute_on_command_errors(self, ctx, error: Exception):
-
+        print(f"{error.__cause__=}")
         error_traceback = ''.join(traceback.format_tb(error.__traceback__)) + f"\n\n{'+'*50}\n{error.__cause__}\n{'+'*50}"
 
         if hasattr(error, 'original'):

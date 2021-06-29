@@ -13,7 +13,7 @@ from functools import wraps, partial
 from concurrent.futures import ThreadPoolExecutor
 from inspect import getclosurevars
 import json
-from typing import Awaitable, Iterable, Mapping, Tuple, TypeVar, Iterable, Dict
+from typing import Awaitable, Iterable, Mapping, Tuple, TypeVar, Iterable, Dict, Union
 # * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
 from validator_collection import validators
@@ -138,16 +138,26 @@ def seconds_to_pretty(seconds: int, decimal_places: int = 1):
     return out_string
 
 
-def alt_seconds_to_pretty(seconds: int, decimal_places: int = 1, seperator: str = ', ', shorten_name_to: int = None):
+def alt_seconds_to_pretty(seconds: int, decimal_places: int = 1, separator: str = ", ", last_separator: str = None, shorten_name_to: int = None):
+    last_separator = separator if last_separator is None else last_separator
     out_string = ''
+    parts = []
     rest = seconds
     for name, factor in FACTORS.items():
         sub_result, rest = divmod(rest, factor)
         if sub_result != 0:
             if shorten_name_to is not None:
                 name = name[0:shorten_name_to]
-            out_string += f"{str(int(round(sub_result,ndigits=decimal_places)))} {name} {seperator}"
-    return out_string.rstrip(seperator)
+            parts.append(f"{str(int(round(sub_result, ndigits=decimal_places)))} {name}")
+    for index, part in enumerate(parts):
+        if index == 0:
+            out_string += f"{part}"
+        elif index != (len(parts) - 1):
+            out_string += f"{separator}{part}"
+        else:
+            out_string += f"{last_separator}{part}"
+
+    return out_string.strip()
 
 
 async def async_seconds_to_pretty_normal(seconds: int, decimal_places: int = 1):

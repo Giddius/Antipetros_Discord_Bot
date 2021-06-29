@@ -136,6 +136,8 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
 
     @commands.Cog.listener(name="on_raw_message_edit")
     async def update_rules(self, payload: discord.RawMessageUpdateEvent):
+        if self.completely_ready is False:
+            return
         if payload.channel_id != self.rules_channel_id:
             return
         asyncio.create_task(self.get_rules_messages())
@@ -243,12 +245,14 @@ class RulesCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.A
     async def _make_rules_embed(self, rule_message: discord.Message):
         fields = await self.parse_rules(rule_message)
         fields.append(self.bot.field_item(name="Additional Rules Documents", value='\n'.join(await self.parse_links())))
+
         timestamp = rule_message.edited_at if rule_message.edited_at is not None else rule_message.created_at
+        fields.append(self.bot.field_item(name='last updated', value=timestamp.strftime(self.bot.std_date_time_format_utc)))
         title = rule_message.content.splitlines()[0] if '----' not in rule_message.content.splitlines()[0].strip('*') else rule_message.content.splitlines()[1]
         embed_data = await self.bot.make_generic_embed(title=title,
                                                        description=self.rules_channel.mention,
                                                        timestamp=timestamp,
-                                                       footer={'text': "Last updated:"},
+                                                       typus="rules_embed",
                                                        fields=fields,
                                                        thumbnail=str(self.bot.bertha_emoji.url),
                                                        color='red')

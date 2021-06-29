@@ -1,2 +1,2 @@
-https://github.com/jorgeajimenezl/aiodav.git
+https://github.com/Giddius/aiodav.git
 https://github.com/overfl0/Armaclass.git

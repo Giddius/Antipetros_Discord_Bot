@@ -86,8 +86,8 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         super().__init__(bot)
         self.faq_items = {}
         self.color = "honeydew"
-        self.trigger_regex = re.compile(rf"(?:faq)|(?:\<#{self.faq_channel_id}\>)\s*(?P<numbers>(?:\d+[\s\,]*)+)", re.IGNORECASE)
-
+        self.trigger_regex = re.compile(rf"\<#{self.faq_channel_id}\>\s*(?P<numbers>(?:\d+(?:[\s\,]|(?:\s*and\s*)|(?:\s*or\s*))*)+)", re.IGNORECASE)
+        self._faq_message_trigger_enabled = None
 # endregion [Init]
 
 # region [Properties]
@@ -105,11 +105,15 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
     def faq_name_table(self) -> dict:
         return loadjson(self.faq_name_data_file)
 
+    @property
+    def faq_message_trigger_enabled(self):
+        if self._faq_message_trigger_enabled is None:
+            self._faq_message_trigger_enabled = COGS_CONFIG.retrieve(self.config_name, 'faq_message_trigger_enabled', typus=bool, direct_fallback=False)
+        return self._faq_message_trigger_enabled
 
 # endregion [Properties]
 
 # region [Setup]
-
 
     async def on_ready_setup(self):
         await super().on_ready_setup()
@@ -129,7 +133,8 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
             FaqItem.faq_channel = self.faq_channel
             await asyncio.to_thread(FaqItem.set_background_image)
             asyncio.create_task(self.collect_raw_faq_data())
-
+        if UpdateTypus.CONFIG in typus:
+            self._faq_message_trigger_enabled = None
         log.debug('cog "%s" was updated', str(self))
 
 
@@ -141,13 +146,18 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [Listener]
 
+
     @commands.Cog.listener(name='on_message')
     async def faq_message_trigger_listener(self, message: discord.Message):
+        if self.completely_ready is False:
+            return
+        if self.faq_message_trigger_enabled is False:
+            return
         content = message.content
 
         content_match = self.trigger_regex.search(content)
         if content_match:
-            numbers = [number for number in map(lambda x: x.strip(), self.number_split_regex.split(content_match.group("numbers"))) if number]
+            numbers = [number for number in map(lambda x: x.strip(), self.number_split_regex.split(content_match.group("numbers"))) if number and number.casefold() not in {'and', 'or'}]
             for number in numbers:
                 try:
                     faq_number = int(number)
@@ -161,7 +171,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
     @commands.Cog.listener(name='on_message')
     async def faq_message_added_listener(self, message):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         channel = message.channel
         if channel is self.faq_channel:
@@ -169,7 +179,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
     @commands.Cog.listener(name='on_raw_message_delete')
     async def faq_message_deleted_listener(self, payload):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
@@ -177,7 +187,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
     @commands.Cog.listener(name='on_raw_message_edit')
     async def faq_message_edited_listener(self, payload):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
@@ -187,6 +197,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_group(aliases=['faq'], invoke_without_command=True, case_insensitive=True)
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -301,6 +312,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [HelperMethods]
 
+
     async def collect_raw_faq_data(self):
         channel = self.faq_channel
         self.faq_items = {}
@@ -326,7 +338,6 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

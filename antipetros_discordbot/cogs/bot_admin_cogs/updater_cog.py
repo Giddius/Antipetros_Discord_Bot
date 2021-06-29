@@ -121,7 +121,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
     @tasks.loop(minutes=30)
     async def cyclic_update_loop(self):
-        if await self.bot.running_longer_than(minutes=5) is False:
+        if self.completely_ready is False:
             return
         log.info('cyclic update started')
 
@@ -135,21 +135,21 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
     @commands.Cog.listener(name="on_guild_channel_delete")
     async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info('pdate Signal %s was send, because Guild channel "%s" was removed', UpdateTypus.GUILD, channel.name)
         await self.send_update_signal(UpdateTypus.GUILD)
 
     @commands.Cog.listener(name="on_guild_channel_create")
     async def guild_structure_changes_listener_create(self, channel: discord.abc.GuildChannel):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info('Update Signal %s was send, because Guild channel "%s" was created', UpdateTypus.GUILD, channel.name)
         await self.send_update_signal(UpdateTypus.GUILD)
 
     @commands.Cog.listener(name="on_guild_channel_update")
     async def guild_structure_changes_listener_update(self, before_channel: discord.abc.GuildChannel, after_channel: discord.abc.GuildChannel):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info('Update Signal %s was send, because Guild channel "%s"/"%s" was updated', UpdateTypus.GUILD, before_channel.name, after_channel.name)
         await self.send_update_signal(UpdateTypus.GUILD)
@@ -157,28 +157,28 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
     @ commands.Cog.listener(name="on_guild_update")
     @ universal_log_profiler
     async def guild_update_listener(self, before_guild: discord.Guild, after_guild: discord.Guild):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info('Update Signal %s was send, because Guild was updated', UpdateTypus.GUILD)
         await self.send_update_signal(UpdateTypus.GUILD)
 
     @commands.Cog.listener(name="on_member_join")
     async def member_join_listener(self, member: discord.Member):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info("Update Signal %s was send, because a new member joined", UpdateTypus.MEMBERS)
         await self.send_update_signal(UpdateTypus.MEMBERS)
 
     @commands.Cog.listener(name="on_member_remove")
     async def member_remove_listener(self, member: discord.Member):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info("Update Signal %s was send, because a was removed or left", UpdateTypus.MEMBERS)
         await self.send_update_signal(UpdateTypus.MEMBERS)
 
     @commands.Cog.listener(name="on_member_update")
     async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         if set(before.roles) != set(after.roles):
             log.info("Update Signal %s was send, because a members roles changed", UpdateTypus.MEMBERS | UpdateTypus.ROLES)
@@ -186,7 +186,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
     @commands.Cog.listener(name="on_member_update")
     async def member_name_changed_listener(self, before: discord.Member, after: discord.Member):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         if before.display_name != after.display_name:
             log.info("Update Signal %s was send, because a members name changed", UpdateTypus.MEMBERS)
@@ -194,29 +194,28 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
     @commands.Cog.listener(name="on_guild_role_create")
     async def role_created_listener(self, role: discord.Role):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info("Update Signal %s was send, because the Role %s was created", UpdateTypus.MEMBERS, role.name)
         await self.send_update_signal(UpdateTypus.ROLES)
 
     @commands.Cog.listener(name="on_guild_role_delete")
     async def role_deleted_listener(self, role: discord.Role):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info("Update Signal %s was send, because the Role %s was deleted", UpdateTypus.MEMBERS, role.name)
         await self.send_update_signal(UpdateTypus.ROLES)
 
     @commands.Cog.listener(name="on_guild_role_update")
     async def role_updated_listener(self, before: discord.Role, after: discord.Role):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info("Update Signal %s was send, because the Role %s was updated", UpdateTypus.MEMBERS, before.name)
         await self.send_update_signal(UpdateTypus.ROLES)
 
     @commands.Cog.listener(name="on_message")
     async def on_message_listener(self, msg: discord.Message):
-        if any([self.ready, self.bot.setup_finished]) is False:
-            log.critical("somethings not ready -> updater_cog_ready: %s, bot_finished_setup: %s", self.ready, self.bot.setup_finished)
+        if self.completely_ready is False:
             return
         if hasattr(self.bot, 'record_channel_usage'):
             await asyncio.create_task(self.bot.record_channel_usage(msg))

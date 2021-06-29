@@ -321,7 +321,7 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
 
     @commands.Cog.listener(name="on_member_update")
     async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):
-        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
+        if self.completely_ready is False:
             return
         if before.roles != after.roles:
             log.debug("updating Team Roster because role on Member was changed")
@@ -329,21 +329,21 @@ class TeamRosterCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCateg
 
     @commands.Cog.listener(name="on_guild_role_create")
     async def role_added_listener(self, role: discord.Role):
-        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
+        if self.completely_ready is False:
             return
         log.debug("updating Team Roster because new role was created")
         await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_delete")
     async def role_removed_listener(self, role: discord.Role):
-        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
+        if self.completely_ready is False:
             return
         log.debug("updating Team Roster because role was deleted")
         await self._update_team_roster()
 
     @commands.Cog.listener(name="on_guild_role_update")
     async def role_updated_listener(self, before: discord.Role, after: discord.Role):
-        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
+        if self.completely_ready is False:
             return
         log.debug("updating Team Roster because role was modifed")
         await self._update_team_roster()

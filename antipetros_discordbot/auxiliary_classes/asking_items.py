@@ -67,7 +67,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
 from antipetros_discordbot.utility.emoji_handling import NUMERIC_EMOJIS, ALPHABET_EMOJIS, CHECK_MARK_BUTTON_EMOJI, CROSS_MARK_BUTTON_EMOJI, letter_to_emoji, CANCEL_EMOJI
 from antipetros_discordbot.utility.exceptions import MissingNeededAttributeError, NeededClassAttributeNotSet, AskCanceledError, AskTimeoutError
-from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import better_shorten, async_better_shorten, alternative_better_shorten
+from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import shorten_string
 
 if TYPE_CHECKING:
     pass
@@ -450,6 +450,7 @@ class AskConfirmation(AbstractUserAsking):
     def check_if_answer(self, payload: discord.RawReactionActionEvent):
         checks = [payload.user_id == self.author.id,
                   payload.channel_id == self.channel.id,
+                  payload.message_id == self.ask_message.id,
                   str(payload.emoji) in self.answer_table or str(payload.emoji) == self.cancel_emoji]
 
         return all(checks)
@@ -579,7 +580,7 @@ class AskFile(AbstractUserAsking):
             embed = self.ask_embed_data.get('embed')
             embed.remove_field(0)
             new_text = ListMarker.make_list([f"`{attachment.filename}`" for attachment in self.collected_attachments])
-            new_text = alternative_better_shorten(new_text, max_length=1000, shorten_side='left', split_on='\n')
+            new_text = shorten_string(new_text, max_length=1000, shorten_side='left', split_on='\n')
             embed.insert_field_at(0, name='Stored Attachments', value=new_text, inline=False)
             await self.ask_message.edit(**self.ask_embed_data, allowed_mentions=discord.AllowedMentions.none())
 
@@ -647,7 +648,7 @@ class AskInputManyAnswers(AskInput):
         if self.collected_text:
             embed = self.ask_embed_data.get('embed')
             embed.remove_field(0)
-            new_text = alternative_better_shorten('\n'.join(self.collected_text), max_length=1000, shorten_side='left')
+            new_text = shorten_string('\n'.join(self.collected_text), max_length=1000, shorten_side='left')
 
             embed.insert_field_at(0, name='Stored text', value=new_text, inline=False)
             await self.ask_message.edit(**self.ask_embed_data, allowed_mentions=discord.AllowedMentions.none())

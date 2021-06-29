@@ -219,7 +219,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
     @commands.Cog.listener(name='on_raw_reaction_add')
     async def subscription_reaction(self, payload):
-        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
+        if self.completely_ready is False:
             return
         try:
             channel = self.bot.get_channel(payload.channel_id)
@@ -247,7 +247,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
     @commands.Cog.listener(name='on_raw_reaction_remove')
     async def unsubscription_reaction(self, payload):
-        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
+        if self.completely_ready is False:
             return
         try:
             channel = self.bot.get_channel(payload.channel_id)

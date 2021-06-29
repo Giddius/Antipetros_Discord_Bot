@@ -187,7 +187,8 @@ class FaqItem:
                                                  title=self.question,
                                                  description=self.answer + '\n\n' + self.faq_channel.mention,
                                                  timestamp=self.creation_date_time,
-                                                 color="random")
+                                                 color="random",
+                                                 typus="faq_embed")
 
     def __repr__(self):
         return f"{self.__class__.__name__}(number={self.number},question={self.question})"

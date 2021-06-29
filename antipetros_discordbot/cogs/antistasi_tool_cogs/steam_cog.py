@@ -22,7 +22,7 @@ from antipetros_discordbot.utility.misc import loop_starter
 
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
-from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import alternative_better_shorten
+from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import shorten_string
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -156,7 +156,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 
     @tasks.loop(minutes=5, reconnect=True)
     async def check_for_updates(self):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         for item in self.registered_workshop_items:
             asyncio.create_task(self._check_item(item))
@@ -181,7 +181,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
                 await ctx.send(f'Item "{item.title}" with id "{item.id}" already registered!')
                 continue
             req_value = '\n'.join([f"**{req_name}**\n{req_link}" for req_name, req_link in item.requirements]) if len(item.requirements) > 0 else 'No Requirements'
-            req_value = alternative_better_shorten(req_value, 1000, ensure_space_around_placeholder=True)
+            req_value = shorten_string(req_value, 1000, ensure_space_around_placeholder=True)
             fields = [self.bot.field_item(name="Last Updated:", value=item.updated, inline=False),
                       self.bot.field_item(name='Requirements:', value=req_value, inline=False),
                       self.bot.field_item(name="Size:", value=item.size, inline=False)]

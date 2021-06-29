@@ -94,7 +94,16 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     public = False
     meta_status = CogMetaStatus.WORKING | CogMetaStatus.OPEN_TODOS | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.DOCUMENTATION_MISSING | CogMetaStatus.FOR_DEBUG
 
-    helper_ids = {173877651923009537, 176345767957495808, 320739533417218048, 558324646521602059, 563758194376179737, 346595708180103170}
+    helper_ids = {173877651923009537,
+                  176345767957495808,
+                  320739533417218048,
+                  558324646521602059,
+                  563758194376179737,
+                  346595708180103170,
+                  673367656245493772,
+                  153542241539981312,
+                  339198001472077834,
+                  345957299569033218}
 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
@@ -112,6 +121,8 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
 
     @commands.Cog.listener(name='on_message')
     async def collect_attachment_types(self, message: discord.Message):
+        if self.completely_ready is False:
+            return
         if os.getenv("COLLECT_ATTACHMENT_TYPES_ENABLED", "0") != "1":
             return
         collected_types = []

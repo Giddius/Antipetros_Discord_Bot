@@ -65,6 +65,10 @@ class TimeKeeper(SubSupportBase):
         return "%Y-%m-%d %H:%M:%S"
 
     @property
+    def std_date_time_format_utc(self) -> str:
+        return self.std_date_time_format + ' UTC'
+
+    @property
     def uptime(self):
         now = datetime.now(tz=timezone.utc)
         delta_time = now - self.start_time

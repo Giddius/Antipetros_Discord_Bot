@@ -39,6 +39,7 @@ from antipetros_discordbot.utility.sqldata_storager import ChannelUsageResult
 from antipetros_discordbot.auxiliary_classes.asking_items import AbstractUserAsking
 from antipetros_discordbot.cogs.community_events_cogs.voting_cog import VoteItem
 from discord.client import _cleanup_loop, _cancel_tasks
+from antipetros_discordbot.utility.sqldata_storager import general_db
 import signal
 import platform
 # endregion[Imports]
@@ -219,6 +220,7 @@ class AntiPetrosBot(commands.Bot):
 
 # ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
+
     def add_self_to_classes(self) -> None:
         ChannelUsageResult.bot = self
         AbstractUserAsking.bot = self
@@ -226,7 +228,7 @@ class AntiPetrosBot(commands.Bot):
     async def _start_sessions(self) -> None:
         self.sessions = {}
         if self.sessions.get('aio_request_session', None) is None or self.sessions.get('aio_request_session', None).closed is True:
-            self.aio_request_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(enable_cleanup_closed=True))
+            self.aio_request_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(enable_cleanup_closed=True, limit=5))
             self.sessions['aio_request_session'] = self.aio_request_session
 
         log.info("Session '%s' was started", repr(self.sessions['aio_request_session']))
@@ -433,7 +435,6 @@ class AntiPetrosBot(commands.Bot):
 
 # region [Loops]
 
-
     @ tasks.loop(count=1, reconnect=True)
     async def _watch_for_config_changes(self) -> None:
         # TODO: How to make sure they are also correctly restarted, regarding all loops on the bot
@@ -460,7 +461,6 @@ class AntiPetrosBot(commands.Bot):
 # endregion[Loops]
 
 # region [Helper]
-
 
     @staticmethod
     def _get_intents() -> discord.Intents:
@@ -642,16 +642,12 @@ class AntiPetrosBot(commands.Bot):
         await self._close_sessions()
         if self.activity_update_task is not None:
             self.activity_update_task.cancel()
-        # for task in asyncio.all_tasks():
-        #     try:
-        #         task.cancel()
-        #     except asyncio.CancelledError:
-        #         log.debug("task %s was cancelled", task.get_name())
-        #     finally:
-        #         log.debug("task %s was cancelled", task.get_name())
 
         await asyncio.sleep(5)
-
+        try:
+            await general_db.shutdown()
+        except Exception as error:
+            log.error(error, exc_info=True)
         log.info("calling bot method super().close()")
         await super().close()
         self._clean_temp_folder()

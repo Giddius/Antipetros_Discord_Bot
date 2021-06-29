@@ -12,6 +12,7 @@ from collections import Counter
 import psutil
 import discord
 from discord.ext import commands, flags, tasks, ipc
+from typing import TYPE_CHECKING
 from textwrap import dedent
 import asyncio
 from functools import cached_property
@@ -21,6 +22,9 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.misc import antipetros_repo_rel_path
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand
+
+if TYPE_CHECKING:
+    from antipetros_discordbot.auxiliary_classes.server_item import ServerItem, IsOnlineMessage
 # endregion[Imports]
 
 # region [Constants]
@@ -141,7 +145,23 @@ class AioGeneralStorageSQLite:
         self.db = AioGidSqliteDatabase(db_location=DB_LOC_GENERAL, script_location=SCRIPT_LOC_GENERAL, log_execution=LOG_EXECUTION)
         self.was_created = self.db.startup_db()
         self.db.vacuum()
+        self.is_shutdown = False
         glog.class_init_notification(log, self)
+
+    async def shutdown(self):
+        log.debug("shutting down DB %s", self.db.name)
+        await self.backup_database()
+        self.is_shutdown = True
+
+    async def backup_database(self):
+        log.debug("backing up database to %s", self.db.backup_path)
+        shutil.copy(self.db.path, self.db.backup_path)
+        await self._truncate_backup_folder()
+
+    async def _truncate_backup_folder(self):
+        for backup_file in self.db.stored_backups[self.db.amount_backups_to_keep:]:
+            backup_file.delete()
+            await asyncio.sleep(0)
 
     async def aio_vacuum(self):
         await self.db.aio_vacuum()
@@ -258,7 +278,10 @@ class AioGeneralStorageSQLite:
         timestamps = []
         amount_players = []
         for row in result:
-            timestamps.append(await asyncio.sleep(0, datetime.strptime(row['timestamp'], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)))
+            if isinstance(row['timestamp'], str):
+                timestamps.append(await asyncio.sleep(0, datetime.strptime(row['timestamp'], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)))
+            else:
+                timestamps.append(row['timestamp'])
             amount_players.append(await asyncio.sleep(0, row['amount_players']))
             await asyncio.sleep(0)
         return timestamps, amount_players
@@ -344,6 +367,40 @@ class AioGeneralStorageSQLite:
 
     async def insert_memory_perfomance(self, timestamp: datetime, memory_in_use: int):
         await self.db.aio_write('insert_memory_performance', (timestamp, memory_in_use))
+
+    async def insert_misc_message(self, misc_message: discord.Message, name: str, extra_info: str = None):
+        await self.db.aio_write("insert_misc_message", (name, name, misc_message.channel.id, misc_message.id, extra_info))
+
+    async def delete_misc_message(self, name: str):
+        await self.db.aio_write("delete_is_online_message_by_server", (name,))
+
+    async def get_misc_message_by_name(self, name: str):
+        result = await self.db.aio_query("get_misc_message_by_name", (name,), row_factory=True)
+        if result:
+            return dict(result[0])
+        else:
+            return None
+
+    async def get_is_online_message_id(self, server: "ServerItem"):
+        result = await self.db.aio_query('get_is_online_message_by_server', (server.name,), row_factory=True)
+        if result:
+            return result[0]['message_id']
+        else:
+            return None
+
+    async def insert_is_online_message(self, is_online_message):
+        await self.db.aio_write("insert_is_online_message", (is_online_message.server.name, is_online_message.message.id))
+
+    async def remove_is_online_message(self, is_online_message):
+        await self.db.aio_write('delete_is_online_message_by_server', (is_online_message.server.name,))
+
+    async def get_is_online_message_ids(self):
+        result = await self.db.aio_query('get_all_is_online_message_ids', row_factory=True)
+        return {row['message_id']for row in result}
+
+    async def get_server_name_from_is_online_message_id(self, is_online_message_id: int):
+        result = await self.db.aio_query("get_server_name_from_is_online_id", (is_online_message_id,), row_factory=True)
+        return result[0]['name']
 
     def __str__(self):
         return self.__class__.__name__

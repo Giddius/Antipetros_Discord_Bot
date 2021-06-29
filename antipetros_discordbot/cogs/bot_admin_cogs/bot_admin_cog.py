@@ -141,7 +141,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
     @commands.Cog.listener(name='on_reaction_add')
     async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         if self.listeners_enabled.get("stop_the_reaction_petros_listener", False) is False:
             return

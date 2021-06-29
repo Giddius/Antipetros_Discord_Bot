@@ -299,7 +299,7 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
     @commands.Cog.listener(name='on_message')
     async def add_reaction_to_message_sorter_listener(self, msg: discord.Message):
-        if self.ready is False:
+        if self.completely_ready is False:
             return
         try:
             if msg.author.bot is True:

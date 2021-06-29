@@ -12,8 +12,8 @@ import random
 from typing import Tuple, Union
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord import Color
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process as fuzzprocess
+from rapidfuzz import fuzz
+from rapidfuzz import process as fuzzprocess
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 

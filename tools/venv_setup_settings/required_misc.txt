@@ -17,11 +17,10 @@ cryptography==3.4.7
 dateparser==1.0.0
 discord-ext-ipc==2.0.0
 discord-flags==2.1.1
-discord.py==1.7.1
+discord.py==1.7.3
 dpytest==0.0.23
 easydev==0.11.0
 emoji==1.2.0
-fuzzywuzzy==0.18.0
 gidappdata==0.1.14
 gidconfig==0.2.3
 gidlogger==0.1.32
@@ -36,11 +35,11 @@ paramiko==2.7.2
 psutil==5.8.0
 pyfiglet==0.8.post1
 pyparsing
-python-Levenshtein==0.12.2
 python-a2s==1.3.0
 python-dotenv==0.17.0
 python-youtube==0.8.0
 pytz
+rapidfuzz
 sortedcontainers
 sqflint==0.3.2
 tldextract==3.1.0

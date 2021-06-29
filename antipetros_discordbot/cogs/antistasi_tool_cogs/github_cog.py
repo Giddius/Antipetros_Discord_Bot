@@ -23,7 +23,8 @@ from statistics import mean
 import aiohttp
 import discord
 from antipetros_discordbot.utility.converters import GitHubLabelConverter, GithubLabelOperatorConverter
-from fuzzywuzzy import process as fuzzprocess
+from rapidfuzz import fuzz
+from rapidfuzz import process as fuzzprocess
 import random
 from discord.ext import tasks, commands, flags
 from async_property import async_property
@@ -307,7 +308,8 @@ class BranchItem:
                                                            url=file_data.html_url,
                                                            author={"name": commit.author.login, "url": commit.author.html_url, 'icon_url': commit.author.avatar_url},
                                                            timestamp=commit.commit.author.date,
-                                                           thumbnail=thumbnail)
+                                                           thumbnail=thumbnail,
+                                                           typus="github_file_embed")
             embed_data['files'].append(content_file)
             await msg.channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none(), reference=msg.to_reference(fail_if_not_exists=False))
 
@@ -369,14 +371,14 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         await super().on_ready_setup()
         await self._update_listener_settings()
         await self.make_branches()
-        await self.get_labels()
+        asyncio.create_task(asyncio.to_thread(self.get_labels))
         self.ready = True
 
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
         await super().update(typus=typus)
-        asyncio.create_task(self.get_labels())
+        asyncio.create_task(asyncio.to_thread(self.get_labels))
         if UpdateTypus.CONFIG in typus:
             await self._update_trigger_prefix_regex()
         elif UpdateTypus.CYCLIC in typus:
@@ -389,7 +391,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
     @tasks.loop(minutes=5, reconnect=True)
     async def tell_rate_limit_loop(self):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info("Github Rate limit remaining: %s", self.github_client.rate_limiting[0])
 
@@ -399,7 +401,9 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
     @commands.Cog.listener(name='on_message')
     async def listen_for_github_request_in_message(self, msg: discord.Message):
-        if any([self.ready, self.bot.setup_finished, self.listen_for_github_request_in_message_enabled is False]) is False:
+        if self.completely_ready is False:
+            return
+        if self.listen_for_github_request_in_message_enabled is False:
             return
 
         if BranchItem.is_waiting_for_rate_limit_reset is True:
@@ -407,6 +411,8 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
         channel = msg.channel
         author = msg.author
+        if self.bot.is_debug is True and channel.id != 645930607683174401:
+            return
         if channel.type is discord.ChannelType.private:
             return
         if author.bot is True:
@@ -636,9 +642,8 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [HelperMethods]
 
-    async def get_labels(self):
-        labels = await asyncio.to_thread(self.antistasi_repo.get_labels)
-        self.labels = {label.name.casefold(): label for label in labels}
+    def get_labels(self):
+        self.labels = {label.name.casefold(): label for label in self.antistasi_repo.get_labels()}
         return self.labels
 
     async def _update_listener_settings(self):
@@ -650,11 +655,13 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
     async def get_branch_names(self, min_date: datetime):
         branches = await asyncio.to_thread(self.antistasi_repo.get_branches)
-        for branch in branches:
-            latest_commit_data = await asyncio.to_thread(lambda x: x.commit.commit.author.date, branch)
-            if latest_commit_data > min_date:
+        with ThreadPoolExecutor() as pool:
+            for branch in branches:
+                latest_commit_data = await self.bot.loop.run_in_executor(pool, lambda x: x.commit.commit.author.date, branch)
+                if latest_commit_data > min_date:
 
-                yield await asyncio.sleep(0, branch.name)
+                    yield branch.name
+                await asyncio.sleep(0)
 
     async def notify_creator_rate_limit_hit(self, reset_time: datetime):
         message = f"Github rate-limit was hit and will reset at {reset_time.strftime(self.bot.std_date_time_format + ' UTC')}"
@@ -696,7 +703,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         fields = [self.bot.field_item(name='State', value=issue.state, inline=False),
                   self.bot.field_item(name='Amount Comments', value=issue.comments, inline=True),
                   self.bot.field_item(name='Labels', value=ListMarker.make_list([f"`{item.name}`" for item in issue.labels]), inline=False)]
-        return await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail, url=url, timestamp=timestamp, fields=fields, author=author)
+        return await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail, url=url, timestamp=timestamp, fields=fields, author=author, typus='github_issue_embed')
 
     async def make_branches(self):
         self.branches = []

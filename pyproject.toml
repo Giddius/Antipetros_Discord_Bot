@@ -34,7 +34,7 @@ requires = [
     "dpytest==0.0.23",
     "emoji==1.2.0",
     "ftfy==6.0.1",
-    "fuzzywuzzy==0.18.0",
+    "rapidfuzz==1.4.1",
     "gidappdata==0.1.17",
     "gidconfig==0.2.14",
     "gidlogger==0.1.33",
@@ -62,7 +62,6 @@ requires = [
     "discord-ext-ipc==2.0.0",
     "discord-flags==2.1.1",
     "discord-ext-ipc==2.0.0",
-    "python-Levenshtein==0.12.2",
     "easydev==0.11.0",
 ]
 

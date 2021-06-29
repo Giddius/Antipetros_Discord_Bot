@@ -132,6 +132,10 @@ class AntistasiInformer(SubSupportBase):
         return BASE_CONFIG.retrieve('links', 'antistasi_discord_invite', typus=str, direct_fallback='')
 
     @cached_property
+    def antistasi_url(self):
+        return BASE_CONFIG.retrieve('antistasi_info', 'antistasi_url', typus=str, direct_fallback="https://antistasi.de/")
+
+    @cached_property
     def armahosts_url(self) -> str:
         return BASE_CONFIG.retrieve('antistasi_info', 'armahosts_url', typus=str, direct_fallback='https://www.armahosts.com/game')
 

@@ -59,7 +59,7 @@ from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
 from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation, AskInput, AskInputManyAnswers, AskFile, AskAnswer, AskSelection, AskSelectionOption
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
-from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import alternative_better_shorten
+from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import shorten_string
 from antipetros_discordbot.utility.exceptions import AskCanceledError
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -265,15 +265,15 @@ class ReportItem:
 
         fields.append(self.cog.bot.field_item(name="Incident happend at", value=time_value, inline=False))
 
-        report_text_value = alternative_better_shorten(self.text, 1000, shorten_side='left')
+        report_text_value = shorten_string(self.text, 1000, shorten_side='left')
         fields.append(self.cog.bot.field_item(name="Report Text", value=report_text_value, inline=False))
         files_value = ListMarker.make_list([file.filename for file in self.files])
-        files_value = alternative_better_shorten(files_value, 1000, shorten_side='left')
+        files_value = shorten_string(files_value, 1000, shorten_side='left')
         fields.append(self.cog.bot.field_item(name="Report Attachments", value=files_value, inline=False))
 
         fields.append(self.cog.bot.field_item(name="Public description", value=self.public_text))
 
-        embed_data = await self.cog.bot.make_generic_embed(title=title, description=description, fields=fields, thumbnail=None, author=self.author)
+        embed_data = await self.cog.bot.make_generic_embed(title=title, description=description, fields=fields, thumbnail=None, author=self.author, typus="report_internal_embed")
         if len(self.text) > 1000:
             embed_data['files'].append(await self.text_to_file())
         return embed_data
@@ -311,6 +311,7 @@ class ReportItem:
         embed.remove_author()
         for i in [4, 4]:
             embed.remove_field(i)
+        embed.set_footer(text="report_public_embed")
         embed_data['embed'] = embed
         embed_data['files'] = []
         return embed_data

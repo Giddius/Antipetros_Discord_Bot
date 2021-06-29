@@ -153,8 +153,8 @@ class TranslateCog(AntiPetrosBaseCog):
 # region [Listener]
 
     async def _emoji_translate_checks(self, payload):
-        if self.ready is False or self.bot.setup_finished is False:
-            return False
+        if self.completely_ready is False:
+            return
         command_name = "emoji_translate_listener"
         channel = self.bot.get_channel(payload.channel_id)
         if channel.type is not discord.ChannelType.text:
@@ -187,7 +187,8 @@ class TranslateCog(AntiPetrosBaseCog):
         The translated message is then send to you via DM.
 
         """
-
+        if self.completely_ready is False:
+            return
         if await self._emoji_translate_checks(payload) is False:
             return
         channel = self.bot.get_channel(payload.channel_id)

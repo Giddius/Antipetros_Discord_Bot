@@ -152,6 +152,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         await super().on_ready_setup()
         self.ready = True
@@ -213,8 +214,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
     @commands.Cog.listener(name='on_message')
     async def remove_double_posts(self, msg: discord.Message):
-        if any([self.ready is False, self.bot.setup_finished is False]):
-            log.debug("self.ready = %s, self.bot.setup_finished = %s", self.ready, self.bot.setup_finished)
+        if self.completely_ready is False:
             return
         if self.remove_double_posts_enabled is False:
             return
@@ -254,8 +254,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
     @commands.Cog.listener(name='on_message_edit')
     async def remove_double_posts_update_edited(self, old_msg: discord.Message, new_msg: discord.Message):
-        if any([self.ready is False, self.bot.setup_finished is False]):
-            log.debug("self.ready = %s, self.bot.setup_finished = %s", self.ready, self.bot.setup_finished)
+        if self.completely_ready is False:
             return
         if self.remove_double_posts_enabled is False:
             return
@@ -272,6 +271,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
     @flags.add_flag("--and-giddi", '-gid', type=bool, default=False)
     @flags.add_flag("--number-of-messages", '-n', type=int, default=99999999999)
+    @flags.add_flag("--both-bots", "-b", type=bool, default=False)
     @auto_meta_info_command(cls=AntiPetrosFlagCommand)
     @commands.is_owner()
     @in_allowed_channels()
@@ -285,9 +285,14 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         """
 
         def is_antipetros(message):
-            if command_flags.get('and_giddi') is False:
-                return message.author.id == self.bot.id
-            return message.author.id in [self.bot.id, self.bot.creator.id]
+            author_ids = [self.bot.id]
+            if command_flags.get('and_giddi') is True:
+                author_ids.append(self.bot.creator.id)
+            if command_flags.get('both_bots') is True:
+                all_bot_ids = [799228116865777675, 752943453624729640]
+                author_ids += all_bot_ids
+            author_ids = set(author_ids)
+            return message.author.id in author_ids
 
         await ctx.channel.purge(limit=command_flags.get('number_of_messages'), check=is_antipetros, bulk=True)
         await ctx.send('done', delete_after=60)
@@ -407,6 +412,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
 # region [Helper]
 
+
     async def _create_role_level_display(self, new_level: int) -> str:
         raw_all_roles = sorted(self.bot.antistasi_guild.roles, key=lambda x: x.position)
         all_roles = {role.position: role.name for role in raw_all_roles}
@@ -457,7 +463,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
             image = files.pop(0) if files[0].filename.split('.')[-1] in IMAGE_EXTENSIONS else None
         if self.remove_double_post_is_dry_run is True:
             fields.append(self.bot.field_item(name='**__MESSAGE WAS NOT DELETED__**', value="Reason: `Testing-phase`", inline=False))
-        embed_data = await self.bot.make_generic_embed(title='Double Post Deleted', fields=fields, image=image, thumbnail='warning')
+        embed_data = await self.bot.make_generic_embed(title='Double Post Deleted', fields=fields, image=image, thumbnail='warning', typus="notify_double_posts_embed")
 
         await self.notify_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
@@ -477,7 +483,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
             image = files.pop(0) if files[0].filename.split('.')[-1] in IMAGE_EXTENSIONS else None
         if self.remove_double_post_is_dry_run is True:
             fields.append(self.bot.field_item(name='**__MESSAGE WAS NOT DELETED__**', value="Reason: `Testing-phase`", inline=False))
-        embed_data = await self.bot.make_generic_embed(title='Double Post Deleted', fields=fields, image=image, thumbnail='warning')
+        embed_data = await self.bot.make_generic_embed(title='Double Post Deleted', fields=fields, image=image, thumbnail='warning', typus="notify_double_posts_embed")
         if files:
             embed_data['files'].append(files)
         webhook = discord.Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(self.bot.aio_request_session))

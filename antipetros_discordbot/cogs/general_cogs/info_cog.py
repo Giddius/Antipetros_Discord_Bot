@@ -166,10 +166,14 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
     @commands.Cog.listener(name='on_member_join')
     async def update_time_sorted_member_ids_join(self, member):
+        if self.completely_ready is False:
+            return
         await self.make_time_sorted_guild_member_list()
 
     @commands.Cog.listener(name='on_member_remove')
     async def update_time_sorted_member_ids_remove(self, member):
+        if self.completely_ready is False:
+            return
         await self.make_time_sorted_guild_member_list()
 
 
@@ -220,7 +224,8 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                                                        image=self.bot.portrait_url,
                                                        url=self.bot.github_url,
                                                        fields=fields,
-                                                       thumbnail=None)
+                                                       thumbnail=None,
+                                                       typus="info_bot_embed")
 
         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
@@ -264,7 +269,13 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
             fields = [self.bot.field_item(name=key, value=str(value[0]), inline=value[1]) for key, value in data.items() if value[0]]
 
-            embed_data = await self.bot.make_generic_embed(title=as_guild.name, url="https://antistasi.de/", description=description, thumbnail=thumbnail, fields=fields, image=image)
+            embed_data = await self.bot.make_generic_embed(title=as_guild.name,
+                                                           url="https://antistasi.de/",
+                                                           description=description,
+                                                           thumbnail=thumbnail,
+                                                           fields=fields,
+                                                           image=image,
+                                                           typus="info_guild_embed")
         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command()
@@ -304,7 +315,12 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             for key, value in data.items():
                 if value[0] not in ['', None]:
                     fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
-            embed_data = await self.bot.make_generic_embed(title=member.name, description=f"The one and only {member.mention}", thumbnail=str(member.avatar_url), fields=fields, color=member.color)
+            embed_data = await self.bot.make_generic_embed(title=member.name,
+                                                           description=f"The one and only {member.mention}",
+                                                           thumbnail=str(member.avatar_url),
+                                                           fields=fields,
+                                                           color=member.color,
+                                                           typus="info_me_embed")
         await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command(hidden=True, categories=CommandCategory.ADMINTOOLS)
@@ -339,7 +355,12 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             for key, value in data.items():
                 if value[0] not in ['', None]:
                     fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
-            embed_data = await self.bot.make_generic_embed(title=member.name, description=f"The one and only {member.mention}", thumbnail=str(member.avatar_url), fields=fields, color=member.color)
+            embed_data = await self.bot.make_generic_embed(title=member.name,
+                                                           description=f"The one and only {member.mention}",
+                                                           thumbnail=str(member.avatar_url),
+                                                           fields=fields,
+                                                           color=member.color,
+                                                           typus="info_other_embed")
 
         await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 

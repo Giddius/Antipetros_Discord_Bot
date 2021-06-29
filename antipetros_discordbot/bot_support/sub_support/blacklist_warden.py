@@ -13,7 +13,8 @@ import os
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+from typing import Union
+import discord
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidtools_functions import (loadjson, pathmaker, writejson)
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
@@ -84,10 +85,11 @@ class BlacklistWarden(SubSupportBase):
 
     def get_blacklisted_user(self):
         self._ensure_blacklist_file_exists()
-        self._blacklisted_user = [] if self._blacklisted_user is None else self._blacklisted_user
+        self._blacklisted_user = [] if self._blacklisted_user is None else list(self._blacklisted_user)
         for item in loadjson(self.blacklist_file):
             blacklisted_user_item = BlacklistedUserItem(warden=self, user_id=item.get('id'), user_name=item.get('name'), command_called=item.get('command_called', 0), notified=item.get('notified', False))
             self._blacklisted_user.append(blacklisted_user_item)
+        self._blacklisted_user = frozenset(self._blacklisted_user)
 
     async def unblacklist_user(self, user_item):
         if isinstance(user_item, int):
@@ -113,19 +115,27 @@ class BlacklistWarden(SubSupportBase):
         if self.blacklist_file_exists is False:
             writejson([], self.blacklist_file)
 
+    async def _on_blocked_mechanism(self, target: Union[discord.User, discord.Member]):
+        if target not in self._blacklisted_user:
+            return False
+        else:
+            item = {blacklisted.id: blacklisted for blacklisted in self._blacklisted_user}.get(target.id)
+            log.debug("blacklisted user found")
+            item.tried_calling()
+            if item.notified is False:
+                log.debug("notifying user")
+                await self.notify(target)
+                log.debug(f"user {target.name} was notified")
+                item.notified = True
+                self.save()
+            log.debug('bot usage blocked')
+            return True
+
     async def command_call_blocked(self, ctx):
-        log.debug("command call blocked")
-        user = ctx.author
-        for item in self._blacklisted_user:
-            if item == user:
-                log.debug("blacklisted user found")
-                item.tried_calling()
-                if item.notified is False:
-                    log.debug("notifying user")
-                    await self.notify(user)
-                    log.debug(f"user {ctx.author.name} was notified")
-                    item.notified = True
-                    self.save()
+        return await self._on_blocked_mechanism(target=ctx.author)
+
+    async def other_check_blocked(self, target: Union[discord.User, discord.Member]):
+        return await self._on_blocked_mechanism(target=target)
 
     async def notify(self, user):
         # TODO: make embed
@@ -143,7 +153,7 @@ class BlacklistWarden(SubSupportBase):
         log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
+        self.get_blacklisted_user()
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     def retire(self):

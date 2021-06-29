@@ -132,7 +132,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def cpu_measure_loop(self):
-        if self.ready is False or self.bot.setup_finished is False:
+        if self.completely_ready is False:
             return
         log.info("measuring cpu")
         now = datetime.now(tz=timezone.utc)
@@ -143,7 +143,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def latency_measure_loop(self):
-        if self.ready is False or self.bot.setup_finished is False:
+        if self.completely_ready is False:
             return
 
         log.info("measuring latency")
@@ -171,7 +171,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def memory_measure_loop(self):
-        if self.ready is False or self.bot.setup_finished is False:
+        if self.completely_ready is False:
             return
         log.info("measuring memory usage")
         now = datetime.now(tz=timezone.utc)

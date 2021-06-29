@@ -67,7 +67,7 @@ from antipetros_discordbot.utility.exceptions import NeededClassAttributeNotSet
 from antipetros_discordbot.engine.replacements import auto_meta_info_command, AntiPetrosBaseCog, RequiredFile, RequiredFolder, auto_meta_info_group, AntiPetrosFlagCommand, AntiPetrosBaseCommand, AntiPetrosBaseGroup, CommandCategory
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 from PIL import Image
-from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import alternative_better_shorten
+from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import shorten_string
 from antipetros_discordbot.abstracts.connect_signal import AbstractConnectSignal
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -290,11 +290,11 @@ class VoteItem:
         embed.timestamp = self.end_at
 
         temp_results = ListMarker.make_numbered_list([f"__**{option}**__: *{amount}*" for option, amount in self.current_result.most_common()])
-        temp_results = alternative_better_shorten(temp_results, max_length=1000, shorten_side="left")
+        temp_results = shorten_string(temp_results, max_length=1000, shorten_side="left")
         if self.show_each_vote is True:
             temp_results = ListMarker.make_numbered_list(
                 [f"__**{option}**__: *{amount}*\n{ZERO_WIDTH}\n{', '.join(member.mention for member,member_vote in self.votes.items() if member_vote is option)}\n{ZERO_WIDTH}" for option, amount in self.current_result.most_common()])
-            temp_results = alternative_better_shorten(temp_results, max_length=1000, shorten_side="left")
+            temp_results = shorten_string(temp_results, max_length=1000, shorten_side="left")
         if final is True:
             embed.add_field(name="Final Result", value=temp_results, inline=False)
             embed.set_footer(text=discord.Embed.Empty, icon_url=discord.Embed.Empty)
@@ -404,6 +404,8 @@ class VotingCog(AntiPetrosBaseCog):
 
     @tasks.loop(minutes=5)
     async def remove_finished_votes(self):
+        if self.completely_ready is False:
+            return
         to_remove = []
         for vote in self.running_votes:
             if vote.finished is True:
@@ -420,7 +422,7 @@ class VotingCog(AntiPetrosBaseCog):
 
     @commands.Cog.listener(name="on_raw_reaction_add")
     async def check_for_vote_listener(self, payload: discord.RawReactionActionEvent):
-        if self.ready is False or self.bot.setup_finished is False:
+        if self.completely_ready is False:
             return
         if payload.member is None:  # This means we are in a DM channel
             return
@@ -468,7 +470,7 @@ class VotingCog(AntiPetrosBaseCog):
         await vote.start_vote(ctx.channel)
 
     @auto_meta_info_command(clear_invocation=True, confirm_command_received=True)
-    async def member_vote(self, ctx: commands.Context, member: discord.Member, steam_id: str = None, minutes: int = 10):
+    async def member_vote(self, ctx: commands.Context, member: discord.Member, minutes: int = 10):
         options = [VoteOptionItem(item="YES", emoji=CHECK_MARK_BUTTON_EMOJI),
                    VoteOptionItem(item="NO", emoji=CROSS_MARK_BUTTON_EMOJI),
                    VoteOptionItem(item="MORE TIME NEEDED", emoji="🕑")]
@@ -476,7 +478,7 @@ class VotingCog(AntiPetrosBaseCog):
         vote = VoteItem(name=f"Membership Vote for {member.display_name}", options=options, end_at=self.minutes_to_end_datetime(minutes), allowed_roles=allowed_roles, after_report=True, report_each_vote=True, show_each_vote=True)
         vote.set_thumbnail(str(member.avatar_url))
 
-        battlemetrics_link = embed_hyperlink('Battlemetrics Link', 'https://www.battlemetrics.com') if steam_id is not None else ""
+        battlemetrics_link = ""
         joined_at = member.joined_at.strftime(self.bot.std_date_time_format) + ' UTC'
         vote.set_description(f"{member.mention}\nJoined this Guild at: `{joined_at}`\n{battlemetrics_link}")
         await vote.start_vote(ctx.channel)
