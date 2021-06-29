@@ -457,7 +457,7 @@ def fix_url_prefix(in_url: str):
     return in_url
 
 
-async def check_if_url(possible_url: str):
+def check_if_url(possible_url: str):
     """
     checks if input `possible_url` is and valid url.
 

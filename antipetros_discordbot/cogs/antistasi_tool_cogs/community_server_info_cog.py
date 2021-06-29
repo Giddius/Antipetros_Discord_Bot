@@ -504,7 +504,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def server_notification_settings(self, ctx: commands.Context):
         await delete_message_if_text_channel(ctx)
         selection_question = AskSelection.from_context(ctx, timeout=300, delete_question=True, error_on=True)
-        selection_question.description = "Please select the settings you want to change"
+        selection_question.set_title("Please select the settings you want to change")
         for option in ["notification timeout", "enable/disable status change report", "enable/disable is_online message", "is_online_messages_channel"]:
             selection_question.options.add_option(selection_question.option_item(option))
         answer = await selection_question.ask()
@@ -570,7 +570,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             else:
                 raise AskCanceledError(confirm_question, confirm_answer)
 
-    @ auto_meta_info_command(only_debug=True)
+    @ auto_meta_info_command(only_debug=True, logged=True)
     @ owner_or_admin()
     async def debug_server_notification(self, ctx: commands.Context, server_name: str = "mainserver_1", new_prev_status: bool = False):
         server = await self._get_server_by_name(server_name)
@@ -611,7 +611,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def tell_amount_mod_data_requested(self, ctx: commands.Context):
         await ctx.send(f"Mod data was requested {self.amount_mod_data_requested} times", delete_after=120)
 
-    @ auto_meta_info_command()
+    @ auto_meta_info_command(experimental=True)
+    @owner_or_admin()
     async def show_population(self, ctx: commands.Context):
         for server in self.server_items:
 
@@ -701,25 +702,25 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             await channel.send('Already received a restart request in the last 5 min')
             return
         ask_selection = AskSelection(author=member, channel=channel, delete_question=True, error_on=True)
-        ask_selection.description = "Reason for Restart?"
+        ask_selection.set_title("Reason for Restart?")
         for reason in reasons:
             ask_selection.options.add_option(AskSelectionOption(item=reason))
         reason_answer = await ask_selection.ask()
         if reason_answer == "Other":
             ask_input = AskInput.from_other_asking(ask_selection, delete_answers=True)
-            ask_input.description = "Please specify the reason briefly"
+            ask_input.set_title("Please specify the reason briefly")
             reason_answer = await ask_input.ask()
 
         saved_ask = AskConfirmation.from_other_asking(ask_selection)
-        saved_ask.description = "Has the commander saved already and did the save complete Message pop up?"
+        saved_ask.set_title("Has the commander saved already and did the save complete Message pop up?")
         saved_answer = await saved_ask.ask()
 
         ready_ask = AskConfirmation.from_other_asking(saved_ask)
-        ready_ask.description = "Is everyone on the server ready for the restart?"
+        ready_ask.set_title("Is everyone on the server ready for the restart?")
         ready_answer = await ready_ask.ask()
 
         confirm_ask = AskConfirmation.from_other_asking(ask_selection)
-        confirm_ask.description = "Do you want to send this restart request?"
+        confirm_ask.set_title("Do you want to send this restart request?")
         confirm_answer = await confirm_ask.ask()
         if confirm_answer is confirm_ask.DECLINED:
             await channel.send('Canceled!')

@@ -49,7 +49,7 @@ from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
 import ftfy
 from hashlib import blake2b
 import json
-from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation, AskInput, AskFile, AskInputManyAnswers
+from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation, AskInput, AskFile, AskInputManyAnswers, AskSelectionOption
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
     from antipetros_discordbot.engine.replacements.context_replacement import AntiPetrosBaseContext

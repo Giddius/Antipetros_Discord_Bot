@@ -190,9 +190,10 @@ class IsOnlineHeaderMessage:
     @classmethod
     async def _try_get_message(cls):
         message_data = await cls.db.get_misc_message_by_name(name=cls.name)
-        message_id = message_data.get('message_id')
-        if message_id is None:
+
+        if message_data is None:
             return None
+        message_id = message_data.get('message_id')
         try:
             return await cls.cog.is_online_messages_channel.fetch_message(message_id)
         except discord.errors.NotFound:

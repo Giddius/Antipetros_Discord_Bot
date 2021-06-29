@@ -62,13 +62,13 @@ from discord.ext import commands
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 import gidlogger as glog
-from antipetros_discordbot.utility.misc import alt_seconds_to_pretty
+from antipetros_discordbot.utility.misc import alt_seconds_to_pretty, check_if_url, fix_url_prefix
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
 from antipetros_discordbot.utility.emoji_handling import NUMERIC_EMOJIS, ALPHABET_EMOJIS, CHECK_MARK_BUTTON_EMOJI, CROSS_MARK_BUTTON_EMOJI, letter_to_emoji, CANCEL_EMOJI
 from antipetros_discordbot.utility.exceptions import MissingNeededAttributeError, NeededClassAttributeNotSet, AskCanceledError, AskTimeoutError
 from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import shorten_string
-
+from antipetros_discordbot.utility.converters import UrlConverter
 if TYPE_CHECKING:
     pass
 
@@ -126,6 +126,7 @@ class AskingTypus(Enum):
     SELECTION = auto()
     INPUT = auto()
     FILE = auto()
+    SELECTION_AND_INPUT = auto()
 
     @classmethod
     def get_typus(cls, ask_class):
@@ -542,6 +543,9 @@ class AskFile(AbstractUserAsking):
         fields.append(self.bot.field_item(name=f"If you are done, attaching Files, send a message only containin {self.finished_phrase}", value=ZERO_WIDTH, inline=False))
         fields.append(self.bot.field_item(name="allowed File Types", value=','.join(f"`{ftype}`" for ftype in self.allowed_file_types), inline=False))
         return fields
+
+    async def download_image(self, url):
+        pass
 
     async def transform_answer(self, answer):
         self.answer_messages.append(answer)

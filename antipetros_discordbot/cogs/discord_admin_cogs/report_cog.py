@@ -145,7 +145,8 @@ class ReportItem:
 
     async def _ask_for_target(self):
         input_ask = AskInput(author=self.author, channel=self.channel, timeout=600, delete_question=True, delete_answers=True, error_on=True)
-        input_ask.description = "Who do you want to make a report about? Please only specify one Person, Best practice is to use the name, with discriminator(eg: `Giddi#5858`)\nYou can get this full name by clicking on the user!"
+        input_ask.set_title("Who do you want to make a report about?")
+        input_ask.set_description("Please only specify one Person, Best practice is to use the name, with discriminator(eg: `Giddi#5858`)\nYou can get this full name by clicking on the user!")
 
         input_ask.validator = self.no_bot_invocation_validator
         answer = await input_ask.ask()
@@ -166,7 +167,8 @@ class ReportItem:
         for location in ["discord_channel", "discord_dm", "teamspeak", "community_server", "event", "other"]:
             location = location.replace('_', " ").title()
             selection_ask.options.add_option(AskSelectionOption(item=location))
-        selection_ask.description = "Please select the Place where the incident happened!"
+        selection_ask.set_title("Please select the Place where the incident happened!")
+        selection_ask.set_description("if the place is not in the list, please select other and you will be prompted for an input")
         main_answer = await selection_ask.ask()
         main_answer = main_answer.casefold().replace(' ', '_')
 
@@ -177,7 +179,7 @@ class ReportItem:
 
         if main_answer == "community_server":
             selection_ask = AskSelection(self.author, self.channel, timeout=600, delete_question=True)
-            selection_ask.description = "Please select the Server where the incident happened."
+            selection_ask.set_title("Please select the Server where the incident happened.")
             for server in self.cog.possible_servers:
                 selection_ask.options.add_option(AskSelectionOption(item=server, name=server.pretty_name))
 
@@ -187,14 +189,14 @@ class ReportItem:
             return
 
         input_ask = AskInput(self.author, self.channel, timeout=600, delete_question=True, delete_answers=True, error_on=True)
-        input_ask.description = "Please describe where exactly the incident happend."
+        input_ask.set_title("Please describe where exactly the incident happend.")
         input_ask.validator = self.no_bot_invocation_validator
         if main_answer == "discord_channel":
             input_ask.description = "Please input the name of the channel where the incident happened. It will only accept an answer if it is an existing channel."
             input_ask.validator = lambda x: x.casefold() in self.cog.bot.channels_name_dict
 
         elif main_answer == "event":
-            input_ask.description = "Please input the name of the event, where the incident happened"
+            input_ask.set_title("Please input the name of the event, where the incident happened")
 
         input_answer = await input_ask.ask()
         if main_answer == "discord_channel":
@@ -206,7 +208,8 @@ class ReportItem:
 
     async def _ask_time(self):
         input_ask = AskInput(self.author, self.channel, timeout=600, delete_question=True, delete_answers=True, error_on=True)
-        input_ask.description = "Please enter the approximate time the incident happened.eg: `One hour ago` or `12:00 on the 24.1.2020`"
+        input_ask.set_title("Please enter the approximate time the incident happened")
+        input_ask.set_description(".eg: `One hour ago` or `12:00 on the 24.1.2020`")
         input_ask.validator = self.no_bot_invocation_validator
         answer = await input_ask.ask()
         base_datetime = datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
@@ -215,7 +218,8 @@ class ReportItem:
 
     async def _ask_public_text_helper(self):
         input_ask = AskInput(self.author, self.channel, timeout=1500, delete_answers=True, delete_question=True, error_on=True)
-        input_ask.description = "Please input a brief text that will be publicly visible. Be carefull not to insert anything identifying.\nMax size of this text is 950 characters.\n\n***If you do not want to enter a public text, enter `None`!***"
+        input_ask.set_title("Please input a brief text that will be publicly visible.")
+        input_ask.set_description("Be carefull not to insert anything identifying.\nMax size of this text is 950 characters.\n\n***If you do not want to enter a public text, enter `None`!***")
         input_ask.validator = self.no_bot_invocation_validator
         return await input_ask.ask()
 
@@ -229,14 +233,16 @@ class ReportItem:
 
     async def _ask_text(self):
         input_ask = AskInputManyAnswers(self.author, self.channel, timeout=1500, delete_question=True, delete_answers=True, error_on=True)
-        input_ask.description = "Please describe the Incident. Try to be brief, but clear!\n\n **⚠️ Attachments can be added later in the process! ⚠️**"
+        input_ask.set_title("Please describe the Incident. Try to be brief, but clear!")
+        input_ask.set_description("**⚠️If you want to add a link, do it here,\nbut file Attachments can be added in a different question! ⚠️**")
         input_ask.validator = self.no_bot_invocation_validator
         answer = await input_ask.ask()
         self.text = answer
 
     async def _ask_files(self):
         file_ask = AskFile(self.author, self.channel, timeout=1500, delete_question=True, delete_answers=True, error_on=True)
-        file_ask.description = f"Here you can attach files as evidence!"
+        file_ask.set_title("Here you can attach files as evidence!")
+        file_ask.set_description("Limited to 9 attachments!")
         answer_attachments = await file_ask.ask()
         self.files = answer_attachments
 
@@ -267,9 +273,10 @@ class ReportItem:
 
         report_text_value = shorten_string(self.text, 1000, shorten_side='left')
         fields.append(self.cog.bot.field_item(name="Report Text", value=report_text_value, inline=False))
-        files_value = ListMarker.make_list([file.filename for file in self.files])
-        files_value = shorten_string(files_value, 1000, shorten_side='left')
-        fields.append(self.cog.bot.field_item(name="Report Attachments", value=files_value, inline=False))
+        if self.files != []:
+            files_value = ListMarker.make_list([file.filename for file in self.files])
+            files_value = shorten_string(files_value, 1000, shorten_side='left')
+            fields.append(self.cog.bot.field_item(name="Report Attachments", value=files_value, inline=False))
 
         fields.append(self.cog.bot.field_item(name="Public description", value=self.public_text))
 
@@ -295,7 +302,7 @@ class ReportItem:
             file = await attachment_file.to_file(spoiler=True)
             await self.channel.send(file=file, reference=summary_message.to_reference(fail_if_not_exists=False))
         confirm_ask = AskConfirmation(self.author, self.channel, timeout=600, delete_question=True, error_on=True)
-        confirm_ask.description = f"Is the above {embed_hyperlink('Summary of your Report', summary_message.jump_url)} correct?\n Do your really want to send this Report(can not be canceled after this confirmation)?"
+        confirm_ask.set_description(f"Is the above {embed_hyperlink('Summary of your Report', summary_message.jump_url)} correct?\n **Do your really want to send this Report__(can not be canceled after this confirmation)__**?")
         answer = await confirm_ask.ask()
         if answer is confirm_ask.DECLINED:
             embed = summary_message.embeds[0]

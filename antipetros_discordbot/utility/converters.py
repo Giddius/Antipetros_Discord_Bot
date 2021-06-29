@@ -221,7 +221,7 @@ class CheckConverter(Converter):
 class UrlConverter(Converter):
 
     async def convert(self, ctx: commands.Context, argument) -> str:
-        if await check_if_url(argument) is False:
+        if check_if_url(argument) is False:
             raise ParameterError("url", argument)
 
         return fix_url_prefix(argument)
