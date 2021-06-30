@@ -263,7 +263,7 @@ class BranchItem:
         return image
 
     async def get_content_files(self, file_data: github.ContentFile):
-        async with self.bot.aio_request_session.get(file_data.download_url) as _response:
+        async with self.bot.aio_session.get(file_data.download_url) as _response:
             if RequestStatus(_response.status) is RequestStatus.Ok:
                 with BytesIO() as bytefile:
                     byte_data = await _response.read()
@@ -380,6 +380,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
         await super().update(typus=typus)
         asyncio.create_task(asyncio.to_thread(self.get_labels))
         if UpdateTypus.CONFIG in typus:
+            await self._update_listener_settings()
             await self._update_trigger_prefix_regex()
         elif UpdateTypus.CYCLIC in typus:
             await self._update_trigger_prefix_regex()

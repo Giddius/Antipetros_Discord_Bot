@@ -48,6 +48,7 @@ from aiodav.exceptions import NoConnection
 from sortedcontainers import SortedDict, SortedList
 from marshmallow import Schema, fields
 from hashlib import shake_256
+import yarl
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog
     from antipetros_discordbot.cogs.antistasi_tool_cogs.community_server_info_cog import CommunityServerInfoCog
@@ -728,7 +729,7 @@ class ServerSchema(Schema):
     log_parser = fields.String()
 
     class Meta:
-        additional = ('name', 'log_folder', 'config_name', 'sub_log_folder_name', 'base_log_folder_name', 'log_folder_path', 'report_status_change')
+        additional = ('name', 'log_folder', 'config_name', 'sub_log_folder_name', 'base_log_folder_url', 'log_folder_path', 'report_status_change')
 
 
 @ total_ordering
@@ -919,7 +920,7 @@ class ServerAddress:
 class ServerItem:
     pretty_name_regex = re.compile(r"(?P<name>[a-z]+)\_?(?P<server>server)\_?(?P<number>\d)?", re.IGNORECASE)
     timeout = 5.0
-    battlemetrics_base_url = "https://www.battlemetrics.com/servers/arma3"
+    battlemetrics_base_url = yarl.URL("https://www.battlemetrics.com/servers/arma3")
 
     # TODO: Refactor into a "server_meta_data_mapping" from here
     battle_metrics_mapping = {'mainserver_1': "10560386",
@@ -978,7 +979,7 @@ class ServerItem:
         self.status = ServerStatusDeque()
         self.log_parser = LogParser(self)
         self.battle_metrics_id = self.battle_metrics_mapping.get(self.name.casefold(), None)
-        self.battle_metrics_url = '/'.join([self.battlemetrics_base_url, self.battle_metrics_id])
+        self.battle_metrics_url = self.battlemetrics_base_url / self.battle_metrics_id
         self.priority = self.server_priority_map.get(self.name.casefold(), 100)
         self._thumbnail = self.server_thumbnail_mapping.get(self.name.casefold(), self.default_server_thumbnail)
         self.on_notification_timeout = {ServerStatus.ON: False, ServerStatus.OFF: False}
@@ -1004,7 +1005,7 @@ class ServerItem:
         if cls.client is None:
             log.debug("%s client was None", cls.__name__)
             cls.client = AioWebdavClient(**get_nextcloud_options())
-            cls.cog.bot.sessions["aiowebdavclient"] = cls.client
+            cls.cog.bot.other_sessions["aiowebdavclient"] = cls.client
 
     async def get_mod_files(self):
         try:
@@ -1066,12 +1067,15 @@ class ServerItem:
         return COGS_CONFIG.retrieve(self.config_name, 'sub_log_folder', typus=str, direct_fallback="Server")
 
     @property
-    def base_log_folder_name(self) -> str:
-        return COGS_CONFIG.retrieve(self.config_name, 'base_log_folder', typus=str, direct_fallback="Antistasi_Community_Logs")
+    def base_log_folder_url(self) -> str:
+        return yarl.URL(COGS_CONFIG.retrieve(self.config_name, 'base_log_folder', typus=str, direct_fallback="Antistasi_Community_Logs"))
 
     @property
     def log_folder_path(self) -> str:
-        return f"{self.base_log_folder_name}/{self.log_folder}/{self.sub_log_folder_name}/"
+        _out = self.base_log_folder_url / self.log_folder / self.sub_log_folder_name
+        _out = _out.human_repr()
+        print(f"{self.name} : {_out}")
+        return _out
 
     @property
     def newest_log_item(self) -> Union[LogFileItem, None]:

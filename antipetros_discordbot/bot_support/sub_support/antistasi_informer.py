@@ -265,7 +265,7 @@ class AntistasiInformer(SubSupportBase):
             await self._make_stored_dicts()
         log.debug("'%s' sub_support was UPDATED", str(self))
 
-    def retire(self) -> None:
+    async def retire(self) -> None:
         log.debug("'%s' sub_support was RETIRED", str(self))
 
 

@@ -486,7 +486,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         embed_data = await self.bot.make_generic_embed(title='Double Post Deleted', fields=fields, image=image, thumbnail='warning', typus="notify_double_posts_embed")
         if files:
             embed_data['files'].append(files)
-        webhook = discord.Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(self.bot.aio_request_session))
+        webhook = discord.Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(self.bot.aio_session))
         await webhook.send(**embed_data, username="Double Post Notification", avatar_url="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Warning.svg/1200px-Warning.svg.png", allowed_mentions=discord.AllowedMentions.none())
 # endregion[Helper]
 

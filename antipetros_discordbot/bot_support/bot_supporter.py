@@ -82,9 +82,9 @@ class BotSupporter:
     #             else:
     #                 getattr(subsupport, attribute_name)(*args, **kwargs)
 
-    def retire_subsupport(self):
+    async def retire_subsupport(self):
         for subsupport in self.subsupports:
-            subsupport.retire()
+            await subsupport.retire()
 
     @ staticmethod
     def log_attribute_not_found(*args, **kwargs):

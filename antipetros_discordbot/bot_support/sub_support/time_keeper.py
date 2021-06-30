@@ -91,7 +91,7 @@ class TimeKeeper(SubSupportBase):
         return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
-    def retire(self):
+    async def retire(self):
         log.debug("'%s' sub_support was RETIRED", str(self))
 
 

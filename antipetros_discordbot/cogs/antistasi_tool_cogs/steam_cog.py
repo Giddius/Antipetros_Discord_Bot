@@ -298,7 +298,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 
     async def _get_fresh_item_data(self, item_id: int):
         item_url = f"{self.base_url}{item_id}"
-        async with self.bot.aio_request_session.get(item_url) as response:
+        async with self.bot.aio_session.get(item_url) as response:
             if RequestStatus(response.status) is RequestStatus.Ok:
                 content = await response.text()
                 soup = BeautifulSoup(content, 'html.parser')

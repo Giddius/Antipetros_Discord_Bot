@@ -371,7 +371,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         for attachment in file_answer:
             hook_files.append(await attachment.to_file())
         await self.bot.channel_from_id(645930607683174401).send(f"Report Concerning: `{player_name}`\n\nReport:\n>>> {report}", allowed_mentions=discord.AllowedMentions.none(), files=files)
-        webhook = discord.Webhook.from_url("https://discord.com/api/webhooks/854749192189640734/kd3tmI17bErnc6egy8ObrdfV6-Rm79hkPxNFxBjeZDSp4wNv4llJ8EG-9_z_6Awv8Jeu", adapter=discord.AsyncWebhookAdapter(self.bot.aio_request_session))
+        webhook = discord.Webhook.from_url("https://discord.com/api/webhooks/854749192189640734/kd3tmI17bErnc6egy8ObrdfV6-Rm79hkPxNFxBjeZDSp4wNv4llJ8EG-9_z_6Awv8Jeu", adapter=discord.AsyncWebhookAdapter(self.bot.aio_session))
         await webhook.send(f"Report from {author.mention}\n\nReport Concerning: `{player_name}`\n\nReport:\n>>> {report}", allowed_mentions=discord.AllowedMentions.none(), username="REPORT", avatar_url="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Warning.svg/1200px-Warning.svg.png", files=hook_files)
 
     @auto_meta_info_command()

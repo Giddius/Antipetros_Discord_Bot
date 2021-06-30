@@ -213,7 +213,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     def request_restart_notification_webhooks(self):
         urls = COGS_CONFIG.retrieve(self.config_name, "request_restart_notification_webhook_urls", typus=List[str], direct_fallback=[
                                     "https://discord.com/api/webhooks/858827398015221800/sD5WMifr7RdP3AbVWVZKgYCPCewTQiMwoWOn0NXUXv8PslisYPWnQcr3IaLy2xaz0ltQ"])
-        return {discord.Webhook.from_url(url, adapter=discord.AsyncWebhookAdapter(self.bot.aio_request_session)) for url in urls}
+        return {discord.Webhook.from_url(url, adapter=discord.AsyncWebhookAdapter(self.bot.aio_session)) for url in urls}
 
     @ property
     def request_restart_to_notify(self):

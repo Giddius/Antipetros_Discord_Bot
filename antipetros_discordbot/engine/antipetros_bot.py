@@ -149,14 +149,13 @@ class AntiPetrosBot(commands.Bot):
                          strip_after_prefix=True,
                          ** kwargs)
 
-        self.sessions = {}
         self.to_update_methods: list[self.ToUpdateItem] = []
         self.token: str = token
-        self.activity_update_task = None
+        self.activity_update_task: asyncio.Task = None
         self.support: BotSupporter = None
         self.used_startup_message = None
-        self._command_dict = None
-        self.connect_counter = 0
+        self._command_dict: dict = None
+        self.connect_counter: int = 0
         self.special_prefixes = None
         self.prefix_role_exceptions = None
         self.use_invoke_by_role_and_mention = None
@@ -199,7 +198,6 @@ class AntiPetrosBot(commands.Bot):
             if platform.system() == 'Linux':
                 self.loop.add_signal_handler(signal.SIGINT, self.shutdown_signal)
                 self.loop.add_signal_handler(3, self.shutdown_signal)  # 3 -> SIGQUIT
-            await self._start_sessions()
             await self.send_startup_message()
             asyncio.create_task(self._start_watchers())
             await self.set_activity()
@@ -224,14 +222,6 @@ class AntiPetrosBot(commands.Bot):
     def add_self_to_classes(self) -> None:
         ChannelUsageResult.bot = self
         AbstractUserAsking.bot = self
-
-    async def _start_sessions(self) -> None:
-        self.sessions = {}
-        if self.sessions.get('aio_request_session', None) is None or self.sessions.get('aio_request_session', None).closed is True:
-            self.aio_request_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(enable_cleanup_closed=True, limit=5))
-            self.sessions['aio_request_session'] = self.aio_request_session
-
-        log.info("Session '%s' was started", repr(self.sessions['aio_request_session']))
 
     async def _ensure_guild_is_chunked(self) -> None:
         if self.antistasi_guild.chunked is False:
@@ -624,22 +614,14 @@ class AntiPetrosBot(commands.Bot):
             elif item.is_dir():
                 shutil.rmtree(item.path)
 
-    async def _close_sessions(self) -> None:
-        for session_name, session in self.sessions.items():
-
-            await session.close()
-            log.info("'%s' was shut down", session_name)
-
     async def close(self) -> None:
         self._watch_for_alias_changes.cancel()
 
         self._watch_for_config_changes.cancel()
 
         log.info("retiring troops")
-        self.support.retire_subsupport()
+        await self.support.retire_subsupport()
 
-        log.info("closing sessions")
-        await self._close_sessions()
         if self.activity_update_task is not None:
             self.activity_update_task.cancel()
 

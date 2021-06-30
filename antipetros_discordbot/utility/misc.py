@@ -479,7 +479,7 @@ def check_if_url(possible_url: str):
 
 async def url_is_alive(bot, url, check_if_github=False):
     try:
-        async with bot.aio_request_session.get(url) as _response:
+        async with bot.aio_session.get(url) as _response:
             if check_if_github is True and _response.headers.get('Server') != 'GitHub.com':
                 return False
             return _response.status_code != 404
