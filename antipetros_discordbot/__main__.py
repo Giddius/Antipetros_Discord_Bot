@@ -25,7 +25,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.enums import CogMetaStatus
 import json
 from typing import List, Callable, Union, Optional, Iterable
-from pycrosskit.envariables import SysEnv
+
 # endregion[Imports]
 
 # region [TODO]
@@ -43,7 +43,7 @@ BASE_CONFIG.save()
 COGS_CONFIG.save()
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-DATA_DIR_ENV_VAR_NAME = 'ANTIPETROS_USER_DATA_DIR'
+
 # endregion [Constants]
 
 # region [Logging]
