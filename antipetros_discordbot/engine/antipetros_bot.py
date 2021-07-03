@@ -391,7 +391,7 @@ class AntiPetrosBot(commands.Bot):
     def all_prefixes(self) -> list[str]:
         prefixes = list(set(BASE_CONFIG.retrieve('prefix', 'command_prefix', typus=List[str], direct_fallback=[])))
         for role in self.member.roles:
-            if role.name.casefold() not in ['dev helper', 'antidevtros'] and role is not self.everyone_role and role.id != 839778664702148608:
+            if role.name.casefold() not in ['dev helper', 'antidevtros'] and role.id != 860679762661867600 and role.id != 839778664702148608:
                 prefixes.append(role.mention)
         prefixes.append(self.member.mention)
         sorted_prefixes = sorted(list(set(prefixes)), key=lambda x: (str(self.id) in x, x.startswith('<'), is_unicode_emoji(x)), reverse=True)

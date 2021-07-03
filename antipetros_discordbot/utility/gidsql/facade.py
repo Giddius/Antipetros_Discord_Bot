@@ -2,6 +2,7 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
+import asyncio
 import logging
 from enum import Enum, auto
 import re
@@ -142,8 +143,12 @@ class GidSqliteDatabase:
     def startup_db(self, overwrite=False):
         if os.path.exists(self.path) is True and overwrite is True:
             os.remove(self.path)
+
         for script in self.scripter.setup_scripts:
-            self.writer.write(script)
+            for sql_phrase in script.split(';'):
+                if sql_phrase:
+
+                    self.writer.write(sql_phrase=sql_phrase)
         return True
 
     def new_phrase(self, typus: PhraseType):
@@ -180,17 +185,21 @@ class GidSqliteDatabase:
 
 
 class AioGidSqliteDatabase(GidSqliteDatabase):
+
     def __init__(self, db_location, script_location, config=None, log_execution: bool = True):
         super().__init__(db_location, script_location, config=config, log_execution=log_execution)
         self.aio_writer = AioGidSQLiteWriter(self.path, self.pragmas, log_execution=log_execution)
         self.aio_reader = AioGidSqliteReader(self.path, self.pragmas, log_execution=log_execution)
 
     async def aio_startup_db(self, overwrite=False):
+
         if os.path.exists(self.path) is True and overwrite is True:
             os.remove(self.path)
 
         for script in self.scripter.setup_scripts:
-            await self.aio_write(script)
+            for sql_phrase in script.split(';'):
+                if sql_phrase:
+                    await self.aio_write(sql_phrase)
 
         return True
 
@@ -203,15 +212,15 @@ class AioGidSqliteDatabase(GidSqliteDatabase):
             await self.aio_writer.write(sql_phrase, variables)
 
     async def aio_query(self, phrase, variables=None, fetch: Fetch = Fetch.All, row_factory: Union[bool, any] = False):
-        if row_factory:
-            _factory = None if isinstance(row_factory, bool) is True else row_factory
-            await self.aio_reader.enable_row_factory(in_factory=_factory)
+
         sql_phrase = self.scripter.get(phrase, None)
         if sql_phrase is None:
             sql_phrase = phrase
-        _out = await self.aio_reader.query(sql_phrase, variables=variables, fetch=fetch)
-        await self.aio_reader.disable_row_factory()
-        return _out
+
+        async with self.aio_reader.active_row_factory(in_factory=row_factory):
+            _out = await self.aio_reader.query(sql_phrase, variables=variables, fetch=fetch)
+            await self.aio_reader.disable_row_factory()
+            return _out
 
     async def aio_vacuum(self):
 

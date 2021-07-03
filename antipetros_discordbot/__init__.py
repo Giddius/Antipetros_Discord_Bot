@@ -1,7 +1,7 @@
 """
 A Discord Bot for the Antistasi (ArmA 3) Community Discord Server
 """
-__version__ = '2.1.2'
+__version__ = '2.1.3'
 
 import os
 from importlib.metadata import metadata
@@ -45,6 +45,8 @@ def set_env():
     os.environ['BOT_CREATOR_ID'] = "576522029470056450"
     os.environ['REPO_BASE_URL'] = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development"
     os.environ['WIKI_BASE_URL'] = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki"
+    if os.getenv('IS_DEV', 'false').casefold() == 'true':
+        os.environ['ALWAYS_CHECK_RATE_LIMITED'] = '1'
 
 
 set_env()

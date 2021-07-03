@@ -45,6 +45,7 @@ if TYPE_CHECKING:
 # TODO: get_logs command
 # TODO: get_appdata_location command
 
+# TODO: Redo all graph func here
 
 # endregion [TODO]
 
@@ -140,7 +141,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
         cpu_percent = psutil.cpu_percent(interval=None)
         cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15 = [x / psutil.cpu_count() * 100 for x in psutil.getloadavg()]
-        await self.general_db.insert_cpu_performance(now, cpu_percent, cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15)
+        await self.general_db.insert_cpu_performance(cpu_percent, cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15)
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def latency_measure_loop(self):
@@ -156,7 +157,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
             if latency > self.latency_thresholds.get('warning'):
                 log.warning("high latency: %s ms", str(latency))
                 await self.bot.message_creator(embed=await make_basic_embed(title='LATENCY WARNING!', text='Latency is very high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'latency': str(latency) + ' ms'}))
-            await self.general_db.insert_latency_perfomance(now, raw_latency)
+            await self.general_db.insert_latency_perfomance(raw_latency)
         except OverflowError:
             await self.bot.message_creator(embed=await make_basic_embed(title='LATENCY WARNING!', text='Latency is very high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'latency': 'infinite'}))
 
@@ -183,7 +184,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
             await self.bot.message_creator(embed=await make_basic_embed(title='MEMORY CRITICAL!', text='Memory consumption is dangerously high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'Memory usage absolute': await self.convert_memory_size(memory_in_use, DataSize.GigaBytes, True, 3), 'as percent': str(_mem_item.percent) + '%'}))
         elif memory_in_use > self.memory_thresholds.get("warning"):
             log.warning("Memory usage is high! Memory in use: %s", DataSize.GigaBytes.convert(memory_in_use, annotate=True))
-        await self.general_db.insert_memory_perfomance(now, memory_in_use)
+        await self.general_db.insert_memory_perfomance(memory_in_use)
 
 # endregion[Loops]
 

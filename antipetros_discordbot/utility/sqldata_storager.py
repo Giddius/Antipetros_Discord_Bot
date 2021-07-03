@@ -12,7 +12,7 @@ from collections import Counter
 import psutil
 import discord
 from discord.ext import commands, flags, tasks, ipc
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Callable, Iterable, List, Set, Tuple, Union, Generator, AsyncGenerator
 from textwrap import dedent
 import asyncio
 from functools import cached_property
@@ -23,8 +23,10 @@ from antipetros_discordbot.utility.misc import antipetros_repo_rel_path
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand
 
+from sortedcontainers import SortedList
 if TYPE_CHECKING:
     from antipetros_discordbot.auxiliary_classes.server_item import ServerItem, IsOnlineMessage
+    from antipetros_discordbot.cogs.general_cogs.reminder_cog import ReminderItem
 # endregion[Imports]
 
 # region [Constants]
@@ -52,6 +54,7 @@ glog.import_notification(log, __name__)
 
 
 # endregion[Logging]
+
 
 class ChannelUsageResult:
     def __init__(self):
@@ -143,6 +146,7 @@ class AioGeneralStorageSQLite:
 
     def __init__(self):
         self.db = AioGidSqliteDatabase(db_location=DB_LOC_GENERAL, script_location=SCRIPT_LOC_GENERAL, log_execution=LOG_EXECUTION)
+
         self.was_created = self.db.startup_db()
         self.db.vacuum()
         self.is_shutdown = False
@@ -154,8 +158,9 @@ class AioGeneralStorageSQLite:
         self.is_shutdown = True
 
     async def backup_database(self):
-        log.debug("backing up database to %s", self.db.backup_path)
-        shutil.copy(self.db.path, self.db.backup_path)
+        async with self.db.lock:
+            log.debug("backing up database to %s", self.db.backup_path)
+            shutil.copy(self.db.path, self.db.backup_path)
         await self._truncate_backup_folder()
 
     async def _truncate_backup_folder(self):
@@ -359,14 +364,14 @@ class AioGeneralStorageSQLite:
         else:
             return [row['name'] for row in result]
 
-    async def insert_cpu_performance(self, timestamp: datetime, usage_percent: int, load_avg_1: int, load_avg_5: int, load_avg_15: int):
-        await self.db.aio_write("insert_cpu_performance", (timestamp, usage_percent, load_avg_1, load_avg_5, load_avg_15))
+    async def insert_cpu_performance(self, usage_percent: int, load_avg_1: int, load_avg_5: int, load_avg_15: int):
+        await self.db.aio_write("insert_cpu_performance", (usage_percent, load_avg_1, load_avg_5, load_avg_15))
 
-    async def insert_latency_perfomance(self, timestamp: datetime, latency: int):
-        await self.db.aio_write('insert_latency_performance', (timestamp, latency))
+    async def insert_latency_perfomance(self, latency: int):
+        await self.db.aio_write('insert_latency_performance', (latency,))
 
-    async def insert_memory_perfomance(self, timestamp: datetime, memory_in_use: int):
-        await self.db.aio_write('insert_memory_performance', (timestamp, memory_in_use))
+    async def insert_memory_perfomance(self, memory_in_use: int):
+        await self.db.aio_write('insert_memory_performance', (memory_in_use,))
 
     async def insert_misc_message(self, misc_message: discord.Message, name: str, extra_info: str = None):
         await self.db.aio_write("insert_misc_message", (name, name, misc_message.channel.id, misc_message.id, extra_info))
@@ -401,6 +406,32 @@ class AioGeneralStorageSQLite:
     async def get_server_name_from_is_online_message_id(self, is_online_message_id: int):
         result = await self.db.aio_query("get_server_name_from_is_online_id", (is_online_message_id,), row_factory=True)
         return result[0]['name']
+
+    async def insert_reminder(self,
+                              name: str,
+                              remind_at: datetime,
+                              user_id: int,
+                              original_channel_id: int,
+                              original_message_id: int,
+                              reason: Optional[str] = None,
+                              reference_message_id: Optional[int] = None):
+        await self.db.aio_write("insert_reminder", (name, remind_at, user_id, original_channel_id, original_message_id, reason, reference_message_id))
+
+    async def mark_reminder_done(self, db_id: int):
+        await self.db.aio_write("mark_reminder_done", (db_id,))
+
+    async def get_all_reminders(self, reminder_item: "ReminderItem") -> SortedList:
+        result = await self.db.aio_query('get_all_reminders', row_factory=True)
+        _out = []
+        for row in result:
+            item = await reminder_item.from_db_row(row=row)
+            if item is not None:
+                _out.append(item)
+
+        return SortedList(_out)
+
+    async def delete_done_reminders(self) -> None:
+        await self.db.aio_write('delete_done_reminders')
 
     def __str__(self):
         return self.__class__.__name__
@@ -552,4 +583,5 @@ class AioSuggestionDataStorageSQLite:
             self.db.startup_db()
 
 
+log.info("instantiating general DB")
 general_db = AioGeneralStorageSQLite()

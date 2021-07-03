@@ -406,16 +406,16 @@ class AbstractUserAsking(ABC):
         return _out
 
     async def after_ask(self):
+        if self.delete_question is True:
+            try:
+                await self.ask_message.delete()
+            except discord.errors.Forbidden:
+                pass
+            except discord.errors.NotFound:
+                pass
         try:
             if self.channel.type is discord.ChannelType.text:
                 await self.ask_message.clear_reactions()
-        except discord.errors.Forbidden:
-            pass
-        except discord.errors.NotFound:
-            pass
-        try:
-            if self.delete_question is True:
-                await self.ask_message.delete()
         except discord.errors.Forbidden:
             pass
         except discord.errors.NotFound:
@@ -710,3 +710,16 @@ class AskSelection(AbstractUserAsking):
         if answer_emoji == self.cancel_emoji:
             return await self.on_cancel(answer)
         return self.options.get_result(answer_emoji)
+
+
+class Questioner:
+
+    def __init__(self, user: Union[discord.User, discord.Member], channel: Union[discord.TextChannel, discord.DMChannel]) -> None:
+        self.user = user
+        self.channel = channel
+        self.questions = []
+
+    async def _ensure_dm_channel(self):
+        if self.user.dm_channel is None:
+            return await self.user.create_dm()
+        return self.user.dm_channel

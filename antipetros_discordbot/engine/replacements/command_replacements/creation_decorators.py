@@ -53,7 +53,10 @@ def auto_meta_info_command(name=None,
                            experimental: bool = None,
                            confirm_command_received: bool = None,
                            logged: bool = None,
+                           force_check_rate_limited: bool = None,
+                           rest_is_raw: bool = None,
                            ** attrs):
+    # TODO: check if the default values of the arguments really have to be None!
     """
     EXTENDED_BY_GIDDI
     -----------------
@@ -107,6 +110,10 @@ def auto_meta_info_command(name=None,
         attrs['confirm_command_received'] = confirm_command_received
     if logged is not None:
         attrs['logged'] = logged
+    if force_check_rate_limited is not None:
+        attrs['force_check_rate_limited'] = force_check_rate_limited
+    if rest_is_raw is not None:
+        attrs['rest_is_raw'] = rest_is_raw
 
     def decorator(func):
 

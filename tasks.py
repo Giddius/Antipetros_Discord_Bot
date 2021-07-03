@@ -297,7 +297,7 @@ def collect_data(c):
 def clean_userdata(c, dry_run=False):
     data_pack_path = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "init_userdata\data_pack")
 
-    folder_to_clear = ['archive', 'user_env_files', 'env_files', 'performance_data', 'stats', 'database', 'debug', 'temp_files']
+    folder_to_clear = ['archive', 'user_env_files', 'env_files', 'performance_data', 'stats', 'database', 'debug', 'temp_files', 'general_antipetros_backups']
     files_to_clear = ["auto_accept_suggestion_users.json",
                       "blacklist.json",
                       "give_aways.json",

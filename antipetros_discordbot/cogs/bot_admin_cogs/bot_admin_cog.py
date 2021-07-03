@@ -84,6 +84,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Init]
 
+
     def __init__(self, bot: "AntiPetrosBot"):
         self.listeners_enabled = {'stop_the_reaction_petros_listener': False}
         super().__init__(bot)
@@ -123,10 +124,17 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # region [Loops]
 
 
+    @tasks.loop(minutes=5)
+    async def check_ws_rate_limit_loop(self):
+        is_rate_limited = self.bot.is_ws_ratelimited()
+        as_text = "IS NOT" if is_rate_limited is False else "! IS !"
+        log.info("The bot %s currently rate-limited", as_text)
+        if is_rate_limited is True:
+            await self.bot.creator.send("__**WARNING**__ ⚠️ THE BOT ***IS*** CURRENTLY RATE-LIMITED! ⚠️ __**WARNING**__")
+
 # endregion[Loops]
 
 # region [Properties]
-
 
     @property
     def alive_phrases(self):
@@ -138,6 +146,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Properties]
 
 # region [Listener]
+
 
     @commands.Cog.listener(name='on_reaction_add')
     async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):
@@ -154,6 +163,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Listener]
 
 # region[Commands]
+
 
     @auto_meta_info_command()
     @owner_or_admin()
@@ -407,7 +417,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Helper]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

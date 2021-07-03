@@ -213,8 +213,9 @@ class ReportItem:
         input_ask.validator = self.no_bot_invocation_validator
         answer = await input_ask.ask()
         base_datetime = datetime.now(tz=timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-
-        self.time = (dateparser.parse(answer), answer)
+        parsed_datetime = dateparser.parse(answer)
+        parsed_datetime = parsed_datetime.replace(tzinfo=timezone.utc) if parsed_datetime is not None else parsed_datetime
+        self.time = (parsed_datetime, answer)
 
     async def _ask_public_text_helper(self):
         input_ask = AskInput(self.author, self.channel, timeout=1500, delete_answers=True, delete_question=True, error_on=True)
@@ -376,6 +377,7 @@ class ReportCog(AntiPetrosBaseCog):
 
 # region [Properties]
 
+
     @property
     def report_webhook_urls(self):
         return COGS_CONFIG.retrieve(self.config_name, "report_webhook_urls", typus=List[str], direct_fallback=[])
@@ -397,6 +399,7 @@ class ReportCog(AntiPetrosBaseCog):
 # endregion [Properties]
 
 # region [Setup]
+
 
     async def on_ready_setup(self):
         await super().on_ready_setup()
@@ -423,7 +426,6 @@ class ReportCog(AntiPetrosBaseCog):
 
 # region [Commands]
 
-
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(True)
     @commands.cooldown(1, 300, commands.BucketType.user)
@@ -447,7 +449,6 @@ class ReportCog(AntiPetrosBaseCog):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx: commands.Context):
         return True

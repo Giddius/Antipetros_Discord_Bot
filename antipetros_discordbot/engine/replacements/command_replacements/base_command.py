@@ -122,9 +122,10 @@ class AntiPetrosBaseCommand(commands.Command):
         self.data_setters['meta_data']("docstring", self.docstring)
         self.only_debug = kwargs.get('only_debug', False)
         self.clear_invocation = kwargs.get('clear_invocation', False)
-        self.notifications = {self.experimental_notifier: kwargs.pop('experimental', False),
-                              self.logged_notifier: kwargs.get('logged', False),
-                              self.confirm_command_received_notifier: kwargs.get('confirm_command_received', False)}
+        self.notifications = {self._experimental_notifier: kwargs.pop('experimental', False),
+                              self._logged_notifier: kwargs.get('logged', False),
+                              self._confirm_command_received_notifier: kwargs.get('confirm_command_received', False)}
+        self.force_check_rate_limited = kwargs.get('force_check_rate_limited', False)
 
     @property
     def bot(self):
@@ -137,7 +138,14 @@ class AntiPetrosBaseCommand(commands.Command):
     def set_logged(self, value: bool):
         self.notifications[self.logged_notifier] = value
 
-    async def experimental_notifier(self, ctx: commands.Context):
+    async def _check_rate_limited(self):
+        is_rate_limited = self.bot.is_ws_ratelimited()
+        as_text = "IS NOT" if is_rate_limited is False else "! IS !"
+        log.info("The bot %s currently rate-limited", as_text)
+        if is_rate_limited is True:
+            await self.bot.creator.send("__**WARNING**__ ⚠️ THE BOT ***IS*** CURRENTLY RATE-LIMITED! ⚠️ __**WARNING**__")
+
+    async def _experimental_notifier(self, ctx: commands.Context):
         text = f"**It could be broken or be changed/removed any time. Feel free to play around with it and please give Feedback to {self.bot.creator.mention} if you can!**"
         title = "WARNING THIS IS AN EXPERIMENTAL COMMAND"
         description = text
@@ -148,7 +156,7 @@ class AntiPetrosBaseCommand(commands.Command):
         log.critical("command '%s' as '%s' -- invoked by: name: '%s', id: %s -- in channel: '%s' -- raw invoking message: '%s'",
                      ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, channel_name, ctx.message.content)
 
-    async def logged_notifier(self, ctx: commands.Context):
+    async def _logged_notifier(self, ctx: commands.Context):
         title = "Logged"
         description = "The usage of this command was logged with your username"
         thumbnail = None
@@ -156,12 +164,13 @@ class AntiPetrosBaseCommand(commands.Command):
         embed_data = await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail, footer=footer)
         await ctx.temp_send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
-    async def confirm_command_received_notifier(self, ctx: commands.Context):
+    async def _confirm_command_received_notifier(self, ctx: commands.Context):
         await ctx.add_temp_reaction(self.confirm_command_received_emoji)
 
     async def call_before_hooks(self, ctx: commands.Context):
         await super().call_before_hooks(ctx)
-
+        if os.getenv('ALWAYS_CHECK_RATE_LIMITED', '0') == '1' or self.force_check_rate_limited is True:
+            await self._check_rate_limited()
         for notification_coro, enabled in self.notifications.items():
             if enabled:
                 await notification_coro(ctx)

@@ -8,9 +8,11 @@ import json
 from typing import TYPE_CHECKING
 import asyncio
 from datetime import datetime, timezone, timedelta
-from typing import List, Optional
+from typing import List, Optional, Union
+from itertools import dropwhile
 # * Third Party Imports -->
 import a2s
+import math
 import numpy as np
 from textwrap import indent
 from rich import print as rprint, inspect as rinspect
@@ -40,14 +42,14 @@ from matplotlib import cm
 
 import matplotlib.dates as mdates
 # * Local Imports -->
-from antipetros_discordbot.utility.misc import delete_message_if_text_channel, loop_starter, alt_seconds_to_pretty
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel, loop_starter, alt_seconds_to_pretty, rgb256_to_rgb1
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, log_invoker, owner_or_admin
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, RequestStatus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command, auto_meta_info_group
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker
-from antipetros_discordbot.auxiliary_classes.server_item import ServerItem, ServerStatus
+from matplotlib import patheffects
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.emoji_handling import NUMERIC_EMOJIS, ALPHABET_EMOJIS, CHECK_MARK_BUTTON_EMOJI, CHECK_MARK_BUTTON_EMOJI, CROSS_MARK_BUTTON_EMOJI
 from collections import deque
@@ -59,11 +61,14 @@ from antipetros_discordbot.utility.sqldata_storager import general_db
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 import re
+import numpy as np
+import scipy as sp
 from io import BytesIO
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from rich.console import Console as RichConsole
 from antipetros_discordbot.utility.asyncio_helper import delayed_execution, async_range
-from antipetros_discordbot.auxiliary_classes.server_item import IsOnlineHeaderMessage
+from antipetros_discordbot.auxiliary_classes.aux_server_classes import IsOnlineHeaderMessage, ServerItem, ServerStatus
+from antipetros_discordbot.utility.debug_helper import console_print
 # endregion[Imports]
 
 # region [TODO]
@@ -138,6 +143,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     reason_keyword_identifier = '%'
     json_lock = asyncio.Lock()
     db = general_db
+    add_amount_lock = asyncio.Lock()
 # endregion [ClassAttributes]
 
 # region [Init]
@@ -158,6 +164,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Init]
 
 # region [Properties]
+
 
     @property
     def battlemetrics_auth(self):
@@ -275,6 +282,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [Loops]
 
+
     @ tasks.loop(minutes=4, reconnect=True)
     async def update_logs_loop(self):
         if self.completely_ready is False:
@@ -346,7 +354,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [Commands]
 
-    @ auto_meta_info_command(aliases=['server', 'servers', 'server?', 'servers?'], categories=[CommandCategory.GENERAL])
+    @ auto_meta_info_command(aliases=['server', 'servers', 'server?', 'servers?'], categories=[CommandCategory.GENERAL], clear_invocation=True, confirm_command_received=True)
     @ allowed_channel_and_allowed_role()
     @ commands.cooldown(1, 60, commands.BucketType.channel)
     async def current_online_server(self, ctx: commands.Context):
@@ -362,9 +370,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                     embed_data = await server.make_server_info_embed()
                 msg = await ctx.send(**embed_data, delete_after=self.server_message_remove_time, allowed_mentions=discord.AllowedMentions.none())
                 await msg.add_reaction(self.bot.armahosts_emoji)
-        await delete_message_if_text_channel(ctx, delay=self.server_message_remove_time)
 
-    @ auto_meta_info_command(categories=[CommandCategory.DEVTOOLS, CommandCategory.ADMINTOOLS], aliases=['get_logs'])
+    @ auto_meta_info_command(categories=[CommandCategory.DEVTOOLS, CommandCategory.ADMINTOOLS], aliases=['get_logs'], confirm_command_received=True, clear_invocation=True)
     @ allowed_channel_and_allowed_role()
     async def get_server_logs(self, ctx: commands.Context, amount: Optional[int] = 1, server_name: Optional[str] = 'mainserver_1'):
         """
@@ -403,8 +410,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             file = discord.File(bytefile, f'only_level_{level}.log')
         await ctx.send(file=file)
 
-    @ auto_meta_info_command(aliases=['restart_reason'], categories=[CommandCategory.ADMINTOOLS], logged=True)
-    @ owner_or_admin()
+    @ auto_meta_info_command(aliases=['restart_reason'], categories=[CommandCategory.ADMINTOOLS], logged=True, rest_is_raw=True, clear_invocation=True)
+    @allowed_channel_and_allowed_role(False)
     async def set_server_restart_reason(self, ctx: commands.Context, notification_msg_id: Optional[int] = None, *, reason: str):
         """
         Sets a reason to the embed of a server restart.
@@ -422,6 +429,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             The command also puts the user who set the reason into the server-restart message. This command can be used multiple times. Best used from Bot-commands channel or Bot-testing channel.
 
         """
+        if not reason:
+            await ctx.send(f"It seems the reason is empty (reason: `{reason}`), a reason is needed!", delete_after=120)
+            return
         if notification_msg_id is None and ctx.message.reference is None:
             notification_msg_id = self.latest_sever_notification_msg_id
 
@@ -445,11 +455,9 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         embed.add_field(name=local_time_field.name, value=local_time_field.value, inline=False)
 
         await msg.edit(embed=embed, allowed_mentions=discord.AllowedMentions.none())
-        await delete_message_if_text_channel(ctx)
 
-    @ auto_meta_info_command(categories=[CommandCategory.ADMINTOOLS], aliases=['add-reason'])
-    @ owner_or_admin(True)
-    @ log_invoker(log, "info")
+    @ auto_meta_info_command(categories=[CommandCategory.ADMINTOOLS], aliases=['add-reason'], logged=True, rest_is_raw=True, clear_invocation=True)
+    @ allowed_channel_and_allowed_role()
     async def add_restart_reason(self, ctx: commands.Context, *, reason_line: str):
         if "==" not in reason_line:
             await ctx.send("The reason to add must have the format `name==text`!", allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
@@ -478,8 +486,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         code_block = CodeBlock(f'Name: {name}\n\n"{text}"')
         await ctx.send(f"{code_block}\n\n Was added to the stored reasons and can be use with `{self.reason_keyword_identifier}{name}`", allowed_mentions=discord.AllowedMentions.none(), delete_after=120)
 
-    @ auto_meta_info_command(categories=[CommandCategory.ADMINTOOLS], aliases=['list-reasons'])
-    @ owner_or_admin(True)
+    @ auto_meta_info_command(categories=[CommandCategory.ADMINTOOLS], aliases=['list-reasons'], clear_invocation=True)
+    @ allowed_channel_and_allowed_role()
     async def list_stored_restart_reasons(self, ctx: commands.Context):
         fields = [self.bot.field_item(name=name.strip(self.reason_keyword_identifier), value=CodeBlock(value, 'fix'), inline=False) for name, value in self.stored_reasons.items()]
         title = "Stored Restart Reasons"
@@ -501,7 +509,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         await delete_message_if_text_channel(ctx)
 
     @ auto_meta_info_command(clear_invocation=True, experimental=True)
-    @ owner_or_admin()
+    @ allowed_channel_and_allowed_role()
     @ log_invoker(log, 'warning')
     async def server_notification_settings(self, ctx: commands.Context):
         await delete_message_if_text_channel(ctx)
@@ -588,8 +596,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                 print(f"{server.name} | {server.newest_log_item.created}")
             await ctx.send(f"__***{server.name.upper()}***__ --> `{server.current_status}` -> __**Timeouts:**_ *ServerStatus.ON* = `{server.on_notification_timeout.get(ServerStatus.ON)}`, *ServerStatus.OFF* = `{server.on_notification_timeout.get(ServerStatus.OFF)}`")
 
-    @ auto_meta_info_command()
-    @ owner_or_admin()
+    @ auto_meta_info_command(clear_invocation=True, logged=True)
+    @ allowed_channel_and_allowed_role()
     async def add_mod_data(self, ctx: commands.Context, identifier: str, name: str, link: str):
         identifier = identifier.removeprefix('@')
         data = loadjson(APPDATA['mod_lookup.json'])
@@ -601,7 +609,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         data[identifier] = {"name": name, "link": link}
         writejson(data, APPDATA['mod_lookup.json'])
         await ctx.send(f"`{identifier}` was added to the mod data")
-        await delete_message_if_text_channel(ctx, 30)
         for server in self.server_items:
             try:
                 server.log_parser.reset()
@@ -613,67 +620,110 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
     async def tell_amount_mod_data_requested(self, ctx: commands.Context):
         await ctx.send(f"Mod data was requested {self.amount_mod_data_requested} times", delete_after=120)
 
-    @ auto_meta_info_command(experimental=True)
-    @owner_or_admin()
+    @ auto_meta_info_command(clear_invocation=True)
+    @ owner_or_admin()
+    async def tell_amount_restart_requested(self, ctx: commands.Context):
+        await ctx.send(f"Restart was requested {self.amount_restart_requested} times", delete_after=120)
+
+    def _data_strip_population(self, timestamps: list[datetime], amounts: list[int]) -> Union[tuple[list[datetime], list[int]], None]:
+        new_timestamps = []
+        new_amounts = []
+        for timestamp, amount in dropwhile(lambda x: x[1] <= 0, zip(timestamps, amounts)):
+            new_timestamps.append(timestamp)
+            new_amounts.append(amount)
+
+        return new_timestamps, new_amounts
+
+    @ auto_meta_info_command(experimental=True, confirm_command_received=True)
+    @ allowed_channel_and_allowed_role()
     async def show_population(self, ctx: commands.Context):
-        for server in self.server_items:
+        async with ctx.typing():
+            interested_server = [server for server in self.server_items if server.name.casefold() not in {'testserver_2'}]
 
-            timestamps, amounts = await general_db.get_server_population(server=server)
-            extra_color = (0.9, 0.9, 0.9, 1)
-            fig, ax = plt.subplots()
-            ax.plot(timestamps, amounts, linewidth=0.25, color=(0, 0, 0, 1))
-            locator = mdates.AutoDateLocator()
-            formatter = mdates.ConciseDateFormatter(locator)
-            ax.xaxis.set_major_locator(locator)
-            ax.xaxis.set_major_formatter(formatter)
+            cleaned_interested_server = []
+            for_max = []
+            for server in interested_server:
+                _timestamps, _amounts = await general_db.get_server_population(server=server)
+                if any(num > 0 for num in _amounts):
+                    for_max += _amounts
+                    cleaned_interested_server.append(server)
+                await asyncio.sleep(0)
+                max_y = max(for_max)
 
-            ax.xaxis.label.set_color(extra_color)
-            ax.yaxis.label.set_color(extra_color)
+            sub_1 = 2
+            sub_2 = int(math.ceil(len(cleaned_interested_server) / 2))
 
-            ax.spines['bottom'].set_color(extra_color)
-            ax.spines['top'].set_color(extra_color)
-            ax.spines['right'].set_color(extra_color)
-            ax.spines['left'].set_color(extra_color)
+            plot_path_effects = (patheffects.SimpleLineShadow(), patheffects.Normal())
+            text_path_effects = (patheffects.SimpleLineShadow(), patheffects.Stroke(linewidth=2 / len(cleaned_interested_server), foreground="white"), patheffects.Normal())
 
-            ax.tick_params(axis='x', colors=extra_color)
-            ax.tick_params(axis='y', colors=extra_color)
-            ax.title.set_color(extra_color)
-            ax.set_ylim(1)
-            ax.fill_between(timestamps, amounts, color=(0, 1, 0, 1), linewidth=0)
+            fig, axs = plt.subplots(sub_2, sub_1, sharey=True)
+            fig.suptitle("Server Population", fontsize=80 / (len(cleaned_interested_server) / 2))
+            for sub_ax, server in zip(axs.flat, cleaned_interested_server):
 
-            ax.set_ylabel('Amount Players')
+                timestamps, amounts = await general_db.get_server_population(server=server)
+                timestamps, amounts = await asyncio.to_thread(self._data_strip_population, timestamps=timestamps, amounts=amounts)
 
-            ax.set_title(f"Player Population on {server.pretty_name}")
+                notation_color = "white"
+                spine_color = "white"
+
+                sub_ax.plot(timestamps, amounts, linewidth=0.25,
+                            color=rgb256_to_rgb1((0.75, 0.75, 0.75, 0.01)),
+                            solid_joinstyle='round',
+                            solid_capstyle='round',
+                            antialiased=True,
+                            snap=True)
+                locator = mdates.AutoDateLocator()
+                formatter = mdates.ConciseDateFormatter(locator)
+                sub_ax.xaxis.set_major_locator(locator)
+                sub_ax.xaxis.set_major_formatter(formatter)
+
+                sub_ax.xaxis.label.set_color(spine_color)
+
+                sub_ax.yaxis.label.set_color(spine_color)
+
+                sub_ax.spines['bottom'].set_color(spine_color)
+                sub_ax.spines['top'].set_color(spine_color)
+                sub_ax.spines['right'].set_color(spine_color)
+                sub_ax.spines['left'].set_color(spine_color)
+
+                sub_ax.tick_params(axis='x', colors=spine_color, labelsize=20 / (len(cleaned_interested_server) / 2))
+                sub_ax.tick_params(axis='y', colors=spine_color, labelsize=20 / (len(cleaned_interested_server) / 2))
+                sub_ax.title.set_color(notation_color)
+
+                color = list(self.bot.colors.get(server.color.casefold()).rgb_norm)
+                color.append(0.75)
+
+                sub_ax.fill_between(timestamps, amounts, color=color, linewidth=0)
+
+                # sub_ax.set_ylabel('Amount Players', fontsize=30 / len(cleaned_interested_server))
+
+                sub_ax.set_title(f"{server.pretty_name}", fontsize=40 / (len(cleaned_interested_server) / 2))
+                sub_ax.set_ylim(0, max_y)
+                await asyncio.sleep(0)
             fig.tight_layout()
+
+            await asyncio.sleep(0)
             with BytesIO() as bytefile:
-                fig.savefig(bytefile, format='png', dpi=250)
+                fig.savefig(bytefile, format='png', dpi=100 * len(cleaned_interested_server))
 
                 bytefile.seek(0)
-                image = Image.open(bytefile)
-                image.load()
-                bytefile.seek(0)
-                file = discord.File(bytefile, f'server_pop_{server.name}.png')
+
+                file = discord.File(bytefile, 'servers_pop.png')
             await ctx.send(file=file)
-
-            source = image.copy()
-            source = source.split()
-            mask = source[1].point(lambda i: i > 240 and 255)
-
-            overlay_image = Image.open(APPDATA["dirtyflag.png"])
-            overlay_image = overlay_image.resize(image.size)
-            new_image = Image.composite(image1=overlay_image, image2=image, mask=mask)
-            new_image = new_image.filter(ImageFilter.BoxBlur(0.5))
-            with BytesIO() as bytefile:
-                new_image.save(bytefile, 'PNG')
-                bytefile.seek(0)
-                second_file = discord.File(bytefile, 'meh.png')
-            await ctx.send(file=second_file)
 
 
 # endregion [Commands]
 
 
 # region [HelperMethods]
+
+    async def add_to_amount_mod_data_requested(self, amount_to_add: int = 1):
+        async with self.add_amount_lock:
+            self.amount_mod_data_requested = self.amount_mod_data_requested + amount_to_add
+
+    async def add_to_amount_restart_requested(self, amount_to_add: int = 1):
+        async with self.add_amount_lock:
+            self.amount_restart_requested = self.amount_restart_requested + amount_to_add
 
     async def clear_all_is_online_messages_mechanism(self):
         self.halt_is_online_update = True
@@ -813,10 +863,10 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
         asyncio.create_task(server_item.is_online())
 
-        asyncio.create_task(server_item.gather_log_items())
+        await (server_item.gather_log_items())
         await server_item.retrieve_is_online_message()
 
-        asyncio.create_task(delayed_execution(5, server_item.get_mod_files))
+        asyncio.create_task(delayed_execution(10, server_item.get_mod_files))
         return server_item
 
     async def load_server_items(self):

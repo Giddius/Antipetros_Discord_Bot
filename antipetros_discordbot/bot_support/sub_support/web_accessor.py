@@ -89,7 +89,7 @@ class WebAccessor(SubSupportBase):
             log.info("'%s' was shut down", session_name)
 
     async def on_ready_setup(self):
-        self.aio_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(enable_cleanup_closed=True, limit=2))
+        self.aio_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(enable_cleanup_closed=True))
         asyncio.create_task(asyncio.to_thread(self.url_extractor.update))
         log.debug("'%s' sub_support is READY", str(self))
 

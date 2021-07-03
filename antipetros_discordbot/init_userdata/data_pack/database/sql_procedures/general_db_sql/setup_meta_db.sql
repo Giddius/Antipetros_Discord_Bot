@@ -73,9 +73,7 @@ CREATE TABLE IF NOT EXISTS text_channels_tbl (
     "deleted" BOOL
 );
 CREATE TABLE IF NOT EXISTS channel_usage_tbl (
-    "timestamp" TIMESTAMP NOT NULL DEFAULT (
-        strftime('%Y-%m-%d %H:%M:%f', DATETIME('now', 'utc'))
-    ),
+    "timestamp" TIMESTAMP NOT NULL DEFAULT (datetime('now', 'utc')),
     "channel_id" INTEGER NOT NULL REFERENCES "text_channels_tbl" ("id"),
     UNIQUE ("timestamp", "channel_id")
 );
@@ -86,9 +84,7 @@ FROM channel_usage_tbl
 GROUP BY channel_id
 ORDER BY usage_amount DESC;
 CREATE TABLE IF NOT EXISTS command_usage_tbl (
-    "timestamp" TIMESTAMP NOT NULL DEFAULT (
-        strftime('%Y-%m-%d %H:%M:%f', DATETIME('now', 'utc'))
-    ),
+    "timestamp" TIMESTAMP NOT NULL DEFAULT (datetime('now', 'utc')),
     "command_id" INTEGER NOT NULL REFERENCES "commands_tbl" ("id"),
     UNIQUE ("timestamp", "command_id")
 );
@@ -106,18 +102,19 @@ CREATE TABLE IF NOT EXISTS server_tbl (
     "query_port" INTEGER NOT NULL UNIQUE,
     UNIQUE("address", "port")
 );
+CREATE INDEX IF NOT EXISTS server_index ON server_tbl ("id");
 CREATE TABLE IF NOT EXISTS server_population_tbl (
-    "timestamp" TIMESTAMP NOT NULL DEFAULT (
-        strftime('%Y-%m-%d %H:%M:%f', DATETIME('now', 'utc'))
-    ),
+    "timestamp" TIMESTAMP NOT NULL DEFAULT (datetime('now', 'utc')),
     "server_id" INTEGER NOT NULL REFERENCES "server_tbl" ("id"),
     "amount_players" INTEGER NOT NULL,
     UNIQUE ("timestamp", "server_id")
 );
+CREATE INDEX IF NOT EXISTS server_population_index ON server_population_tbl ("server_id");
 CREATE TABLE IF NOT EXISTS is_online_messages_tbl (
     "server_id" INTEGER NOT NULL UNIQUE REFERENCES "server_tbl" ("id"),
     "message_id" INTEGER UNIQUE
 );
+CREATE INDEX IF NOT EXISTS is_online_messages_index ON is_online_messages_tbl ("server_id");
 CREATE TABLE IF NOT EXISTS misc_messages_tbl (
     "id" INTEGER NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL UNIQUE,
@@ -125,4 +122,15 @@ CREATE TABLE IF NOT EXISTS misc_messages_tbl (
     "message_id" INTEGER NOT NULL,
     "extra_info" TEXT,
     UNIQUE("channel_id", "message_id")
+);
+CREATE TABLE IF NOT EXISTS reminder_tbl (
+    "id" INTEGER NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL UNIQUE,
+    "remind_at" TIMESTAMP NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "original_channel_id" INTEGER NOT NULL REFERENCES "text_channels_tbl" ("id"),
+    "original_message_id" INTEGER NOT NULL UNIQUE,
+    "reason" TEXT,
+    "reference_message_id" INTEGER,
+    "done" BOOL DEFAULT 0
 );

@@ -31,8 +31,10 @@ import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.misc import loop_starter
+from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation
+from antipetros_discordbot.utility.checks import only_giddi
 from antipetros_discordbot.utility.sqldata_storager import general_db
-from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory
+from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -102,7 +104,7 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     async def on_ready_setup(self):
         await super().on_ready_setup()
-
+        await general_db.db.aio_startup_db()
         self.ready = await asyncio.sleep(5, True)
         log.debug('setup for cog "%s" finished', str(self))
 
@@ -161,7 +163,25 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Commands]
 
-
+    @auto_meta_info_command(clear_invocation=True, confirm_command_received=True)
+    @only_giddi()
+    async def clear_performance_data(self, ctx: commands.Context):
+        question = AskConfirmation(author=ctx.author, channel=ctx.channel, delete_question=True, error_on=True)
+        question.set_title('Do you really want to delete all collected performance data?')
+        answer = await question.ask()
+        if answer is AskConfirmation.DECLINED:
+            await ctx.send('clear_performance_data was cancelled.', delete_after=60)
+            return
+        async with ctx.typing():
+            await self.db.backup_database()
+            await asyncio.sleep(5)
+            for table in ['memory_performance_tbl', 'latency_performance_tbl', 'cpu_performance_tbl']:
+                log.info("clearing all records from table '%s'", table)
+                await self.db.db.aio_write(f'DELETE FROM {table}')
+                await asyncio.sleep(2)
+            await asyncio.sleep(5)
+            await self.db.aio_vacuum()
+        await ctx.send('done!', delete_after=60)
 # endregion [Commands]
 
 # region [DataStorage]

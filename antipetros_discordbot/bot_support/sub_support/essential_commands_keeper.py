@@ -120,6 +120,7 @@ class EssentialCommandsKeeper(SubSupportBase):
                                                           image=BASE_CONFIG.retrieve('shutdown_message', 'image', typus=str, direct_fallback="https://i.ytimg.com/vi/YATREe6dths/maxresdefault.jpg"),
                                                           type=self.support.embed_types_enum.Image,
                                                           thumbnail="red_chain",
+                                                          typus="shutdown_embed",
                                                           fields=[self.support.field_item(name='Online since', value=str(started_at_string), inline=False), self.support.field_item(name='Online for', value=str(online_duration), inline=False)])
                 channel = self.shutdown_message_channel
                 last_shutdown_message = await channel.send(**embed)

@@ -511,6 +511,18 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         await ctx.send(msg, allowed_mentions=discord.AllowedMentions.all(), reference=reference)
         await delete_message_if_text_channel(ctx)
 
+    @auto_meta_info_command()
+    async def check_create_dm_channel(self, ctx: commands.Context):
+        member = self.bot.creator
+        await ctx.send(f"Dm channel of {member.mention} is {member.dm_channel}")
+
+        channel = await member.create_dm()
+        await ctx.send(f"NEW Dm channel of {member.mention} is {channel}")
+        try:
+            await ctx.send(f"DM channel id is {channel.id}")
+        except Exception as e:
+            await ctx.send(f"getting id of dm channel caused {e}  error")
+
     async def cog_check(self, ctx):
         # if ctx.author.id == 576522029470056450:
         #     return True

@@ -63,6 +63,14 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class FaqItem:
+    __slots__ = ("_raw_content",
+                 "creation_date_time",
+                 "url",
+                 "_image",
+                 "number",
+                 "_number_thumbnail",
+                 "question",
+                 "answer")
     bot = None
     faq_channel = None
     question_parse_emoji = "🇶"
@@ -78,7 +86,7 @@ class FaqItem:
 
     def __init__(self, raw_content: str, created_at: datetime, url: str, image: discord.Attachment = None) -> None:
         self._check_class_attr()
-        self._raw_content = raw_content
+        self._raw_content = str(raw_content)
         self.creation_date_time = created_at
         self.url = url
         self._image = image
@@ -192,6 +200,7 @@ class FaqItem:
 
     def __repr__(self):
         return f"{self.__class__.__name__}(number={self.number},question={self.question})"
+
 
         # region[Main_Exec]
 if __name__ == '__main__':

@@ -664,3 +664,8 @@ async def async_loop_starter(task_loops: Dict[str, tasks.Loop]):
 def loop_stopper(task_loop: tasks.Loop):
     if task_loop.is_running() is True:
         task_loop.stop()
+
+
+def rgb256_to_rgb1(values: list[int]):
+    values = map(lambda x: 1 * (x / 256), values)
+    return tuple(values)

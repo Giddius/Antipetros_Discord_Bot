@@ -48,9 +48,8 @@ from contextlib import contextmanager
 from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
 from collections import Counter, ChainMap, deque, namedtuple, defaultdict
 from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
+
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
 
 
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
@@ -106,6 +105,7 @@ class RemoveHashedMessageSignal(AbstractConnectSignal):
 
 
 class HashedMessage:
+    __slots__ = ("channel_id", "message_id", "message_hash", "attachment_hashes", "storage_start_time", "amount_reposted", "removal_task")
     bot = None
     config_name = None
     whitespace_regex = re.compile(r'\W')
