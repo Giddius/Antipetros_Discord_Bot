@@ -32,7 +32,7 @@ from concurrent.futures import ThreadPoolExecutor
 import unicodedata
 from io import BytesIO, StringIO
 from textwrap import dedent
-
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 
 import dateparser
 

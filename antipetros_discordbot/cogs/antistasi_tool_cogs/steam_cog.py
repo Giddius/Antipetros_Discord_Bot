@@ -25,7 +25,7 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, Command
 from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import shorten_string
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 
 # endregion[Imports]
 
@@ -154,7 +154,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
             await self._update_item_in_registered_items(item, new_item)
             await self.notify_update(item, new_item)
 
-    @tasks.loop(minutes=5, reconnect=True)
+    @custom_loop(minutes=5, reconnect=True)
     async def check_for_updates(self):
         if self.completely_ready is False:
             return

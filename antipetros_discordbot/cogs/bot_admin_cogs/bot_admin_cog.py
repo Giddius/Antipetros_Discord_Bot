@@ -26,10 +26,11 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, Command
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.converters import CogConverter
-
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
+import matplotlib.pyplot as plt
 
 # endregion[Imports]
 
@@ -84,7 +85,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Init]
 
-
     def __init__(self, bot: "AntiPetrosBot"):
         self.listeners_enabled = {'stop_the_reaction_petros_listener': False}
         super().__init__(bot)
@@ -124,7 +124,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # region [Loops]
 
 
-    @tasks.loop(minutes=5)
+    @custom_loop(minutes=5)
     async def check_ws_rate_limit_loop(self):
         is_rate_limited = self.bot.is_ws_ratelimited()
         as_text = "IS NOT" if is_rate_limited is False else "! IS !"
@@ -132,6 +132,11 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         if is_rate_limited is True:
             await self.bot.creator.send("__**WARNING**__ ⚠️ THE BOT ***IS*** CURRENTLY RATE-LIMITED! ⚠️ __**WARNING**__")
 
+    @custom_loop(minutes=5)
+    async def close_all_plots_loop(self):
+        if self.completely_ready is False:
+            return
+        plt.close('all')
 # endregion[Loops]
 
 # region [Properties]
@@ -146,7 +151,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Properties]
 
 # region [Listener]
-
 
     @commands.Cog.listener(name='on_reaction_add')
     async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):
@@ -163,7 +167,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Listener]
 
 # region[Commands]
-
 
     @auto_meta_info_command()
     @owner_or_admin()
@@ -417,6 +420,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Helper]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

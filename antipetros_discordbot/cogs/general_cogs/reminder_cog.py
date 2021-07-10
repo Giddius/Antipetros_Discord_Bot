@@ -64,6 +64,7 @@ from antipetros_discordbot.utility.exceptions import AskCanceledError
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from functools import total_ordering
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from antipetros_discordbot.utility.discord_markdown_helper import CodeBlock, shorten_string
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
@@ -261,6 +262,7 @@ class ReminderCog(AntiPetrosBaseCog):
 
 # region [Setup]
 
+
     async def initialize_reminder_item(self):
         ReminderItem.cog = self
 
@@ -274,16 +276,23 @@ class ReminderCog(AntiPetrosBaseCog):
 
 # region [Loops]
 
-    @tasks.loop(minutes=1)
+    @custom_loop(seconds=30)
     async def remind_loop(self):
         if self.completely_ready is False:
             return
+        log.debug('checking if reminders have finished')
         now = datetime.now(tz=timezone.utc)
-        now = now.astimezone(tz=timezone.utc)
         async for reminder in self.get_reminders():
-            asyncio.create_task(reminder.trigger_check(now=now))
+            await reminder.trigger_check(now=now)
 
-    @tasks.loop(minutes=10)
+    @remind_loop.error
+    async def remind_loop_error_handler(self, error: Exception):
+        log.error(error, exc_info=True)
+        if self.remind_loop.is_running() is False:
+            log.warning("restarted 'remind_loop'")
+            self.remind_loop.start()
+
+    @custom_loop(minutes=10)
     async def clean_old_reminders_loop(self):
         log.info("cleaning old reminders from db")
         await self.db.delete_done_reminders()
@@ -297,7 +306,6 @@ class ReminderCog(AntiPetrosBaseCog):
 
 # region [Commands]
 
-
     @ auto_meta_info_command(experimental=True, aliases=['remind_me', "remind"])
     async def new_reminder(self, ctx: commands.Context, remind_at: str, name: str, *, reason: Optional[str] = None):
         reference_message = ctx.message.reference.resolved if ctx.message.reference is not None else None
@@ -306,6 +314,8 @@ class ReminderCog(AntiPetrosBaseCog):
             await ctx.send(f"Unable to parse datetime `{remind_at}`", delete_after=90)
             return
         _remind_at = _remind_at.replace(tzinfo=timezone.utc)
+        if _remind_at.microsecond == 0:
+            _remind_at = _remind_at.replace(microsecond=111)
         if _remind_at <= datetime.now(tz=timezone.utc):
             await ctx.send(f"The specified time `{remind_at}` is in the past, **I can not notify you at that time without breaking Causality**")
             return
@@ -314,14 +324,52 @@ class ReminderCog(AntiPetrosBaseCog):
         embed_data = await self.new_reminder_embed(remind_at=_remind_at, name=name, reason=reason, reference_message=reference_message)
         await ctx.send(**embed_data)
 
+    @auto_meta_info_command(logged=True)
+    @owner_or_admin(False)
+    async def check_reminder_loop_running(self, ctx: commands.Context):
+        await ctx.send(f"reminder_loop.is_running = {self.remind_loop.is_running()}")
+
+    @auto_meta_info_command(logged=True)
+    @owner_or_admin(False)
+    async def clear_all_reminder(self, ctx: commands.Context):
+        confirm_question = AskConfirmation(author=ctx.author, channel=ctx.channel, delete_question=True, error_on=True)
+        answer = await confirm_question.ask()
+        if answer is confirm_question.DECLINED:
+            await ctx.send('aborted!')
+            return
+
+        if answer is confirm_question.ACCEPTED:
+            await ctx.send('removing all reminders from the database')
+            await self._clear_and_recreate_reminder_tbl()
+            await ctx.send('done!')
+
 # endregion [Commands]
 
 # region [DataStorage]
 
     async def get_reminders(self) -> AsyncGenerator[ReminderItem, None]:
+        log.debug('trying to collect all reminders')
         for reminder in await self.db.get_all_reminders(reminder_item=ReminderItem):
+            log.debug(reminder)
             yield reminder
 
+    async def _clear_and_recreate_reminder_tbl(self):
+        log.critical("deleting 'reminder_tbl'")
+        await self.db.db.aio_write('DROP TABLE "reminder_tbl"')
+        log.critical("'reminder_tbl' was deleted!")
+        log.critical("recreating 'reminder_tbl'")
+        await self.db.db.aio_write("""CREATE TABLE IF NOT EXISTS reminder_tbl (
+    "id" INTEGER NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL UNIQUE,
+    "remind_at" TIMESTAMP NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "original_channel_id" INTEGER NOT NULL REFERENCES "text_channels_tbl" ("id"),
+    "original_message_id" INTEGER NOT NULL UNIQUE,
+    "reason" TEXT,
+    "reference_message_id" INTEGER,
+    "done" BOOL DEFAULT 0
+)""")
+    log.critical("'reminder_tbl' was recreated")
 
 # endregion [DataStorage]
 
@@ -358,7 +406,6 @@ class ReminderCog(AntiPetrosBaseCog):
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx: commands.Context):
         return True

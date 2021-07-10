@@ -3,7 +3,8 @@ from rich import inspect as rinspect
 from rich.console import Console as RichConsole
 from typing import Union, Optional, Callable, Iterable, TYPE_CHECKING
 from rich.rule import Rule
-
+import subprocess
+import os
 
 RICH_POSSIBLE_KWARGS = {"color_system",
                         "force_terminal",
@@ -56,7 +57,7 @@ def show_toast(title: str, msg: str, duration: int = 5):
     toaster.show_toast(title=title, msg=msg, duration=duration)
 
 
-def rinspect_object(in_object, output_file: str = None, **kwargs):
+def rinspect_object(in_object, output_file: str = None, auto_open: bool = False, **kwargs):
     def _apply_possible_console_kwargs(in_console_kwargs):
         found_kwargs = {}
         for key, value in kwargs.items():
@@ -84,10 +85,19 @@ def rinspect_object(in_object, output_file: str = None, **kwargs):
         save_method = "export_html" if output_file.split('.')[-1].casefold() == 'html' else "export_text"
         with open(output_file, 'w', encoding='utf-8', errors='ignore') as f:
             f.write(getattr(temp_console, save_method)())
+        if auto_open is True:
+            cmd = ["start"]
+            if save_method == "export_html":
+                cmd += ["firefox.exe", "-new-window"]
+            full_path = os.path.realpath(output_file)
+            cmd.append(full_path)
+            with subprocess.Popen(cmd, start_new_session=True, shell=True) as x:
+                pass
+
     temp_console.clear()
 
 
-def console_print(to_print, output_file: str = None, header_rule: Union[str, bool] = False, **kwargs):
+def console_print(to_print, output_file: str = None, header_rule: Union[str, bool] = False, auto_open: bool = False, **kwargs):
     def _apply_possible_console_kwargs(in_console_kwargs):
         found_kwargs = {}
         for key, value in kwargs.items():
@@ -110,4 +120,12 @@ def console_print(to_print, output_file: str = None, header_rule: Union[str, boo
         save_method = "export_html" if output_file.split('.')[-1].casefold() == 'html' else "export_text"
         with open(output_file, 'w', encoding='utf-8', errors='ignore') as f:
             f.write(getattr(temp_console, save_method)())
+        if auto_open is True:
+            cmd = ["start"]
+            if save_method == "export_html":
+                cmd += ["firefox.exe", "-new-window"]
+            full_path = os.path.realpath(output_file)
+            cmd.append(full_path)
+            with subprocess.Popen(cmd, start_new_session=True, shell=True) as x:
+                pass
     temp_console.clear()

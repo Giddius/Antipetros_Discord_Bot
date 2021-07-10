@@ -78,7 +78,7 @@ class WebAccessor(SubSupportBase):
     async def request_json(self, url):
         async with self.aio_session.get(url=url) as response:
             if RequestStatus(response.status) is RequestStatus.Ok:
-                return response.json()
+                return await response.json()
 
     async def close_sessions(self):
         log.info('closing sessions')

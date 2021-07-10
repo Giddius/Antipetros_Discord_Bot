@@ -19,7 +19,7 @@ import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import alt_seconds_to_pretty
-
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, has_attachments, log_invoker, owner_or_admin
 from antipetros_discordbot.utility.embed_helpers import make_basic_embed
 from antipetros_discordbot.utility.gidtools_functions import pathmaker

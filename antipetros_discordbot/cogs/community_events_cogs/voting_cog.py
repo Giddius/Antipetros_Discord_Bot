@@ -32,7 +32,7 @@ import unicodedata
 from io import BytesIO
 from textwrap import dedent
 
-
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 # import requests
 # import pyperclip
 # import matplotlib.pyplot as plt
@@ -158,7 +158,7 @@ class VotingCog(AntiPetrosBaseCog):
 
 # region [Loops]
 
-    @tasks.loop(minutes=5)
+    @custom_loop(minutes=5)
     async def remove_finished_votes(self):
         if self.completely_ready is False:
             return

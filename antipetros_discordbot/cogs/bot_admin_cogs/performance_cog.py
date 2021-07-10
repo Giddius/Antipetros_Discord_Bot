@@ -36,7 +36,7 @@ from antipetros_discordbot.utility.general_decorator import universal_log_profil
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 # endregion[Imports]
 
 # region [TODO]
@@ -132,7 +132,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Loops]
 
-    @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
+    @custom_loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def cpu_measure_loop(self):
         if self.completely_ready is False:
             return
@@ -143,7 +143,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15 = [x / psutil.cpu_count() * 100 for x in psutil.getloadavg()]
         await self.general_db.insert_cpu_performance(cpu_percent, cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15)
 
-    @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
+    @custom_loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def latency_measure_loop(self):
         if self.completely_ready is False:
             return
@@ -171,7 +171,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         else:
             raise error
 
-    @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
+    @custom_loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def memory_measure_loop(self):
         if self.completely_ready is False:
             return
@@ -289,6 +289,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
             await ctx.invoke(self.bot.get_command('report_memory'))
             await ctx.invoke(self.bot.get_command('report_latency'))
             await ctx.invoke(self.bot.get_command('report_cpu'))
+            plt.close('all')
         except StatisticsError as error:
             # TODO: make as error embed
             await ctx.send('not enough data points collected to report!', delete_after=120)

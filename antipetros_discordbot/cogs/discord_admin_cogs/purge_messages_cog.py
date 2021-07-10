@@ -26,6 +26,7 @@ import re
 from sortedcontainers import SortedDict, SortedList
 from discord.ext import commands
 from hashlib import blake2b
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker

@@ -58,6 +58,7 @@ from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation
 from PIL import Image, ImageEnhance, ImageFilter
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.sqldata_storager import general_db
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 import re
@@ -508,9 +509,8 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         await self.clear_all_is_online_messages_mechanism()
         await delete_message_if_text_channel(ctx)
 
-    @ auto_meta_info_command(clear_invocation=True, experimental=True)
+    @ auto_meta_info_command(clear_invocation=True, experimental=True, logged=True)
     @ allowed_channel_and_allowed_role()
-    @ log_invoker(log, 'warning')
     async def server_notification_settings(self, ctx: commands.Context):
         await delete_message_if_text_channel(ctx)
         selection_question = AskSelection.from_context(ctx, timeout=300, delete_question=True, error_on=True)
@@ -569,7 +569,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             inverse_set_value = "no" if current_value is True else "yes"
             confirm_question = AskConfirmation.from_other_asking(selection_question)
 
-            confirm_question.description = f"The setting `show in is-online-message` is currently **{current_value_text}** for Server `{selected_server.pretty_name}`.\nDo you want to `{inverse_value_text}` it?"
+            confirm_question.description = f"The setting `show in is-online-message` is currently **{current_value_text}** for Server `{selected_server.pretty_name}`.\n\nDo you want to `{inverse_value_text}` it?"
             confirm_answer = await confirm_question.ask()
             if confirm_answer is confirm_question.ACCEPTED:
                 COGS_CONFIG.set(self.config_name, f"{selected_server.name.lower()}_is_online_message_enabled", inverse_set_value)
@@ -710,6 +710,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
                 file = discord.File(bytefile, 'servers_pop.png')
             await ctx.send(file=file)
+            plt.close('all')
 
 
 # endregion [Commands]
@@ -875,8 +876,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
         ServerItem.status_switch_signal.connect(self.send_server_notification)
         await ServerItem.ensure_client()
         _out = []
-        for server_loading in asyncio.as_completed([asyncio.create_task(self._load_server_items_helper(name)) for name in self.server_names]):
-            server_item = await server_loading
+        for server_item in [await self._load_server_items_helper(name) for name in self.server_names]:
             if server_item is not None:
                 _out.append(server_item)
 

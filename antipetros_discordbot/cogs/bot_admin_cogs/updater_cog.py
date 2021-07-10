@@ -36,7 +36,7 @@ from antipetros_discordbot.utility.general_decorator import universal_log_profil
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
-
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 # endregion[Imports]
 
 # region [TODO]
@@ -119,7 +119,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
 # region [Loops]
 
-    @tasks.loop(minutes=30)
+    @custom_loop(minutes=30)
     async def cyclic_update_loop(self):
         if self.completely_ready is False:
             return

@@ -24,7 +24,7 @@ from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command
 from antipetros_discordbot.utility.general_decorator import async_log_profiler
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
-
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 from typing import Optional, TYPE_CHECKING
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command

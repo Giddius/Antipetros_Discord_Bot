@@ -134,3 +134,53 @@ CREATE TABLE IF NOT EXISTS reminder_tbl (
     "reference_message_id" INTEGER,
     "done" BOOL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS log_level_tbl (
+    "id" INTEGER NOT NULL UNIQUE,
+    "name" TEXT NOT NULL UNIQUE
+);
+INSERT
+    OR IGNORE INTO "log_level_tbl" ("id", "name")
+VALUES (0, 'NO_LEVEL');
+INSERT
+    OR IGNORE INTO "log_level_tbl" ("id", "name")
+VALUES (1, 'DEBUG');
+INSERT
+    OR IGNORE INTO "log_level_tbl" ("id", "name")
+VALUES (2, 'INFO');
+INSERT
+    OR IGNORE INTO "log_level_tbl" ("id", "name")
+VALUES (3, 'WARNING');
+INSERT
+    OR IGNORE INTO "log_level_tbl" ("id", "name")
+VALUES (4, 'CRITICAL');
+INSERT
+    OR IGNORE INTO "log_level_tbl" ("id", "name")
+VALUES (5, 'ERROR');
+CREATE TABLE IF NOT EXISTS antistasi_function_tbl (
+    "id" INTEGER NOT NULL PRIMARY KEY,
+    "function_name" TEXT NOT NULL UNIQUE,
+    "file_name" TEXT NOT NULL UNIQUE
+);
+CREATE TABLE IF NOT EXISTS log_record_type_tbl (
+    "id" INTEGER NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL UNIQUE
+);
+CREATE TABLE IF NOT EXISTS log_files_tbl (
+    "id" INTEGER NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "server_id" INTEGER NOT NULL REFERENCES "server_tbl" ("id"),
+    UNIQUE("name", "server_id")
+);
+CREATE TABLE IF NOT EXISTS log_records_tbl (
+    "id" INTEGER NOT NULL PRIMARY KEY,
+    "recorded_at" TIMESTAMP NOT NULL,
+    "server_id" INTEGER NOT NULL REFERENCES "server_tbl" ("id"),
+    "file_id" INTEGER NOT NULL REFERENCES "log_files_tbl" ("id"),
+    "start" INTEGER NOT NULL,
+    "end" INTEGER NOT NULL,
+    "level_id" INTEGER NOT NULL REFERENCES "log_level_tbl" ("id"),
+    "function_id" INTEGER NOT NULL REFERENCES "antistasi_function_tbl" ("id"),
+    "called_by_id" INTEGER REFERENCES "antistasi_function_tbl" ("id"),
+    "message" TEXT NOT NULL,
+    UNIQUE("recorded_at", "server_id", "message")
+);

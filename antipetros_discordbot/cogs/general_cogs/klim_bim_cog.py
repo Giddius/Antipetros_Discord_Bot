@@ -31,7 +31,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.utility.exceptions import ParseDiceLineError
 from antipetros_discordbot.utility.converters import UrlConverter
-
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseGroup, CommandCategory, RequiredFile, auto_meta_info_command, auto_meta_info_group

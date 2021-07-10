@@ -9,3 +9,7 @@ General:
         Graphs:
 
         Other:
+
+
+Bugs:
+    ✔ reminder loop seems to error out on the server, check why, fix @bug @done(21-07-10 04:16)

@@ -38,7 +38,7 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, Command
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
-
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 # endregion[Imports]
 
 # region [TODO]
@@ -119,7 +119,7 @@ class DbCaretakerCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Loops]
 
-    @tasks.loop(hours=6)
+    @custom_loop(hours=6)
     async def scheduled_vacuum(self):
         if self.completely_ready is False:
             return

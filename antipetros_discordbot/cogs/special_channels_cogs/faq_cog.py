@@ -26,7 +26,7 @@ from antipetros_discordbot.utility.general_decorator import universal_log_profil
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 
 # endregion[Imports]
 

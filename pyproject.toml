@@ -37,7 +37,7 @@ requires = [
     "rapidfuzz==1.4.1",
     "gidappdata==0.1.17",
     "gidconfig==0.2.17",
-    "gidlogger==0.1.33",
+    "gidlogger==0.1.39",
     "googletrans==4.0.0rc1",
     "humanize==3.4.1",
     "icecream==2.1.0",
@@ -65,6 +65,8 @@ requires = [
     "easydev==0.11.0",
     "yarl==1.6.3",
     "scipy==1.7.0",
+    "attrs==21.2.0",
+    "ordered-enum==0.0.6",
 ]
 
 requires-python = ">=3.9"

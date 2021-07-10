@@ -34,7 +34,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.special_characters im
 from antipetros_discordbot.utility.misc import loop_starter
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 # endregion[Imports]
 
 # region [TODO]

@@ -158,9 +158,9 @@ class AioGeneralStorageSQLite:
         self.is_shutdown = True
 
     async def backup_database(self):
-        async with self.db.lock:
-            log.debug("backing up database to %s", self.db.backup_path)
-            shutil.copy(self.db.path, self.db.backup_path)
+
+        log.debug("backing up database to %s", self.db.backup_path)
+        shutil.copy(self.db.path, self.db.backup_path)
         await self._truncate_backup_folder()
 
     async def _truncate_backup_folder(self):

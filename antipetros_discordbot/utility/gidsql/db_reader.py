@@ -97,11 +97,12 @@ class AioGidSqliteReader(AioGidSqliteActionBase):
 
     @asynccontextmanager
     async def active_row_factory(self, in_factory=False):
-        async with self.lock:
-            if in_factory is not False:
-                await self.enable_row_factory(in_factory=in_factory)
-            yield
-            await self.disable_row_factory()
+        await self.lock.acquire()
+        if in_factory is not False:
+            await self.enable_row_factory(in_factory=in_factory)
+        yield
+        await self.disable_row_factory()
+        self.lock.release()
 
     async def enable_row_factory(self, in_factory):
         if in_factory is True:

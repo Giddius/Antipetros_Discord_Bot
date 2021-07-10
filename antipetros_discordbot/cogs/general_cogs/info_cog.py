@@ -36,7 +36,7 @@ from pygments.filters import get_all_filters
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-
+from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker

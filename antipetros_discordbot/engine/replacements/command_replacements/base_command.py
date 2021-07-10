@@ -136,7 +136,7 @@ class AntiPetrosBaseCommand(commands.Command):
         return self.bot.salute_emoji
 
     def set_logged(self, value: bool):
-        self.notifications[self.logged_notifier] = value
+        self.notifications[self._logged_notifier] = value
 
     async def _check_rate_limited(self):
         is_rate_limited = self.bot.is_ws_ratelimited()
