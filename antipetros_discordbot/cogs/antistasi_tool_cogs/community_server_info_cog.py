@@ -864,7 +864,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
         asyncio.create_task(server_item.is_online())
 
-        await (server_item.gather_log_items())
+        await server_item.gather_log_items()
         await server_item.retrieve_is_online_message()
 
         asyncio.create_task(delayed_execution(10, server_item.get_mod_files))

@@ -7,6 +7,7 @@ import asyncio
 from datetime import datetime
 from collections import namedtuple
 import re
+import random
 from typing import List, TYPE_CHECKING
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, tasks
@@ -109,7 +110,6 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 
 # region [Properties]
 
-
     @property
     def registered_workshop_items(self):
         return [self.workshop_item(**item) for item in loadjson(self.registered_workshop_items_file)]
@@ -158,7 +158,10 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
     async def check_for_updates(self):
         if self.completely_ready is False:
             return
+
         for item in self.registered_workshop_items:
+            sleep_seconds = random.randint(0, 300 // len(self.register_workshop_item))
+            await asyncio.sleep(sleep_seconds)
             asyncio.create_task(self._check_item(item))
 
 # endregion [Loops]
@@ -169,7 +172,6 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
@@ -290,7 +292,9 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
             if match:
                 return match.group('image_link')
         except IndexError:
-            return None
+            for image_tag in in_soup.find_all('img'):
+                if image_tag.get('id') == "previewImage":
+                    return image_tag.get('src')
 
     async def _get_item_size(self, in_soup: BeautifulSoup):
         size = in_soup.findAll("div", {"class": "detailsStatRight"})[0]
@@ -315,6 +319,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

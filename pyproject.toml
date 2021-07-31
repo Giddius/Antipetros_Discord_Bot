@@ -20,7 +20,7 @@ requires = [
     "Pygments==2.8.1",
     "WeasyPrint==52.5",
     "aiodav==0.1.4",
-    "aiohttp==3.7.4.post0",
+    "aiohttp[speedups]==3.7.4.post0",
     "aiosqlite==0.17.0",
     "antistasi_template_checker==0.1.1",
     "arrow==1.0.3",
@@ -99,6 +99,8 @@ exclude = [
     "dev_tools_and_scripts",
     "pytest_coverage",
     "antipetros_website",
+    "planning.todo",
+    "tasks.py",
 ]
 
 # endregion [flit]

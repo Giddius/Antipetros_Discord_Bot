@@ -4,6 +4,10 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
+from cloudinary.api import delete_resources_by_tag, resources_by_tag
+from cloudinary.uploader import upload
+import cloudinary
+from cloudinary.utils import cloudinary_url
 import re
 import json
 from datetime import datetime, timedelta, timezone
@@ -15,9 +19,11 @@ import asyncio
 import tempfile
 import webbrowser
 from discord.ext.commands import Greedy
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageEnhance
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageEnhance, ImageChops
 from itertools import chain
 import inspect
+from pprint import pprint
+from math import ceil
 from typing import Optional
 # * Third Party Imports --------------------------------------------------------------------------------->
 import discord
@@ -31,7 +37,7 @@ from weasyprint import HTML, CSS
 import gidlogger as glog
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import generate_bot_data, delete_message_if_text_channel
-from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson, pathmaker, bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, ContextAskAnswer
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command, AntiPetrosBaseCommand
@@ -51,9 +57,19 @@ from hashlib import blake2b
 import json
 from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation, AskInput, AskFile, AskInputManyAnswers, AskSelectionOption
+import pagan
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
     from antipetros_discordbot.engine.replacements.context_replacement import AntiPetrosBaseContext
+from antipetros_discordbot.utility.image_manipulation import find_min_fontsize, make_perfect_fontsize
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize, get_named_colors_mapping
+from matplotlib import pyplot as plt
+from matplotlib import patheffects
+from matplotlib import cm
+
+import matplotlib.dates as mdates
+import chat_exporter
 # endregion [Imports]
 
 # region [Logging]
@@ -91,7 +107,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     """
     Cog for debug or test commands, should not be enabled fo normal Bot operations.
     """
-
+    general_db = general_db
     public = False
     meta_status = CogMetaStatus.WORKING | CogMetaStatus.OPEN_TODOS | CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.NEEDS_REFRACTORING | CogMetaStatus.DOCUMENTATION_MISSING | CogMetaStatus.FOR_DEBUG
 
@@ -116,6 +132,8 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         self.general_db = general_db
         self.attachment_type_file = pathmaker(APPDATA['debug'], "attachment_types.json")
         self.helper = set()
+        self.temp_msg = None
+        self.temp_img = None
         if os.path.isfile(self.attachment_type_file) is False:
             writejson([], self.attachment_type_file)
         glog.class_init_notification(log, self)
@@ -167,9 +185,149 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         log.debug('cog "%s" was updated', str(self))
 
     @auto_meta_info_command()
+    async def backup_messages_check(self, ctx: commands.Context):
+        msgs = []
+        channel = self.bot.channel_from_id(571742794624925742)
+        async with ctx.typing():
+            log.debug("collecting messages")
+            async for message in channel.history(limit=9999999, oldest_first=False):
+                msgs.append(message)
+                await asyncio.sleep(0)
+            log.debug('transcribing to html')
+            transcript = await chat_exporter.raw_export(channel, msgs, "UTC")
+
+            if transcript is None:
+                return
+            log.debug("writing to BytesIO file")
+            with BytesIO() as bytefile:
+                bytefile.write(transcript.encode())
+                bytefile.seek(0)
+                file = discord.File(bytefile, 'blah.html')
+                await ctx.send(file=file)
+
+    @auto_meta_info_command()
+    async def upload_check(self, ctx: commands.Context):
+        cloudinary.config(
+            cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+            api_key=os.getenv('CLOUDINARY_API_KEY'),
+            api_secret=os.getenv('CLOUDINARY_API_SECRET_KEY'),
+            secure=True
+        )
+        image_path = APPDATA["cog_icon.png"]
+        response = await asyncio.to_thread(upload, image_path, tags='check', public_id="cog_icon")
+        url, options = await asyncio.to_thread(cloudinary_url,
+                                               response['public_id'],
+                                               format=response['format'])
+        embed_data = await self.bot.make_generic_embed(title='Upload Check', thumbnail=url, image=url)
+        self.temp_msg = await ctx.send(**embed_data)
+
+    async def stupid_graph(self):
+        report_data = await self.general_db.get_memory_data_last_24_hours()
+        x = [item.date_time for item in report_data]
+        y = [bytes2human(item.memory_in_use) for item in report_data]
+        fig, ax = plt.subplots()
+        ax.plot(x, y, linewidth=0.25,
+                solid_joinstyle='round',
+                solid_capstyle='round',
+                antialiased=True,
+                snap=True)
+        locator = mdates.AutoDateLocator()
+        formatter = mdates.ConciseDateFormatter(locator)
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_major_formatter(formatter)
+        ax.set_ylim(0, round(max(y) * 1.1))
+        fig.tight_layout()
+        path = pathmaker(APPDATA['temp_files'], str(random.randint(1, 9999999)) + '.png')
+        with open(path, 'wb') as f:
+            fig.savefig(f, format='png', dpi=500)
+        return path
+
+    @auto_meta_info_command()
+    async def change_image_check(self, ctx: commands.Context):
+        cloudinary.config(
+            cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+            api_key=os.getenv('CLOUDINARY_API_KEY'),
+            api_secret=os.getenv('CLOUDINARY_API_SECRET_KEY'),
+            secure=True
+        )
+        image_path = await self.stupid_graph()
+        response = await asyncio.to_thread(upload, image_path, tags='check', public_id=os.path.basename(image_path).split('.')[0])
+        url, options = await asyncio.to_thread(cloudinary_url,
+                                               response['public_id'],
+                                               format=response['format'])
+        embed = self.temp_msg.embeds[0]
+        image_url = embed.image.url
+        log.info("old url: %s, new url: %s", image_url, url)
+        embed.set_image(url=url)
+        await self.temp_msg.edit(embed=embed)
+
+    @ auto_meta_info_command()
     async def tell_sub_supporter(self, ctx: commands.Context):
         text = ListMarker.make_list([str(sub_sup) for sub_sup in self.bot.support.subsupports])
         await ctx.send(text, allowed_mentions=discord.AllowedMentions.none(), delete_after=120)
+
+    @ auto_meta_info_command()
+    async def identicon(self, ctx: commands.Context, member: Optional[discord.Member] = None):
+        input_string = ctx.author.display_name if member is None else member.display_name
+        img = await asyncio.to_thread(pagan.Avatar, input_string, pagan.SHA512)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fname = f"identicon_{ctx.author.name.replace(' ','_')}.png"
+            await asyncio.to_thread(img.save, str(tmpdir), fname)
+            with open(pathmaker(str(tmpdir), fname), 'rb') as f:
+                file = discord.File(f, filename=fname)
+                await ctx.send(file=file)
+
+    def get_identicon_image(self, in_string: str, max_string: str) -> Image:
+        identicon = pagan.Avatar(in_string, pagan.SHA512)
+        image = identicon.img
+        image = image.resize((round(image.size[0] * 2), round(image.size[1] * 2)))
+
+        width, height = image.size
+
+        image_font = make_perfect_fontsize(APPDATA["carbon bl.ttf"], max_string, width, height)
+
+        draw = ImageDraw.Draw(image)
+        w, h = draw.textsize(in_string, font=image_font)
+        draw.text(((width - w) / 2, height - round(h * 1.15)), in_string, fill=(255, 255, 255), stroke_width=image_font.size // 8, stroke_fill=(0, 0, 0), font=image_font)
+
+        # contrast = ImageEnhance.Contrast(image)
+        # image = contrast.enhance(1.25)
+        # color = ImageEnhance.Color(image=image)
+        # image = color.enhance(1.25)
+        return image
+
+    async def paste_together(self, members: list[discord.Member]) -> Image:
+        max_string = sorted(members, key=lambda x: len(x.display_name.encode('utf-8', errors='remove').decode('utf-8', errors='remove')))[-1].display_name
+        images = [await asyncio.to_thread(self.get_identicon_image, member.display_name, max_string) for member in members]
+        print(len(images))
+        amount = len(images)
+        spacing = max(images[0].size[0], images[0].size[1]) // 8
+        dice_per_line = 4
+        if amount <= dice_per_line:
+            b_image_size = ((images[0].size[0] * amount) + (spacing * amount), images[0].size[1])
+        else:
+            b_image_size = ((images[0].size[0] * dice_per_line) + (spacing * dice_per_line), (images[0].size[1] * ceil(amount / dice_per_line)) + (spacing * ceil(amount / dice_per_line)))
+        b_image = Image.new('RGBA', b_image_size, color=(0, 0, 0, 0))
+        current_x = 0
+        current_y = 0
+        for index, image in enumerate(images):
+            b_image.paste(image, (current_x, current_y))
+            current_x += image.size[0] + spacing
+            if (index + 1) % dice_per_line == 0:
+                current_x = 0
+                current_y += image.size[1] + spacing
+
+        return b_image
+
+    @ auto_meta_info_command()
+    async def identicon_team(self, ctx: commands.Context, *, role_name: str):
+        print(role_name)
+        all_members_with_role = await self.bot.all_members_with_role(role_name)
+
+        combined_image = await self.paste_together(all_members_with_role)
+        print(combined_image.size)
+        embed_data = await self.bot.make_generic_embed(title=f"Identicons for all members of {role_name.title()}", image=combined_image, thumbnail=None)
+        await ctx.send(**embed_data)
 
     @ auto_meta_info_command()
     async def dump_bot(self, ctx: commands.Context):
@@ -193,23 +351,23 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         writejson(msg.content, str(message_id) + '.json')
         await ctx.send('done')
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def say_bot_emoji(self, ctx: commands.Context):
         for name in self.bot.color_emoji_id_map:
             await ctx.send(await self.bot.get_color_emoji(name))
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def force_reconnect(self, ctx: commands.Context, seconds: int, times: int = 2):
         import time
         for i in range(times):
             time.sleep(seconds)
             await ctx.send(f"slept blocking for {seconds} seconds")
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def say_best_alias(self, ctx: commands.Context, command: CommandConverter):
         await ctx.send(command.best_alias)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def taken_colors(self, ctx: commands.Context):
         taken = []
         for cog_name, cog_object in sorted(self.bot.cogs.items(), key=lambda x: (x[1].color != 'default', x[1].color)):
@@ -225,7 +383,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
                 not_taken.append(color)
         await ctx.send('\n'.join(not_taken))
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def other_guild_emojis(self, ctx: commands.Context):
         x = {}
         for _emoji in self.bot.bot_testing_guild.emojis:
@@ -245,18 +403,18 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
                 f.write(schema.dumps(list(self.bot.antistasi_guild.roles), many=True))
             await ctx.send('done', delete_after=90, allowed_mentions=discord.AllowedMentions.none())
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def separated_list_converter_test(self, ctx: commands.Context, *, the_list: SeparatedListConverter(value_type=RoleOrIntConverter(), separator=',', strip_whitespace=True)):
         await ctx.send(ListMarker.make_list(the_list), allowed_mentions=discord.AllowedMentions.none())
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_message_existing(self, ctx: commands.Context, channel_id: int, message_id: int):
         try:
             await ctx.send(await self.bot.get_message_directly(channel_id, message_id), allowed_mentions=discord.AllowedMentions.none())
         except discord.errors.NotFound as e:
             await ctx.send(e, allowed_mentions=discord.AllowedMentions.none())
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_context(self, ctx: commands.Context):
         async with ctx.continous_typing():
             await ctx.send(str(self.bot))
@@ -265,13 +423,13 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
             console = Console(soft_wrap=True, record=True)
             rinspect(ctx, console=console, help=True, all=True)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_ask_confirmation(self, ctx):
         answer = await ctx.ask_confirmation("this is a test of the confirmation-method", 60.0)
         await ctx.send(str(answer))
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command(clear_invocation=True)
+    @ auto_meta_info_command(clear_invocation=True)
     async def check_ask_selection(self, ctx: commands.Context):
         faq_cog = self.bot.cogs.get('FaqCog')
 
@@ -285,17 +443,17 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
             return
         await ctx.send(answer.answer)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_ask_input(self, ctx: commands.Context):
         validator = re.compile(r"\*\*.*?\*\*")
         answer = await ctx.ask_input(description='this is a test', validator=validator, case_insensitive=True, timeout=60)
         await ctx.send(answer)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_voice_channel_members(self, ctx: commands.Context, voice_channel: discord.VoiceChannel):
         await ctx.send(ListMarker.make_list(member.mention for member in voice_channel.members))
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_rpc(self, ctx: commands.Context):
         info = await self.bot.application_info()
         from rich import inspect as rinspect
@@ -308,7 +466,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
     # def cog_unload(self):
     #     log.debug("Cog '%s' UNLOADED!", str(self))
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def concept_report(self, ctx: commands.Context):
         log.critical("%s concept report run was started by %s %s", "!" * 10, ctx.author.name, "!" * 10)
 
@@ -375,7 +533,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         webhook = discord.Webhook.from_url("https://discord.com/api/webhooks/854749192189640734/kd3tmI17bErnc6egy8ObrdfV6-Rm79hkPxNFxBjeZDSp4wNv4llJ8EG-9_z_6Awv8Jeu", adapter=discord.AsyncWebhookAdapter(self.bot.aio_session))
         await webhook.send(f"Report from {author.mention}\n\nReport Concerning: `{player_name}`\n\nReport:\n>>> {report}", allowed_mentions=discord.AllowedMentions.none(), username="REPORT", avatar_url="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Warning.svg/1200px-Warning.svg.png", files=hook_files)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def get_server_stati(self, ctx: commands.Context, channel: discord.TextChannel):
         await ctx.send(f'collecting all messages from channel {channel.name}')
 
@@ -397,7 +555,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         writejson(msgs, 'all_server_status_messages.json', sort_keys=False, default=str)
         await ctx.send(f'done, collected {len(msgs)} messages from channel {channel.name}', delete_after=120)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def create_emoji_list(self, ctx: commands.Context):
 
         await ctx.send('starting command emoji-list', store=True)
@@ -426,7 +584,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         await ctx.delete_stored_messages(delay=30)
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def server_info_check(self, ctx: commands.Context):
         cog = self.bot.get_cog("CommunityServerInfoCog")
         for s_name in ['mainserver_1', 'mainserver_2']:
@@ -474,8 +632,8 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         await emoji.delete()
         log.info("emoji %s was deleted", emoji)
 
-    @auto_meta_info_command()
-    @has_image_attachment(1)
+    @ auto_meta_info_command()
+    @ has_image_attachment(1)
     async def new_emoji(self, ctx: commands.Context, contrast: float, repeat_enhance: int, color_factor: float, *, names: str = None):
         names = [] if names is None else [name for name in names.split() if name != ""]
         for attachment in ctx.message.attachments:
@@ -491,17 +649,17 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
             await ctx.send(emoji)
             asyncio.create_task(self._remove_emoji(emoji))
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def tell_allowed_channels(self, ctx: commands.Context, command: CommandConverter):
         await ctx.send(command.allowed_channels)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def tell_helper(self, ctx: commands.Context):
         text = '\n'.join(str(member) for member in self.helper)
 
         await ctx.send(text, allowed_mentions=discord.AllowedMentions.none(), delete_after=60)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def ping_helper(self, ctx: commands.Context, *, text: str = None):
         msg = ' | '.join(helper.mention for helper in self.helper) + f' | {self.bot.creator.mention}'
         if text is not None:
@@ -512,7 +670,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         await ctx.send(msg, allowed_mentions=discord.AllowedMentions.all(), reference=reference)
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def check_create_dm_channel(self, ctx: commands.Context):
         member = self.bot.creator
         await ctx.send(f"Dm channel of {member.mention} is {member.dm_channel}")

@@ -27,6 +27,7 @@ pep517==0.10.0
 pigar==0.10.0
 pipdeptree==2.0.0
 pipreqs==0.4.10
+pyannotate
 pydeps==1.9.13
 pydoc-markdown==3.10.1
 pypandoc==1.5

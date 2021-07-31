@@ -106,7 +106,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         self.plot_formatting_info = {'latency': COGS_CONFIG.get(self.config_name, 'latency_graph_formatting'),
                                      'memory': COGS_CONFIG.get(self.config_name, 'memory_graph_formatting'),
                                      'cpu': COGS_CONFIG.get(self.config_name, 'cpu_graph_formatting')}
-
+        self.initial_memory = int(os.getenv('INITIAL_MEMORY_USAGE', 0))
         self.general_db = general_db
 
 
@@ -318,7 +318,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         plt.rc("xtick.minor", width=0.25, size=3)
         plt.rc('xtick', labelsize=10)
 
-    @ universal_log_profiler
     async def make_graph(self, data, typus: str, save_to=None):
         plt.style.use('dark_background')
 
@@ -367,7 +366,10 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
         plt.axvline(x=vline_max, color='g', linestyle=':')
         plt.axhline(y=h_line_height, color='r', linestyle='--')
-
+        if typus == 'memory':
+            plt.axhline(y=bytes2human(self.initial_memory), color='y', linestyle=':')
+        elif typus == 'latency':
+            plt.axhline(y=mean(y), color='y', linestyle=':')
         plt.axis(ymin=ymin, ymax=ymax)
 
         plt.title(f'{typus.title()} -- {datetime.utcnow().strftime("%Y.%m.%d")}')
@@ -384,14 +386,12 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
             return discord.File(image_binary, filename=f'{typus}graph.png'), f"attachment://{typus}graph.png"
 
-    @ universal_log_profiler
     async def convert_memory_size(self, in_bytes, new_unit: DataSize, annotate: bool = False, extra_digits=2):
 
         if annotate is False:
             return round(int(in_bytes) / new_unit.value, ndigits=extra_digits)
         return str(round(int(in_bytes) / new_unit.value, ndigits=extra_digits)) + ' ' + new_unit.short_name
 
-    @ universal_log_profiler
     async def get_time_from_max_y(self, data, max_y, typus):
         for item in data:
             if typus == 'memory':

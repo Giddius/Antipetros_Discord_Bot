@@ -179,7 +179,6 @@ class TranslateCog(AntiPetrosBaseCog):
         return True
 
     @commands.Cog.listener(name="on_raw_reaction_add")
-    @async_log_profiler
     async def emoji_translate_listener(self, payload):
         """
         Translates a Message when you add a Flag Emoji to it.

@@ -184,3 +184,15 @@ CREATE TABLE IF NOT EXISTS log_records_tbl (
     "message" TEXT NOT NULL,
     UNIQUE("recorded_at", "server_id", "message")
 );
+CREATE TABLE IF NOT EXISTS a3_functions_tbl (
+    "id" INTEGER NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL UNIQUE,
+    "url" TEXT NOT NULL UNIQUE,
+    "description" TEXT,
+    "syntax" TEXT,
+    "example_1" TEXT,
+    "example_2" TEXT,
+    "example_3" TEXT,
+    "example_4" TEXT,
+    "example_5" TEXT
+);

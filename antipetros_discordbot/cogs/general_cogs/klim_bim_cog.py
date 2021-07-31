@@ -242,7 +242,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         urban_request_url = "https://api.urbandictionary.com/v0/define?term="
         full_url = urban_request_url + urlquote(term)
 
-        json_content = await self.bot.request_json(url=full_url)
+        json_content = await self.bot.get_request_json(url=full_url)
         content_list = sorted(json_content.get('list'), key=lambda x: x.get('thumbs_up') + x.get('thumbs_down'), reverse=True)
 
         for index, item in enumerate(content_list):

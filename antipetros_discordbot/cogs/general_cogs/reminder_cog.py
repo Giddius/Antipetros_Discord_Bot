@@ -285,13 +285,6 @@ class ReminderCog(AntiPetrosBaseCog):
         async for reminder in self.get_reminders():
             await reminder.trigger_check(now=now)
 
-    @remind_loop.error
-    async def remind_loop_error_handler(self, error: Exception):
-        log.error(error, exc_info=True)
-        if self.remind_loop.is_running() is False:
-            log.warning("restarted 'remind_loop'")
-            self.remind_loop.start()
-
     @custom_loop(minutes=10)
     async def clean_old_reminders_loop(self):
         log.info("cleaning old reminders from db")
@@ -369,7 +362,7 @@ class ReminderCog(AntiPetrosBaseCog):
     "reference_message_id" INTEGER,
     "done" BOOL DEFAULT 0
 )""")
-    log.critical("'reminder_tbl' was recreated")
+        log.critical("'reminder_tbl' was recreated")
 
 # endregion [DataStorage]
 

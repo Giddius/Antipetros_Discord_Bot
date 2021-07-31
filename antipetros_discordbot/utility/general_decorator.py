@@ -40,6 +40,8 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # endregion[Constants]
 
+NANO_SECONDS_FACTOR = 1_000_000_000
+
 
 def debug_timing_print(func):
     @wraps(func)
@@ -111,28 +113,32 @@ def sync_log_profiler(f):
 
 
 def universal_log_profiler(f):
+    pretty = True if os.getenv('ANTIPETROS_PROFILING_PRETTY', '0') == "1" else False
+
     @wraps(f)
     async def async_wrapper(*args, **kwargs):
-        if os.getenv('ANTIPETROS_PROFILING') == '1':
+        if os.getenv('ANTIPETROS_PROFILING', '0') == '1':
             logger = glog.aux_logger(__name__)
             start_time = process_time_ns()
             _out = await f(*args, **kwargs)
             time_taken = process_time_ns() - start_time
             if time_taken > 0:
-                logger.profile("<PROFILING> module: %s, function: %s, time_taken: %s ns</PROFILING>", f.__module__, f.__name__, str(time_taken))
+                time_string = str(round(time_taken / NANO_SECONDS_FACTOR, 2)) + ' s' if pretty is True else str(time_taken) + ' ns'
+                logger.critical("<PROFILING> module: %s, function: %s, time_taken: %s</PROFILING>", f.__module__, f.__name__, time_string)
         else:
             _out = await f(*args, **kwargs)
         return _out
 
     @wraps(f)
     def wrapper(*args, **kwargs):
-        if os.getenv('ANTIPETROS_PROFILING') == '1':
+        if os.getenv('ANTIPETROS_PROFILING', '0') == '1':
             logger = glog.aux_logger(__name__)
             start_time = process_time_ns()
             _out = f(*args, **kwargs)
             time_taken = process_time_ns() - start_time
             if time_taken > 0:
-                logger.profile("<PROFILING> module: %s, function: %s, time_taken: %s ns</PROFILING>", f.__module__, f.__name__, str(time_taken))
+                time_string = str(round(time_taken / NANO_SECONDS_FACTOR, 2)) + ' s' if pretty is True else str(time_taken) + ' ns'
+                logger.critical("<PROFILING> module: %s, function: %s, time_taken: %s</PROFILING>", f.__module__, f.__name__, time_string)
         else:
             _out = f(*args, **kwargs)
         return _out

@@ -25,8 +25,9 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCommand, Ant
 
 from sortedcontainers import SortedList
 if TYPE_CHECKING:
-    from antipetros_discordbot.auxiliary_classes.server_item import ServerItem, IsOnlineMessage
+    from antipetros_discordbot.auxiliary_classes.aux_server_classes import ServerItem, IsOnlineMessage
     from antipetros_discordbot.cogs.general_cogs.reminder_cog import ReminderItem
+    from antipetros_discordbot.cogs.antistasi_tool_cogs.biki_cog import A3Function
 # endregion[Imports]
 
 # region [Constants]
@@ -79,7 +80,8 @@ class MemoryPerformanceItem:
 
     def __init__(self, timestamp, memory_in_use: int):
         self.raw_timestamp = timestamp
-        self.date_time = datetime.fromisoformat(self.raw_timestamp)
+
+        self.date_time = timestamp if isinstance(timestamp, datetime) else datetime.fromisoformat(timestamp)
         self.memory_in_use = memory_in_use
         self.as_percent = (self.memory_in_use / self.total_memory) * 100
 
@@ -98,7 +100,7 @@ class LatencyPerformanceItem:
 
     def __init__(self, timestamp, latency: int):
         self.raw_timestamp = timestamp
-        self.date_time = datetime.fromisoformat(self.raw_timestamp)
+        self.date_time = datetime.fromisoformat(self.raw_timestamp) if isinstance(self.raw_timestamp, str) else self.raw_timestamp
         self.latency = latency
 
     @cached_property
@@ -116,7 +118,7 @@ class CpuPerformanceItem:
 
     def __init__(self, timestamp, usage_percent: int, load_average_1: int, load_average_5: int, load_average_15: int):
         self.raw_timestamp = timestamp
-        self.date_time = datetime.fromisoformat(self.raw_timestamp)
+        self.date_time = datetime.fromisoformat(self.raw_timestamp) if isinstance(self.raw_timestamp, str) else self.raw_timestamp
         self.usage_percent = usage_percent
         self.load_average_1 = load_average_1
         self.load_average_5 = load_average_5
@@ -170,6 +172,18 @@ class AioGeneralStorageSQLite:
 
     async def aio_vacuum(self):
         await self.db.aio_vacuum()
+
+    async def insert_a3_function(self, function_item: "A3Function"):
+        extra_data = list(function_item.extra_data.values())
+        while len(extra_data) < 6:
+            extra_data.append(None)
+        args = [function_item.name, function_item.name, str(function_item.url), function_item.description] + extra_data
+
+        await self.db.aio_write('insert_a3_function', tuple(args))
+
+    async def get_a3_functions(self):
+        result = await self.db.aio_query("get_a3_functions", row_factory=True)
+        return [row for row in result]
 
     async def insert_server(self, server_item):
         await self.db.aio_write('insert_server', (server_item.name, server_item.name, server_item.server_address.url, server_item.server_address.port, server_item.server_address.query_port))

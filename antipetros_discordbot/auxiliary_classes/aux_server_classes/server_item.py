@@ -27,7 +27,7 @@ from aiodav import Client as AioWebdavClient
 from aiodav.client import Resource
 from aiodav.exceptions import NoConnection
 import gidlogger as glog
-from asyncio import Lock as AioLock
+
 from asyncstdlib import lru_cache as async_lru_cache
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, loadjson, readit, pathmaker, writejson
 
@@ -691,9 +691,23 @@ class ServerItem:
             return ' '.join([group.title() if any(not char.isupper() for char in group) else group for group in name_match.groups() if group])
         return self.name.replace('_', ' ').title()
 
+    async def _retry_list_log_items(self, try_amount: int = 3, delay: float = 5.0):
+        async for try_num in async_range(try_amount):
+            try:
+
+                return await self.client.list(self.log_folder_path, get_info=True)
+
+            except NoConnection:
+                if try_num < (try_amount - 1):
+                    log.debug("retrying getting log items for server %s, try number: %s", self.name, try_num)
+                    await asyncio.sleep(delay)
+                    continue
+                else:
+                    raise
+
     async def list_log_items_on_server(self):
 
-        for info_item in await self.client.list(self.log_folder_path, get_info=True):
+        for info_item in await self._retry_list_log_items():
             if info_item.get('isdir') is False:
                 async with self.lock:
                     resource_item = self.client.resource(fix_path(info_item.get('path')))
@@ -766,7 +780,7 @@ class ServerItem:
         self.on_notification_timeout[status] = False
         log.debug("finished notification timeout for Server %s and status %s", self.name, str(status))
 
-    async def _retry_get_info(self, try_amount: int = 3, delay: float = 5.0):
+    async def _retry_get_info(self, try_amount: int = 3, delay: float = 2.0):
         async for try_num in async_range(try_amount):
             try:
                 info_data = await a2s.ainfo(self.server_address.query_address, timeout=self.timeout, encoding=self.encoding)

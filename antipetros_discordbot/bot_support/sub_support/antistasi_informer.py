@@ -247,11 +247,12 @@ class AntistasiInformer(SubSupportBase):
         return self.get_channel_link(channel) + f"/{message_id}"
 
     async def all_members_with_role(self, role: str) -> List[discord.Member]:
-        role = await self.role_from_string(role)
+        role = self.role_from_string(role)
         _out = []
         for member in self.antistasi_guild.members:
             if role in member.roles:
                 _out.append(member)
+                await asyncio.sleep(0)
         return list(set(_out))
 
     async def on_ready_setup(self) -> None:
