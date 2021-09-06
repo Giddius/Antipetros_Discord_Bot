@@ -27,7 +27,7 @@ from aiodav import Client as AioWebdavClient
 from aiodav.client import Resource
 from aiodav.exceptions import NoConnection
 import gidlogger as glog
-
+from asyncio import Lock as AioLock
 from asyncstdlib import lru_cache as async_lru_cache
 from antipetros_discordbot.utility.gidtools_functions import bytes2human, loadjson, readit, pathmaker, writejson
 
@@ -252,18 +252,26 @@ class LogParser:
 
     async def get_mod_data_html_file(self) -> discord.File:
         with BytesIO() as bytefile:
-            html_string = await self._render_mod_data()
-            bytefile.write(html_string.encode('utf-8', errors='ignore'))
-            bytefile.seek(0)
-            return discord.File(bytefile, f"{self.server.name}_mods.html")
+            try:
+                html_string = await self._render_mod_data()
+                bytefile.write(html_string.encode('utf-8', errors='ignore'))
+                bytefile.seek(0)
+                return discord.File(bytefile, f"{self.server.name}_mods.html")
+            except BaseException as e:
+                log.error(exc_info=e)
+                return None
 
     async def get_mod_data_image_file(self) -> discord.File:
-        html_string = await self._render_mod_data()
-        weasy_html = await asyncio.to_thread(HTML, string=html_string)
-        with BytesIO() as bytefile:
-            await asyncio.to_thread(weasy_html.write_png, bytefile, optimize_images=False, presentational_hints=False, resolution=96)
-            bytefile.seek(0)
-            return discord.File(bytefile, f"{self.server.name}_mods.png")
+        try:
+            html_string = await self._render_mod_data()
+            weasy_html = await asyncio.to_thread(HTML, string=html_string)
+            with BytesIO() as bytefile:
+                await asyncio.to_thread(weasy_html.write_png, bytefile, optimize_images=False, presentational_hints=False, resolution=96)
+                bytefile.seek(0)
+                return discord.File(bytefile, f"{self.server.name}_mods.png")
+        except BaseException as e:
+            log.error(exc_info=e)
+            return None
 
     async def get_only_level(self, level: str):
         _out = []
@@ -444,6 +452,7 @@ class LogFileItem:
             _hash = self.hashfunc(bytefile.read()).hexdigest(8)
             bytefile.seek(0)
             file = discord.File(bytefile, name)
+
         embed_data = await self.server_item.cog.bot.make_generic_embed(title=self.name, fields=[self.server_item.cog.bot.field_item(name='Server', value=self.server_item.pretty_name, inline=False),
                                                                                                 self.server_item.cog.bot.field_item(name='Size', value=self.size_pretty, inline=False),
                                                                                                 self.server_item.cog.bot.field_item(name='Created', value=self.created_pretty, inline=False),
@@ -508,7 +517,7 @@ class ServerAddress:
 
 class ServerItem:
     pretty_name_regex = re.compile(r"(?P<name>[a-z]+)\_?(?P<server>server)\_?(?P<number>\d)?", re.IGNORECASE)
-    timeout = 5.0
+    timeout = 4.0
     battlemetrics_base_url = yarl.URL("https://www.battlemetrics.com/servers/arma3")
 
     # TODO: Refactor into a "server_meta_data_mapping" from here
@@ -691,23 +700,9 @@ class ServerItem:
             return ' '.join([group.title() if any(not char.isupper() for char in group) else group for group in name_match.groups() if group])
         return self.name.replace('_', ' ').title()
 
-    async def _retry_list_log_items(self, try_amount: int = 3, delay: float = 5.0):
-        async for try_num in async_range(try_amount):
-            try:
-
-                return await self.client.list(self.log_folder_path, get_info=True)
-
-            except NoConnection:
-                if try_num < (try_amount - 1):
-                    log.debug("retrying getting log items for server %s, try number: %s", self.name, try_num)
-                    await asyncio.sleep(delay)
-                    continue
-                else:
-                    raise
-
     async def list_log_items_on_server(self):
 
-        for info_item in await self._retry_list_log_items():
+        for info_item in await self.client.list(self.log_folder_path, get_info=True):
             if info_item.get('isdir') is False:
                 async with self.lock:
                     resource_item = self.client.resource(fix_path(info_item.get('path')))
@@ -780,16 +775,17 @@ class ServerItem:
         self.on_notification_timeout[status] = False
         log.debug("finished notification timeout for Server %s and status %s", self.name, str(status))
 
-    async def _retry_get_info(self, try_amount: int = 3, delay: float = 2.0):
+    async def _retry_get_info(self, try_amount: int = 5, delay: float = 1.0):
         async for try_num in async_range(try_amount):
             try:
                 info_data = await a2s.ainfo(self.server_address.query_address, timeout=self.timeout, encoding=self.encoding)
                 self._official_name = info_data.server_name
                 return info_data
-            except asyncio.exceptions.TimeoutError:
+            except asyncio.exceptions.TimeoutError as error:
                 if try_num < (try_amount - 1):
                     await asyncio.sleep(delay)
-                    log.debug("retrying getting server info for server %s, try number: %s", self.name, try_num)
+                    log.warning("retrying getting server info for server %s, try number: %s because of %s", self.name, try_num, error)
+
                     continue
                 else:
                     raise
@@ -808,6 +804,8 @@ class ServerItem:
 
     async def make_server_info_embed(self, with_mods: bool = True):
         if with_mods is True:
+            if self.has_access_to_logs is False:
+                return await self.make_server_info_embed(with_mods=False)
             try:
                 mod_data = await self.get_mod_files()
             except Exception as error:
@@ -817,6 +815,7 @@ class ServerItem:
         ping = round(float(info_data.ping), ndigits=3)
         password_needed = "YES 🔐" if info_data.password_protected is True else 'NO 🔓'
         image = self.cog.server_symbol if with_mods is False else mod_data.image
+        ts_ip = COGS_CONFIG.retrieve("community_server_info", 'teamspeak_server_addresses', typus=List[str], direct_fallback=["38.65.5.151", "antistasi.armahosts.com"])
         embed_data = await self.cog.bot.make_generic_embed(title=info_data.server_name,
                                                            thumbnail=image,
                                                            author="armahosts",
@@ -824,7 +823,7 @@ class ServerItem:
                                                            color="blue",
                                                            fields=[self.cog.bot.field_item(name="Server Address", value=self.server_address.url, inline=True),
                                                                    self.cog.bot.field_item(name="Port", value=self.server_address.port, inline=True),
-                                                                   self.cog.bot.field_item(name="Teamspeak", value=f"38.65.5.151  {ZERO_WIDTH}  **OR**  {ZERO_WIDTH}  antistasi.armahosts.com"),
+                                                                   self.cog.bot.field_item(name="Teamspeak", value=f"{ts_ip[0]}  {ZERO_WIDTH}  **OR**  {ZERO_WIDTH}  antistasi.armahosts.com"),
                                                                    self.cog.bot.field_item(name="Game", value=info_data.game, inline=False),
                                                                    self.cog.bot.field_item(name="Players", value=f"{info_data.player_count}/{info_data.max_players}", inline=True),
                                                                    self.cog.bot.field_item(name="Ping", value=ping if ping is not None else "NA", inline=True),
@@ -833,7 +832,8 @@ class ServerItem:
                                                                    self.cog.bot.field_item(name='Battlemetrics', value=embed_hyperlink('link to Battlemetrics', self.battle_metrics_url), inline=True)],
                                                            timestamp=self.newest_log_item.modified if self.log_folder is not None else datetime.now(timezone.utc))
         if with_mods is True:
-            embed_data['files'].append(mod_data.html)
+            if self.has_access_to_logs is True and mod_data and isinstance(mod_data.html, discord.File):
+                embed_data['files'].append(mod_data.html)
         return embed_data
 
     async def dump(self):

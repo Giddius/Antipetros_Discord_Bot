@@ -15,7 +15,6 @@ from rich import print as rprint, inspect as rinspect
 from PIL import Image, ImageDraw, ImageFont, ImageChops, ImageFilter, ImageOps, ImageEnhance, ImageFile, ImageColor, ImageStat, ImagePalette, ImageSequence, ImageMath, ImageCms, ImageWin, ImageShow, ImageMode, ImagePath
 import gidlogger as glog
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from functools import lru_cache
 # endregion [Imports]
 
 # region [TODO]
@@ -55,19 +54,17 @@ def get_text_dimensions(text_string, font):
     return (text_width, text_height)
 
 
-@lru_cache()
-def make_perfect_fontsize(font_file, text: str, image_width: int, image_height: int, padding: tuple[int, int] = None):
-    padding = (10, 10) if padding is None else padding
-    padding_width = image_width // padding[0]
-    padding_height = image_height // padding[1]
-    font_size = 1
+def make_perfect_fontsize(font_file, text: str, image_width: int, image_height: int):
+    padding_width = image_width // 10
+    padding_height = image_height // 10
+    font_size = 16
     font = ImageFont.truetype(font_file, font_size)
     text_size = get_text_dimensions(text, font)
     while text_size[0] <= (image_width - padding_width) and text_size[1] <= (image_height - padding_height):
         font_size += 1
         font = ImageFont.truetype(font_file, font_size)
         text_size = get_text_dimensions(text, font)
-    log.debug(f"found perfect font size -> {font_size-1} for text {text}")
+    log.debug(f"found perfect font size -> {font_size-1}")
     return ImageFont.truetype(font_file, font_size - 1)
 
 

@@ -331,7 +331,6 @@ class ReportItem:
         await self.cog.report_channel_anonymized.send(**anonymized_embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     async def collect_report(self):
-
         await self._ask_for_target()
         await self._ask_for_location()
         await self._ask_time()
@@ -369,7 +368,8 @@ class RemarkItem:
         self.channel = channel
         self.remark_id = self._determine_remark_id()
         self.remark_type = None
-        self.target = None
+        self.target_mention = None
+        self.target_clear_name = None
         self.text = ""
         self.files = []
         self.full_message_data = None
@@ -426,9 +426,11 @@ class RemarkItem:
         elif answer.isnumeric() and len(answer) == 18:
             maybe_target_member = self.cog.bot.get_antistasi_member(int(answer))
         if maybe_target_member is not None:
-            self.target = maybe_target_member.mention
+            self.target_mention = maybe_target_member.mention
+            self.target_clear_name = maybe_target_member.display_name
         else:
-            self.target = f"`{answer}`"
+            self.target_mention = ''
+            self.target_clear_name = answer
 
     async def _ask_text(self):
         ask_text_data = self.ask_text_data.get('ask_text', {})
@@ -456,8 +458,10 @@ class RemarkItem:
         data = {}
         data['utc_time'] = datetime.now(tz=timezone.utc).strftime(self.datetime_format)
         data['remarker'] = self.author.mention
+        data['remarker_clear_name'] = self.author.display_name
         data['remark_type'] = self.remark_type
-        data['target'] = self.target
+        data['target'] = self.target_mention
+        data['target_clear_name'] = self.target_clear_name
         data['remark_text'] = self.text if len(self.text) <= 1900 else "see attachment"
         data['remark_type_emoji'] = self.type_emoji_map.get(self.remark_type)
         data['remark_id'] = self.remark_id
@@ -638,6 +642,7 @@ class ReportCog(AntiPetrosBaseCog):
             message = await self.bot.get_message_directly(payload.channel_id, payload.message_id)
 
         except discord.errors.NotFound:
+            log.error('Unable to retrieve remark trigger message because not Found')
             return
         emoji = str(payload.emoji)
         await message.remove_reaction(payload.emoji, reaction_member)
@@ -667,7 +672,7 @@ class ReportCog(AntiPetrosBaseCog):
 
         embed_data = await self.bot.make_generic_embed(title=title,
                                                        description=description,
-                                                       thumbnail="https://www.lotus-qa.com/wp-content/uploads/2020/02/testing.jpg",
+                                                       thumbnail="https://i.postimg.cc/WpKdd6rq/remark-icon.png",
                                                        timestamp=None,
                                                        fields=[self.bot.field_item('If something goes wrong:', 'Please contact an Admin and tell im the situation, they will then contact `Giddi`, to fix the bug!')])
         msg = await remark_channel.send(**embed_data)
@@ -675,7 +680,7 @@ class ReportCog(AntiPetrosBaseCog):
         COGS_CONFIG.set(self.config_name, 'remark_request_channel_id', str(remark_channel.id))
         COGS_CONFIG.set(self.config_name, 'remark_request_message_id', str(msg.id))
 
-    @auto_meta_info_command()
+    @ auto_meta_info_command()
     async def remark(self, ctx: commands.Context):
         remark = await RemarkItem.from_ctx(ctx)
 
@@ -685,9 +690,9 @@ class ReportCog(AntiPetrosBaseCog):
         except BaseException as e:
             log.exception("encountered exception", exc_info=e)
 
-    @auto_meta_info_command()
-    @allowed_channel_and_allowed_role(True)
-    @commands.cooldown(1, 300, commands.BucketType.user)
+    @ auto_meta_info_command()
+    @ allowed_channel_and_allowed_role(True)
+    @ commands.cooldown(1, 300, commands.BucketType.user)
     async def report(self, ctx: commands.Context):
         if self.bot.is_debug is True:
             log.info("Report started by Member %s", ctx.author)

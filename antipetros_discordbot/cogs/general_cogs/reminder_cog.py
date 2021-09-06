@@ -64,7 +64,6 @@ from antipetros_discordbot.utility.exceptions import AskCanceledError
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from functools import total_ordering
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from antipetros_discordbot.utility.discord_markdown_helper import CodeBlock, shorten_string
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
@@ -276,7 +275,7 @@ class ReminderCog(AntiPetrosBaseCog):
 
 # region [Loops]
 
-    @custom_loop(seconds=30)
+    @tasks.loop(seconds=30)
     async def remind_loop(self):
         if self.completely_ready is False:
             return
@@ -285,7 +284,14 @@ class ReminderCog(AntiPetrosBaseCog):
         async for reminder in self.get_reminders():
             await reminder.trigger_check(now=now)
 
-    @custom_loop(minutes=10)
+    @remind_loop.error
+    async def remind_loop_error_handler(self, error: Exception):
+        log.error(error, exc_info=True)
+        if self.remind_loop.is_running() is False:
+            log.warning("restarted 'remind_loop'")
+            self.remind_loop.start()
+
+    @tasks.loop(minutes=10)
     async def clean_old_reminders_loop(self):
         log.info("cleaning old reminders from db")
         await self.db.delete_done_reminders()
@@ -362,7 +368,7 @@ class ReminderCog(AntiPetrosBaseCog):
     "reference_message_id" INTEGER,
     "done" BOOL DEFAULT 0
 )""")
-        log.critical("'reminder_tbl' was recreated")
+    log.critical("'reminder_tbl' was recreated")
 
 # endregion [DataStorage]
 

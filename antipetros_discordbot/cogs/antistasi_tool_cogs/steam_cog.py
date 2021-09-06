@@ -7,7 +7,6 @@ import asyncio
 from datetime import datetime
 from collections import namedtuple
 import re
-import random
 from typing import List, TYPE_CHECKING
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext import commands, tasks
@@ -26,7 +25,7 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, Command
 from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import shorten_string
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
+
 
 # endregion[Imports]
 
@@ -110,6 +109,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 
 # region [Properties]
 
+
     @property
     def registered_workshop_items(self):
         return [self.workshop_item(**item) for item in loadjson(self.registered_workshop_items_file)]
@@ -154,14 +154,11 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
             await self._update_item_in_registered_items(item, new_item)
             await self.notify_update(item, new_item)
 
-    @custom_loop(minutes=5, reconnect=True)
+    @tasks.loop(minutes=5, reconnect=True)
     async def check_for_updates(self):
         if self.completely_ready is False:
             return
-
         for item in self.registered_workshop_items:
-            sleep_seconds = random.randint(0, 300 // len(self.registered_workshop_items))
-            await asyncio.sleep(sleep_seconds)
             asyncio.create_task(self._check_item(item))
 
 # endregion [Loops]
@@ -172,6 +169,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role()
@@ -292,9 +290,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
             if match:
                 return match.group('image_link')
         except IndexError:
-            for image_tag in in_soup.find_all('img'):
-                if image_tag.get('id') == "previewImage":
-                    return image_tag.get('src')
+            return None
 
     async def _get_item_size(self, in_soup: BeautifulSoup):
         size = in_soup.findAll("div", {"class": "detailsStatRight"})[0]
@@ -319,7 +315,6 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.bot.__class__.__name__})"

@@ -40,9 +40,8 @@ from antipetros_discordbot.auxiliary_classes.asking_items import AbstractUserAsk
 from antipetros_discordbot.cogs.community_events_cogs.voting_cog import VoteItem
 from discord.client import _cleanup_loop, _cancel_tasks
 from antipetros_discordbot.utility.sqldata_storager import general_db
-from antipetros_discordbot.utility.general_decorator import universal_log_profiler
-import signal
 from antipetros_discordbot.utility.asyncio_helper import RestartBlocker
+import signal
 import platform
 # endregion[Imports]
 
@@ -161,11 +160,10 @@ class AntiPetrosBot(commands.Bot):
         self.special_prefixes = None
         self.prefix_role_exceptions = None
         self.use_invoke_by_role_and_mention = None
-        self.restart_blocker = RestartBlocker()
         self.set_prefix_params()
         self.to_update_methods.append(self.ToUpdateItem(self.update_prefix_params, [UpdateTypus.CONFIG, UpdateTypus.CYCLIC]))
         self.after_invoke(self.after_command_invocation)
-
+        self.restart_blocker: RestartBlocker = RestartBlocker()
         self._setup()
 
         glog.class_init_notification(log, self)
@@ -195,9 +193,11 @@ class AntiPetrosBot(commands.Bot):
         await self.wait_until_ready()
         log.info('%s has connected to Discord!', self.name)
         self.setup_finished = False
+
         self.connect_counter += 1
         await self._ensure_guild_is_chunked()
         if self.connect_counter == 1:
+
             if platform.system() == 'Linux':
                 self.loop.add_signal_handler(signal.SIGINT, self.shutdown_signal)
                 self.loop.add_signal_handler(3, self.shutdown_signal)  # 3 -> SIGQUIT
@@ -382,7 +382,7 @@ class AntiPetrosBot(commands.Bot):
     @property
     def commands_map(self) -> dict[str, Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]]:
         if self._command_dict is None:
-            asyncio.get_event_loop().run_until_complete(self._make_command_dict())
+            self._make_command_dict()
         return self._command_dict
 
     @property
@@ -649,7 +649,7 @@ class AntiPetrosBot(commands.Bot):
 
     async def start(self, *args, **kwargs) -> None:
         asyncio.create_task(self.async_setup())
-        await super().start(self.token, reconnect=True)
+        await super().start(self.token, reconnect=True, bot=True)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"

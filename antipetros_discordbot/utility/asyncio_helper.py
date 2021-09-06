@@ -22,11 +22,7 @@ from discord.ext import commands
 
 from antipetros_discordbot.utility.gidtools_functions import loadjson, writejson, readit, writeit
 from asyncio.locks import _ContextManagerMixin
-import gidlogger as glog
 # endregion[Imports]
-
-log = glog.aux_logger(__name__)
-glog.import_notification(log, __name__)
 
 
 class RestartBlocker(_ContextManagerMixin):
@@ -44,9 +40,11 @@ class RestartBlocker(_ContextManagerMixin):
     def unblocked(self) -> bool:
         return self.open_tokens == 0
 
+    @asynccontextmanager
     async def wait_until_unblocked(self):
         while self.unblocked is False:
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.1)
+        yield
 
 
 async def async_range(*args):

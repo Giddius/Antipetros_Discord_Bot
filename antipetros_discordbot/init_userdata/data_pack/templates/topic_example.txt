@@ -1,8 +1,0 @@
-name = a_test_topic
-emoji = 🐿️
-color = pink
-image = https://s3.eu-central-1.amazonaws.com/rausgegangen/p7PBNtdmS8iSkHm8Aqn5_happy-test-screen-01png
-description = something I am to down to think of some clever text now
-but hey, you can also use new lines
-
-now a few morre also, blah I hate writing texts and thinking them up, please somebody do the text writing for me

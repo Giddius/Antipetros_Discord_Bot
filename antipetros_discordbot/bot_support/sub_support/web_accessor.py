@@ -16,11 +16,10 @@ from typing import TYPE_CHECKING, Union, Optional, Callable, Iterable, Generator
 import gidlogger as glog
 import yarl
 from urlextract import URLExtract
-from bs4 import BeautifulSoup
+
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus, RequestStatus
-from antipetros_discordbot.utility.url import make_url_absolute, fix_url
 from antipetros_discordbot.utility.misc import alt_seconds_to_pretty
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
@@ -62,28 +61,24 @@ class WebAccessor(SubSupportBase):
         self.loop = self.bot.loop
         self.is_debug = self.bot.is_debug
         self.aio_session: aiohttp.ClientSession = None
-        self.text_url_extractor = URLExtract()
+        self.url_extractor = URLExtract()
         self.other_sessions = {}
 
-    async def find_urls_in_text(self, text: str):
-        urls = await asyncio.to_thread(self.text_url_extractor.find_urls, text=text)
-        return [fix_url(url) for url in urls]
+    def fix_url(self, url: str):
+        _url = yarl.URL(url)
+        if _url.is_absolute() is False:
+            _url = yarl.URL('//' + url)
+            _url = _url.with_scheme('https')
+        return _url
 
-    async def find_urls_in_website(self, website_url: str):
-        text = await self.get_request_text(url=website_url)
-        soup = BeautifulSoup(text, 'html.parser')
-        _out = [link.get('href') for link in soup.find_all('a')]
-        return [link for link in _out if link]
+    async def find_urls(self, text: str):
+        urls = await asyncio.to_thread(self.url_extractor.find_urls, text=text)
+        return [self.fix_url(url) for url in urls]
 
-    async def get_request_json(self, url):
+    async def request_json(self, url):
         async with self.aio_session.get(url=url) as response:
-            response.raise_for_status()
-            return await response.json()
-
-    async def get_request_text(self, url):
-        async with self.aio_session.get(url=url) as response:
-            response.raise_for_status()
-            return await response.text()
+            if RequestStatus(response.status) is RequestStatus.Ok:
+                return await response.json()
 
     async def close_sessions(self):
         log.info('closing sessions')
@@ -95,11 +90,11 @@ class WebAccessor(SubSupportBase):
 
     async def on_ready_setup(self):
         self.aio_session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(enable_cleanup_closed=True))
-        asyncio.create_task(asyncio.to_thread(self.text_url_extractor.update))
+        asyncio.create_task(asyncio.to_thread(self.url_extractor.update))
         log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self, typus: UpdateTypus):
-        asyncio.create_task(asyncio.to_thread(self.text_url_extractor.update))
+        asyncio.create_task(asyncio.to_thread(self.url_extractor.update))
         log.debug("'%s' sub_support was UPDATED", str(self))
 
     async def retire(self):

@@ -44,7 +44,8 @@ if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 from antipetros_discordbot.auxiliary_classes.all_item import AllItem
 from antipetros_discordbot.engine.replacements.helper.help_embed_builder import HelpEmbedBuilder
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
+if os.getenv('IS_DEV', 'false').casefold() == 'true':
+    pass
 
 # endregion[Imports]
 

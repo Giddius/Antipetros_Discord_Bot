@@ -26,7 +26,7 @@ from antipetros_discordbot.utility.general_decorator import universal_log_profil
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
+
 
 # endregion[Imports]
 
@@ -146,7 +146,6 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_message')
     async def faq_message_trigger_listener(self, message: discord.Message):
         if self.completely_ready is False:
@@ -197,7 +196,6 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_group(aliases=['faq'], invoke_without_command=True, case_insensitive=True)
     @commands.cooldown(1, 5, commands.BucketType.channel)
@@ -312,12 +310,11 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [HelperMethods]
 
-
     async def collect_raw_faq_data(self):
         channel = self.faq_channel
         self.faq_items = {}
         async for message in channel.history(limit=None, oldest_first=True):
-            while self.bot.is_ws_ratelimited is True:
+            while self.bot.is_ws_ratelimited() is True:
                 await asyncio.sleep(5)
             content = message.content
             created_at = message.created_at
@@ -325,13 +322,12 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
             image = None
             if len(message.attachments) > 0:
                 image = message.attachments[0]
-            faq_item = await asyncio.to_thread(FaqItem, content, created_at, jump_url, image)
-            asyncio.create_task(faq_item.get_number_thumbnail())
+            faq_item = FaqItem(content, created_at, jump_url, image)
+            _ = await faq_item.get_number_thumbnail()
             self.faq_items[faq_item.number] = faq_item
             await asyncio.sleep(0)
 
         max_faq_number = max(self.faq_items)
-        await asyncio.sleep(0)
         if all(_num in self.faq_items for _num in range(1, max_faq_number + 1)):
             log.info('FAQ items collected: %s', max_faq_number)
         else:
@@ -341,6 +337,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 # endregion [HelperMethods]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

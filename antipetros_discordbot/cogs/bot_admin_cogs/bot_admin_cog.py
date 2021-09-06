@@ -32,7 +32,8 @@ from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation
 import subprocess
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-
+from pathlib import Path
+import shutil
 
 # endregion[Imports]
 
@@ -177,7 +178,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
     @auto_meta_info_command(logged=True, clear_invocation=True)
     @owner_or_admin()
     async def restart(self, ctx: commands.Context):
-        await self.bot.restart_blocker.wait_until_unblocked()
         if platform.system() != 'Linux':
             await ctx.send('Only available on UNIX!', delete_after=120)
             return
@@ -187,8 +187,11 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         confirm.set_title('CONFIRM RESTART')
         answer = await confirm.ask()
         if answer is confirm.ACCEPTED:
-            subprocess.Popen(["antipetros_restart_script"], start_new_session=True)
-            await ctx.send('Bot restart was requested, restarting within the next 60 seconds!', delete_after=30)
+            wait_msg = await ctx.send('Waiting for all running remarks to finish')
+            async with self.bot.restart_blocker.wait_until_unblocked():
+                await wait_msg.delete()
+                subprocess.Popen(["antipetros_restart_script"], start_new_session=True)
+                await ctx.send('Bot restart was requested, restarting in the next few seconds', delete_after=15)
 
     @auto_meta_info_command()
     @owner_or_admin()
@@ -354,7 +357,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         await ctx.send(f"I have unblacklisted user {user.name}")
 
     @auto_meta_info_command()
-    @commands.is_owner()
+    @owner_or_admin()
     async def send_log_file(self, ctx: commands.Context, which_logs: str = 'newest'):
         """
         Gets the log files of the bot and post it as a file to discord.
@@ -368,23 +371,30 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
             @AntiPetros send_log_file all
         """
         log_folder = APPDATA.log_folder
-        if which_logs == 'newest':
-
+        all_log_files = []
+        async with ctx.typing():
             for file in os.scandir(log_folder):
                 if file.is_file() and file.name.endswith('.log'):
-                    discord_file = discord.File(file.path)
-                    await ctx.send(file=discord_file)
-
-        elif which_logs == 'all':
-            for file in os.scandir(log_folder):
-                if file.is_file() and file.name.endswith('.log'):
-                    discord_file = discord.File(file.path)
-                    await ctx.send(file=discord_file)
-
+                    file_path = Path(file.path)
+                    temp_path = Path(APPDATA['temp_files']).with_name(file_path.name)
+                    shutil.copy(str(file_path), str(temp_path))
+                    all_log_files.append(str(temp_path))
             for old_file in os.scandir(pathmaker(log_folder, 'old_logs')):
                 if old_file.is_file() and old_file.name.endswith('.log'):
-                    discord_file = discord.File(old_file.path)
-                    await ctx.send(file=discord_file)
+                    all_log_files.append(old_file.path)
+
+            all_log_files = sorted(all_log_files, key=lambda x: os.stat(x).st_mtime, reverse=True)
+
+        if which_logs == 'newest':
+            to_send_file = all_log_files[0]
+
+            discord_file = discord.File(to_send_file)
+            await ctx.send(file=discord_file)
+
+        elif which_logs == 'all':
+            for file in all_log_files:
+                discord_file = discord.File(file)
+                await ctx.send(file=discord_file)
         log.warning("%s log file%s was requested by '%s'", which_logs, 's' if which_logs == 'all' else '', ctx.author.name)
 
     @auto_meta_info_command()

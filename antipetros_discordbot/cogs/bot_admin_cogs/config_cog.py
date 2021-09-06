@@ -28,7 +28,7 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, Command
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
+
 # endregion[Imports]
 
 # region [TODO]

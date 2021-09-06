@@ -36,7 +36,7 @@ from pygments.filters import get_all_filters
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
+
 
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
@@ -263,8 +263,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                 "Current Booster": ('\n'.join([await asyncio.sleep(0, f"{member.mention} (`{member.name}`)") for member in sorted(as_guild.premium_subscribers, key=lambda x: len(x.display_name))]), False),
                 "Rules Channel": (as_guild.rules_channel.mention, False),
                 "Member for longest time": (await self._oldest_youngest_member(True), False),
-                "Member for shortest time": (await self._oldest_youngest_member(False), False),
-                "Most Used Channel": (await self.most_used_channel(), False)
+                "Member for shortest time": (await self._oldest_youngest_member(False), False)
             }
 
             fields = [self.bot.field_item(name=key, value=str(value[0]), inline=value[1]) for key, value in data.items() if value[0]]

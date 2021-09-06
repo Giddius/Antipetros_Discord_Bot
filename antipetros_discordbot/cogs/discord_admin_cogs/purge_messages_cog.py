@@ -26,7 +26,6 @@ import re
 from sortedcontainers import SortedDict, SortedList
 from discord.ext import commands
 from hashlib import blake2b
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
@@ -178,6 +177,10 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 # region [Properties]
 
     @property
+    def remove_double_post_min_lenght(self)->int:
+        return COGS_CONFIG.retrieve(self.config_name, 'remove_double_post_min_lenght', typus=int, direct_fallback=10)
+
+    @property
     def notify_channel(self) -> discord.TextChannel:
         notification_channel_id = COGS_CONFIG.retrieve(self.config_name, 'double_post_notification_channel', typus=int, direct_fallback=645930607683174401)  # direct fallback is channel Bot-testing
         return self.bot.channel_from_id(notification_channel_id)
@@ -233,6 +236,8 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         if any(msg.content.startswith(prfx) for prfx in await self.bot.get_prefix(msg)):
             return
         if any(msg.content.startswith(prfx) for prfx in self.other_bot_prefixes):
+            return
+        if len(msg.content) < self.remove_double_post_min_lenght and len(msg.attachments) == 0:
             return
         hashed_msg = await self.hashed_message_class.from_message(msg)
         if await self.msg_keeper.handle_message(hashed_msg) is True:

@@ -41,9 +41,8 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, GithubLabelOperator
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker, ZERO_WIDTH
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
 from antipetros_discordbot.utility.pygment_styles import DraculaStyle
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 from github import Github
 import github
 if TYPE_CHECKING:
@@ -342,6 +341,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [Init]
 
+
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.github_client = Github(os.getenv('GITHUB_TOKEN'))
@@ -368,6 +368,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         await super().on_ready_setup()
         await self._update_listener_settings()
@@ -391,7 +392,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [Loops]
 
-    @custom_loop(minutes=5, reconnect=True)
+    @tasks.loop(minutes=5, reconnect=True)
     async def tell_rate_limit_loop(self):
         if self.completely_ready is False:
             return
@@ -440,6 +441,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # endregion [Listener]
 
 # region [Commands]
+
 
     @auto_meta_info_command()
     async def github_rate_limit_left(self, ctx: commands.Context):
@@ -497,7 +499,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
             bytefile.seek(0)
             file = discord.File(bytefile, 'top_github_referrers.png')
         await ctx.send(file=file)
-        plt.close('all')
 
     @auto_meta_info_command(clear_invocation=True, experimental=True)
     @allowed_channel_and_allowed_role()
@@ -550,7 +551,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
             bytefile.seek(0)
             file = discord.File(bytefile, 'popular_files.png')
         await ctx.send(file=file)
-        plt.close('all')
 
     @ auto_meta_info_command()
     @ allowed_channel_and_allowed_role()
@@ -645,6 +645,7 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # endregion [DataStorage]
 
 # region [HelperMethods]
+
 
     def get_labels(self):
         self.labels = {label.name.casefold(): label for label in self.antistasi_repo.get_labels()}

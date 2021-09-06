@@ -36,7 +36,7 @@ from antipetros_discordbot.utility.general_decorator import universal_log_profil
 
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
+
 # endregion[Imports]
 
 # region [TODO]
@@ -106,7 +106,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         self.plot_formatting_info = {'latency': COGS_CONFIG.get(self.config_name, 'latency_graph_formatting'),
                                      'memory': COGS_CONFIG.get(self.config_name, 'memory_graph_formatting'),
                                      'cpu': COGS_CONFIG.get(self.config_name, 'cpu_graph_formatting')}
-        self.initial_memory = int(os.getenv('INITIAL_MEMORY_USAGE', 0))
+
         self.general_db = general_db
 
 
@@ -132,7 +132,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 # region [Loops]
 
-    @custom_loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
+    @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def cpu_measure_loop(self):
         if self.completely_ready is False:
             return
@@ -143,7 +143,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15 = [x / psutil.cpu_count() * 100 for x in psutil.getloadavg()]
         await self.general_db.insert_cpu_performance(cpu_percent, cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15)
 
-    @custom_loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
+    @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def latency_measure_loop(self):
         if self.completely_ready is False:
             return
@@ -171,7 +171,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         else:
             raise error
 
-    @custom_loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
+    @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def memory_measure_loop(self):
         if self.completely_ready is False:
             return
@@ -289,7 +289,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
             await ctx.invoke(self.bot.get_command('report_memory'))
             await ctx.invoke(self.bot.get_command('report_latency'))
             await ctx.invoke(self.bot.get_command('report_cpu'))
-            plt.close('all')
         except StatisticsError as error:
             # TODO: make as error embed
             await ctx.send('not enough data points collected to report!', delete_after=120)
@@ -318,6 +317,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         plt.rc("xtick.minor", width=0.25, size=3)
         plt.rc('xtick', labelsize=10)
 
+    @ universal_log_profiler
     async def make_graph(self, data, typus: str, save_to=None):
         plt.style.use('dark_background')
 
@@ -366,10 +366,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
         plt.axvline(x=vline_max, color='g', linestyle=':')
         plt.axhline(y=h_line_height, color='r', linestyle='--')
-        if typus == 'memory':
-            plt.axhline(y=bytes2human(self.initial_memory), color='y', linestyle=':')
-        elif typus == 'latency':
-            plt.axhline(y=mean(y), color='y', linestyle=':')
+
         plt.axis(ymin=ymin, ymax=ymax)
 
         plt.title(f'{typus.title()} -- {datetime.utcnow().strftime("%Y.%m.%d")}')
@@ -386,12 +383,14 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
             return discord.File(image_binary, filename=f'{typus}graph.png'), f"attachment://{typus}graph.png"
 
+    @ universal_log_profiler
     async def convert_memory_size(self, in_bytes, new_unit: DataSize, annotate: bool = False, extra_digits=2):
 
         if annotate is False:
             return round(int(in_bytes) / new_unit.value, ndigits=extra_digits)
         return str(round(int(in_bytes) / new_unit.value, ndigits=extra_digits)) + ' ' + new_unit.short_name
 
+    @ universal_log_profiler
     async def get_time_from_max_y(self, data, max_y, typus):
         for item in data:
             if typus == 'memory':

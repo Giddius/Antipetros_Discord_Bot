@@ -36,7 +36,7 @@ from antipetros_discordbot.utility.general_decorator import universal_log_profil
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
+
 # endregion[Imports]
 
 # region [TODO]
@@ -119,7 +119,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
 # region [Loops]
 
-    @custom_loop(minutes=30)
+    @tasks.loop(minutes=30)
     async def cyclic_update_loop(self):
         if self.completely_ready is False:
             return
@@ -155,6 +155,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         await self.send_update_signal(UpdateTypus.GUILD)
 
     @ commands.Cog.listener(name="on_guild_update")
+    @ universal_log_profiler
     async def guild_update_listener(self, before_guild: discord.Guild, after_guild: discord.Guild):
         if self.completely_ready is False:
             return
@@ -217,7 +218,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         if self.completely_ready is False:
             return
         if hasattr(self.bot, 'record_channel_usage'):
-            asyncio.create_task(self.bot.record_channel_usage(msg))
+            await asyncio.create_task(self.bot.record_channel_usage(msg))
 
 # endregion [Listener]
 

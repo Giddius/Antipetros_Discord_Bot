@@ -559,7 +559,7 @@ class AskFile(AbstractUserAsking):
         fields = [self.bot.field_item(name="Attached Files", value="None", inline=False)]
         super_fields = await super().make_fields()
         fields += [super_fields[0], self.bot.field_item(name=f"Type {self.cancel_phrase} to cancel", value=ZERO_WIDTH, inline=False)]
-        fields.append(self.bot.field_item(name="If you are done attaching Files, or do not have any files to attach", value=f"type and send **{self.finished_phrase}**", inline=False))
+        fields.append(self.bot.field_item(name="Once you are done attaching Files, or do not have any files to attach", value=f"click the emoji {self.finished_emoji} or send a message only containing **{self.finished_phrase}**", inline=False))
         fields.append(self.bot.field_item(name="allowed File Types", value=','.join(f"`{ftype}`" for ftype in self.allowed_file_types), inline=False))
         return fields
 

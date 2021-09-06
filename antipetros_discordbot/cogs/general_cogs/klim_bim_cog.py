@@ -31,7 +31,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_hel
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.utility.exceptions import ParseDiceLineError
 from antipetros_discordbot.utility.converters import UrlConverter
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
+
 
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosBaseGroup, CommandCategory, RequiredFile, auto_meta_info_command, auto_meta_info_group
@@ -242,7 +242,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
         urban_request_url = "https://api.urbandictionary.com/v0/define?term="
         full_url = urban_request_url + urlquote(term)
 
-        json_content = await self.bot.get_request_json(url=full_url)
+        json_content = await self.bot.request_json(url=full_url)
         content_list = sorted(json_content.get('list'), key=lambda x: x.get('thumbs_up') + x.get('thumbs_down'), reverse=True)
 
         for index, item in enumerate(content_list):

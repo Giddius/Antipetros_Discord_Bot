@@ -58,7 +58,6 @@ from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation
 from PIL import Image, ImageEnhance, ImageFilter
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.sqldata_storager import general_db
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 import re
@@ -165,7 +164,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 # endregion [Init]
 
 # region [Properties]
-
 
     @property
     def battlemetrics_auth(self):
@@ -283,7 +281,6 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
 # region [Loops]
 
-
     @ tasks.loop(minutes=4, reconnect=True)
     async def update_logs_loop(self):
         if self.completely_ready is False:
@@ -304,7 +301,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
                         await asyncio.to_thread(writejson, data, self.already_notified_savefile)
                 await asyncio.sleep(0)
 
-    @ tasks.loop(seconds=60, reconnect=True)
+    @ tasks.loop(seconds=120, reconnect=True)
     async def is_online_message_loop(self):
         if self.completely_ready is False:
             return
@@ -569,7 +566,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
             inverse_set_value = "no" if current_value is True else "yes"
             confirm_question = AskConfirmation.from_other_asking(selection_question)
 
-            confirm_question.description = f"The setting `show in is-online-message` is currently **{current_value_text}** for Server `{selected_server.pretty_name}`.\n\nDo you want to `{inverse_value_text}` it?"
+            confirm_question.description = f"The setting `show in is-online-message` is currently **{current_value_text}** for Server `{selected_server.pretty_name}`.\nDo you want to `{inverse_value_text}` it?"
             confirm_answer = await confirm_question.ask()
             if confirm_answer is confirm_question.ACCEPTED:
                 COGS_CONFIG.set(self.config_name, f"{selected_server.name.lower()}_is_online_message_enabled", inverse_set_value)
@@ -710,13 +707,13 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
                 file = discord.File(bytefile, 'servers_pop.png')
             await ctx.send(file=file)
-            plt.close('all')
 
 
 # endregion [Commands]
 
 
 # region [HelperMethods]
+
 
     async def add_to_amount_mod_data_requested(self, amount_to_add: int = 1):
         async with self.add_amount_lock:
@@ -864,7 +861,7 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
         asyncio.create_task(server_item.is_online())
 
-        await server_item.gather_log_items()
+        await (server_item.gather_log_items())
         await server_item.retrieve_is_online_message()
 
         asyncio.create_task(delayed_execution(10, server_item.get_mod_files))

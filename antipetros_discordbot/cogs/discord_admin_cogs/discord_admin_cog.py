@@ -22,7 +22,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.converters import date_time_full_converter_flags
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
+
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosFlagCommand, CommandCategory, auto_meta_info_command
 
@@ -84,6 +84,7 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         await super().on_ready_setup()
         self.ready = True
@@ -106,6 +107,7 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 # endregion[Loops]
 
 # region [Commands]
+
 
     @ auto_meta_info_command()
     @owner_or_admin()
@@ -159,7 +161,7 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
         """
         await channel.send(message, allowed_mentions=discord.AllowedMentions.none())
         await ctx.message.delete()
-
+        
     @auto_meta_info_command(logged=True)
     @owner_or_admin()
     async def edit_message(self, ctx: commands.Context, channel: discord.TextChannel, msg_id: int, *, content: str):
@@ -177,7 +179,7 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
         to_edit_msg = await channel.fetch_message(msg_id)
         await to_edit_msg.edit(content=content)
         await ctx.message.delete()
-
+        
     @flags.add_flag("--title", '-t', type=str, default=ZERO_WIDTH)
     @flags.add_flag("--description", '-d', type=str, default=ZERO_WIDTH)
     @flags.add_flag("--url", '-u', type=str, default=discord.Embed.Empty)
@@ -270,6 +272,7 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 # endregion[Helper]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

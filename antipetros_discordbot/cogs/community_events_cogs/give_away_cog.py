@@ -22,7 +22,7 @@ from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_rol
 from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, writejson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
+
 from antipetros_discordbot.auxiliary_classes.for_cogs.aux_give_away_cog import GiveAwayEvent
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPetrosFlagCommand, CommandCategory, RequiredFile, auto_meta_info_command
@@ -124,7 +124,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 # region [Loops]
 
 
-    @custom_loop(seconds=30, reconnect=True)
+    @tasks.loop(seconds=30, reconnect=True)
     async def check_give_away_ended_loop(self):
         if not await self.give_aways:
             return
@@ -134,7 +134,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
             if datetime.utcnow() >= give_away_event.end_date_time:
                 await self.give_away_finished(give_away_event)
 
-    @custom_loop(seconds=5, reconnect=True)
+    @tasks.loop(seconds=5, reconnect=True)
     async def clean_emojis_from_reaction(self):
         if not await self.give_aways:
             return
