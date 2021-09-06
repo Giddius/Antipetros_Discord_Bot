@@ -243,7 +243,6 @@ async def generate_bot_data(bot, production_bot):
     bot_info['display_name'] = production_bot.display_name
     bot_info['guild'] = bot.guilds[0].name
     bot_info['intents'] = dict(bot.intents)
-    bot_info['avatar_url'] = str(production_bot.avatar_url)
     bot_info['invite_url'] = bot.antistasi_invite_url
     bot_info['role_names'] = [role.name for role in production_bot.roles if 'everyone' not in role.name.casefold()]
     bot_info['amount_cogs'] = len([cog for cog in bot.cogs if cog.casefold() != 'generaldebugcog'])

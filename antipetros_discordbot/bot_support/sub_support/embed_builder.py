@@ -486,11 +486,11 @@ class EmbedBuilder(SubSupportBase):
         return 'rich'
 
     async def on_ready_setup(self):
-        self.special_authors = await asyncio.sleep(0, {'bot_author': {'name': self.bot.display_name, 'url': self.bot.github_url, 'icon_url': self.bot.user.avatar_url},
+        self.special_authors = await asyncio.sleep(0, {'bot_author': {'name': self.bot.display_name, 'url': self.bot.github_url},
                                                        'default_author': self.default_author,
                                                        'armahosts': {'name': 'Server Provided by ARMAHOSTS🔗', "url": self.bot.armahosts_url, 'icon_url': self.bot.armahosts_icon}})
 
-        self.special_footers = await asyncio.sleep(0, {'feature_request_footer': {'text': "For feature suggestions and feature request, contact @Giddi".title(), "icon_url": self.bot.creator.avatar_url},
+        self.special_footers = await asyncio.sleep(0, {'feature_request_footer': {'text': "For feature suggestions and feature request, contact @Giddi".title()},
                                                        'default_footer': self.default_footer,
                                                        'armahosts': {'text': self.bot.armahosts_footer_text + '\n' + self.bot.armahosts_url + '\n' + ZERO_WIDTH, "icon_url": self.bot.armahosts_icon}})
 

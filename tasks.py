@@ -3,6 +3,7 @@ import sys
 import os
 import subprocess
 import shutil
+from pathlib import Path
 from datetime import datetime, timedelta, date
 from pprint import pprint
 from time import time, sleep
@@ -27,6 +28,7 @@ import asyncio
 from inspect import getmembers, ismodule
 import isort
 from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
+import subprocess
 GIT_EXE = shutil.which('git.exe')
 
 
@@ -1076,3 +1078,9 @@ def process_meta_data(c):
 
         _new_dict[command_name] = new_attrs
     writejson(_new_dict, file_path)
+
+
+@task
+def repl(c):
+    cmd = [Path(THIS_FILE_DIR).joinpath('.venv', 'Scripts', 'ptipython3.9.exe')]
+    subprocess.Popen(cmd, start_new_session=True, creationflags=subprocess.CREATE_NEW_CONSOLE)

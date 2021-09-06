@@ -63,9 +63,10 @@ from discord.ext import commands
 
 import gidlogger as glog
 from antipetros_discordbot.utility.misc import alt_seconds_to_pretty, check_if_url, fix_url_prefix
+from antipetros_discordbot.utility.gidtools_functions import bytes2human
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH, ListMarker
 from antipetros_discordbot.utility.named_tuples import EmbedFieldItem
-from antipetros_discordbot.utility.emoji_handling import NUMERIC_EMOJIS, ALPHABET_EMOJIS, CHECK_MARK_BUTTON_EMOJI, CROSS_MARK_BUTTON_EMOJI, letter_to_emoji, CANCEL_EMOJI
+from antipetros_discordbot.utility.emoji_handling import NUMERIC_EMOJIS, ALPHABET_EMOJIS, CHECK_MARK_BUTTON_EMOJI, CROSS_MARK_BUTTON_EMOJI, letter_to_emoji, CANCEL_EMOJI, FINISHED_EMOJI
 from antipetros_discordbot.utility.exceptions import MissingNeededAttributeError, NeededClassAttributeNotSet, AskCanceledError, AskTimeoutError
 from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import shorten_string
 from antipetros_discordbot.utility.converters import UrlConverter
@@ -255,6 +256,7 @@ class AbstractUserAsking(ABC):
     cancel_emoji = CANCEL_EMOJI
     cancel_phrase = CANCEL_EMOJI
     finished_phrase = "🆗"
+    finished_emoji = FINISHED_EMOJI
     confirm_emoji = CHECK_MARK_BUTTON_EMOJI
     decline_emoji = CROSS_MARK_BUTTON_EMOJI
     error_answers = {AskAnswer.CANCELED, AskAnswer.NOANSWER}
@@ -266,8 +268,9 @@ class AbstractUserAsking(ABC):
                  author: Union[int, discord.Member, discord.User],
                  channel: Union[int, discord.DMChannel, discord.TextChannel],
                  timeout: int = 300,
-                 delete_question: bool = False,
-                 error_on: Union[bool, list[AskAnswer], AskAnswer, frozenset[AskAnswer]] = False) -> None:
+                 delete_question: bool = True,
+                 delete_emojis: bool = True,
+                 error_on: Union[bool, list[AskAnswer], AskAnswer, frozenset[AskAnswer]] = True) -> None:
         for c_attr_name in self.mandatoy_attributes:
             if getattr(self, c_attr_name) is None:
                 raise NeededClassAttributeNotSet(c_attr_name, self.__class__.__name__)
@@ -275,11 +278,13 @@ class AbstractUserAsking(ABC):
         self.channel = self._ensure_channel(channel)
         self.author = self._ensure_author(author)
         self.delete_question = delete_question
+        self.delete_emojis = delete_emojis
         self.error_on = self._ensure_error_on(error_on)
         self.title = None
         self.description = ZERO_WIDTH
         self.thumbnail = None
         self.fields = []
+        self.extra_fields = []
         self.ask_message = None
         self.ask_embed_data = None
         self.end_time = datetime.now(tz=timezone.utc) + timedelta(seconds=timeout)
@@ -292,6 +297,9 @@ class AbstractUserAsking(ABC):
 
     def set_thumbnail(self, thumbnail: Union[str, bytes, discord.File, IO]):
         self.thumbnail = thumbnail
+
+    def add_extra_field(self, name: str, content: str):
+        self.extra_fields.append(EmbedFieldItem(name=name, value=content))
 
     def _ensure_error_on(self, error_on: Union[bool, list[AskAnswer], AskAnswer, frozenset[AskAnswer]]) -> frozenset:
         if isinstance(error_on, frozenset):
@@ -360,13 +368,14 @@ class AbstractUserAsking(ABC):
 
     async def on_cancel(self, answer):
         if AskAnswer.CANCELED in self.error_on:
+            await self.channel.send("Remark was **Canceled!**")
             raise AskCanceledError(self, answer)
 
         return self.CANCELED
 
     async def make_fields(self):
         return [self.bot.field_item(name="Time to answer", value=alt_seconds_to_pretty(int(self.timeout)), inline=False),
-                self.bot.field_item(name=f"{self.cancel_emoji} to Cancel", value=ZERO_WIDTH, inline=False)]
+                self.bot.field_item(name=f"{self.cancel_emoji} to Cancel", value=ZERO_WIDTH, inline=False)] + self.extra_fields
 
     async def make_ask_embed(self, **kwargs):
         return await self.bot.make_asking_embed(typus=self.typus, timeout=self.timeout, description=self.description, fields=await self.make_fields(), title=self.title, **kwargs)
@@ -386,7 +395,7 @@ class AbstractUserAsking(ABC):
 
     async def _ask_mechanism(self):
         timeout = (self.end_time - datetime.now(tz=timezone.utc)).total_seconds()
-        await self.update_ask_embed_data()
+        asyncio.create_task(self.update_ask_embed_data())
         try:
             return await self.bot.wait_for(event=self.wait_for_event, timeout=timeout, check=self.check_if_answer)
         except asyncio.TimeoutError:
@@ -406,6 +415,7 @@ class AbstractUserAsking(ABC):
         return _out
 
     async def after_ask(self):
+
         if self.delete_question is True:
             try:
                 await self.ask_message.delete()
@@ -413,13 +423,20 @@ class AbstractUserAsking(ABC):
                 pass
             except discord.errors.NotFound:
                 pass
-        try:
-            if self.channel.type is discord.ChannelType.text:
-                await self.ask_message.clear_reactions()
-        except discord.errors.Forbidden:
-            pass
-        except discord.errors.NotFound:
-            pass
+
+        if self.delete_emojis is True:
+            try:
+                msg = await self.channel.fetch_message(self.ask_message.id)
+                log.debug("Trying to delete emojis")
+
+                for reaction in msg.reactions:
+                    async for user in reaction.users():
+                        if user.id == self.bot.user.id:
+                            asyncio.create_task(msg.remove_reaction(reaction, user))
+            except discord.errors.Forbidden:
+                pass
+            except discord.errors.NotFound:
+                pass
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}"
@@ -433,8 +450,8 @@ class AskConfirmation(AbstractUserAsking):
                  author: Union[int, discord.Member, discord.User],
                  channel: Union[int, discord.DMChannel, discord.TextChannel],
                  timeout: int = 300,
-                 delete_question: bool = False,
-                 error_on: Union[bool, list[AskAnswer], AskAnswer] = False) -> None:
+                 delete_question: bool = True,
+                 error_on: Union[bool, list[AskAnswer], AskAnswer] = True) -> None:
         super().__init__(timeout=timeout, author=author, channel=channel, delete_question=delete_question, error_on=error_on)
 
     @cached_property
@@ -444,6 +461,7 @@ class AskConfirmation(AbstractUserAsking):
 
     async def transform_answer(self, answer):
         answer_emoji = str(answer.emoji)
+
         if answer_emoji == self.cancel_emoji:
             return await self.on_cancel(answer)
         return self.answer_table.get(answer_emoji)
@@ -470,10 +488,10 @@ class AskInput(AbstractUserAsking):
                  author: Union[int, discord.Member, discord.User],
                  channel: Union[int, discord.DMChannel, discord.TextChannel],
                  timeout: int = 300,
-                 delete_question: bool = False,
+                 delete_question: bool = True,
                  delete_answers: bool = False,
                  validator: Callable = None,
-                 error_on: Union[bool, list[AskAnswer], AskAnswer] = False) -> None:
+                 error_on: Union[bool, list[AskAnswer], AskAnswer] = True) -> None:
         super().__init__(timeout=timeout, author=author, channel=channel, delete_question=delete_question, error_on=error_on)
         self.validator = self.default_validator if validator is None else validator
         self.delete_answers = delete_answers
@@ -520,15 +538,17 @@ class AskFile(AbstractUserAsking):
     typus = AskingTypus.FILE
     wait_for_event = 'message'
     allowed_file_types = frozenset({'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mp3', 'tiff', 'tga', 'txt', 'md', 'log', 'rpt'})
+    cancel_phrase = 'CANCEL'
+    finished_phrase = "CONTINUE"
 
     def __init__(self,
                  author: Union[int, discord.Member, discord.User],
                  channel: Union[int, discord.DMChannel, discord.TextChannel],
                  timeout: int = 300,
-                 delete_question: bool = False,
+                 delete_question: bool = True,
                  delete_answers: bool = False,
                  file_validator: Callable = None,
-                 error_on: Union[bool, list[AskAnswer], AskAnswer] = False) -> None:
+                 error_on: Union[bool, list[AskAnswer], AskAnswer] = True) -> None:
         super().__init__(author=author, channel=channel, timeout=timeout, delete_question=delete_question, error_on=error_on)
         self.delete_answers = delete_answers
         self.file_validator = self.default_file_validator if file_validator is None else file_validator
@@ -539,8 +559,7 @@ class AskFile(AbstractUserAsking):
         fields = [self.bot.field_item(name="Attached Files", value="None", inline=False)]
         super_fields = await super().make_fields()
         fields += [super_fields[0], self.bot.field_item(name=f"Type {self.cancel_phrase} to cancel", value=ZERO_WIDTH, inline=False)]
-        fields.append(self.bot.field_item(name="Maximum amount of attachments", value=10, inline=False))
-        fields.append(self.bot.field_item(name=f"If you are done, attaching Files, send a message only containin {self.finished_phrase}", value=ZERO_WIDTH, inline=False))
+        fields.append(self.bot.field_item(name="If you are done attaching Files, or do not have any files to attach", value=f"type and send **{self.finished_phrase}**", inline=False))
         fields.append(self.bot.field_item(name="allowed File Types", value=','.join(f"`{ftype}`" for ftype in self.allowed_file_types), inline=False))
         return fields
 
@@ -552,10 +571,19 @@ class AskFile(AbstractUserAsking):
         if answer.content == self.cancel_phrase:
             return await self.on_cancel(answer)
 
-        if answer.content == self.finished_phrase and answer.attachments == []:
+        if answer.content.casefold() == self.finished_phrase.casefold() and answer.attachments == []:
             return AskAnswer.FINISHED
-
-        return answer.attachments
+        _out = []
+        for attachment in answer.attachments:
+            file_type = attachment.filename.casefold().split('.')[-1]
+            if file_type not in self.allowed_file_types:
+                asyncio.create_task(self.channel.send(f'file-type {file_type!r} is not allowed.'))
+            elif self.channel.type is discord.ChannelType.private and attachment.size >= 8388608:
+                asyncio.create_task(self.channel.send(
+                    f'Please keep the file size under 8mb (received file size= {bytes2human(attachment.size,True)}).\nIf you need to upload larger files, upload them somewhere and use add the link to the remark text.'))
+            else:
+                _out.append(attachment)
+        return _out
 
     async def on_timeout(self):
         return self.NOANSWER
@@ -564,17 +592,18 @@ class AskFile(AbstractUserAsking):
         if attachments is None or attachments == []:
             return True
 
-        return all(attachment.filename.casefold().split('.')[-1] in self.allowed_file_types for attachment in attachments)
+        # return all(attachment.filename.casefold().split('.')[-1] in self.allowed_file_types for attachment in attachments)
+        return True
 
     def check_if_answer(self, message: discord.Message):
         checks = [message.author.id == self.author.id,
                   message.channel.id == self.channel.id]
 
         if all(checks):
-            if message.content not in {self.finished_phrase, self.cancel_phrase} and not message.attachments:
+            if message.content.upper() not in {self.finished_phrase, self.cancel_phrase} and not message.attachments:
                 return False
 
-            return all(checks) and self.file_validator(message.attachments) is True
+            return True
 
     async def transform_ask_message(self):
         pass
@@ -604,6 +633,7 @@ class AskFile(AbstractUserAsking):
 
             if len(self.collected_attachments) == 10:
                 break
+        asyncio.create_task(self.after_ask())
         return self.collected_attachments
 
     async def after_ask(self):
@@ -624,9 +654,9 @@ class AskInputManyAnswers(AskInput):
                  author: Union[int, discord.Member, discord.User],
                  channel: Union[int, discord.DMChannel, discord.TextChannel],
                  timeout: int = 500,
-                 delete_question: bool = False,
+                 delete_question: bool = True,
                  delete_answers: bool = False,
-                 error_on: Union[bool, list[AskAnswer], AskAnswer] = False) -> None:
+                 error_on: Union[bool, list[AskAnswer], AskAnswer] = True) -> None:
         super().__init__(author=author, channel=channel, timeout=timeout, delete_question=delete_question, delete_answers=delete_answers, error_on=error_on)
         self.collected_text = []
 
@@ -682,9 +712,9 @@ class AskSelection(AbstractUserAsking):
                  author: Union[int, discord.Member, discord.User],
                  channel: Union[int, discord.DMChannel, discord.TextChannel],
                  timeout: int = 300,
-                 delete_question: bool = False,
+                 delete_question: bool = True,
                  default_emojis: list[str, discord.Emoji] = None,
-                 error_on: Union[bool, list[AskAnswer], AskAnswer] = False) -> None:
+                 error_on: Union[bool, list[AskAnswer], AskAnswer] = True) -> None:
         super().__init__(author, channel, timeout=timeout, delete_question=delete_question, error_on=error_on)
         self.options = AskSelectionOptionsMapping(default_emojis=default_emojis)
 
@@ -707,19 +737,90 @@ class AskSelection(AbstractUserAsking):
 
     async def transform_answer(self, answer: discord.RawReactionActionEvent):
         answer_emoji = str(answer.emoji)
+
         if answer_emoji == self.cancel_emoji:
             return await self.on_cancel(answer)
         return self.options.get_result(answer_emoji)
 
 
-class Questioner:
+class AskFileWithEmoji(AskFile):
+    extra_wait_for_event = 'raw_reaction_add'
 
-    def __init__(self, user: Union[discord.User, discord.Member], channel: Union[discord.TextChannel, discord.DMChannel]) -> None:
-        self.user = user
-        self.channel = channel
-        self.questions = []
+    async def transform_ask_message(self):
+        asyncio.create_task(try_add_reaction(self.ask_message, self.cancel_emoji))
+        asyncio.create_task(try_add_reaction(self.ask_message, self.finished_emoji))
 
-    async def _ensure_dm_channel(self):
-        if self.user.dm_channel is None:
-            return await self.user.create_dm()
-        return self.user.dm_channel
+    def check_if_answer_emoji(self, payload: discord.RawReactionActionEvent):
+        checks = [payload.user_id == self.author.id,
+                  payload.channel_id == self.channel.id,
+                  payload.message_id == self.ask_message.id,
+                  str(payload.emoji) in {self.finished_emoji, self.cancel_emoji}]
+
+        return all(checks)
+
+    async def transform_answer(self, answer):
+        if isinstance(answer, discord.Message):
+            return await super().transform_answer(answer=answer)
+
+        answer_emoji = str(answer.emoji)
+
+        if answer_emoji == self.cancel_emoji:
+            return await self.on_cancel(answer)
+        if answer_emoji == self.finished_emoji:
+            return AskAnswer.FINISHED
+
+    async def _ask_mechanism(self):
+        timeout = (self.end_time - datetime.now(tz=timezone.utc)).total_seconds()
+        asyncio.create_task(self.update_ask_embed_data())
+
+        _futures = [asyncio.ensure_future(self.bot.wait_for(event=self.wait_for_event, timeout=timeout, check=self.check_if_answer)),
+                    asyncio.ensure_future(self.bot.wait_for(event=self.extra_wait_for_event, timeout=timeout, check=self.check_if_answer_emoji))]
+        try:
+            done, pending = await asyncio.wait(_futures, timeout=timeout, return_when=asyncio.FIRST_COMPLETED)
+            for pending_task in pending:
+                if isinstance(pending_task, asyncio.Task) and pending_task.done() is False:
+                    pending_task.cancel()
+            return await list(done)[0]
+
+        except asyncio.TimeoutError:
+            return await self.on_timeout()
+
+
+class AskInputWithEmoji(AskInput):
+    extra_wait_for_event = 'raw_reaction_add'
+
+    async def transform_ask_message(self):
+        asyncio.create_task(try_add_reaction(self.ask_message, self.cancel_emoji))
+
+    def check_if_answer_emoji(self, payload: discord.RawReactionActionEvent):
+        checks = [payload.user_id == self.author.id,
+                  payload.channel_id == self.channel.id,
+                  payload.message_id == self.ask_message.id,
+                  str(payload.emoji) in {self.cancel_emoji}]
+
+        return all(checks)
+
+    async def _ask_mechanism(self):
+        timeout = (self.end_time - datetime.now(tz=timezone.utc)).total_seconds()
+        asyncio.create_task(self.update_ask_embed_data())
+
+        _futures = [asyncio.ensure_future(self.bot.wait_for(event=self.wait_for_event, timeout=timeout, check=self.check_if_answer)),
+                    asyncio.ensure_future(self.bot.wait_for(event=self.extra_wait_for_event, timeout=timeout, check=self.check_if_answer_emoji))]
+        try:
+            done, pending = await asyncio.wait(_futures, timeout=timeout, return_when=asyncio.FIRST_COMPLETED)
+            for pending_task in pending:
+                if isinstance(pending_task, asyncio.Task) and pending_task.done() is False:
+                    pending_task.cancel()
+            return await list(done)[0]
+
+        except asyncio.TimeoutError:
+            return await self.on_timeout()
+
+    async def transform_answer(self, answer):
+        if isinstance(answer, discord.Message):
+            return await super().transform_answer(answer=answer)
+
+        answer_emoji = str(answer.emoji)
+
+        if answer_emoji == self.cancel_emoji:
+            return await self.on_cancel(answer)

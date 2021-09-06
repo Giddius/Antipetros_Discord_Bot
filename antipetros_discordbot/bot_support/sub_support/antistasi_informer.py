@@ -16,12 +16,13 @@ import gidlogger as glog
 import discord
 from sortedcontainers import SortedDict, SortedList
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker
+from antipetros_discordbot.utility.gidtools_functions import loadjson, pathmaker, bytes2human
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import UpdateTypus
 from functools import cached_property
 from antipetros_discordbot.auxiliary_classes.all_item import AllItem
+from pympler.asizeof import asizeof
 # endregion[Imports]
 
 # region [TODO]
@@ -86,16 +87,18 @@ class AntistasiInformer(SubSupportBase):
         self.members_name_dict = None
         self.roles_name_dict = None
         self.channels_name_dict = None
-        self.antistasi_guild_id = self.get_antistasi_guild_id()
         self._antistasi_guild = None
-
+        self.antistasi_guild_id = self.get_antistasi_guild_id()
         glog.class_init_notification(log, self)
 
     async def _make_stored_dicts(self):
+        while self.bot.is_ws_ratelimited() is True:
+            await asyncio.sleep(1)
         if self.antistasi_guild.chunked is False:
             await self.antistasi_guild.chunk(cache=True)
         for cat in ['channels', 'members', 'roles']:
             attr = getattr(self.antistasi_guild, cat)
+
             name_attr_dict = {item.name.casefold(): item for item in attr} | {item.mention: item for item in attr}
             if cat == "members":
                 name_attr_dict |= {str(item).casefold(): item for item in attr}
@@ -185,6 +188,9 @@ class AntistasiInformer(SubSupportBase):
         color_emoji_id = self.color_emoji_id_map.get(color_name.casefold(), 839782169303449640)
         return discord.utils.get(self.bot_testing_guild.emojis, id=color_emoji_id)
 
+    async def get_testing_guild_emoji(self, emoji_id: int):
+        return discord.utils.get(self.bot_testing_guild.emojis, id=emoji_id)
+
     async def get_antistasi_emoji(self, name):
         for _emoji in self.antistasi_guild.emojis:
             if _emoji.name.casefold() == name.casefold():
@@ -256,8 +262,8 @@ class AntistasiInformer(SubSupportBase):
         return list(set(_out))
 
     async def on_ready_setup(self) -> None:
-        await self.antistasi_guild.chunk(cache=True)
-        await self._make_stored_dicts()
+        if any(attr is False for attr in [self.channels_name_dict, self.roles_name_dict, self.members_name_dict]):
+            await self._make_stored_dicts()
         log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self, typus: UpdateTypus) -> None:

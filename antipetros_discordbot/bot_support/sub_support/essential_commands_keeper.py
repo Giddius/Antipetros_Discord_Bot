@@ -60,7 +60,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class EssentialCommandsKeeper(SubSupportBase):
     cog_import_base_path = BASE_CONFIG.get('general_settings', 'cogs_location')
-    shutdown_message_pickle_file = pathmaker(APPDATA['temp_files'], 'last_shutdown_message.pkl')
+    shutdown_message_pickle_file = pathmaker(APPDATA['misc'], 'last_shutdown_message.pkl')
     goodbye_quotes_file = APPDATA['goodbye_quotes.json']
 
     def __init__(self, bot: "AntiPetrosBot", support):
@@ -101,7 +101,7 @@ class EssentialCommandsKeeper(SubSupportBase):
 
     @property
     def shutdown_message_channel(self):
-        channel_name = BASE_CONFIG.retrieve("shutdown_message", "channel_name", typus=str, direct_fallback='bot-commands')
+        channel_name = BASE_CONFIG.retrieve("shutdown_message", "channel_name", typus=str, direct_fallback='bot-testing')
         return self.bot.channel_from_name(channel_name)
 
     def shutdown_signal(self, *args):
@@ -123,6 +123,7 @@ class EssentialCommandsKeeper(SubSupportBase):
                                                           typus="shutdown_embed",
                                                           fields=[self.support.field_item(name='Online since', value=str(started_at_string), inline=False), self.support.field_item(name='Online for', value=str(online_duration), inline=False)])
                 channel = self.shutdown_message_channel
+                log.info("sending shutdown message")
                 last_shutdown_message = await channel.send(**embed)
                 pickleit({"message_id": last_shutdown_message.id, "channel_id": last_shutdown_message.channel.id}, self.shutdown_message_pickle_file)
 

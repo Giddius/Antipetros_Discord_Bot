@@ -42,6 +42,7 @@ from discord.client import _cleanup_loop, _cancel_tasks
 from antipetros_discordbot.utility.sqldata_storager import general_db
 from antipetros_discordbot.utility.general_decorator import universal_log_profiler
 import signal
+from antipetros_discordbot.utility.asyncio_helper import RestartBlocker
 import platform
 # endregion[Imports]
 
@@ -160,6 +161,7 @@ class AntiPetrosBot(commands.Bot):
         self.special_prefixes = None
         self.prefix_role_exceptions = None
         self.use_invoke_by_role_and_mention = None
+        self.restart_blocker = RestartBlocker()
         self.set_prefix_params()
         self.to_update_methods.append(self.ToUpdateItem(self.update_prefix_params, [UpdateTypus.CONFIG, UpdateTypus.CYCLIC]))
         self.after_invoke(self.after_command_invocation)
@@ -199,7 +201,7 @@ class AntiPetrosBot(commands.Bot):
             if platform.system() == 'Linux':
                 self.loop.add_signal_handler(signal.SIGINT, self.shutdown_signal)
                 self.loop.add_signal_handler(3, self.shutdown_signal)  # 3 -> SIGQUIT
-            await self.send_startup_message()
+            asyncio.create_task(self.send_startup_message())
             asyncio.create_task(self._start_watchers())
             await self.set_activity()
             await self._make_stored_dicts()
@@ -380,7 +382,7 @@ class AntiPetrosBot(commands.Bot):
     @property
     def commands_map(self) -> dict[str, Union[AntiPetrosBaseCommand, AntiPetrosBaseGroup, AntiPetrosFlagCommand]]:
         if self._command_dict is None:
-            self._make_command_dict()
+            asyncio.get_event_loop().run_until_complete(self._make_command_dict())
         return self._command_dict
 
     @property
@@ -485,6 +487,10 @@ class AntiPetrosBot(commands.Bot):
 # endregion[Helper]
 
     async def send_startup_message(self) -> None:
+        while self.setup_finished is False:
+            await asyncio.sleep(1)
+        await asyncio.sleep(2)
+
         await self._handle_previous_shutdown_msg()
         if BASE_CONFIG.getboolean('startup_message', 'use_startup_message') is False:
             return
@@ -502,6 +508,8 @@ class AntiPetrosBot(commands.Bot):
         title = f"**{BASE_CONFIG.get('startup_message', 'title').title()}**"
         description = BASE_CONFIG.get('startup_message', 'description')
         image = BASE_CONFIG.get('startup_message', 'image')
+
+        log.info("sending startup message")
         if BASE_CONFIG.getboolean('startup_message', 'as_embed') is True:
             embed_data = await self.make_generic_embed(author='bot_author', footer='feature_request_footer', image=image, title=title, description=description, thumbnail='no_thumbnail', type='image')
             self.used_startup_message = await channel.send(**embed_data, delete_after=delete_time)
@@ -510,7 +518,9 @@ class AntiPetrosBot(commands.Bot):
             self.used_startup_message = await channel.send(msg, delete_after=delete_time)
 
     async def _handle_previous_shutdown_msg(self) -> None:
-        if self.is_debug is False and os.path.isfile(self.shutdown_message_pickle_file):
+        log.debug("shutdown_message_pickle_file = %s, exists=%s", self.shutdown_message_pickle_file, str(os.path.isfile(self.shutdown_message_pickle_file)))
+        if os.path.isfile(self.shutdown_message_pickle_file):
+            log.info("trying to remove old shutdown message")
             try:
                 last_shutdown_message = get_pickled(self.shutdown_message_pickle_file)
                 message = await self.get_message_directly(last_shutdown_message.get('channel_id'), last_shutdown_message.get('message_id'))
@@ -639,7 +649,7 @@ class AntiPetrosBot(commands.Bot):
 
     async def start(self, *args, **kwargs) -> None:
         asyncio.create_task(self.async_setup())
-        await super().start(self.token, reconnect=True, bot=True)
+        await super().start(self.token, reconnect=True)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"

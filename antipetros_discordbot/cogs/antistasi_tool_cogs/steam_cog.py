@@ -160,7 +160,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
             return
 
         for item in self.registered_workshop_items:
-            sleep_seconds = random.randint(0, 300 // len(self.register_workshop_item))
+            sleep_seconds = random.randint(0, 300 // len(self.registered_workshop_items))
             await asyncio.sleep(sleep_seconds)
             asyncio.create_task(self._check_item(item))
 

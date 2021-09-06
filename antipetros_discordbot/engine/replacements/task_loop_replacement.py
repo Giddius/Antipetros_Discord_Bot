@@ -9,13 +9,13 @@ class AntiPetrosBaseLoop(tasks.Loop):
     async def _error(self, *args):
         exception = args[-1]
         text = 'Unhandled exception in internal background task {0.__name__!r}.'.format(self.coro)
-        log.error(text, exc_info=True)
+        log.error(text, exc_info=exception)
         log.critical("restarting loop %s after Error %s", self.coro.__name__, exception)
         if self.is_running() is False:
             self.start()
 
 
-def custom_loop(*, seconds=0, minutes=0, hours=0, count=None, reconnect=True, loop=None, klass=None):
+def custom_loop(**kwargs):
     """A decorator that schedules a task in the background for you with
     optional reconnect logic. The decorator returns a :class:`Loop`.
 
@@ -45,17 +45,18 @@ def custom_loop(*, seconds=0, minutes=0, hours=0, count=None, reconnect=True, lo
     TypeError
         The function was not a coroutine.
     """
-    if klass is None:
-        klass = AntiPetrosBaseLoop
+    # if klass is None:
+    #     klass = AntiPetrosBaseLoop
 
-    def decorator(func):
-        kwargs = {
-            'seconds': seconds,
-            'minutes': minutes,
-            'hours': hours,
-            'count': count,
-            'reconnect': reconnect,
-            'loop': loop
-        }
-        return klass(func, **kwargs)
-    return decorator
+    # def decorator(func):
+    #     kwargs = {
+    #         'seconds': seconds,
+    #         'minutes': minutes,
+    #         'hours': hours,
+    #         'count': count,
+    #         'reconnect': reconnect,
+    #         'loop': loop
+    #     }
+    #     return klass(func, **kwargs)
+    # return decorator
+    return tasks.loop(**kwargs)

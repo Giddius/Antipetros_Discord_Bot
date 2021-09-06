@@ -184,19 +184,25 @@ class BikiUrls:
     async def load_functions(self):
         self.function_items = {}
         rows = await self.db.get_a3_functions()
-        functions = []
-        names = []
+
         for row in rows:
             row = dict(**row)
-            functions.append(A3Function(name=row.pop('name'), url=row.pop('url'), description=row.pop('description'), extra_data=row))
+            func_item = await asyncio.to_thread(A3Function, name=row.pop('name'), url=row.pop('url'), description=row.pop('description'), extra_data=row)
+            self.function_items[func_item.name] = func_item
             await asyncio.sleep(0)
+        asyncio.create_task(self.create_function_name_regex())
 
-        for item in functions:
-            self.function_items[item.name] = item
+    async def create_function_name_regex(self):
+        names = []
+        for item in self.function_items.values():
             names.append(item.name)
             names += item.aliases
-        comb_names = r'|'.join(names)
-        self.function_name_regex = re.compile(rf"(?:\s|\A)(?P<name>{comb_names})", re.IGNORECASE)
+            await asyncio.sleep(0)
+
+        def _make_regex(all_names: list[str]):
+            comb_names = r'|'.join(all_names)
+            self.function_name_regex = re.compile(rf"(?:\s|\A)(?P<name>{comb_names})", re.IGNORECASE)
+        asyncio.create_task(asyncio.to_thread(_make_regex, names))
 
 
 class BikiCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": CommandCategory.TEAMTOOLS | CommandCategory.ADMINTOOLS | CommandCategory.DEVTOOLS}):
@@ -255,7 +261,7 @@ class BikiCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Listener]
 
-    @commands.Cog.listener(name='on_message')
+    @ commands.Cog.listener(name='on_message')
     async def listen_for_function_in_message(self, msg: discord.Message):
         if self.completely_ready is False:
             return
@@ -290,8 +296,8 @@ class BikiCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
 # region [Commands]
 
-    @auto_meta_info_command()
-    @owner_or_admin()
+    @ auto_meta_info_command()
+    @ owner_or_admin()
     async def refresh_function_db(self, ctx: commands.Context):
         await ctx.send('starting to scrape functions')
 

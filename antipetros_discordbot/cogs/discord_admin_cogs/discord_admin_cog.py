@@ -84,7 +84,6 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         await super().on_ready_setup()
         self.ready = True
@@ -107,7 +106,6 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 # endregion[Loops]
 
 # region [Commands]
-
 
     @ auto_meta_info_command()
     @owner_or_admin()
@@ -145,9 +143,8 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 
         await delete_message_if_text_channel(ctx)
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(logged=True)
     @owner_or_admin()
-    @log_invoker(log, "critical")
     async def write_message(self, ctx: commands.Context, channel: discord.TextChannel, *, message: str):
         """
         Writes a message as the bot to a specific channel.
@@ -160,7 +157,25 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
         Example:
             @AntiPetros write_message 645930607683174401 This is my message
         """
-        await channel.send(message)
+        await channel.send(message, allowed_mentions=discord.AllowedMentions.none())
+        await ctx.message.delete()
+
+    @auto_meta_info_command(logged=True)
+    @owner_or_admin()
+    async def edit_message(self, ctx: commands.Context, channel: discord.TextChannel, msg_id: int, *, content: str):
+        """
+        Writes a message as the bot to a specific channel.
+
+
+        Args:
+            channel (discord.TextChannel): name or id of channel. Preferably use Id as it is failsafe.
+            message (str): The message you want to write, does not need any quotes and can be multiline
+
+        Example:
+            @AntiPetros write_message 645930607683174401 This is my message
+        """
+        to_edit_msg = await channel.fetch_message(msg_id)
+        await to_edit_msg.edit(content=content)
         await ctx.message.delete()
 
     @flags.add_flag("--title", '-t', type=str, default=ZERO_WIDTH)
@@ -255,7 +270,6 @@ class AdministrationCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categ
 # endregion[Helper]
 
 # region [SpecialMethods]
-
 
     def cog_check(self, ctx):
         return True

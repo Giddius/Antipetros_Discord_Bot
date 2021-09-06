@@ -2,16 +2,15 @@
 build-backend = "flit_core.buildapi"
 requires = ["flit_core ==2,<4"]
 
-# region [flit]
-
-[tool.flit.metadata]
-author = "antistasi_tools"
+[project]
+name = "antipetros_discordbot"
+authors = [{ name = "antistasi_tools" }]
 classifiers = ["License :: OSI Approved :: MIT License"]
-description-file = "README.md"
-home-page = "https://github.com/Giddius/Antipetros_Discord_Bot"
-license = "MIT"
-module = "antipetros_discordbot"
-requires = [
+license = { file = "LICENSE" }
+readme = "README.md"
+dynamic = ['version', 'description']
+requires-python = ">=3.9"
+dependencies = [
     "Jinja2>=3.0.0",
     "discord.py==1.7.1",
     "Markdown==3.3.4",
@@ -69,14 +68,14 @@ requires = [
     "ordered-enum==0.0.6",
 ]
 
-requires-python = ">=3.9"
+[project.urls]
+Source = "https://github.com/Giddius/Antipetros_Discord_Bot"
 
-[tools.flit.metadata.requires-extra]
+[project.optional-dependencies]
 uvloop = ["uvloop==0.15.2"]
 
-[tool.flit.scripts]
+[project.scripts]
 antipetrosbot = "antipetros_discordbot.__main__:cli"
-
 
 [tool.flit.sdist]
 exclude = [
@@ -103,14 +102,10 @@ exclude = [
     "tasks.py",
 ]
 
-# endregion [flit]
-# region [autopep8]
 [tool.autopep8]
 ignore = ["E402", "E501"]
 max-line-length = 250
 
-# endregion [autopep8]
-# region [isort]
 [tool.isort]
 balanced_wrapping = true
 ensure_newline_before_comments = true
@@ -135,24 +130,5 @@ sections = [
     "LOCALFOLDER",
 ]
 
-# endregion [isort]
-# region [pytest]
 [tool.pytest.ini_options]
 addopts = "-rP -vv --durations=0 --show-capture=all --color=auto --code-highlight=yes"
-
-# endregion [pytest]
-# region [gidvenv]
-[tool.gidvenv.base_venv_settings]
-clear = true
-symlinks = true
-system_site_packages = false
-with_pip = false
-# prompt=
-upgrade_deps = false
-
-[tool.gidvenv.settings]
-extra_install_instructions = []
-manipulate_script = true
-pyclean_before = true
-verbose = false
-# endregion [gidvenv]

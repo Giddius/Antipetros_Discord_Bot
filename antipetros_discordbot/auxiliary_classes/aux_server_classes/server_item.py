@@ -789,6 +789,7 @@ class ServerItem:
             except asyncio.exceptions.TimeoutError:
                 if try_num < (try_amount - 1):
                     await asyncio.sleep(delay)
+                    log.debug("retrying getting server info for server %s, try number: %s", self.name, try_num)
                     continue
                 else:
                     raise

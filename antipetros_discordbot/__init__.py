@@ -25,7 +25,6 @@ def set_env():
     """
     old_cd = os.getcwd()
     os.chdir(MAIN_DIR)
-
     os.environ['LOG_CONFIG_RETRIEVE'] = '0'
     os.environ['PYTHONASYNCIODEBUG'] = "1"
     os.environ['ANTIPETRO_START_TIME'] = START_TIME.isoformat()

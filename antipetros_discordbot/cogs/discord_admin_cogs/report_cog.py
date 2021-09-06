@@ -16,7 +16,7 @@ import logging
 import platform
 import subprocess
 from enum import Enum, Flag, auto, unique
-from time import sleep
+from time import sleep, process_time, process_time_ns, perf_counter, perf_counter_ns
 from pprint import pprint, pformat
 from typing import Optional, Union, Any, TYPE_CHECKING, Callable, Iterable, List, Dict, Set, Tuple, Mapping
 from datetime import tzinfo, datetime, timezone, timedelta
@@ -32,8 +32,8 @@ from concurrent.futures import ThreadPoolExecutor
 import unicodedata
 from io import BytesIO, StringIO
 from textwrap import dedent
-from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 
+from jinja2 import Environment, BaseLoader
 import dateparser
 
 import aiohttp
@@ -44,8 +44,8 @@ from dateparser import parse as date_parse
 from hashlib import shake_256
 
 import gidlogger as glog
-
-
+from pathlib import Path
+from zipfile import ZipFile, ZIP_LZMA
 from antipetros_discordbot.cogs import get_aliases, get_doc_data
 from antipetros_discordbot.utility.misc import STANDARD_DATETIME_FORMAT, CogConfigReadOnly, make_config_name, is_even, delete_message_if_text_channel, async_write_json, async_load_json
 from antipetros_discordbot.utility.checks import command_enabled_checker, allowed_requester, allowed_channel_and_allowed_role, has_attachments, owner_or_admin, log_invoker
@@ -57,7 +57,7 @@ from antipetros_discordbot.engine.replacements import auto_meta_info_command, An
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.emoji_handling import normalize_emoji
 from antipetros_discordbot.utility.parsing import parse_command_text_file
-from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation, AskInput, AskInputManyAnswers, AskFile, AskAnswer, AskSelection, AskSelectionOption
+from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation, AskInput, AskInputManyAnswers, AskFile, AskAnswer, AskSelection, AskSelectionOption, AskFileWithEmoji, AskInputWithEmoji
 from antipetros_discordbot.utility.general_decorator import async_log_profiler, sync_log_profiler, universal_log_profiler
 from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import shorten_string
 from antipetros_discordbot.utility.exceptions import AskCanceledError
@@ -331,6 +331,7 @@ class ReportItem:
         await self.cog.report_channel_anonymized.send(**anonymized_embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     async def collect_report(self):
+
         await self._ask_for_target()
         await self._ask_for_location()
         await self._ask_time()
@@ -349,6 +350,190 @@ class ReportItem:
             await self.channel.send("report was canceled", allowed_mentions=discord.AllowedMentions.none())
 
 
+class RemarkItem:
+    cog: "ReportCog" = None
+    ask_text_data_file = APPDATA['remark_text_data.json']
+    user_profile_base_url = "https://discordapp.com/users/"
+    color_type_map = {"Positive": 'green',
+                      'Neutral': 'grey',
+                      'Negative': 'red'}
+    type_emoji_map = {'Positive': "✅",
+                      "Neutral": "❕",
+                      "Negative": "❌"}
+    datetime_format = "%Y-%m-%d %H-%M-%S UTC"
+    template_file = Path(APPDATA['remark_template.jinja'])
+    jinja_env = Environment(loader=BaseLoader, enable_async=True)
+
+    def __init__(self, author: discord.Member, channel: discord.DMChannel):
+        self.author = author
+        self.channel = channel
+        self.remark_id = self._determine_remark_id()
+        self.remark_type = None
+        self.target = None
+        self.text = ""
+        self.files = []
+        self.full_message_data = None
+        self.ask_text_data = loadjson(self.ask_text_data_file)
+
+    def _determine_remark_id(self):
+        current_date = datetime.now(tz=timezone.utc)
+        id_string = current_date.isoformat() + str(self.author.id)
+        id_bytes = id_string.encode('utf-8', errors='ignore')
+        id_hash = shake_256(id_bytes).hexdigest(8)
+        return int(id_hash, 16)
+
+    @classmethod
+    async def from_ctx(cls, ctx: commands.Context):
+        author = ctx.author
+        channel = ctx.channel if ctx.channel.type is discord.ChannelType.private else await cls.cog.bot.ensure_dm_channel(author)
+        return cls(author=author, channel=channel)
+
+    def no_bot_invocation_validator(self, text: str):
+
+        for prefix in self.cog.bot.all_prefixes_for_check:
+            if text.startswith(prefix):
+                return False
+        if text == '':
+            return False
+        return True
+
+    async def _ask_for_type(self):
+        ask_text_data = self.ask_text_data.get('ask_for_type', {})
+        selection_ask = AskSelection(author=self.author, channel=self.channel, timeout=600, delete_question=False, error_on=True)
+        selection_ask.set_title(ask_text_data.get('title'))
+        selection_ask.set_description(ask_text_data.get('description').replace('\n\n\n', f"\n{ZERO_WIDTH}\n"))
+
+        for item in ask_text_data.get('extra_fields', []):
+            selection_ask.add_extra_field(name=item.get('name'), content=item.get('content', ZERO_WIDTH))
+        selection_ask.options.add_option(AskSelectionOption(item="Positive", emoji=ask_text_data.get("option_positive_emoji", "✅"), description=ask_text_data.get("option_positive")))
+        selection_ask.options.add_option(AskSelectionOption(item="Neutral", emoji=ask_text_data.get("option_neutral_emoji", "❕"), description=ask_text_data.get("option_neutral")))
+        selection_ask.options.add_option(AskSelectionOption(item="Negative", emoji=ask_text_data.get("option_negative_emoji", "❌"), description=ask_text_data.get("option_negative")))
+        main_answer = await selection_ask.ask()
+        self.remark_type = main_answer
+
+    async def _ask_for_target(self):
+        ask_text_data = self.ask_text_data.get('ask_for_target', {})
+        input_ask = AskInputWithEmoji(author=self.author, channel=self.channel, timeout=600, delete_question=False, delete_answers=False, error_on=True)
+        input_ask.set_title(ask_text_data.get("title"))
+        input_ask.set_description(ask_text_data.get("description").replace('\n\n\n', f"\n{ZERO_WIDTH}\n"))
+        for item in ask_text_data.get('extra_fields', []):
+            input_ask.add_extra_field(name=item.get('name'), content=item.get('content', ZERO_WIDTH))
+        input_ask.validator = self.no_bot_invocation_validator
+        answer = await input_ask.ask()
+        maybe_target_member = None
+        if '#' in answer:
+            maybe_target_member = self.cog.bot.member_by_name(answer.strip())
+        elif answer.isnumeric() and len(answer) == 18:
+            maybe_target_member = self.cog.bot.get_antistasi_member(int(answer))
+        if maybe_target_member is not None:
+            self.target = maybe_target_member.mention
+        else:
+            self.target = f"`{answer}`"
+
+    async def _ask_text(self):
+        ask_text_data = self.ask_text_data.get('ask_text', {})
+        input_ask = AskInputWithEmoji(self.author, self.channel, timeout=1500, delete_question=False, delete_answers=False, error_on=True)
+        input_ask.set_title(ask_text_data.get('title'))
+        input_ask.set_description(ask_text_data.get('description').replace('\n\n\n', f"\n{ZERO_WIDTH}\n"))
+        for item in ask_text_data.get('extra_fields', []):
+            input_ask.add_extra_field(name=item.get('name'), content=item.get('content', ZERO_WIDTH))
+        input_ask.validator = self.no_bot_invocation_validator
+        answer = await input_ask.ask()
+        self.text = answer
+
+    async def _ask_files(self):
+        ask_text_data = self.ask_text_data.get('ask_files', {})
+        file_ask = AskFileWithEmoji(self.author, self.channel, timeout=1500, delete_question=False, delete_answers=False, error_on=True)
+        file_ask.set_title(ask_text_data.get('title'))
+        file_ask.set_description(ask_text_data.get('description').replace('\n\n\n', f"\n{ZERO_WIDTH}\n"))
+        for item in ask_text_data.get('extra_fields', []):
+            file_ask.add_extra_field(name=item.get('name'), content=item.get('content', ZERO_WIDTH))
+        answer_attachments = await file_ask.ask()
+        self.files = answer_attachments
+
+    async def make_full_message_data(self):
+
+        data = {}
+        data['utc_time'] = datetime.now(tz=timezone.utc).strftime(self.datetime_format)
+        data['remarker'] = self.author.mention
+        data['remark_type'] = self.remark_type
+        data['target'] = self.target
+        data['remark_text'] = self.text if len(self.text) <= 1900 else "see attachment"
+        data['remark_type_emoji'] = self.type_emoji_map.get(self.remark_type)
+        data['remark_id'] = self.remark_id
+        template = self.jinja_env.from_string(self.template_file.read_text())
+        text = await template.render_async(**data)
+        files = []
+        async with self.channel.typing():
+            if len(self.text) > 1900:
+                files.append(await self.text_to_file())
+            # if len(self.files) > 2 or any(attachment.size >= 8388608 for attachment in self.files):
+            #     files.append(await self.files_to_zip())
+
+            # else:
+            for attachment_file in self.files:
+                files.append(await attachment_file.to_file(spoiler=False))
+        return {'content': text, 'files': files, 'allowed_mentions': discord.AllowedMentions.none()}
+
+    async def files_to_zip(self):
+        def _write_zip(items):
+
+            with BytesIO() as bytefile:
+                with ZipFile(bytefile, 'w', compression=ZIP_LZMA) as zippy:
+                    for _name, _data in items:
+                        zippy.writestr(_name, data=_data)
+
+                bytefile.seek(0)
+                current_date = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d_%H-%M-%S UTC")
+                return discord.File(bytefile, f"remark_{self.author.id}_{current_date}.zip")
+        all_items = []
+        for attachment in self.files:
+            name = attachment.filename
+            data = await attachment.read()
+            all_items.append((name, data))
+        return await asyncio.to_thread(_write_zip, all_items)
+
+    async def text_to_file(self) -> discord.File:
+        with StringIO() as string_file:
+            await asyncio.to_thread(string_file.write, self.text)
+            string_file.seek(0)
+            current_date = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d_%H-%M-%S UTC")
+
+            file = discord.File(string_file, filename=f"remark_{self.author.id}_{current_date}.txt")
+        return file
+
+    async def _ask_remark_confirm(self):
+        self.full_message_data = await self.make_full_message_data()
+        ask_text_data = self.ask_text_data.get('ask_remark_confirm', {})
+        summary_message = await self.channel.send(self.full_message_data.get('content'))
+        for file in self.full_message_data.get('files'):
+            await self.channel.send(file=file)
+
+        confirm_ask = AskConfirmation(self.author, self.channel, timeout=600, delete_question=False, error_on=True)
+        confirm_ask.set_title(ask_text_data.get('title'))
+        confirm_ask.set_description(
+            f"Is the above {embed_hyperlink('Summary of your Remark', summary_message.jump_url)} correct?\n **Do your really want to send this Remark__(can not be canceled after this confirmation)__**?\n{ZERO_WIDTH}\n❎ cancels the remark, same as 🛑")
+        answer = await confirm_ask.ask()
+        if answer is confirm_ask.DECLINED:
+            await self.channel.send("**Remark was canceled!**")
+        else:
+            await self.channel.send("**Your Remark has been submitted!**")
+        return True if answer is confirm_ask.ACCEPTED else False
+
+    async def collect_report(self):
+        async with self.cog.bot.restart_blocker:
+            await self._ask_for_type()
+            await self._ask_for_target()
+            await self._ask_text()
+            await self._ask_files()
+
+            if await self._ask_remark_confirm() is True:
+
+                await self.cog.send_to_remark_webhook(await self.make_full_message_data())
+            else:
+                await self.channel.send("Remark was canceled", allowed_mentions=discord.AllowedMentions.none())
+
+
 class ReportCog(AntiPetrosBaseCog):
     """
     WiP
@@ -364,6 +549,7 @@ class ReportCog(AntiPetrosBaseCog):
                                             "report_channel_anonymized": "bot-testing"}}
     required_folder = []
     required_files = []
+    remark_emoji = "📮"
 
 # endregion [ClassAttributes]
 
@@ -377,6 +563,20 @@ class ReportCog(AntiPetrosBaseCog):
 
 # region [Properties]
 
+
+    @property
+    def remark_request_channel_id(self):
+        channel_id = COGS_CONFIG.retrieve(self.config_name, "remark_request_channel_id", typus=int, direct_fallback=None)
+        return channel_id
+
+    @property
+    def remark_request_message_id(self):
+        msg_id = COGS_CONFIG.retrieve(self.config_name, "remark_request_message_id", typus=int, direct_fallback=None)
+        return msg_id
+
+    @property
+    def remark_webhook_urls(self):
+        return COGS_CONFIG.retrieve(self.config_name, "remark_webhook_urls", typus=List[str], direct_fallback=["https://discord.com/api/webhooks/854749192189640734/kd3tmI17bErnc6egy8ObrdfV6-Rm79hkPxNFxBjeZDSp4wNv4llJ8EG-9_z_6Awv8Jeu"])
 
     @property
     def report_webhook_urls(self):
@@ -400,10 +600,9 @@ class ReportCog(AntiPetrosBaseCog):
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
         await super().on_ready_setup()
-
+        RemarkItem.cog = self
         ReportItem.cog = self
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
@@ -421,10 +620,70 @@ class ReportCog(AntiPetrosBaseCog):
 
 # region [Listener]
 
+    @ commands.Cog.listener(name='on_raw_reaction_add')
+    async def remark_on_emoji_listener(self, payload: discord.RawReactionActionEvent):
+        if self.completely_ready is False:
+            return
+        if self.remark_request_channel_id is None or self.remark_request_message_id is None:
+            return
+        if payload.channel_id != self.remark_request_channel_id:
+            return
+        if payload.message_id != self.remark_request_message_id:
+            return
+        reaction_member = payload.member if payload.member is not None else self.bot.get_antistasi_member(payload.user_id)
+
+        if reaction_member.bot is True:
+            return
+        try:
+            message = await self.bot.get_message_directly(payload.channel_id, payload.message_id)
+
+        except discord.errors.NotFound:
+            return
+        emoji = str(payload.emoji)
+        await message.remove_reaction(payload.emoji, reaction_member)
+        if emoji == str(self.remark_emoji):
+
+            try:
+                remark = RemarkItem(author=reaction_member, channel=await self.bot.ensure_dm_channel(reaction_member))
+                await remark.collect_report()
+            except BaseException as e:
+                log.exception("encountered exception", exc_info=e)
 
 # endregion [Listener]
 
 # region [Commands]
+
+    @auto_meta_info_command(clear_invocation=True)
+    @owner_or_admin()
+    async def make_remark_emoji_message(self, ctx: commands.Context, remark_channel: discord.TextChannel):
+        current_message = await self.get_remark_request_message()
+        if current_message is not None:
+            await current_message.delete()
+        description = f'To make a Remark, please react to this message with {self.remark_emoji}, then you will be contacted per DM by the Bot.'
+        title = 'REMARK SYSTEM'
+        if self.bot.is_debug is True:
+            description = f"⚠️⚠️ **THIS IS JUST A TEST** ⚠️⚠️\n{ZERO_WIDTH}\n‼️ **__DO NOT__** SEND REAL REMARKS WITH THIS.\n‼️ You can use real users, but **make up a stupid story**\n‼️ most of all ***TRY TO BREAK IT***\n" + ZERO_WIDTH + '\n' + description
+            title = title + ' TEST'
+
+        embed_data = await self.bot.make_generic_embed(title=title,
+                                                       description=description,
+                                                       thumbnail="https://www.lotus-qa.com/wp-content/uploads/2020/02/testing.jpg",
+                                                       timestamp=None,
+                                                       fields=[self.bot.field_item('If something goes wrong:', 'Please contact an Admin and tell im the situation, they will then contact `Giddi`, to fix the bug!')])
+        msg = await remark_channel.send(**embed_data)
+        await msg.add_reaction(self.remark_emoji)
+        COGS_CONFIG.set(self.config_name, 'remark_request_channel_id', str(remark_channel.id))
+        COGS_CONFIG.set(self.config_name, 'remark_request_message_id', str(msg.id))
+
+    @auto_meta_info_command()
+    async def remark(self, ctx: commands.Context):
+        remark = await RemarkItem.from_ctx(ctx)
+
+        await delete_message_if_text_channel(ctx)
+        try:
+            await remark.collect_report()
+        except BaseException as e:
+            log.exception("encountered exception", exc_info=e)
 
     @auto_meta_info_command()
     @allowed_channel_and_allowed_role(True)
@@ -445,6 +704,23 @@ class ReportCog(AntiPetrosBaseCog):
 
 # region [HelperMethods]
 
+
+    async def send_to_remark_webhook(self, remark_data):
+        for webhook_url in self.remark_webhook_urls:
+            webhook = discord.Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(self.bot.aio_session))
+            _remark_data = {'allowed_mentions': discord.AllowedMentions.none()} | remark_data
+            await webhook.send(**_remark_data)
+
+    async def get_remark_request_message(self) -> discord.Message:
+        channel_id = self.remark_request_channel_id
+        msg_id = self.remark_request_message_id
+        if msg_id is None or channel_id is None:
+            return None
+        try:
+            msg = await self.bot.get_message_directly(channel_id, msg_id)
+            return msg
+        except discord.NotFound:
+            return None
 
 # endregion [HelperMethods]
 

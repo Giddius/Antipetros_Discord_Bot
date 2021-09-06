@@ -41,7 +41,7 @@ from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeepe
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus, GithubLabelOperator
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, auto_meta_info_command
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker, ZERO_WIDTH
 from antipetros_discordbot.utility.pygment_styles import DraculaStyle
 from antipetros_discordbot.engine.replacements.task_loop_replacement import custom_loop
 from github import Github
@@ -342,7 +342,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [Init]
 
-
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.github_client = Github(os.getenv('GITHUB_TOKEN'))
@@ -368,7 +367,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # endregion [Properties]
 
 # region [Setup]
-
 
     async def on_ready_setup(self):
         await super().on_ready_setup()
@@ -442,7 +440,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 # endregion [Listener]
 
 # region [Commands]
-
 
     @auto_meta_info_command()
     async def github_rate_limit_left(self, ctx: commands.Context):
@@ -649,7 +646,6 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
 
 # region [HelperMethods]
 
-
     def get_labels(self):
         self.labels = {label.name.casefold(): label for label in self.antistasi_repo.get_labels()}
         return self.labels
@@ -700,10 +696,28 @@ class GithubCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories":
             await channel.send(f'Unable to find issue `{issue_number}`', allowed_mentions=discord.AllowedMentions.none(), reference=msg.to_reference(fail_if_not_exists=False))
 
     async def make_issue_embed(self, issue: github.Issue.Issue):
+        async def _extract_section(in_text: str, section_text: str):
+            section_dict = defaultdict(list)
+            current_key = "NOKEY"
+            header_regex = re.compile(r"^\#+\s*(?P<head_text>.*)")
+            for line in (_line for _line in in_text.splitlines()):
+                h_match = header_regex.search(line.strip())
+                if h_match:
+                    current_key = h_match.group("head_text").casefold().rstrip("?!.,")
+                    section_dict[current_key].append(f'**{h_match.group("head_text")}**')
+                    section_dict[current_key].append('')
+                    # log.debug("current_key= %r, section_text= %r", current_key, section_text)
+
+                else:
+                    section_dict[current_key].append(line.strip())
+                await asyncio.sleep(0)
+            return '\n'.join(section_dict.get(section_text.casefold(), re.sub(r"\#+", "> ", in_text).splitlines())) + f'\n'
+
         title = issue.title
-        description = issue.body
+        description = await _extract_section(issue.body, section_text="What have you changed and why")
+
         if len(description) > 1024:
-            description = description[1020:] + '...'
+            description = description[:1020] + '...'
         url = issue.html_url
         timestamp = issue.created_at
         thumbnail = "https://avatars0.githubusercontent.com/u/53788409?s=200&v=4"

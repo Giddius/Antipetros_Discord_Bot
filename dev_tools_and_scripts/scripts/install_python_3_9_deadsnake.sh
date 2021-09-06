@@ -12,19 +12,14 @@ rm get-pip.py
 
 
 
-echo 'alias pip39="python3.9 -m pip"' >> ~/.bashrc
+
 python3.9 --version
 
 
 sudo apt-get update -y
 
-sudo apt-get install -y libcairo2-dev
-
-
-sudo apt-get install -y libsdl-pango-dev
 
 sudo apt install python3-testresources -y
 
 python3.9 -m pip install --upgrade pip
 
-python3.9 -m pip install python-Levenshtein-wheels
