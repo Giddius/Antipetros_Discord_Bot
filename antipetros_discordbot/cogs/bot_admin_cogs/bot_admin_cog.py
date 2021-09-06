@@ -376,7 +376,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
             for file in os.scandir(log_folder):
                 if file.is_file() and file.name.endswith('.log'):
                     file_path = Path(file.path)
-                    temp_path = Path(APPDATA['temp_files']).with_name(file_path.name)
+                    temp_path = Path(APPDATA['temp_files']).joinpath(file_path.name)
                     shutil.copy(str(file_path), str(temp_path))
                     all_log_files.append(str(temp_path))
             for old_file in os.scandir(pathmaker(log_folder, 'old_logs')):

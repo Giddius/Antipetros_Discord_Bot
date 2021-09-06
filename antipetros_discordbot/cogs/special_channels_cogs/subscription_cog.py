@@ -202,7 +202,10 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
     @property
     def subscription_channel(self):
-        name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
+        if self.bot.is_debug is True:
+            name = 'bot-testing'
+        else:
+            name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
         if name is None:
             return None
         return self.bot.channel_from_name(name)

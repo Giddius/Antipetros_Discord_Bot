@@ -185,7 +185,10 @@ class CommunityServerInfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, 
 
     @property
     def notification_channel(self) -> discord.TextChannel:
-        name = COGS_CONFIG.retrieve(self.config_name, 'status_change_notification_channel', typus=str, direct_fallback='bot-testing')
+        if self.bot.is_debug is True:
+            name = 'bot-testing'
+        else:
+            name = COGS_CONFIG.retrieve(self.config_name, 'status_change_notification_channel', typus=str, direct_fallback='bot-testing')
         return self.bot.channel_from_name(name)
 
     @property

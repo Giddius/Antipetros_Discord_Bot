@@ -622,6 +622,8 @@ def setup(bot):
     """
     Mandatory function to add the Cog to the bot.
     """
+    if bot.is_debug is True:
+        return
     bot.add_cog(TeamRosterCog(bot))
 
 
