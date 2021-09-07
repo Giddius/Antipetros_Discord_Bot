@@ -12,8 +12,8 @@ import random
 from typing import Tuple, Union
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord import Color
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process as fuzzprocess
+from rapidfuzz import fuzz
+from rapidfuzz import process as fuzzprocess
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
@@ -148,7 +148,7 @@ class ColorKeeper(SubSupportBase):
         return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
-    def retire(self):
+    async def retire(self):
         log.debug("'%s' sub_support was RETIRED", str(self))
 
 

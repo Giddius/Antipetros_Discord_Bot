@@ -3,6 +3,7 @@
 
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
+import asyncio
 from datetime import datetime
 from collections import namedtuple
 import re
@@ -21,7 +22,7 @@ from antipetros_discordbot.utility.misc import loop_starter
 
 from antipetros_discordbot.utility.enums import RequestStatus, CogMetaStatus, UpdateTypus
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, CommandCategory, RequiredFile, auto_meta_info_command
-
+from antipetros_discordbot.utility.discord_markdown_helper.string_manipulation import shorten_string
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 
@@ -68,7 +69,8 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
     long_description = ""
     extra_info = ""
     required_config_data = {'base_config': {},
-                            'cogs_config': {}}
+                            'cogs_config': {"notify_member_ids": "",
+                                            "notify_channel": "bot-testing"}}
 
     registered_workshop_items_file = pathmaker(APPDATA['json_data'], 'registered_steam_workshop_items.json')
 
@@ -101,13 +103,12 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.color = "white"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
+
 
 # endregion [Init]
 
 # region [Properties]
+
 
     @property
     def registered_workshop_items(self):
@@ -120,39 +121,45 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
         for member_id in member_ids:
             members.append(self.bot.get_antistasi_member(member_id))
         return list(set(members))
+
+    @property
+    def notify_channel(self):
+        channel_name = COGS_CONFIG.retrieve(self.config_name, 'notify_channel', typus=str, direct_fallback="bot-testing")
+        return self.bot.channel_from_name(channel_name)
+
 # endregion [Properties]
 
 # region [Setup]
 
     async def on_ready_setup(self):
-        for loop_object in self.loops.values():
-            loop_starter(loop_object)
+        await super().on_ready_setup()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
+        await super().update(typus)
         log.debug('cog "%s" was updated', str(self))
-
 
 # endregion [Setup]
 
 # region [Loops]
 
+    async def _check_item(self, item):
+        log.debug("checking steam_workshop_item '%s' for possible update", item.title)
+        new_item = await self._get_fresh_item_data(item.id)
+        updated_new = datetime.strptime(new_item.updated, self.date_time_format)
+        updated_old = datetime.strptime(item.updated, self.date_time_format)
+
+        if updated_new > updated_old:
+            await self._update_item_in_registered_items(item, new_item)
+            await self.notify_update(item, new_item)
 
     @tasks.loop(minutes=5, reconnect=True)
     async def check_for_updates(self):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         for item in self.registered_workshop_items:
-            log.debug("checking steam_workshop_item '%s' for possible update", item.title)
-            new_item = await self._get_fresh_item_data(item.id)
-            updated_new = datetime.strptime(new_item.updated, self.date_time_format)
-            updated_old = datetime.strptime(item.updated, self.date_time_format)
-            log.debug("comapring time '%s' new, to '%s' old", updated_new.strftime(self.date_time_format), updated_old.strftime(self.date_time_format))
-            if updated_new > updated_old:
-                await self._update_item_in_registered_items(item, new_item)
-                await self.notify_update(item, new_item)
+            asyncio.create_task(self._check_item(item))
 
 # endregion [Loops]
 
@@ -172,13 +179,15 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
             saved = await self._add_item_to_registered_items(item)
             if saved is False:
                 await ctx.send(f'Item "{item.title}" with id "{item.id}" already registered!')
-                return
+                continue
             req_value = '\n'.join([f"**{req_name}**\n{req_link}" for req_name, req_link in item.requirements]) if len(item.requirements) > 0 else 'No Requirements'
+            req_value = shorten_string(req_value, 1000, ensure_space_around_placeholder=True)
             fields = [self.bot.field_item(name="Last Updated:", value=item.updated, inline=False),
                       self.bot.field_item(name='Requirements:', value=req_value, inline=False),
                       self.bot.field_item(name="Size:", value=item.size, inline=False)]
 
-            embed_data = await self.bot.make_generic_embed(author={'name': "link to steam workshop page 🔗", 'url': item.url, 'icon_url': item.image_link}, title=item.title, description="was added to registered Workshop Items", image=item.image_link,
+            author = {'name': "link to steam workshop page 🔗", 'url': item.url, 'icon_url': item.image_link} if item.image_link is not None else {'name': "link to steam workshop page 🔗", 'url': item.url}
+            embed_data = await self.bot.make_generic_embed(author=author, title=item.title, description="was added to registered Workshop Items", image=item.image_link,
                                                            fields=fields, thumbnail=None)
 
             await ctx.send(**embed_data)
@@ -204,6 +213,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
         log.info(f"{new_item.title} had an update")
         for member in self.notify_members:
             await member.send(f"{new_item.title} had an update")
+        await self.notify_channel.send(f"{new_item.title} had an update")
 
     async def _add_item_to_registered_items(self, item):
         data = loadjson(self.registered_workshop_items_file)
@@ -253,8 +263,13 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
         return title.text
 
     async def _get_updated(self, in_soup: BeautifulSoup):
-        updated_data = in_soup.findAll("div", {"class": "detailsStatRight"})[2]
-        return await self._parse_update_date(updated_data.text)
+        try:
+            updated_data = in_soup.findAll("div", {"class": "detailsStatRight"})[2]
+            return await self._parse_update_date(updated_data.text)
+        except IndexError:
+
+            updated_data = in_soup.findAll("div", {"class": "detailsStatRight"})[1]
+            return await self._parse_update_date(updated_data.text)
 
     async def _get_requirements(self, in_soup: BeautifulSoup):
         _out = []
@@ -269,10 +284,13 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
         return _out
 
     async def _get_image_link(self, in_soup: BeautifulSoup):
-        image = in_soup.find_all('div', {'class': "workshopItemPreviewImageMain"})[0].find_all('a')[0].get('onclick')
-        match = self.image_link_regex.search(image)
-        if match:
-            return match.group('image_link')
+        try:
+            image = in_soup.find_all('div', {'class': "workshopItemPreviewImageMain"})[0].find_all('a')[0].get('onclick')
+            match = self.image_link_regex.search(image)
+            if match:
+                return match.group('image_link')
+        except IndexError:
+            return None
 
     async def _get_item_size(self, in_soup: BeautifulSoup):
         size = in_soup.findAll("div", {"class": "detailsStatRight"})[0]
@@ -280,7 +298,7 @@ class SteamCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": 
 
     async def _get_fresh_item_data(self, item_id: int):
         item_url = f"{self.base_url}{item_id}"
-        async with self.bot.aio_request_session.get(item_url) as response:
+        async with self.bot.aio_session.get(item_url) as response:
             if RequestStatus(response.status) is RequestStatus.Ok:
                 content = await response.text()
                 soup = BeautifulSoup(content, 'html.parser')

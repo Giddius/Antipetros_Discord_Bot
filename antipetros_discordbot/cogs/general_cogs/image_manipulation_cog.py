@@ -124,9 +124,6 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
         #                         'airport': Image.open(r"D:\Dropbox\hobby\Modding\Ressources\Arma_Ressources\maps\tanoa_v2_2000_airport_marker.png")}
         self.old_map_message = None
         self.color = "blue"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
 
 
 # endregion[Init]
@@ -135,12 +132,14 @@ class ImageManipulationCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "c
 
 
     async def on_ready_setup(self):
+        await super().on_ready_setup()
         self._get_stamps()
         self._get_nato_symbol_parts()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
+        await super().update(typus=typus)
         self._get_stamps()
         log.debug('cog "%s" was updated', str(self))
 

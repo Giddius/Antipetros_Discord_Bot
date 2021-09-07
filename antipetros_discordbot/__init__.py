@@ -1,7 +1,7 @@
 """
 A Discord Bot for the Antistasi (ArmA 3) Community Discord Server
 """
-__version__ = '2.0.2'
+__version__ = '2.1.4'
 
 import os
 from importlib.metadata import metadata
@@ -25,14 +25,7 @@ def set_env():
     """
     old_cd = os.getcwd()
     os.chdir(MAIN_DIR)
-    dev_indicator_env_path = os.path.normpath(os.path.join(MAIN_DIR, '../tools/_project_devmeta.env'))
 
-    if os.path.isfile(dev_indicator_env_path):
-        load_dotenv(dev_indicator_env_path)
-        os.environ['IS_DEV'] = 'true'
-
-    else:
-        os.environ['IS_DEV'] = 'false'
     os.environ['LOG_CONFIG_RETRIEVE'] = '0'
     os.environ['PYTHONASYNCIODEBUG'] = "1"
     os.environ['ANTIPETRO_START_TIME'] = START_TIME.isoformat()
@@ -52,6 +45,9 @@ def set_env():
     os.environ['BOT_CREATOR_ID'] = "576522029470056450"
     os.environ['REPO_BASE_URL'] = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/blob/development"
     os.environ['WIKI_BASE_URL'] = "https://github.com/official-antistasi-community/Antipetros_Discord_Bot/wiki"
+    if os.getenv('IS_DEV', 'false').casefold() == 'true':
+        os.environ['ALWAYS_CHECK_RATE_LIMITED'] = '1'
 
 
 set_env()
+os.environ['COLLECT_ATTACHMENT_TYPES_ENABLED'] = "0"

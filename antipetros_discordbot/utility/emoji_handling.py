@@ -2,14 +2,15 @@ from emoji.unicode_codes.en import EMOJI_ALIAS_UNICODE_ENGLISH
 from emoji import demojize, emoji_count
 from contextlib import contextmanager
 import random
+from string import ascii_lowercase
 
 CHECK_MARK_BUTTON_EMOJI = "✅"
 
 CROSS_MARK_BUTTON_EMOJI = "❎"
 
-
-NUMERIC_EMOJIS = ["0️⃣",
-                  "1️⃣",
+CANCEL_EMOJI = "🛑"
+FINISHED_EMOJI = "🆗"
+NUMERIC_EMOJIS = ["1️⃣",
                   "2️⃣",
                   "3️⃣",
                   "4️⃣",
@@ -47,6 +48,13 @@ ALPHABET_EMOJIS = ["🇦",
                    "🇽",
                    "🇾",
                    "🇿"]
+
+
+EMOJI_ALPHABET_MAP = {x[0]: x[1] for x in zip(ascii_lowercase, ALPHABET_EMOJIS)}
+
+
+def letter_to_emoji(letter: str):
+    return EMOJI_ALPHABET_MAP[letter.casefold()]
 
 
 def is_unicode_emoji(data: str):

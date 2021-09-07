@@ -14,10 +14,10 @@ from discord.ext import commands
 import gidlogger as glog
 
 # * Local Imports --------------------------------------------------------------------------------------->
-from antipetros_discordbot.utility.exceptions import IsNotDMChannelError, IsNotTextChannelError, MissingAttachmentError, NotAllowedChannelError, NotAllowedMember, NotNecessaryRole
+from antipetros_discordbot.utility.exceptions import IsNotDMChannelError, IsNotTextChannelError, MissingAttachmentError, NotAllowedChannelError, NotAllowedMember, NotNecessaryRole, WrongAttachmentTypeError
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.data import COMMAND_CONFIG_SUFFIXES, DEFAULT_CONFIG_OPTION_NAMES, COG_CHECKER_ATTRIBUTE_NAMES
-
+from antipetros_discordbot.auxiliary_classes.all_item import AllItem
 # endregion[Imports]
 
 # region [TODO]
@@ -71,15 +71,17 @@ class BaseAntiPetrosCheck:
             return True
         if channel.type is discord.ChannelType.text:
             allowed_channels = self.allowed_channels(command)
-            if allowed_channels != {'all'} and channel.name.casefold() not in allowed_channels:
+            if allowed_channels != {'all'} and allowed_channels != {AllItem()} and channel.name.casefold() not in allowed_channels:
+                log.debug("invoking channel: %s", channel.name.casefold())
+                log.debug("allowed channels: %s", allowed_channels)
                 raise NotAllowedChannelError(ctx, allowed_channels)
 
         allowed_roles = self.allowed_roles(command)
-        if allowed_roles != {'all'} and all(role.name.casefold() not in allowed_roles for role in member.roles):
+        if allowed_roles != {'all'} and allowed_roles != {AllItem()} and all(role.name.casefold() not in allowed_roles for role in member.roles):
             raise NotNecessaryRole(ctx, allowed_roles)
 
         allowed_members = self.allowed_members(command)
-        if allowed_members != {'all'} and member not in allowed_members:
+        if allowed_members != {'all'} and allowed_members != {AllItem()} and member not in allowed_members:
             raise NotAllowedMember(allowed_members)
         return True
 
@@ -111,7 +113,8 @@ class AllowedChannelAndAllowedRoleCheck(BaseAntiPetrosCheck):
         allowed_channel_names = getattr(command.cog, COG_CHECKER_ATTRIBUTE_NAMES.get('channels'))
         if callable(allowed_channel_names):
             allowed_channel_names = allowed_channel_names(command)
-        allowed_channel_names.append('bot-testing')
+        if len(allowed_channel_names) != 1 and allowed_channel_names[0] != 'all':
+            allowed_channel_names.append('bot-testing')
         return set(map(lambda x: x.casefold(), allowed_channel_names))
 
     def allowed_roles(self, command: commands.Command):
@@ -167,6 +170,17 @@ class HasAttachmentCheck(BaseAntiPetrosCheck):
         return True
 
 
+class HasImageAttachment(HasAttachmentCheck):
+    allowed_content_types = {"image/jpeg", "image/png"}
+
+    async def __call__(self, ctx: commands.Context):
+        await super().__call__(ctx)
+        for attachment in ctx.message.attachments:
+            if attachment.content_type not in self.allowed_content_types:
+                raise WrongAttachmentTypeError(ctx, attachment, self.allowed_content_types)
+        return True
+
+
 def in_allowed_channels():
     def predicate(ctx: commands.Context):
         cog = ctx.cog
@@ -190,10 +204,8 @@ def log_invoker(logger, level: str = 'info'):
     # TODO: make as before invoke hook and not check!
     def predicate(ctx):
         ctx.command.set_logged(True)
-        channel_name = ctx.channel.name if ctx.channel.type is discord.ChannelType.text else 'DM'
-        getattr(logger, level)("command '%s' as '%s' -- invoked by: name: '%s', id: %s -- in channel: '%s' -- raw invoking message: '%s'",
-                               ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, channel_name, ctx.message.content)
-
+        getattr(logger, level)("!!DEPRECATED!! PLEASE REMOVE THE DECORATOR 'log_invoker' from '%s' in cog '%s' !!DEPRECATED!!",
+                               ctx.command.name, ctx.command.cog_name if hasattr(ctx.command, 'cog_name') else "NO_COG")
         return True
 
     return commands.check(predicate)
@@ -243,6 +255,10 @@ PURGE_CHECK_TABLE = {'is_bot': purge_check_is_bot,
 
 def has_attachments(min_amount_attachments: int = 1):
     return commands.check(HasAttachmentCheck(min_amount_attachments))
+
+
+def has_image_attachment(min_amount_attachments: int = 1):
+    return commands.check(HasImageAttachment(min_amount_attachments))
 
 
 def is_not_giddi(ctx: commands.Context):

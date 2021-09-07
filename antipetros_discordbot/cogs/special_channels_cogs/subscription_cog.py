@@ -179,21 +179,20 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         super().__init__(bot)
         self.topics = []
         self.color = "tan"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
+
 
 # endregion[Init]
 
 # region [Setup]
 
     async def on_ready_setup(self):
+        await super().on_ready_setup()
         await self._load_topic_items()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
+        await super().update(typus=typus)
         log.debug('cog "%s" was updated', str(self))
 
 
@@ -203,7 +202,10 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
     @property
     def subscription_channel(self):
-        name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
+        if self.bot.is_debug is True:
+            name = 'bot-testing'
+        else:
+            name = COGS_CONFIG.retrieve(self.config_name, 'subscription_channel', typus=str, direct_fallback=None)
         if name is None:
             return None
         return self.bot.channel_from_name(name)
@@ -220,7 +222,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
     @commands.Cog.listener(name='on_raw_reaction_add')
     async def subscription_reaction(self, payload):
-        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
+        if self.completely_ready is False:
             return
         try:
             channel = self.bot.get_channel(payload.channel_id)
@@ -248,7 +250,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
     @commands.Cog.listener(name='on_raw_reaction_remove')
     async def unsubscription_reaction(self, payload):
-        if any([self.ready, self.bot.setup_finished]) is False or self.bot.is_debug is True:
+        if self.completely_ready is False:
             return
         try:
             channel = self.bot.get_channel(payload.channel_id)

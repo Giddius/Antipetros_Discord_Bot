@@ -4,7 +4,7 @@
 # * Standard Library Imports ---------------------------------------------------------------------------->
 import os
 import asyncio
-
+import re
 # * Third Party Imports --------------------------------------------------------------------------------->
 from jinja2 import BaseLoader, Environment
 import discord
@@ -76,38 +76,44 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
     q_emoji = "🇶"
     a_emoji = "🇦"
 
+    number_split_regex = re.compile(r"\s|,")
 
 # endregion [ClassAttributes]
 
 # region [Init]
 
-
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
         self.faq_items = {}
         self.color = "honeydew"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
-
+        self.trigger_regex = re.compile(rf"\<#{self.faq_channel_id}\>\s*(?P<numbers>(?:\d+(?:[\s\,]|(?:\s*and\s*)|(?:\s*or\s*))*)+)", re.IGNORECASE)
+        self._faq_message_trigger_enabled = None
 # endregion [Init]
 
 # region [Properties]
 
     @property
+    def faq_channel_id(self) -> int:
+        return COGS_CONFIG.retrieve(self.config_name, 'faq_channel_id', typus=int, direct_fallback=673410398510383115)
+
+    @property
     def faq_channel(self):
-        channel_id = COGS_CONFIG.retrieve(self.config_name, 'faq_channel_id', typus=int, direct_fallback=673410398510383115)
+        channel_id = self.faq_channel_id
         return self.bot.channel_from_id(channel_id)
 
     @property
     def faq_name_table(self) -> dict:
         return loadjson(self.faq_name_data_file)
 
+    @property
+    def faq_message_trigger_enabled(self):
+        if self._faq_message_trigger_enabled is None:
+            self._faq_message_trigger_enabled = COGS_CONFIG.retrieve(self.config_name, 'faq_message_trigger_enabled', typus=bool, direct_fallback=False)
+        return self._faq_message_trigger_enabled
 
 # endregion [Properties]
 
 # region [Setup]
-
 
     async def on_ready_setup(self):
         await super().on_ready_setup()
@@ -117,16 +123,18 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         FaqItem.answer_parse_emoji = self.a_emoji
         FaqItem.config_name = self.config_name
         await asyncio.to_thread(FaqItem.set_background_image)
-        await self.collect_raw_faq_data()
+        asyncio.create_task(self.collect_raw_faq_data())
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        if UpdateTypus.RECONNECT in typus or UpdateTypus.CONFIG in typus:
+        await super().update(typus=typus)
+        if UpdateTypus.RECONNECT in typus:
             FaqItem.faq_channel = self.faq_channel
             await asyncio.to_thread(FaqItem.set_background_image)
-            await self.collect_raw_faq_data()
-        await super().update(typus)
+            asyncio.create_task(self.collect_raw_faq_data())
+        if UpdateTypus.CONFIG in typus:
+            self._faq_message_trigger_enabled = None
         log.debug('cog "%s" was updated', str(self))
 
 
@@ -134,15 +142,35 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
 # region [Loops]
 
-
 # endregion [Loops]
 
 # region [Listener]
 
+    @commands.Cog.listener(name='on_message')
+    async def faq_message_trigger_listener(self, message: discord.Message):
+        if self.completely_ready is False:
+            return
+        if self.faq_message_trigger_enabled is False:
+            return
+        content = message.content
+
+        content_match = self.trigger_regex.search(content)
+        if content_match:
+            numbers = [number for number in map(lambda x: x.strip(), self.number_split_regex.split(content_match.group("numbers"))) if number and number.casefold() not in {'and', 'or'}]
+            for number in numbers:
+                try:
+                    faq_number = int(number)
+                    faq_item = self.faq_items.get(faq_number, None)
+                    embed_data = await faq_item.to_embed_data()
+                    reference = None if message.reference is None else message.reference.resolved
+                    await message.channel.send(**embed_data, reference=reference, allowed_mentions=discord.AllowedMentions.none())
+                except ValueError:
+                    log.debug('unable to transform the string "%s" to int for "faq_message_trigger_listener"', number)
+                await asyncio.sleep(0)
 
     @commands.Cog.listener(name='on_message')
     async def faq_message_added_listener(self, message):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         channel = message.channel
         if channel is self.faq_channel:
@@ -150,7 +178,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
     @commands.Cog.listener(name='on_raw_message_delete')
     async def faq_message_deleted_listener(self, payload):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
@@ -158,7 +186,7 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
 
     @commands.Cog.listener(name='on_raw_message_edit')
     async def faq_message_edited_listener(self, payload):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         channel = self.bot.get_channel(payload.channel_id)
         if channel is self.faq_channel:
@@ -286,6 +314,8 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
         channel = self.faq_channel
         self.faq_items = {}
         async for message in channel.history(limit=None, oldest_first=True):
+            while self.bot.is_ws_ratelimited() is True:
+                await asyncio.sleep(5)
             content = message.content
             created_at = message.created_at
             jump_url = message.jump_url
@@ -295,11 +325,13 @@ class FaqCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCategory.ADM
             faq_item = FaqItem(content, created_at, jump_url, image)
             _ = await faq_item.get_number_thumbnail()
             self.faq_items[faq_item.number] = faq_item
+            await asyncio.sleep(0)
+
         max_faq_number = max(self.faq_items)
         if all(_num in self.faq_items for _num in range(1, max_faq_number + 1)):
             log.info('FAQ items collected: %s', max_faq_number)
         else:
-            raise KeyError(f"Not all FAQ Items where collected, missing: {', '.join(_num for _num in range(1,max_faq_number+1) if _num not in self.faq_items)}")
+            raise KeyError(f"Not all FAQ Items where collected, missing: {', '.join(str(_num) for _num in range(1,max_faq_number+1) if _num not in self.faq_items)}")
 
 
 # endregion [HelperMethods]

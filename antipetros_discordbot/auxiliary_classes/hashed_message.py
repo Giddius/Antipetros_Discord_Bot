@@ -48,9 +48,8 @@ from contextlib import contextmanager
 from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
 from collections import Counter, ChainMap, deque, namedtuple, defaultdict
 from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
+
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
 
 
 # * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
@@ -106,17 +105,17 @@ class RemoveHashedMessageSignal(AbstractConnectSignal):
 
 
 class HashedMessage:
+    __slots__ = ("channel_id", "message_id", "message_hash", "attachment_hashes", "storage_start_time", "amount_reposted", "removal_task")
     bot = None
     config_name = None
     whitespace_regex = re.compile(r'\W')
     storage_timespan = timedelta(minutes=COGS_CONFIG.retrieve(config_name, "remove_double_post_timespan_minutes", typus=int, direct_fallback=20))
     removal_signal = RemoveHashedMessageSignal()
 
-    def __init__(self, author_id: int, channel_id: int, message_id: int, message_hash: str, attachment_hashes: List[str] = None):
+    def __init__(self, channel_id: int, message_id: int, message_hash: str, attachment_hashes: List[str] = None):
         for c_attr_name in ["bot", "config_name"]:
             if getattr(self, c_attr_name) is None:
                 raise NeededClassAttributeNotSet(c_attr_name, self.__class__.__name__)
-        self.author_id = author_id
         self.channel_id = channel_id
         self.message_id = message_id
         self.message_hash = message_hash
@@ -147,9 +146,11 @@ class HashedMessage:
         return cleaned_content.casefold()
 
     @classmethod
-    async def _hash_content(cls, content: Union[str, bytes]) -> str:
+    async def _hash_content(cls, author_id: int, content: Union[str, bytes]) -> str:
+        author_bytes = str(author_id).encode('utf-8', errors='ignore')
         if isinstance(content, str):
             content = content.encode('utf-8', errors='ignore')
+        content = author_bytes + content
         content_hash = blake2b(content).hexdigest()
         return content_hash
 
@@ -159,9 +160,9 @@ class HashedMessage:
         channel_id = msg.channel.id
         message_id = msg.id
 
-        message_hash = await cls._hash_content(await cls._clean_content(msg.content))
-        attachment_hashes = [await cls._hash_content(await attachment.read()) for attachment in msg.attachments] if msg.attachments else None
-        hashed_msg_item = cls(author_id=author_id, channel_id=channel_id, message_id=message_id, message_hash=message_hash, attachment_hashes=attachment_hashes)
+        message_hash = await cls._hash_content(author_id, await cls._clean_content(msg.content))
+        attachment_hashes = [await cls._hash_content(author_id, await attachment.read()) for attachment in msg.attachments] if msg.attachments else None
+        hashed_msg_item = cls(channel_id=channel_id, message_id=message_id, message_hash=message_hash, attachment_hashes=attachment_hashes)
         hashed_msg_item.removal_task = asyncio.create_task(hashed_msg_item.check_removal())
         return hashed_msg_item
 
@@ -180,7 +181,7 @@ class HashedMessage:
             return False
 
     def __hash__(self):
-        _out = hash(self.author_id) + hash(self.message_hash)
+        _out = hash(self.message_hash)
         for attachment_hash in self.attachment_hashes:
             _out += hash(attachment_hash)
         return _out

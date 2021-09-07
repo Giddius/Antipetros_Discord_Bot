@@ -57,6 +57,7 @@ from antipetros_discordbot.utility.checks import dynamic_enabled_checker
 from antipetros_discordbot.schemas import AntiPetrosBaseCommandSchema
 from antipetros_discordbot.engine.replacements.command_replacements.command_category import CommandCategory
 from antipetros_discordbot.utility.gidtools_functions import pathmaker
+from antipetros_discordbot.utility.misc import delete_message_if_text_channel
 # endregion[Imports]
 
 # region [TODO]
@@ -120,48 +121,65 @@ class AntiPetrosBaseCommand(commands.Command):
         self.module_object = sys.modules[func.__module__]
         self.data_setters['meta_data']("docstring", self.docstring)
         self.only_debug = kwargs.get('only_debug', False)
-        self.specials = {self.experimental_notifier: kwargs.pop('experimental', False),
-                         self.logged_notifier: kwargs.get('logged', False)}
+        self.clear_invocation = kwargs.get('clear_invocation', False)
+        self.notifications = {self._experimental_notifier: kwargs.pop('experimental', False),
+                              self._logged_notifier: kwargs.get('logged', False),
+                              self._confirm_command_received_notifier: kwargs.get('confirm_command_received', False)}
+        self.force_check_rate_limited = kwargs.get('force_check_rate_limited', False)
 
     @property
     def bot(self):
         return self.cog.bot
 
-    def set_logged(self, value: bool):
-        self.specials[self.logged_notifier] = value
+    @property
+    def confirm_command_received_emoji(self):
+        return self.bot.salute_emoji
 
-    async def experimental_notifier(self, ctx: commands.Context):
+    def set_logged(self, value: bool):
+        self.notifications[self._logged_notifier] = value
+
+    async def _check_rate_limited(self):
+        is_rate_limited = self.bot.is_ws_ratelimited()
+        as_text = "IS NOT" if is_rate_limited is False else "! IS !"
+        log.info("The bot %s currently rate-limited", as_text)
+        if is_rate_limited is True:
+            await self.bot.creator.send("__**WARNING**__ ⚠️ THE BOT ***IS*** CURRENTLY RATE-LIMITED! ⚠️ __**WARNING**__")
+
+    async def _experimental_notifier(self, ctx: commands.Context):
         text = f"**It could be broken or be changed/removed any time. Feel free to play around with it and please give Feedback to {self.bot.creator.mention} if you can!**"
         title = "WARNING THIS IS AN EXPERIMENTAL COMMAND"
         description = text
         thumbnail = "warning"
         embed_data = await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail)
-        msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-        ctx.extra_messages.append(msg)
+        await ctx.temp_send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+        channel_name = ctx.channel.name if ctx.channel.type is discord.ChannelType.text else 'DM'
+        log.critical("command '%s' as '%s' -- invoked by: name: '%s', id: %s -- in channel: '%s' -- raw invoking message: '%s'",
+                     ctx.command.name, ctx.invoked_with, ctx.author.name, ctx.author.id, channel_name, ctx.message.content)
 
-    async def logged_notifier(self, ctx: commands.Context):
+    async def _logged_notifier(self, ctx: commands.Context):
         title = "Logged"
         description = "The usage of this command was logged with your username"
         thumbnail = None
         footer = None
         embed_data = await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail, footer=footer)
-        msg = await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-        ctx.extra_messages.append(msg)
+        await ctx.temp_send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+
+    async def _confirm_command_received_notifier(self, ctx: commands.Context):
+        await ctx.add_temp_reaction(self.confirm_command_received_emoji)
 
     async def call_before_hooks(self, ctx: commands.Context):
-        if not hasattr(ctx, 'extra_messages'):
-            ctx.extra_messages = []
         await super().call_before_hooks(ctx)
-
-        for special_coro, enabled in self.specials.items():
+        if os.getenv('ALWAYS_CHECK_RATE_LIMITED', '0') == '1' or self.force_check_rate_limited is True:
+            await self._check_rate_limited()
+        for notification_coro, enabled in self.notifications.items():
             if enabled:
-                await special_coro(ctx)
+                await notification_coro(ctx)
 
     async def call_after_hooks(self, ctx):
         await super().call_after_hooks(ctx)
-        for extra_msg in ctx.extra_messages:
-            if extra_msg.channel.type is discord.ChannelType.text:
-                asyncio.create_task(extra_msg.delete(delay=60))
+        await ctx.delete_temp_items()
+        if self.clear_invocation is True:
+            asyncio.create_task(delete_message_if_text_channel(ctx))
 
     @singledispatchmethod
     def handle_category_kwargs(self, categories: Any):
@@ -350,7 +368,7 @@ class AntiPetrosBaseCommand(commands.Command):
         allowed_channels = []
         for check in self.checks:
             if hasattr(check, "allowed_channels"):
-                allowed_channels += check.allowed_channels(self)
+                allowed_channels += list(check.allowed_channels(self))
         if allowed_channels == []:
             return []
         if len(allowed_channels) > 1 and 'all' in allowed_channels:
@@ -364,7 +382,7 @@ class AntiPetrosBaseCommand(commands.Command):
         allowed_roles = []
         for check in self.checks:
             if hasattr(check, "allowed_roles"):
-                allowed_roles += check.allowed_roles(self)
+                allowed_roles += list(check.allowed_roles(self))
         if allowed_roles == []:
             return []
         if len(allowed_roles) > 1 and 'all' in allowed_roles:
@@ -388,7 +406,7 @@ class AntiPetrosBaseCommand(commands.Command):
         allowed_members = []
         for check in self.checks:
             if hasattr(check, "allowed_members"):
-                allowed_members += check.allowed_members(self)
+                allowed_members += list(check.allowed_members(self))
         if allowed_members == []:
             return set([self.bot.member_by_name('all')])
         if len(allowed_members) > 1 and 'all' in allowed_members:

@@ -36,7 +36,7 @@ from pygments.filters import get_all_filters
 from antipetros_discordbot.utility.checks import allowed_channel_and_allowed_role, owner_or_admin, log_invoker
 from antipetros_discordbot.utility.gidtools_functions import bytes2human
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
-from icecream import ic
+
 
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
@@ -123,9 +123,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         super().__init__(bot)
         self.time_sorted_guild_member_list = []
         self.color = "red"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
+
 
 # endregion [Init]
 
@@ -144,6 +142,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 # region [Setup]
 
     async def on_ready_setup(self):
+        await super().on_ready_setup()
         if self.bot.antistasi_guild.chunked is False:
             await self.bot.antistasi_guild.chunk(cache=True)
         await self.make_time_sorted_guild_member_list()
@@ -151,6 +150,7 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
+        await super().update(typus=typus)
         await self.make_time_sorted_guild_member_list()
         log.debug('cog "%s" was updated', str(self))
 
@@ -166,10 +166,14 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
 
     @commands.Cog.listener(name='on_member_join')
     async def update_time_sorted_member_ids_join(self, member):
+        if self.completely_ready is False:
+            return
         await self.make_time_sorted_guild_member_list()
 
     @commands.Cog.listener(name='on_member_remove')
     async def update_time_sorted_member_ids_remove(self, member):
+        if self.completely_ready is False:
+            return
         await self.make_time_sorted_guild_member_list()
 
 
@@ -220,8 +224,9 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                                                        image=self.bot.portrait_url,
                                                        url=self.bot.github_url,
                                                        fields=fields,
-                                                       thumbnail=None)
-        ic(self.bot.portrait_url)
+                                                       thumbnail=None,
+                                                       typus="info_bot_embed")
+
         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command()
@@ -258,13 +263,18 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
                 "Current Booster": ('\n'.join([await asyncio.sleep(0, f"{member.mention} (`{member.name}`)") for member in sorted(as_guild.premium_subscribers, key=lambda x: len(x.display_name))]), False),
                 "Rules Channel": (as_guild.rules_channel.mention, False),
                 "Member for longest time": (await self._oldest_youngest_member(True), False),
-                "Member for shortest time": (await self._oldest_youngest_member(False), False),
-                "Most Used Channel": (await self.most_used_channel(), False)
+                "Member for shortest time": (await self._oldest_youngest_member(False), False)
             }
 
             fields = [self.bot.field_item(name=key, value=str(value[0]), inline=value[1]) for key, value in data.items() if value[0]]
 
-            embed_data = await self.bot.make_generic_embed(title=as_guild.name, url="https://antistasi.de/", description=description, thumbnail=thumbnail, fields=fields, image=image)
+            embed_data = await self.bot.make_generic_embed(title=as_guild.name,
+                                                           url="https://antistasi.de/",
+                                                           description=description,
+                                                           thumbnail=thumbnail,
+                                                           fields=fields,
+                                                           image=image,
+                                                           typus="info_guild_embed")
         await ctx.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command()
@@ -304,7 +314,12 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             for key, value in data.items():
                 if value[0] not in ['', None]:
                     fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
-            embed_data = await self.bot.make_generic_embed(title=member.name, description=f"The one and only {member.mention}", thumbnail=str(member.avatar_url), fields=fields, color=member.color)
+            embed_data = await self.bot.make_generic_embed(title=member.name,
+                                                           description=f"The one and only {member.mention}",
+                                                           thumbnail=str(member.avatar_url),
+                                                           fields=fields,
+                                                           color=member.color,
+                                                           typus="info_me_embed")
         await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     @auto_meta_info_command(hidden=True, categories=CommandCategory.ADMINTOOLS)
@@ -339,7 +354,12 @@ class InfoCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories": C
             for key, value in data.items():
                 if value[0] not in ['', None]:
                     fields.append(self.bot.field_item(name=key, value=str(value[0]), inline=value[1]))
-            embed_data = await self.bot.make_generic_embed(title=member.name, description=f"The one and only {member.mention}", thumbnail=str(member.avatar_url), fields=fields, color=member.color)
+            embed_data = await self.bot.make_generic_embed(title=member.name,
+                                                           description=f"The one and only {member.mention}",
+                                                           thumbnail=str(member.avatar_url),
+                                                           fields=fields,
+                                                           color=member.color,
+                                                           typus="info_other_embed")
 
         await ctx.reply(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 

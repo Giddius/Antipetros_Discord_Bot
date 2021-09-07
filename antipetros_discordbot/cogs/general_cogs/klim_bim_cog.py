@@ -106,10 +106,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
             'd100': {'sides': 100}
         }
         self.color = 'green'
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
 
-        glog.class_init_notification(log, self)
 
 # endregion [Init]
 
@@ -124,11 +121,12 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 # region [Setup]
 
     async def on_ready_setup(self):
+        await super().on_ready_setup()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
+        await super().update(typus=typus)
         log.debug('cog "%s" was updated', str(self))
 
 
@@ -243,20 +241,19 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
 
         urban_request_url = "https://api.urbandictionary.com/v0/define?term="
         full_url = urban_request_url + urlquote(term)
-        async with self.bot.aio_request_session.get(full_url) as _response:
-            if RequestStatus(_response.status) is RequestStatus.Ok:
-                json_content = await _response.json()
-                content_list = sorted(json_content.get('list'), key=lambda x: x.get('thumbs_up') + x.get('thumbs_down'), reverse=True)
 
-                for index, item in enumerate(content_list):
-                    if index <= entries - 1:
-                        _embed_data = await self.bot.make_generic_embed(title=f"Definition for '{item.get('word')}'",
-                                                                        description=item.get('definition').replace('[', '*').replace(']', '*'),
-                                                                        fields=[self.bot.field_item(name='EXAMPLE:', value=item.get('example').replace('[', '*').replace(']', '*'), inline=False),
-                                                                                self.bot.field_item(name='LINK:', value=item.get('permalink'), inline=False)],
-                                                                        thumbnail="https://gamers-palace.de/wordpress/wp-content/uploads/2019/10/Urban-Dictionary-e1574592239378-820x410.jpg")
-                        await ctx.send(**_embed_data)
-                        await asyncio.sleep(1)
+        json_content = await self.bot.request_json(url=full_url)
+        content_list = sorted(json_content.get('list'), key=lambda x: x.get('thumbs_up') + x.get('thumbs_down'), reverse=True)
+
+        for index, item in enumerate(content_list):
+            if index <= entries - 1:
+                _embed_data = await self.bot.make_generic_embed(title=f"Definition for '{item.get('word')}'",
+                                                                description=item.get('definition').replace('[', '*').replace(']', '*'),
+                                                                fields=[self.bot.field_item(name='EXAMPLE:', value=item.get('example').replace('[', '*').replace(']', '*'), inline=False),
+                                                                        self.bot.field_item(name='LINK:', value=item.get('permalink'), inline=False)],
+                                                                thumbnail="https://gamers-palace.de/wordpress/wp-content/uploads/2019/10/Urban-Dictionary-e1574592239378-820x410.jpg")
+                await ctx.send(**_embed_data)
+                await asyncio.sleep(1)
 
     @ auto_meta_info_command()
     @ allowed_channel_and_allowed_role()

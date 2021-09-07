@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
-
+from antipetros_discordbot.utility.enums import UpdateTypus
 # endregion[Imports]
 
 # region [TODO]
@@ -45,11 +45,11 @@ class SubSupportBase(ABC):
         ...
 
     @abstractmethod
-    def retire(self):
+    async def retire(self):
         ...
 
     @abstractmethod
-    async def update(self, typus):
+    async def update(self, typus: UpdateTypus):
         ...
 
     def __str__(self) -> str:

@@ -123,9 +123,7 @@ class TranslateCog(AntiPetrosBaseCog):
         self.translator = Translator()
         self.flag_emoji_regex = re.compile(r'REGIONAL INDICATOR SYMBOL LETTER (?P<letter>\w)')
         self.color = "violet"
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
+
 
 # endregion [Init]
 
@@ -137,11 +135,12 @@ class TranslateCog(AntiPetrosBaseCog):
 # region [Setup]
 
     async def on_ready_setup(self):
+        await super().on_ready_setup()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
+        await super().update(typus=typus)
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
@@ -154,8 +153,8 @@ class TranslateCog(AntiPetrosBaseCog):
 # region [Listener]
 
     async def _emoji_translate_checks(self, payload):
-        if self.ready is False or self.bot.setup_finished is False:
-            return False
+        if self.completely_ready is False:
+            return
         command_name = "emoji_translate_listener"
         channel = self.bot.get_channel(payload.channel_id)
         if channel.type is not discord.ChannelType.text:
@@ -188,7 +187,8 @@ class TranslateCog(AntiPetrosBaseCog):
         The translated message is then send to you via DM.
 
         """
-
+        if self.completely_ready is False:
+            return
         if await self._emoji_translate_checks(payload) is False:
             return
         channel = self.bot.get_channel(payload.channel_id)

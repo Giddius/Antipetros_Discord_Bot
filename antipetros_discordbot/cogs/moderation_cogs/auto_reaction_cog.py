@@ -249,9 +249,6 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         super().__init__(bot)
         BaseReactionInstruction.bot = self.bot
         self.color = 'purple'
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
 
 # endregion [Init]
 
@@ -282,12 +279,12 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 # region [Setup]
 
     async def on_ready_setup(self):
-
+        await super().on_ready_setup()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
-        return
+        await super().update(typus=typus)
         log.debug('cog "%s" was updated', str(self))
 
 # endregion [Setup]
@@ -302,7 +299,7 @@ class AutoReactionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
     @commands.Cog.listener(name='on_message')
     async def add_reaction_to_message_sorter_listener(self, msg: discord.Message):
-        if self.ready is False:
+        if self.completely_ready is False:
             return
         try:
             if msg.author.bot is True:

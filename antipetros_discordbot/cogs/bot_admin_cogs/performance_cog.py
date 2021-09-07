@@ -45,6 +45,7 @@ if TYPE_CHECKING:
 # TODO: get_logs command
 # TODO: get_appdata_location command
 
+# TODO: Redo all graph func here
 
 # endregion [TODO]
 
@@ -67,7 +68,7 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-DATA_COLLECT_INTERVALL = 60 if os.getenv('IS_DEV').casefold() in ['yes', 'true', '1'] else 600  # seconds
+DATA_COLLECT_INTERVALL = 60 if os.getenv('IS_DEV', '0').casefold() in ['yes', 'true', '1'] else 600  # seconds
 
 # endregion[Constants]
 
@@ -106,19 +107,17 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
                                      'memory': COGS_CONFIG.get(self.config_name, 'memory_graph_formatting'),
                                      'cpu': COGS_CONFIG.get(self.config_name, 'cpu_graph_formatting')}
 
-        self.ready = False
         self.general_db = general_db
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
+
 
 # endregion[Init]
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         _ = psutil.cpu_percent(interval=None)
-        for loop in self.loops.values():
-            loop_starter(loop)
+        await super().on_ready_setup()
 
         plt.style.use('dark_background')
         await self.format_graph(10)
@@ -126,7 +125,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         self.ready = True
 
     async def update(self, typus: UpdateTypus):
-        return
+        await super().update(typus=typus)
         log.debug('cog "%s" was updated', str(self))
 
 # endregion[Setup]
@@ -135,18 +134,18 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def cpu_measure_loop(self):
-        if self.ready is False or self.bot.setup_finished is False:
+        if self.completely_ready is False:
             return
         log.info("measuring cpu")
         now = datetime.now(tz=timezone.utc)
 
         cpu_percent = psutil.cpu_percent(interval=None)
         cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15 = [x / psutil.cpu_count() * 100 for x in psutil.getloadavg()]
-        await self.general_db.insert_cpu_performance(now, cpu_percent, cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15)
+        await self.general_db.insert_cpu_performance(cpu_percent, cpu_load_avg_1, cpu_load_avg_5, cpu_load_avg_15)
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def latency_measure_loop(self):
-        if self.ready is False or self.bot.setup_finished is False:
+        if self.completely_ready is False:
             return
 
         log.info("measuring latency")
@@ -158,7 +157,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
             if latency > self.latency_thresholds.get('warning'):
                 log.warning("high latency: %s ms", str(latency))
                 await self.bot.message_creator(embed=await make_basic_embed(title='LATENCY WARNING!', text='Latency is very high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'latency': str(latency) + ' ms'}))
-            await self.general_db.insert_latency_perfomance(now, raw_latency)
+            await self.general_db.insert_latency_perfomance(raw_latency)
         except OverflowError:
             await self.bot.message_creator(embed=await make_basic_embed(title='LATENCY WARNING!', text='Latency is very high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'latency': 'infinite'}))
 
@@ -174,7 +173,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
     @tasks.loop(seconds=DATA_COLLECT_INTERVALL, reconnect=True)
     async def memory_measure_loop(self):
-        if self.ready is False or self.bot.setup_finished is False:
+        if self.completely_ready is False:
             return
         log.info("measuring memory usage")
         now = datetime.now(tz=timezone.utc)
@@ -185,7 +184,7 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
             await self.bot.message_creator(embed=await make_basic_embed(title='MEMORY CRITICAL!', text='Memory consumption is dangerously high!', symbol='warning', **{'Time': now.strftime(self.bot.std_date_time_format), 'Memory usage absolute': await self.convert_memory_size(memory_in_use, DataSize.GigaBytes, True, 3), 'as percent': str(_mem_item.percent) + '%'}))
         elif memory_in_use > self.memory_thresholds.get("warning"):
             log.warning("Memory usage is high! Memory in use: %s", DataSize.GigaBytes.convert(memory_in_use, annotate=True))
-        await self.general_db.insert_memory_perfomance(now, memory_in_use)
+        await self.general_db.insert_memory_perfomance(memory_in_use)
 
 # endregion[Loops]
 
@@ -277,9 +276,9 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
             embed.set_image(url=_url)
         await ctx.send(embed=embed, file=_file)
 
-    @auto_meta_info_command()
+    @auto_meta_info_command(clear_invocation=True, confirm_command_received=True, aliases=['performance'])
     @owner_or_admin()
-    async def report(self, ctx):
+    async def performance_statistic(self, ctx):
         """
         Reports all collected metrics as Graph.
 
@@ -293,13 +292,11 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
         except StatisticsError as error:
             # TODO: make as error embed
             await ctx.send('not enough data points collected to report!', delete_after=120)
-            await delete_message_if_text_channel(ctx)
 
 
 # endregion[Commands]
 
 # region [Helper]
-
 
     async def format_graph(self, amount_data: int):
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
@@ -408,7 +405,6 @@ class PerformanceCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categori
 
 
 # region [SpecialMethods]
-
 
     def __str__(self) -> str:
         return self.qualified_name

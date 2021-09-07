@@ -75,7 +75,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
     meta_status = CogMetaStatus.UNTESTED | CogMetaStatus.FEATURE_MISSING | CogMetaStatus.DOCUMENTATION_MISSING
 
     required_config_data = {'base_config': {},
-                            'cogs_config': {}}
+                            'cogs_config': {"update_timeout_seconds": "60"}}
 
     required_files = []
     required_folder = []
@@ -86,28 +86,30 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-        self.ready = False
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
+
+        self.typus_on_timeout = {typus: False for typus in UpdateTypus}
+
 
 # endregion [Init]
 
 # region [Properties]
 
+    @property
+    def update_timeout(self):
+        return COGS_CONFIG.retrieve(self.config_name, 'update_timeout_seconds', typus=int, direct_fallback=60)
 
 # endregion [Properties]
 
 # region [Setup]
 
-
     async def on_ready_setup(self):
-        for loop in self.loops.values():
-            loop_starter(loop)
+        await super().on_ready_setup()
         self.bot.to_update_methods.append(self.bot.ToUpdateItem(AntiPetrosBaseCommand.alias_data_provider.update_default_alias_chars, [UpdateTypus.CONFIG, UpdateTypus.CYCLIC]))
         self.ready = await asyncio.sleep(0, True)
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
+        await super().update(typus=typus)
         for to_update_item in self.bot.to_update_methods:
             if any(trigger in typus for trigger in to_update_item.typus_triggers):
                 await to_update_item.function()
@@ -119,7 +121,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
     @tasks.loop(minutes=30)
     async def cyclic_update_loop(self):
-        if await self.bot.running_longer_than(minutes=5) is False:
+        if self.completely_ready is False:
             return
         log.info('cyclic update started')
 
@@ -130,23 +132,24 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
 # region [Listener]
 
+
     @commands.Cog.listener(name="on_guild_channel_delete")
     async def guild_structure_changes_listener_remove(self, channel: discord.abc.GuildChannel):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info('pdate Signal %s was send, because Guild channel "%s" was removed', UpdateTypus.GUILD, channel.name)
         await self.send_update_signal(UpdateTypus.GUILD)
 
     @commands.Cog.listener(name="on_guild_channel_create")
     async def guild_structure_changes_listener_create(self, channel: discord.abc.GuildChannel):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info('Update Signal %s was send, because Guild channel "%s" was created', UpdateTypus.GUILD, channel.name)
         await self.send_update_signal(UpdateTypus.GUILD)
 
     @commands.Cog.listener(name="on_guild_channel_update")
     async def guild_structure_changes_listener_update(self, before_channel: discord.abc.GuildChannel, after_channel: discord.abc.GuildChannel):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info('Update Signal %s was send, because Guild channel "%s"/"%s" was updated', UpdateTypus.GUILD, before_channel.name, after_channel.name)
         await self.send_update_signal(UpdateTypus.GUILD)
@@ -154,28 +157,28 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
     @ commands.Cog.listener(name="on_guild_update")
     @ universal_log_profiler
     async def guild_update_listener(self, before_guild: discord.Guild, after_guild: discord.Guild):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info('Update Signal %s was send, because Guild was updated', UpdateTypus.GUILD)
         await self.send_update_signal(UpdateTypus.GUILD)
 
     @commands.Cog.listener(name="on_member_join")
     async def member_join_listener(self, member: discord.Member):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info("Update Signal %s was send, because a new member joined", UpdateTypus.MEMBERS)
         await self.send_update_signal(UpdateTypus.MEMBERS)
 
     @commands.Cog.listener(name="on_member_remove")
     async def member_remove_listener(self, member: discord.Member):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info("Update Signal %s was send, because a was removed or left", UpdateTypus.MEMBERS)
         await self.send_update_signal(UpdateTypus.MEMBERS)
 
     @commands.Cog.listener(name="on_member_update")
     async def member_roles_changed_listener(self, before: discord.Member, after: discord.Member):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         if set(before.roles) != set(after.roles):
             log.info("Update Signal %s was send, because a members roles changed", UpdateTypus.MEMBERS | UpdateTypus.ROLES)
@@ -183,7 +186,7 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
     @commands.Cog.listener(name="on_member_update")
     async def member_name_changed_listener(self, before: discord.Member, after: discord.Member):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         if before.display_name != after.display_name:
             log.info("Update Signal %s was send, because a members name changed", UpdateTypus.MEMBERS)
@@ -191,31 +194,31 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 
     @commands.Cog.listener(name="on_guild_role_create")
     async def role_created_listener(self, role: discord.Role):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info("Update Signal %s was send, because the Role %s was created", UpdateTypus.MEMBERS, role.name)
         await self.send_update_signal(UpdateTypus.ROLES)
 
     @commands.Cog.listener(name="on_guild_role_delete")
     async def role_deleted_listener(self, role: discord.Role):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info("Update Signal %s was send, because the Role %s was deleted", UpdateTypus.MEMBERS, role.name)
         await self.send_update_signal(UpdateTypus.ROLES)
 
     @commands.Cog.listener(name="on_guild_role_update")
     async def role_updated_listener(self, before: discord.Role, after: discord.Role):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         log.info("Update Signal %s was send, because the Role %s was updated", UpdateTypus.MEMBERS, before.name)
         await self.send_update_signal(UpdateTypus.ROLES)
 
     @commands.Cog.listener(name="on_message")
     async def on_message_listener(self, msg: discord.Message):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         if hasattr(self.bot, 'record_channel_usage'):
-            asyncio.create_task(self.bot.record_channel_usage(msg))
+            await asyncio.create_task(self.bot.record_channel_usage(msg))
 
 # endregion [Listener]
 
@@ -232,11 +235,20 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
 # region [HelperMethods]
 
 
+    async def remove_typus_from_timeout(self, typus: UpdateTypus):
+        await asyncio.sleep(self.update_timeout)
+        if typus in self.typus_on_timeout:
+            self.typus_on_timeout[typus] = False
+
     async def send_update_signal(self, typus: UpdateTypus):
+        if typus in self.typus_on_timeout and self.typus_on_timeout.get(typus) is True:
+            log.debug("%s not sent because it is on timeout", str(typus))
+            return
         all_tasks = await self.bot.to_all_as_tasks("update", False, typus=typus)
         if all_tasks:
             await asyncio.wait(all_tasks, return_when="ALL_COMPLETED")
-
+        self.typus_on_timeout[typus] = True
+        asyncio.create_task(self.remove_typus_from_timeout(typus))
 # endregion [HelperMethods]
 
 # region [SpecialMethods]

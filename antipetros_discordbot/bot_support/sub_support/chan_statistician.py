@@ -82,24 +82,31 @@ class ChannelStatistician(SubSupportBase):
         glog.class_init_notification(log, self)
 
     async def record_channel_usage(self, msg: discord.Message):
-        if all(msg.content.startswith(prfx) is False for prfx in await self.bot.get_prefix(msg)):
-            asyncio.create_task(self._channel_usage_to_db(msg))
+        return
+
+        # removed feature
+
+        # if all(msg.content.startswith(prfx) is False for prfx in await self.bot.get_prefix(msg)):
+        #     asyncio.create_task(self._channel_usage_to_db(msg))
 
     async def _channel_usage_to_db(self, msg: discord.Message):
-        channel = msg.channel
-        if self.bot.setup_finished is False:
-            return
-        if await asyncio.sleep(0, msg.author.bot) is True:
-            return
-        if await asyncio.sleep(0, isinstance(msg.channel, discord.DMChannel)) is True:
-            return
-        if await asyncio.sleep(0, channel.name.casefold()) in self.exclude_channels:
-            return
-        if await asyncio.sleep(0, channel.category.name.casefold()) in self.exclude_categories:
-            return
+        return
+        # removed feature
 
-        asyncio.create_task(self.general_db.insert_channel_use(channel))
-        log.info("channel usage recorded for channel '%s'", channel.name)
+        # channel = msg.channel
+        # if self.bot.setup_finished is False:
+        #     return
+        # if await asyncio.sleep(0, msg.author.bot) is True:
+        #     return
+        # if await asyncio.sleep(0, isinstance(msg.channel, discord.DMChannel)) is True:
+        #     return
+        # if await asyncio.sleep(0, channel.name.casefold()) in self.exclude_channels:
+        #     return
+        # if await asyncio.sleep(0, channel.category.name.casefold()) in self.exclude_categories:
+        #     return
+
+        # asyncio.create_task(self.general_db.insert_channel_use(channel))
+        # log.info("channel usage recorded for channel '%s'", channel.name)
 
     async def make_heat_map(self):
         return NotImplemented
@@ -143,14 +150,14 @@ class ChannelStatistician(SubSupportBase):
                 await self.general_db.update_text_channel_deleted(text_channel_id)
 
     async def on_ready_setup(self):
-        asyncio.create_task(self.insert_channels_into_db())
+        # asyncio.create_task(self.insert_channels_into_db())
         self.ready = True
         log.debug("'%s' sub_support is READY", str(self))
 
     async def update(self, typus: UpdateTypus):
         log.debug("'%s' sub_support was UPDATED", str(self))
 
-    def retire(self):
+    async def retire(self):
         log.debug("'%s' sub_support was RETIRED", str(self))
 
 

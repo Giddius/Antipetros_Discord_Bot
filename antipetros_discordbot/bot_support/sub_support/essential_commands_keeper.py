@@ -60,7 +60,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class EssentialCommandsKeeper(SubSupportBase):
     cog_import_base_path = BASE_CONFIG.get('general_settings', 'cogs_location')
-    shutdown_message_pickle_file = pathmaker(APPDATA['temp_files'], 'last_shutdown_message.pkl')
+    shutdown_message_pickle_file = pathmaker(APPDATA['misc'], 'last_shutdown_message.pkl')
     goodbye_quotes_file = APPDATA['goodbye_quotes.json']
 
     def __init__(self, bot: "AntiPetrosBot", support):
@@ -101,7 +101,7 @@ class EssentialCommandsKeeper(SubSupportBase):
 
     @property
     def shutdown_message_channel(self):
-        channel_name = BASE_CONFIG.retrieve("shutdown_message", "channel_name", typus=str, direct_fallback='bot-commands')
+        channel_name = BASE_CONFIG.retrieve("shutdown_message", "channel_name", typus=str, direct_fallback='bot-testing')
         return self.bot.channel_from_name(channel_name)
 
     def shutdown_signal(self, *args):
@@ -120,8 +120,10 @@ class EssentialCommandsKeeper(SubSupportBase):
                                                           image=BASE_CONFIG.retrieve('shutdown_message', 'image', typus=str, direct_fallback="https://i.ytimg.com/vi/YATREe6dths/maxresdefault.jpg"),
                                                           type=self.support.embed_types_enum.Image,
                                                           thumbnail="red_chain",
+                                                          typus="shutdown_embed",
                                                           fields=[self.support.field_item(name='Online since', value=str(started_at_string), inline=False), self.support.field_item(name='Online for', value=str(online_duration), inline=False)])
                 channel = self.shutdown_message_channel
+                log.info("sending shutdown message")
                 last_shutdown_message = await channel.send(**embed)
                 pickleit({"message_id": last_shutdown_message.id, "channel_id": last_shutdown_message.channel.id}, self.shutdown_message_pickle_file)
 
@@ -130,7 +132,7 @@ class EssentialCommandsKeeper(SubSupportBase):
 
         await self.bot.close()
 
-    async def split_to_messages(self, ctx, message, split_on='\n', in_codeblock=False, syntax_highlighting='json'):
+    async def split_to_messages(self, target: discord.abc.Messageable, message, split_on='\n', in_codeblock=False, syntax_highlighting='json'):
         _out = ''
         chunks = message.split(split_on)
         for chunk in chunks:
@@ -139,12 +141,14 @@ class EssentialCommandsKeeper(SubSupportBase):
             else:
                 if in_codeblock is True:
                     _out = f"```{syntax_highlighting}\n{_out}\n```"
-                await ctx.send(_out)
                 await asyncio.sleep(1)
+                await target.send(_out)
+
                 _out = ''
         if in_codeblock is True:
             _out = f"```{syntax_highlighting}\n{_out}\n```"
-        await ctx.send(_out)
+        await asyncio.sleep(1)
+        await target.send(_out)
 
     async def process_meta_data(self):
         docstring_regex = re.compile(r"(?P<description>.*?)(?P<args>args\:.*?(?=example\:)?)?(?P<example>example\:.*?)?(?P<extra_info>info\:.*)?$", re.IGNORECASE | re.DOTALL)
@@ -191,7 +195,7 @@ class EssentialCommandsKeeper(SubSupportBase):
         return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
-    def retire(self):
+    async def retire(self):
         log.debug("'%s' sub_support was RETIRED", str(self))
 
 

@@ -21,7 +21,7 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, AntiPet
 from antipetros_discordbot.utility.data import IMAGE_EXTENSIONS
 from collections import UserDict
 import asyncio
-from antipetros_discordbot.utility.converters import RoleOrIntConverter
+from antipetros_discordbot.utility.converters import RoleOrIntConverter, UrlConverter
 import re
 from sortedcontainers import SortedDict, SortedList
 from discord.ext import commands
@@ -30,6 +30,7 @@ from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_help
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
 from antipetros_discordbot.auxiliary_classes.hashed_message import HashedMessage
+from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation, AskFile, AskInput, AskInputManyAnswers, AskAnswer, AskSelectionOptionsMapping, AskSelectionOption, AskSelection
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
 # endregion[Imports]
@@ -141,25 +142,24 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
     def __init__(self, bot: "AntiPetrosBot"):
         super().__init__(bot)
-        self.ready = False
         self.msg_keeper = None
         self._init_msg_keeper()
         self._other_bot_prefixes = None
         self._remove_double_post_is_dry_run = None
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
 
 
 # endregion[Init]
 
 # region [Setup]
 
-    async def on_ready_setup(self):
 
+    async def on_ready_setup(self):
+        await super().on_ready_setup()
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
+        await super().update(typus=typus)
         if UpdateTypus.CONFIG in typus:
             await self.hashed_message_class.update_store_for_minutes()
             self._other_bot_prefixes = None
@@ -175,6 +175,10 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 # endregion [Setup]
 
 # region [Properties]
+
+    @property
+    def remove_double_post_min_lenght(self)->int:
+        return COGS_CONFIG.retrieve(self.config_name, 'remove_double_post_min_lenght', typus=int, direct_fallback=10)
 
     @property
     def notify_channel(self) -> discord.TextChannel:
@@ -214,8 +218,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
     @commands.Cog.listener(name='on_message')
     async def remove_double_posts(self, msg: discord.Message):
-        if any([self.ready is False, self.bot.setup_finished is False]):
-            log.debug("self.ready = %s, self.bot.setup_finished = %s", self.ready, self.bot.setup_finished)
+        if self.completely_ready is False:
             return
         if self.remove_double_posts_enabled is False:
             return
@@ -233,6 +236,8 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         if any(msg.content.startswith(prfx) for prfx in await self.bot.get_prefix(msg)):
             return
         if any(msg.content.startswith(prfx) for prfx in self.other_bot_prefixes):
+            return
+        if len(msg.content) < self.remove_double_post_min_lenght and len(msg.attachments) == 0:
             return
         hashed_msg = await self.hashed_message_class.from_message(msg)
         if await self.msg_keeper.handle_message(hashed_msg) is True:
@@ -255,8 +260,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
     @commands.Cog.listener(name='on_message_edit')
     async def remove_double_posts_update_edited(self, old_msg: discord.Message, new_msg: discord.Message):
-        if any([self.ready is False, self.bot.setup_finished is False]):
-            log.debug("self.ready = %s, self.bot.setup_finished = %s", self.ready, self.bot.setup_finished)
+        if self.completely_ready is False:
             return
         if self.remove_double_posts_enabled is False:
             return
@@ -273,6 +277,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
     @flags.add_flag("--and-giddi", '-gid', type=bool, default=False)
     @flags.add_flag("--number-of-messages", '-n', type=int, default=99999999999)
+    @flags.add_flag("--both-bots", "-b", type=bool, default=False)
     @auto_meta_info_command(cls=AntiPetrosFlagCommand)
     @commands.is_owner()
     @in_allowed_channels()
@@ -286,13 +291,74 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
         """
 
         def is_antipetros(message):
-            if command_flags.get('and_giddi') is False:
-                return message.author.id == self.bot.id
-            return message.author.id in [self.bot.id, self.bot.creator.id]
+            author_ids = [self.bot.id]
+            if command_flags.get('and_giddi') is True:
+                author_ids.append(self.bot.creator.id)
+            if command_flags.get('both_bots') is True:
+                all_bot_ids = [799228116865777675, 752943453624729640]
+                author_ids += all_bot_ids
+            author_ids = set(author_ids)
+            return message.author.id in author_ids
 
         await ctx.channel.purge(limit=command_flags.get('number_of_messages'), check=is_antipetros, bulk=True)
         await ctx.send('done', delete_after=60)
         await delete_message_if_text_channel(ctx)
+
+    @auto_meta_info_command(clear_invocation=True, experimental=True)
+    @commands.is_owner()
+    @log_invoker(log, 'warning')
+    async def remove_double_posts_settings(self, ctx: commands.Context):
+        setting_ask = AskSelection(author=ctx.author, channel=ctx.channel, timeout=300, delete_question=True, error_on=[AskSelection.CANCELED, AskSelection.NOANSWER])
+        setting_ask.description = "Select a Setting you want to change."
+        setting_ask.options.add_option(setting_ask.option_item(item="switch on/off"))
+        setting_ask.options.add_option(setting_ask.option_item(item="change max triggered Role"))
+        setting_ask.options.add_option(setting_ask.option_item(item="Add report Webhook"))
+        setting_ask.options.add_option(setting_ask.option_item(item="Remove report Webhook"))
+        answer = await setting_ask.ask()
+
+        if answer == "switch on/off":
+            current_setting = self.remove_double_posts_enabled
+            current_setting_text = "Enabled" if current_setting is True else "Disabled"
+            future_setting_text = "Disabled" if current_setting is True else "Enabled"
+
+            confirmation_ask = AskConfirmation(ctx.author, ctx.channel, timeout=300, delete_question=True)
+            confirmation_ask.description = f"Double Post Remover is currently **{current_setting_text.upper()}**.\nDo you want to set it to ***{future_setting_text}***?"
+            answer = await confirmation_ask.ask()
+            if answer in {confirmation_ask.CANCELED, confirmation_ask.DECLINED, confirmation_ask.NOANSWER}:
+                return
+            COGS_CONFIG.set(self.config_name, "remove_double_posts_enabled", str(not current_setting))
+            await ctx.send(f"Double Post Remover is now **{future_setting_text}**!")
+            return
+
+        elif answer == "change max triggered Role":
+            input_ask = AskInput(ctx.author, ctx.channel, timeout=300, delete_question=True, delete_answers=True, error_on=True)
+            def validator(x): return any([x.isnumeric(), x in self.bot.roles_name_dict])
+            input_ask.validator = validator
+            level_display = await self._create_role_level_display(self.remove_double_posts_max_role_position)
+            input_ask.description = f"{level_display}"
+            answer = await input_ask.ask()
+            answer = await RoleOrIntConverter().convert(ctx, answer)
+            await self.set_remove_double_posts_max_role_position(ctx, answer)
+
+        elif answer == "Add report Webhook":
+            input_ask = AskInput(ctx.author, ctx.channel, timeout=300, delete_question=True, delete_answers=True, error_on=True)
+            input_ask.description = "Please enter a valid Webhook url"
+            answer = await input_ask.ask()
+            answer = await UrlConverter().convert(ctx, answer)
+            webhooks = self.notify_webhooks.copy()
+            webhooks.append(answer)
+            COGS_CONFIG.set(self.config_name, "double_post_notification_webhook_urls", ', '.join(webhooks))
+            await ctx.send(f"Webhook {answer} was added to the webhooks.\nCurrently set webhooks:\n" + '\n'.join(f"`{hook}`" for hook in webhooks))
+
+        elif answer == "Remove report Webhook":
+            selection_ask = AskSelection(ctx.author, ctx.channel, delete_question=True, error_on=True)
+            selection_ask.description = "Please select the corresponding emoji to the Webhook you want to remove"
+            for item in self.notify_webhooks:
+                selection_ask.options.add_option(selection_ask.option_item(item=item))
+            answer = await selection_ask.ask()
+            webhooks = [hook for hook in self.notify_webhooks if hook != answer]
+            COGS_CONFIG.set(self.config_name, "double_post_notification_webhook_urls", ', '.join(webhooks))
+            await ctx.send(f"Webhook {answer} was removed from the webhooks.\nCurrently set webhooks:\n" + '\n'.join(f"`{hook}`" for hook in webhooks))
 
     @auto_meta_info_command()
     @commands.is_owner()
@@ -352,6 +418,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
 
 # region [Helper]
 
+
     async def _create_role_level_display(self, new_level: int) -> str:
         raw_all_roles = sorted(self.bot.antistasi_guild.roles, key=lambda x: x.position)
         all_roles = {role.position: role.name for role in raw_all_roles}
@@ -402,7 +469,7 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
             image = files.pop(0) if files[0].filename.split('.')[-1] in IMAGE_EXTENSIONS else None
         if self.remove_double_post_is_dry_run is True:
             fields.append(self.bot.field_item(name='**__MESSAGE WAS NOT DELETED__**', value="Reason: `Testing-phase`", inline=False))
-        embed_data = await self.bot.make_generic_embed(title='Double Post Deleted', fields=fields, image=image, thumbnail='warning')
+        embed_data = await self.bot.make_generic_embed(title='Double Post Deleted', fields=fields, image=image, thumbnail='warning', typus="notify_double_posts_embed")
 
         await self.notify_channel.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
@@ -422,10 +489,10 @@ class PurgeMessagesCog(AntiPetrosBaseCog, command_attrs={'hidden': True, "catego
             image = files.pop(0) if files[0].filename.split('.')[-1] in IMAGE_EXTENSIONS else None
         if self.remove_double_post_is_dry_run is True:
             fields.append(self.bot.field_item(name='**__MESSAGE WAS NOT DELETED__**', value="Reason: `Testing-phase`", inline=False))
-        embed_data = await self.bot.make_generic_embed(title='Double Post Deleted', fields=fields, image=image, thumbnail='warning')
+        embed_data = await self.bot.make_generic_embed(title='Double Post Deleted', fields=fields, image=image, thumbnail='warning', typus="notify_double_posts_embed")
         if files:
             embed_data['files'].append(files)
-        webhook = discord.Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(self.bot.aio_request_session))
+        webhook = discord.Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(self.bot.aio_session))
         await webhook.send(**embed_data, username="Double Post Notification", avatar_url="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Warning.svg/1200px-Warning.svg.png", allowed_mentions=discord.AllowedMentions.none())
 # endregion[Helper]
 

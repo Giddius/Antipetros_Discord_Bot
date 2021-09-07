@@ -9,7 +9,8 @@ class AbstractConnectSignal(ABC):
         self.targets = set()
 
     def connect(self, target: Callable):
-        self.targets.add(target)
+        if target not in self.targets:
+            self.targets.add(target)
 
     @abstractmethod
     async def emit(self, *args, **kwargs):
@@ -19,6 +20,6 @@ class AbstractConnectSignal(ABC):
     async def _emit_to_targets(self, *args, **kwargs):
         for target in self.targets:
             if asyncio.iscoroutinefunction(target):
-                await target(*args, **kwargs)
+                asyncio.create_task(target(*args, **kwargs))
             else:
                 target(*args, **kwargs)

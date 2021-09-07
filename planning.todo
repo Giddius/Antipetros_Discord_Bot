@@ -1,0 +1,15 @@
+General:
+    Refactors:
+        Bot-Supporter:
+            ☐ make bot supporter embed_builder into a stand alone object Reason = So the bot does not have to be passed around for embeds. @high
+
+    Help_Wanted:
+        Images:
+
+        Graphs:
+
+        Other:
+
+
+Bugs:
+    ✔ reminder loop seems to error out on the server, check why, fix @bug @done(21-07-10 04:16)

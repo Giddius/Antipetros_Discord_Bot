@@ -26,10 +26,14 @@ from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, Command
 from antipetros_discordbot.utility.gidtools_functions import pathmaker, writejson, loadjson
 from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ZERO_WIDTH
 from antipetros_discordbot.utility.converters import CogConverter
-
+import matplotlib.pyplot as plt
+import platform
+from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation, AskFile, AskInput, AskInputManyAnswers, AskAnswer, AskSelectionOptionsMapping, AskSelectionOption, AskSelection
+import subprocess
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
-
+from pathlib import Path
+import shutil
 
 # endregion[Imports]
 
@@ -91,10 +95,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         self.latest_who_is_triggered_time = datetime.utcnow()
         self.reaction_remove_ids = []
         self.color = "olive"
-        self.ready = False
 
-        self.meta_data_setter('docstring', self.docstring)
-        glog.class_init_notification(log, self)
 # endregion[Init]
 
 # region [Setup]
@@ -107,16 +108,16 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
                 COGS_CONFIG.set(self.config_name, option, "yes")
 
     async def on_ready_setup(self):
-        # self.garbage_clean_loop.start()
+        await super().on_ready_setup()
         reaction_remove_ids = [self.bot.id] + [_id for _id in self.bot.owner_ids]
         self.reaction_remove_ids = set(reaction_remove_ids)
         asyncio.create_task(self._update_listener_enabled())
-        for loop in self.loops.values():
-            loop_starter(loop)
+
         self.ready = True
         log.debug('setup for cog "%s" finished', str(self))
 
     async def update(self, typus: UpdateTypus):
+        await super().update(typus=typus)
         if UpdateTypus.CONFIG in typus:
             asyncio.create_task(self._update_listener_enabled())
         log.debug('cog "%s" was updated', str(self))
@@ -126,6 +127,21 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Loops]
 
+
+    @tasks.loop(minutes=5)
+    async def check_ws_rate_limit_loop(self):
+        is_rate_limited = self.bot.is_ws_ratelimited()
+        as_text = "IS NOT" if is_rate_limited is False else "! IS !"
+        log.info("The bot %s currently rate-limited", as_text)
+        if is_rate_limited is True:
+            await self.bot.creator.send("__**WARNING**__ ⚠️ THE BOT ***IS*** CURRENTLY RATE-LIMITED! ⚠️ __**WARNING**__")
+
+    @tasks.loop(minutes=5)
+    async def close_all_plots_loop(self):
+        if self.completely_ready is False:
+            return
+        plt.close('all')
+        log.info("closed all matplotlib plots")
 
 # endregion[Loops]
 
@@ -145,7 +161,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
     @commands.Cog.listener(name='on_reaction_add')
     async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):
-        if any([self.ready, self.bot.setup_finished]) is False:
+        if self.completely_ready is False:
             return
         if self.listeners_enabled.get("stop_the_reaction_petros_listener", False) is False:
             return
@@ -159,6 +175,23 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region[Commands]
 
+    @auto_meta_info_command(logged=True, clear_invocation=True)
+    @owner_or_admin()
+    async def restart(self, ctx: commands.Context):
+        if platform.system() != 'Linux':
+            await ctx.send('Only available on UNIX!', delete_after=120)
+            return
+
+        confirm = AskConfirmation.from_context(ctx, error_on=True, delete_question=True)
+        confirm.set_description('Do you really want to restart the bot?')
+        confirm.set_title('CONFIRM RESTART')
+        answer = await confirm.ask()
+        if answer is confirm.ACCEPTED:
+            wait_msg = await ctx.send('Waiting for all running remarks to finish')
+            async with self.bot.restart_blocker.wait_until_unblocked():
+                await wait_msg.delete()
+                subprocess.Popen(["antipetros_restart_script"], start_new_session=True)
+                await ctx.send('Bot restart was requested, restarting in the next few seconds', delete_after=15)
 
     @auto_meta_info_command()
     @owner_or_admin()
@@ -324,7 +357,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         await ctx.send(f"I have unblacklisted user {user.name}")
 
     @auto_meta_info_command()
-    @commands.is_owner()
+    @owner_or_admin()
     async def send_log_file(self, ctx: commands.Context, which_logs: str = 'newest'):
         """
         Gets the log files of the bot and post it as a file to discord.
@@ -338,23 +371,30 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
             @AntiPetros send_log_file all
         """
         log_folder = APPDATA.log_folder
-        if which_logs == 'newest':
-
+        all_log_files = []
+        async with ctx.typing():
             for file in os.scandir(log_folder):
                 if file.is_file() and file.name.endswith('.log'):
-                    discord_file = discord.File(file.path)
-                    await ctx.send(file=discord_file)
-
-        elif which_logs == 'all':
-            for file in os.scandir(log_folder):
-                if file.is_file() and file.name.endswith('.log'):
-                    discord_file = discord.File(file.path)
-                    await ctx.send(file=discord_file)
-
+                    file_path = Path(file.path)
+                    temp_path = Path(APPDATA['temp_files']).joinpath(file_path.name)
+                    shutil.copy(str(file_path), str(temp_path))
+                    all_log_files.append(str(temp_path))
             for old_file in os.scandir(pathmaker(log_folder, 'old_logs')):
                 if old_file.is_file() and old_file.name.endswith('.log'):
-                    discord_file = discord.File(old_file.path)
-                    await ctx.send(file=discord_file)
+                    all_log_files.append(old_file.path)
+
+            all_log_files = sorted(all_log_files, key=lambda x: os.stat(x).st_mtime, reverse=True)
+
+        if which_logs == 'newest':
+            to_send_file = all_log_files[0]
+
+            discord_file = discord.File(to_send_file)
+            await ctx.send(file=discord_file)
+
+        elif which_logs == 'all':
+            for file in all_log_files:
+                discord_file = discord.File(file)
+                await ctx.send(file=discord_file)
         log.warning("%s log file%s was requested by '%s'", which_logs, 's' if which_logs == 'all' else '', ctx.author.name)
 
     @auto_meta_info_command()
@@ -395,11 +435,14 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
             text += f"NAME: {cog_name}, CONFIG_NAME: {cog_object.config_name}\n{'-'*10}\n"
         await self.bot.split_to_messages(ctx, text, in_codeblock=True, syntax_highlighting='fix')
 
-
+    @auto_meta_info_command()
+    @owner_or_admin()
+    async def tell_is_dev_value(self, ctx: commands.Context):
+        await ctx.send(f"from os.getenv = {os.getenv('IS_DEV')}", delete_after=120)
+        await ctx.send(f"from self.bot.is_debug = {self.bot.is_debug}", delete_after=120)
 # endregion[Commands]
 
 # region [Helper]
-
 
     async def _update_listener_enabled(self):
         for listener_name in self.listeners_enabled:

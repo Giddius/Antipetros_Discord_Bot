@@ -3,6 +3,7 @@ import sys
 import os
 import subprocess
 import shutil
+from pathlib import Path
 from datetime import datetime, timedelta, date
 from pprint import pprint
 from time import time, sleep
@@ -27,6 +28,7 @@ import asyncio
 from inspect import getmembers, ismodule
 import isort
 from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
+import subprocess
 GIT_EXE = shutil.which('git.exe')
 
 
@@ -297,7 +299,7 @@ def collect_data(c):
 def clean_userdata(c, dry_run=False):
     data_pack_path = pathmaker(THIS_FILE_DIR, PROJECT_NAME, "init_userdata\data_pack")
 
-    folder_to_clear = ['archive', 'user_env_files', 'env_files', 'performance_data', 'stats', 'database', 'debug', 'temp_files']
+    folder_to_clear = ['archive', 'user_env_files', 'env_files', 'performance_data', 'stats', 'database', 'debug', 'temp_files', 'general_antipetros_backups']
     files_to_clear = ["auto_accept_suggestion_users.json",
                       "blacklist.json",
                       "give_aways.json",
@@ -857,6 +859,9 @@ def archive_scratches(c):
 
 @task
 def new_cog(c, name, category="general"):
+    name = name.removesuffix('_cog')
+    category = category.removesuffix('_cogs')
+
     code_template_environment = Environment(loader=FileSystemLoader(pathmaker(THIS_FILE_DIR, "dev_tools_and_scripts", "template_handling", "templates")))
     folder_name = category.lower().replace(' ', '_') + '_cogs'
     folder_path = pathmaker(FOLDER.get('cogs'), folder_name)
@@ -1073,3 +1078,9 @@ def process_meta_data(c):
 
         _new_dict[command_name] = new_attrs
     writejson(_new_dict, file_path)
+
+
+@task
+def repl(c):
+    cmd = [Path(THIS_FILE_DIR).joinpath('.venv', 'Scripts', 'ptipython3.9.exe')]
+    subprocess.Popen(cmd, start_new_session=True, creationflags=subprocess.CREATE_NEW_CONSOLE)

@@ -330,7 +330,7 @@ class DefaultFieldsProvider(AbstractFieldProvider):
         attr_name = "allowed_roles"
         name = await self.handle_name(attr_name)
         roles = sorted(getattr(self.in_object, attr_name), key=lambda x: x.position)
-        value = '\n'.join(role.mention for role in roles)
+        value = '\n'.join(f"`{role.name}`" for role in roles)
         inline = False
         return self.field_item(name=name, value=value, inline=inline)
 

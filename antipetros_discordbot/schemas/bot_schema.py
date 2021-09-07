@@ -15,7 +15,7 @@ import unicodedata
 
 from marshmallow import Schema, fields
 import gidlogger as glog
-
+from antipetros_discordbot.utility.debug_helper import rinspect_object
 
 # endregion[Imports]
 
@@ -75,5 +75,4 @@ class AntiPetrosBotSchema(Schema):
 # region[Main_Exec]
 if __name__ == '__main__':
     pass
-
 # endregion[Main_Exec]

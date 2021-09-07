@@ -128,7 +128,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
     async def check_give_away_ended_loop(self):
         if not await self.give_aways:
             return
-        if self.ready is False:
+        if self.completely_ready is False:
             return
         for give_away_event in await self.give_aways:
             if datetime.utcnow() >= give_away_event.end_date_time:
@@ -138,7 +138,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
     async def clean_emojis_from_reaction(self):
         if not await self.give_aways:
             return
-        if self.ready is False:
+        if self.completely_ready is False:
             return
         try:
             for give_away_event in await self.give_aways:
@@ -166,7 +166,7 @@ class GiveAwayCog(AntiPetrosBaseCog, command_attrs={"hidden": True, 'categories'
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        if self.ready is False:
+        if self.completely_ready is False:
             return
         try:
             channel = self.bot.get_channel(payload.channel_id)

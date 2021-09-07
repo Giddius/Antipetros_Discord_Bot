@@ -96,7 +96,10 @@ class AntistasiInformer(SubSupportBase):
             await self.antistasi_guild.chunk(cache=True)
         for cat in ['channels', 'members', 'roles']:
             attr = getattr(self.antistasi_guild, cat)
-            name_attr_dict = {item.name.casefold(): item for item in attr}
+            name_attr_dict = {item.name.casefold(): item for item in attr} | {item.mention: item for item in attr}
+            if cat == "members":
+                name_attr_dict |= {str(item).casefold(): item for item in attr}
+
             setattr(self, f"{cat}_name_dict", name_attr_dict)
             log.info("created '%s_name_dict' fresh", cat)
 
@@ -109,6 +112,10 @@ class AntistasiInformer(SubSupportBase):
         return "https://avatars0.githubusercontent.com/u/53788409?s=200&v=4"
 
     @cached_property
+    def salute_emoji(self):
+        return discord.utils.get(self.antistasi_guild.emojis, id=755173152752926753)
+
+    @cached_property
     def bertha_emoji(self) -> discord.Emoji:
         return discord.utils.get(self.antistasi_guild.emojis, id=829666475035197470)
 
@@ -118,11 +125,15 @@ class AntistasiInformer(SubSupportBase):
 
     @cached_property
     def server_emoji(self) -> discord.Emoji:
-        return discord.utils.get(self.bot_testing_guild.emojis, id=845740762900856838)
+        return discord.utils.get(self.bot_testing_guild.emojis, id=855915156881408000)
 
     @cached_property
     def antistasi_invite_url(self) -> str:
         return BASE_CONFIG.retrieve('links', 'antistasi_discord_invite', typus=str, direct_fallback='')
+
+    @cached_property
+    def antistasi_url(self):
+        return BASE_CONFIG.retrieve('antistasi_info', 'antistasi_url', typus=str, direct_fallback="https://antistasi.de/")
 
     @cached_property
     def armahosts_url(self) -> str:
@@ -162,6 +173,7 @@ class AntistasiInformer(SubSupportBase):
 
     @cached_property
     def bot_testing_guild(self) -> discord.Guild:
+        _id = BASE_CONFIG.retrieve('debug', "testing_guild_id", typus=int, direct_fallback=837389179025096764)
         guild = self.bot.get_guild(837389179025096764)
         return guild
 
@@ -182,6 +194,12 @@ class AntistasiInformer(SubSupportBase):
     def blacklisted_user_ids(self) -> Generator[int, None, None]:
         for user_item in self.blacklisted_users:
             yield user_item.get('id')
+
+    async def ensure_dm_channel(self, target: Union[discord.Member, discord.User]) -> discord.DMChannel:
+        _out = target.dm_channel
+        if _out is None:
+            _out = await target.create_dm()
+        return _out
 
     async def get_message_directly(self, channel_id: int, message_id: int) -> discord.Message:
         channel = self.channel_from_id(channel_id)
@@ -247,7 +265,7 @@ class AntistasiInformer(SubSupportBase):
             await self._make_stored_dicts()
         log.debug("'%s' sub_support was UPDATED", str(self))
 
-    def retire(self) -> None:
+    async def retire(self) -> None:
         log.debug("'%s' sub_support was RETIRED", str(self))
 
 

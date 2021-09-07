@@ -5,14 +5,14 @@ import enum
 import logging
 import sqlite3 as sqlite
 import textwrap
-
+import asyncio
 # * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 import aiosqlite
 
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.gidsql.db_action_base import GidSqliteActionBase, AioGidSqliteActionBase
-
+from contextlib import asynccontextmanager
 # endregion[Imports]
 
 __updated__ = '2020-11-28 02:04:13'
@@ -87,6 +87,7 @@ class GidSqliteReader(GidSqliteActionBase):
 class AioGidSqliteReader(AioGidSqliteActionBase):
     FETCH_ALL = Fetch.All
     FETCH_ONE = Fetch.One
+    lock = asyncio.Lock()
 
     def __init__(self, in_db_loc, in_pragmas=None, log_execution: bool = True):
         super().__init__(in_db_loc, in_pragmas)
@@ -94,15 +95,28 @@ class AioGidSqliteReader(AioGidSqliteActionBase):
         self.log_execution = log_execution
         glog.class_init_notification(log, self)
 
-    async def enable_row_factory(self, in_factory=None):
-        self.row_factory = in_factory if in_factory is not None else aiosqlite.Row
+    @asynccontextmanager
+    async def active_row_factory(self, in_factory=False):
+
+        if in_factory is not False:
+            await self.enable_row_factory(in_factory=in_factory)
+        yield
+        await self.disable_row_factory()
+
+
+    async def enable_row_factory(self, in_factory):
+        if in_factory is True:
+            self.row_factory = aiosqlite.Row
+        else:
+            self.row_factory = in_factory
 
     async def disable_row_factory(self):
         self.row_factory = None
 
     async def query(self, sql_phrase, variables: tuple = None, fetch: Fetch = Fetch.All):
         # isolation_level=None
-        async with aiosqlite.connect(self.db_loc, detect_types=sqlite.PARSE_DECLTYPES) as conn:
+
+        async with aiosqlite.connect(self.db_loc, detect_types=sqlite.PARSE_DECLTYPES, iter_chunk_size=512) as conn:
             if self.row_factory is not None:
                 conn.row_factory = self.row_factory
 

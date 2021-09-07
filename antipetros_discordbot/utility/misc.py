@@ -13,7 +13,7 @@ from functools import wraps, partial
 from concurrent.futures import ThreadPoolExecutor
 from inspect import getclosurevars
 import json
-from typing import Awaitable, Iterable, Mapping, Tuple, TypeVar, Iterable, Dict
+from typing import Awaitable, Iterable, Mapping, Tuple, TypeVar, Iterable, Dict, Union
 # * Third Party Imports --------------------------------------------------------------------------------->
 # * Third Party Imports -->
 from validator_collection import validators
@@ -138,16 +138,26 @@ def seconds_to_pretty(seconds: int, decimal_places: int = 1):
     return out_string
 
 
-def alt_seconds_to_pretty(seconds: int, decimal_places: int = 1, seperator: str = ', ', shorten_name_to: int = None):
+def alt_seconds_to_pretty(seconds: int, decimal_places: int = 1, separator: str = ", ", last_separator: str = None, shorten_name_to: int = None):
+    last_separator = separator if last_separator is None else last_separator
     out_string = ''
+    parts = []
     rest = seconds
     for name, factor in FACTORS.items():
         sub_result, rest = divmod(rest, factor)
         if sub_result != 0:
             if shorten_name_to is not None:
                 name = name[0:shorten_name_to]
-            out_string += f"{str(int(round(sub_result,ndigits=decimal_places)))} {name} {seperator}"
-    return out_string.rstrip(seperator)
+            parts.append(f"{str(int(round(sub_result, ndigits=decimal_places)))} {name}")
+    for index, part in enumerate(parts):
+        if index == 0:
+            out_string += f"{part}"
+        elif index != (len(parts) - 1):
+            out_string += f"{separator}{part}"
+        else:
+            out_string += f"{last_separator}{part}"
+
+    return out_string.strip()
 
 
 async def async_seconds_to_pretty_normal(seconds: int, decimal_places: int = 1):
@@ -305,13 +315,13 @@ async def async_split_camel_case_string(string):
     return ''.join(_out).strip()
 
 
-def split_camel_case_string(string):
+def split_camel_case_string(string, filler=' '):
     _out = []
     for char in string:
         if char == char.upper():
-            char = ' ' + char
+            char = filler + char
         _out.append(char)
-    return ''.join(_out).strip()
+    return ''.join(_out).strip(filler)
 
 
 def save_bin_file(path, data):
@@ -447,7 +457,7 @@ def fix_url_prefix(in_url: str):
     return in_url
 
 
-async def check_if_url(possible_url: str):
+def check_if_url(possible_url: str):
     """
     checks if input `possible_url` is and valid url.
 
@@ -469,7 +479,7 @@ async def check_if_url(possible_url: str):
 
 async def url_is_alive(bot, url, check_if_github=False):
     try:
-        async with bot.aio_request_session.get(url) as _response:
+        async with bot.aio_session.get(url) as _response:
             if check_if_github is True and _response.headers.get('Server') != 'GitHub.com':
                 return False
             return _response.status_code != 404
@@ -654,3 +664,8 @@ async def async_loop_starter(task_loops: Dict[str, tasks.Loop]):
 def loop_stopper(task_loop: tasks.Loop):
     if task_loop.is_running() is True:
         task_loop.stop()
+
+
+def rgb256_to_rgb1(values: list[int]):
+    values = map(lambda x: 1 * (x / 256), values)
+    return tuple(values)

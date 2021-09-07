@@ -1,8 +1,16 @@
 # * Third Party Imports -->
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord.ext.commands.errors import CommandError
+import discord
 from datetime import datetime
-from typing import Any
+from typing import Any, TYPE_CHECKING, Union
+from antipetros_discordbot.utility.misc import split_camel_case_string
+from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker
+from discord.ext import commands
+if TYPE_CHECKING:
+    from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
+    from antipetros_discordbot.engine.replacements import AntiPetrosBaseContext
 
 
 class AntiPetrosBaseError(Exception):
@@ -111,7 +119,18 @@ class DuplicateNameError(AntiPetrosBaseError):
 
 
 class BaseExtendedCommandError(CommandError):
-    pass
+    error_handler_name_prefix = '_handle'
+
+    @classmethod
+    @property
+    def error_name(cls):
+        return cls.__name__
+
+    @classmethod
+    @property
+    def error_handler_name(cls):
+        name = '_'.join([cls.error_handler_name_prefix, split_camel_case_string(cls.error_name, filler='_')]).casefold()
+        return name
 
 
 class MissingAttachmentError(BaseExtendedCommandError):
@@ -122,6 +141,17 @@ class MissingAttachmentError(BaseExtendedCommandError):
         self.min_attachments = min_attachments
         self.attachments = self.ctx.message.attachments
         self.msg = f"This command requires at least '{str(self.min_attachments)}' attachments to work\nAmount attachments provided: '{str(len(self.attachments))}'."
+        super().__init__(self.msg)
+
+
+class WrongAttachmentTypeError(BaseExtendedCommandError):
+    def __init__(self, ctx, attachment: discord.Attachment, allowed_content_types: set):
+        self.ctx = ctx
+        self.command = self.ctx.command
+        self.attachment = attachment
+        self.attachment_content_type = self.attachment.content_type
+        self.allowed_content_types = allowed_content_types
+        self.msg = f"The Attachment `{self.attachment.filename}` has the wrong content_type(`{self.attachment_content_type}`. Allowed content_types: {', '.join(self.allowed_content_types)}"
         super().__init__(self.msg)
 
 
@@ -183,12 +213,12 @@ class NotAllowedMember(BaseExtendedCommandError):
 
 class ParameterError(BaseExtendedCommandError):
     def __init__(self, parameter_name: str = None, parameter_value=None, error=None) -> None:
-        self.name = parameter_name
-        self.value = parameter_value
+        self.parameter_name = parameter_name
+        self.parameter_value = parameter_value
         self._error = error
-        self.msg = f"'{self.value}' is not a valid input"
+        self.msg = f"'{self.parameter_value}' is not a valid input"
         if self.name is not None:
-            self.msg += f" for '{self.name}'"
+            self.msg += f" for '{self.parameter_name}'"
         super().__init__(self.msg)
 
     @property
@@ -200,11 +230,17 @@ class ParameterError(BaseExtendedCommandError):
 
 class ParameterErrorWithPossibleParameter(BaseExtendedCommandError):
     def __init__(self, parameter_name: str, parameter_value, possible_parameter: list):
-        self.name = parameter_name
-        self.value = parameter_value
+        self.parameter_name = parameter_name
+        self.parameter_value = parameter_value
         self.possible_parameter = possible_parameter
-        self.msg = f"'{self.value}' is not a valid input for '{self.name}'\nPossible values are:\n" + "\n".join(f"\t`{item}`" for item in self.possible_parameter)
+        self.error_embed_title = f"'{self.parameter_value}' is not a valid input for '{self.parameter_name}'"
+        self.error_embed_description = f"Possible values are:\n\n{CodeBlock(ListMarker.make_list([f'{item}' for item in self.possible_parameter], indent=1), 'python')}"
+        self.msg = f"'{self.parameter_value}' is not a valid input for '{self.parameter_name}'\nPossible values are:\n" + "\n".join(f"\t{item}" for item in self.possible_parameter)
         super().__init__(self.msg)
+
+    async def to_embed(self, ctx: Union[commands.Context, "AntiPetrosBaseContext"], bot: "AntiPetrosBot"):
+        embed_data = await bot.make_generic_embed(title=self.error_embed_title, description=self.error_embed_description, thumbnail="error", author=ctx.author)
+        return embed_data
 
 
 class ParseDiceLineError(BaseExtendedCommandError):
@@ -234,4 +270,19 @@ class GithubRateLimitUsedUp(BaseExtendedCommandError):
     def __init__(self, reset_time: datetime):
         self.reset_time = reset_time
         self.msg = "Rate Limit for github is used up, this action is not usable until " + self.reset_time.strftime("%Y-%m-%d %H:%M:%S UTC") + ", as the rate-limit resets at that time!"
+        super().__init__(self.msg)
+
+
+class AskCanceledError(BaseExtendedCommandError):
+    def __init__(self, ask_object, answer):
+        self.ask_object = ask_object
+        self.answer = answer
+        self.msg = "Question was canceled by User"
+        super().__init__(self.msg)
+
+
+class AskTimeoutError(BaseExtendedCommandError):
+    def __init__(self, ask_object):
+        self.ask_object = ask_object
+        self.msg = "No Answer received"
         super().__init__(self.msg)

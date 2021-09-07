@@ -14,8 +14,8 @@ from typing import Tuple
 import re
 # * Third Party Imports --------------------------------------------------------------------------------->
 from discord import Embed, ChannelType
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process as fuzzprocess
+from rapidfuzz import fuzz
+from rapidfuzz import process as fuzzprocess
 from discord.ext import commands
 import discord
 import asyncio
@@ -25,7 +25,7 @@ import gidlogger as glog
 from rich import inspect as rinspect
 # * Local Imports --------------------------------------------------------------------------------------->
 from antipetros_discordbot.utility.misc import async_seconds_to_pretty_normal, async_split_camel_case_string
-from antipetros_discordbot.utility.exceptions import MissingAttachmentError, NotNecessaryRole, IsNotTextChannelError, NotNecessaryDmId, NotAllowedChannelError, NotNecessaryRole, ParseDiceLineError, NameInUseError, CustomEmojiError
+from antipetros_discordbot.utility.exceptions import MissingAttachmentError, NotNecessaryRole, IsNotTextChannelError, NotNecessaryDmId, NotAllowedChannelError, NotNecessaryRole, ParseDiceLineError, NameInUseError, CustomEmojiError, ParameterErrorWithPossibleParameter
 from antipetros_discordbot.utility.gidtools_functions import loadjson
 from antipetros_discordbot.abstracts.subsupport_abstract import SubSupportBase
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
@@ -137,18 +137,19 @@ class ErrorHandler(SubSupportBase):
         log.error(f"{event_method} - '{arg_string}' - '{kwarg_string}'", exc_info=True)
 
     async def execute_on_command_errors(self, ctx, error: Exception):
-
+        print(f"{error.__cause__=}")
         error_traceback = ''.join(traceback.format_tb(error.__traceback__)) + f"\n\n{'+'*50}\n{error.__cause__}\n{'+'*50}"
 
         if hasattr(error, 'original'):
             error_traceback = ''.join(traceback.format_tb(error.original.__traceback__)) + f"\n\n{'+'*50}\n{error.__cause__}\n{'+'*50}"
 
-        print('!' * 50)
-        print(repr(error.__traceback__))
-        print("!" * 50)
+        if hasattr(error, 'error_handler_name') and hasattr(self, error.error_handler_name):
+            handle_meth = getattr(self, error.error_handler_name)
+        else:
+            handle_meth = self.error_handle_table.get(type(error), self._default_handle_error)
 
-        await self.error_handle_table.get(type(error), self._default_handle_error)(ctx, error, error_traceback)
-        if ctx.channel.type is ChannelType.text and ctx.command is not None:
+        log_error = await handle_meth(ctx, error, error_traceback)
+        if ctx.channel.type is ChannelType.text and ctx.command is not None and log_error is not False:
             log.error("Error '%s' was caused by '%s' on the content '%s' with args '%s' and traceback --> %s", error.__class__.__name__, ctx.author.name, ctx.message.content, ctx.args, error_traceback)
             if self.delete_invoking_messages is True:
                 await ctx.message.delete()
@@ -171,8 +172,22 @@ class ErrorHandler(SubSupportBase):
                                                        fields=fields,
                                                        thumbnail="https://i.postimg.cc/J0zSHgRH/sorry-thumbnail.png",
                                                        color='red')
-        await ctx.reply(**embed_data, delete_after=delete_after, allowed_mentions=discord.AllowedMentions.none())
+        await ctx.send(**embed_data, delete_after=delete_after, allowed_mentions=discord.AllowedMentions.none())
         await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error)), file=await self._make_traceback_file(error_traceback))
+
+    async def _handle_ask_canceled_error(self, ctx, error, error_traceback):
+        await error.ask_object.channel.send(error.msg, delete_after=90)
+        return False
+
+    async def _handle_ask_timeout_error(self, ctx, error, error_traceback):
+        await error.ask_object.channel.send(error.msg, delete_after=90)
+        return False
+
+    async def _handle_parameter_error_with_possible_parameter(self, ctx, error, error_traceback):
+        embed_data = await error.to_embed(ctx=ctx, bot=self.bot)
+        await ctx.send(**embed_data)
+        help_command = self.bot.get_command('help')
+        await help_command(ctx, in_object=ctx.command)
 
     async def _handle_name_in_use_error(self, ctx, error, error_traceback):
         await ctx.send(embed=await self.bot.make_error_embed(ctx, error), delete_after=60)
@@ -249,9 +264,13 @@ class ErrorHandler(SubSupportBase):
 
     async def _handle_command_on_cooldown(self, ctx, error, error_traceback):
         # TODO: get normal sentence from BucketType, with dynamical stuff (user_name, channel_name,...)
-        msg = await self.transform_error_msg(f"Command '{ctx.command.name}' is on cooldown for '{error.cooldown.type.name.upper()}'. \n{ZERO_WIDTH}\nYou can try again in '{await async_seconds_to_pretty_normal(int(round(error.retry_after, 0)))}'\n{ZERO_WIDTH}")
+        again_time = await async_seconds_to_pretty_normal(int(round(error.retry_after, 0)))
+        msg = await self.transform_error_msg(f"Command '{ctx.command.name}' is on cooldown for '{error.cooldown.type.name.upper()}'. \n{ZERO_WIDTH}\nYou can try again in '{again_time}'\n{ZERO_WIDTH}")
         if self.cooldown_data.in_data(ctx, error) is True:
-            await ctx.message.delete()
+            try:
+                await ctx.message.delete()
+            except discord.errors.Forbidden:
+                pass
             await ctx.author.send(msg)
             return
         await self.cooldown_data.add(ctx, error)
@@ -259,7 +278,10 @@ class ErrorHandler(SubSupportBase):
                                                        thumbnail="cooldown",
                                                        description=msg)
         await ctx.reply(**embed_data, delete_after=error.retry_after)
-        await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except discord.errors.Forbidden:
+            pass
 
     async def _make_traceback_file(self, error_traceback: str):
         bytes_traceback = await asyncio.to_thread(error_traceback.encode, encoding='utf-8', errors='ignore')
@@ -278,11 +300,13 @@ class ErrorHandler(SubSupportBase):
         embed.add_field(name="kwargs", value=ctx.kwargs, inline=False)
 
         if ctx.command is not None:
-            embed.set_footer(text=f"Command: `{ctx.command.name}`\n{ZERO_WIDTH}\n By User: `{ctx.author.name}`\n{ZERO_WIDTH}\n Error: `{await async_split_camel_case_string(error.__class__.__name__)}`\n{ZERO_WIDTH}\n{ZERO_WIDTH}")
+            err_name = await async_split_camel_case_string(error.__class__.__name__)
+            embed.set_footer(text=f"Command: `{ctx.command.name}`\n{ZERO_WIDTH}\n By User: `{ctx.author.name}`\n{ZERO_WIDTH}\n Error: `{err_name}`\n{ZERO_WIDTH}\n{ZERO_WIDTH}")
             embed.add_field(name='command used', value=ctx.command.name, inline=False)
 
         else:
-            embed.set_footer(text=f"text: {ctx.message.content}\n{ZERO_WIDTH}\n By User: `{ctx.author.name}`\n{ZERO_WIDTH}\n Error: `{await async_split_camel_case_string(error.__class__.__name__)}`\n{ZERO_WIDTH}\n{ZERO_WIDTH}")
+            err_name = await async_split_camel_case_string(error.__class__.__name__)
+            embed.set_footer(text=f"text: {ctx.message.content}\n{ZERO_WIDTH}\n By User: `{ctx.author.name}`\n{ZERO_WIDTH}\n Error: `{err_name}`\n{ZERO_WIDTH}\n{ZERO_WIDTH}")
         embed.add_field(name='invoking user', value=ctx.author.name, inline=False)
         error_type = error.__class__.__name__ if not hasattr(error, 'original') else error.original.__class__.__name__
         embed.add_field(name='error type', value=error_type, inline=False)
@@ -325,7 +349,7 @@ class ErrorHandler(SubSupportBase):
         return
         log.debug("'%s' sub_support was UPDATED", str(self))
 
-    def retire(self):
+    async def retire(self):
         log.debug("'%s' sub_support was RETIRED", str(self))
 
 

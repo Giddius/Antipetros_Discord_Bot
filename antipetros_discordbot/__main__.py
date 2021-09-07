@@ -24,6 +24,7 @@ from antipetros_discordbot.utility.gidtools_functions import pathmaker
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus
 import json
+from typing import List, Callable, Union, Optional, Iterable
 
 # endregion[Imports]
 
@@ -40,6 +41,8 @@ BASE_CONFIG = ParaStorageKeeper.get_config('base_config')
 COGS_CONFIG = ParaStorageKeeper.get_config('cogs_config')
 BASE_CONFIG.save()
 COGS_CONFIG.save()
+THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
+
 
 # endregion [Constants]
 
@@ -105,8 +108,8 @@ def configure_logger():
     use_logging = from_config('use_logging', 'getboolean')
     if os.getenv('IS_DEV') == 'true':
         log_stdout = 'both'
-
-    _log = glog.main_logger(_log_file, log_level, other_logger_names=['asyncio', 'gidsql', 'gidfiles', "gidappdata", "gidconfig", "discord.ext"], log_to=log_stdout, in_back_up=in_back_up)
+    other_logger_names = BASE_CONFIG.retrieve('logging', 'other_logger_names', typus=List[str], direct_fallback=[])
+    _log = glog.main_logger(_log_file, log_level, other_logger_names=other_logger_names, log_to=log_stdout, in_back_up=in_back_up)
     gidconfig_logger = logging.getLogger('gidconfig')
     gidconfig_logger.setLevel('DEBUG')
     asyncio_logger = logging.getLogger('asyncio')
@@ -178,9 +181,11 @@ def command_info_run(output_file, verbose):
 
     collected in `/docs/resources/data` as `commands_data.json`
     """
+    old_cwd = os.getcwd()
+    os.chdir(THIS_FILE_DIR)
     load_dotenv('token.env')
     load_dotenv("nextcloud.env")
-
+    os.chdir(old_cwd)
     os.environ['INFO_RUN'] = "1"
     os.environ['INFO_RUN_DUMP_FOLDER'] = output_file
     if verbose is False:
@@ -289,20 +294,28 @@ def main(token: str, nextcloud_username: str = None, nextcloud_password: str = N
 
     anti_petros_bot = AntiPetrosBot(token=token)
     log.info("Connecting Bot")
-    anti_petros_bot.run()
 
-    log.info('~+~' * 20 + ' finished shutting down! ' + '~+~' * 20)
-
+    try:
+        anti_petros_bot.run()
+        log.info('~+~' * 20 + ' finished shutting down! ' + '~+~' * 20)
+    finally:
+        log.info('~+~' * 20 + ' Bot has stopped ' + '~+~' * 20)
 
 # endregion [Main_function]
 # region [Main_Exec]
 
+
 if __name__ == '__main__':
+
     if os.getenv('IS_DEV') == 'true':
         load_dotenv('token.env')
         load_dotenv("nextcloud.env")
 
-        main(token=os.getenv('ANTIDEVTROS_TOKEN'), nextcloud_username=os.getenv('NX_USERNAME'), nextcloud_password=os.getenv("NX_PASSWORD"), github_token=os.getenv('GITHUB_TOKEN'), battlemetrics_token=os.getenv('BATTLEMETRICS_TOKEN'))
+        main(token=os.getenv('ANTIDEVTROS_TOKEN'),
+             nextcloud_username=os.getenv('NEXTCLOUD_USERNAME'),
+             nextcloud_password=os.getenv("NEXTCLOUD_PASSWORD_ANTIDEVTROS"),
+             github_token=os.getenv('GITHUB_TOKEN'),
+             battlemetrics_token=os.getenv('BATTLEMETRICS_TOKEN'))
     else:
         main()
 
