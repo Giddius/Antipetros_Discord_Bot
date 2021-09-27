@@ -25,6 +25,17 @@ from asyncio.locks import _ContextManagerMixin
 # endregion[Imports]
 
 
+async def message_delete(msg: discord.Message, delay: float = None, shutdown_event: asyncio.Event = None):
+    async def delete_task():
+        if shutdown_event is not None:
+            done, pending = await asyncio.wait([shutdown_event.wait()], timeout=delay, return_when=asyncio.FIRST_COMPLETED)
+            for pending_aws in pending:
+                pending_aws.cancel()
+            delay = None
+        await msg.delete(delay=delay)
+    asyncio.create_task(delete_task(), name=f"DELETE_AFTER_MESSAGE_REMOVAL_{msg.channel.name}_{msg.id}")
+
+
 class RestartBlocker(_ContextManagerMixin):
 
     def __init__(self) -> None:

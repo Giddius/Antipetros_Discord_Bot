@@ -107,7 +107,7 @@ class EssentialCommandsKeeper(SubSupportBase):
     def shutdown_signal(self, *args):
         asyncio.create_task(self.shutdown_mechanic())
 
-    async def shutdown_mechanic(self):
+    async def shutdown_mechanic(self, ctx: commands.Context = None):
         if BASE_CONFIG.retrieve("shutdown_message", "enable_shutdown_message", typus=bool, direct_fallback=False) is True:
             try:
                 started_at = self.support.start_time
@@ -129,7 +129,9 @@ class EssentialCommandsKeeper(SubSupportBase):
 
             except Exception as error:
                 log.error(error, exc_info=True)
-
+        if ctx is not None:
+            await ctx.delete_temp_items()
+            await ctx.delete_stored_messages()
         await self.bot.close()
 
     async def split_to_messages(self, target: discord.abc.Messageable, message, split_on='\n', in_codeblock=False, syntax_highlighting='json'):

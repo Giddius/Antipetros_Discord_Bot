@@ -22,6 +22,7 @@ discord-ext-ipc==2.0.0
 discord-flags==2.1.1
 discord.py==1.7.3
 dpytest==0.0.23
+mistune==2.0.0rc1
 easydev==0.11.0
 emoji==1.2.0
 gidappdata==0.1.14

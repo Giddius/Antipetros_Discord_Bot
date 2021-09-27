@@ -185,6 +185,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # region [Setup]
 
+
     async def on_ready_setup(self):
         await super().on_ready_setup()
         await self._load_topic_items()
@@ -199,6 +200,7 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 # endregion [Setup]
 
 # region [Properties]
+
 
     @property
     def subscription_channel(self):
@@ -328,15 +330,17 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
         Example:
             @AntiPetros remove_topic Antistasi_Fake_Topic
         """
+
         topic_item = {item.name.casefold(): item for item in self.topics}.get(topic_name.casefold(), None)
         if await self._confirm_topic_creation_deletion(ctx, topic_item, 'removal') is False:
             return
-        await self._send_topic_remove_notification(topic_item)
-        await topic_item.role.delete(reason=f"Topic '{topic_item.name}' was removed")
-        await topic_item.message.delete()
-        if ctx.channel.type is discord.ChannelType.text:
-            await ctx.message.delete()
-        log.info(f"Topic '{topic_item.name}' was removed, by {ctx.author.display_name}")
+        async with self.bot.updated_lock:
+            await self._send_topic_remove_notification(topic_item)
+            await topic_item.role.delete(reason=f"Topic '{topic_item.name}' was removed")
+            await topic_item.message.delete()
+            if ctx.channel.type is discord.ChannelType.text:
+                await ctx.message.delete()
+            log.info(f"Topic '{topic_item.name}' was removed, by {ctx.author.display_name}")
 
     @auto_meta_info_command()
     @commands.is_owner()
@@ -494,7 +498,6 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
 
 # region [Helper]
 
-
     async def _get_header_message(self):
         msg_id = COGS_CONFIG.retrieve(self.config_name, 'header_message_id', typus=int, direct_fallback=0)
         if msg_id == 0:
@@ -583,10 +586,13 @@ class SubscriptionCog(AntiPetrosBaseCog, command_attrs={"categories": CommandCat
     async def _send_topic_remove_notification(self, topic_item: TopicItem):
         role = topic_item.role
         for member in role.members:
-            embed_data = await self.bot.make_generic_embed(title=f"Topic {topic_item.name} was removed!",
-                                                           description=f"The Topic `{topic_item.name}` was removed as a topic, therefor the assigned role {topic_item.role.mention} has been removed from your account!")
-            await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
-            await asyncio.sleep(0.25)
+            try:
+                embed_data = await self.bot.make_generic_embed(title=f"Topic {topic_item.name} was removed!",
+                                                               description=f"The Topic `{topic_item.name}` was removed as a topic, therefor the assigned role `@{topic_item.role.name}` has been removed from your account!")
+                await member.send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
+                await asyncio.sleep(0.25)
+            except discord.Forbidden:
+                continue
 
     async def sucess_subscribed_embed(self, member: discord.Member, topic: TopicItem):
         embed_data = await self.bot.make_generic_embed(title="Successfully Subscribed", description=f"You are now subscribed to {topic.name} and will get pinged if they have an Announcement.",

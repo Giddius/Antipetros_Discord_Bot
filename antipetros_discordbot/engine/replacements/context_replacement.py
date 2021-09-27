@@ -66,6 +66,7 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class AntiPetrosBaseContext(commands.Context):
+
     schema = AntiPetrosBaseContextSchema()
 
     def __init__(self, **attrs):
@@ -109,36 +110,54 @@ class AntiPetrosBaseContext(commands.Context):
 
     async def delete_stored_messages(self, delay: int = None):
         async def _delete_stored_message(message: discord.Message):
+            done, pending = await asyncio.wait([self.bot.is_shutting_down_event.wait()], timeout=delay, return_when=asyncio.FIRST_COMPLETED)
+            for pending_aws in pending:
+                pending_aws.cancel()
             try:
-                await message.delete(delay=delay)
+                await message.delete()
             except discord.errors.NotFound:
                 log.debug("Message %s could not be deleted, as it was Not Found", message)
             except discord.errors.Forbidden:
                 log.debug("Message %s could not be deleted, as it was Forbidden", message)
 
         for msg in self.stored_messages:
-            asyncio.create_task(_delete_stored_message(msg))
+            asyncio.create_task(_delete_stored_message(msg), name=f'STORED_MESSAGE_REMOVAL_{msg.channel.name}_{msg.id}')
 
     async def delete_temp_items(self):
 
         async def _remove_temp_reaction(reaction, delay: int = 15):
-            await asyncio.sleep(delay)
+            done, pending = await asyncio.wait([self.bot.is_shutting_down_event.wait()], timeout=delay, return_when=asyncio.FIRST_COMPLETED)
+            for pending_aws in pending:
+                pending_aws.cancel()
             try:
                 await self.message.remove_reaction(reaction, self.bot)
             except discord.errors.NotFound:
                 pass
 
         async def _remove_temp_msg(msg, delay: int = 30):
-            await asyncio.sleep(delay)
+            done, pending = await asyncio.wait([self.bot.is_shutting_down_event.wait()], timeout=delay, return_when=asyncio.FIRST_COMPLETED)
+            for pending_aws in pending:
+                pending_aws.cancel()
             try:
                 await msg.delete()
             except discord.errors.NotFound:
                 pass
 
         for message in self.temp_messages:
-            asyncio.create_task(_remove_temp_msg(message, 30))
+            asyncio.create_task(_remove_temp_msg(message, 30), name=f'TEMP_MESSAGE_REMOVAL_{message.channel.name}_{message.id}')
         for emoji in self.temp_reactions:
-            asyncio.create_task(_remove_temp_reaction(emoji, 15))
+            asyncio.create_task(_remove_temp_reaction(emoji, 15), name=f'TEMP_EMOJI_REMOVAL_{emoji}')
+
+    async def delete_after(self, msg: discord.Message, delay: float = None):
+        done, pending = await asyncio.wait([self.bot.is_shutting_down_event.wait()], timeout=delay, return_when=asyncio.FIRST_COMPLETED)
+        for pending_aws in pending:
+            pending_aws.cancel()
+        try:
+            await msg.delete()
+        except discord.errors.NotFound:
+            log.debug("Message %s could not be deleted, as it was Not Found", msg)
+        except discord.errors.Forbidden:
+            log.debug("Message %s could not be deleted, as it was Forbidden", msg)
 
     async def send(self, content=None, *, tts=False, embed=None, file=None,
                    files=None, delete_after=None, nonce=None,
@@ -149,7 +168,6 @@ class AntiPetrosBaseContext(commands.Context):
                                   embed=embed,
                                   file=file,
                                   files=files,
-                                  delete_after=delete_after,
                                   nonce=nonce,
                                   allowed_mentions=allowed_mentions,
                                   reference=reference,
@@ -158,6 +176,8 @@ class AntiPetrosBaseContext(commands.Context):
             asyncio.create_task(self.trigger_typing())
         if store is True or self.store_all is True:
             self.stored_messages.append(_out)
+        if delete_after is not None:
+            asyncio.create_task(self.delete_after(_out, delete_after), name=f'DELETE_AFTER_MESSAGE_REMOVAL_{_out.channel.name}_{_out.id}')
         return _out
 
     async def reply(self, content=None, mention_author=False, store: bool = False, ** kwargs) -> discord.Message:

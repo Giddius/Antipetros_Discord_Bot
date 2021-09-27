@@ -28,6 +28,7 @@ from async_property import async_property
 import gidlogger as glog
 
 # * Local Imports -->
+
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus
 from antipetros_discordbot.utility.misc import loop_starter
@@ -155,7 +156,6 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
         await self.send_update_signal(UpdateTypus.GUILD)
 
     @ commands.Cog.listener(name="on_guild_update")
-    @ universal_log_profiler
     async def guild_update_listener(self, before_guild: discord.Guild, after_guild: discord.Guild):
         if self.completely_ready is False:
             return
@@ -241,6 +241,8 @@ class Updater(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories': Co
             self.typus_on_timeout[typus] = False
 
     async def send_update_signal(self, typus: UpdateTypus):
+        if self.bot.updated_lock.locked() is True:
+            return
         if typus in self.typus_on_timeout and self.typus_on_timeout.get(typus) is True:
             log.debug("%s not sent because it is on timeout", str(typus))
             return

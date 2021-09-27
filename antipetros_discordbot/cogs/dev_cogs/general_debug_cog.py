@@ -35,7 +35,7 @@ from antipetros_discordbot.utility.gidtools_functions import writejson, loadjson
 from antipetros_discordbot.init_userdata.user_data_setup import ParaStorageKeeper
 from antipetros_discordbot.utility.enums import CogMetaStatus, UpdateTypus, ContextAskAnswer
 from antipetros_discordbot.engine.replacements import AntiPetrosBaseCog, auto_meta_info_command, AntiPetrosBaseCommand
-from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker, Seperators
+from antipetros_discordbot.utility.discord_markdown_helper.special_characters import ListMarker, Seperators, ZERO_WIDTH
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from antipetros_discordbot.utility.converters import CommandConverter, SeparatedListConverter, RoleOrIntConverter
 from antipetros_discordbot.utility.checks import has_attachments, has_image_attachment
@@ -48,6 +48,7 @@ from rich.console import Console
 from antipetros_discordbot.schemas.bot_schema import AntiPetrosBotSchema
 import ftfy
 from hashlib import blake2b
+import mistune
 import json
 from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation, AskInput, AskFile, AskInputManyAnswers, AskSelectionOption
 if TYPE_CHECKING:
@@ -79,6 +80,20 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 # endregion [TODO]
+
+HTML_PRE = """<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Example 2</title>
+  </head>
+    <body style="background-color:white;">"""
+
+HTML_POST = """  </body>
+</html>"""
+
+HTML_TEMPLATE = HTML_PRE + "\n{content}\n" + HTML_POST
+
 
 class RoleSchema(Schema):
 
@@ -373,6 +388,38 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         await self.bot.channel_from_id(645930607683174401).send(f"Report Concerning: `{player_name}`\n\nReport:\n>>> {report}", allowed_mentions=discord.AllowedMentions.none(), files=files)
         webhook = discord.Webhook.from_url("https://discord.com/api/webhooks/854749192189640734/kd3tmI17bErnc6egy8ObrdfV6-Rm79hkPxNFxBjeZDSp4wNv4llJ8EG-9_z_6Awv8Jeu", adapter=discord.AsyncWebhookAdapter(self.bot.aio_session))
         await webhook.send(f"Report from {author.mention}\n\nReport Concerning: `{player_name}`\n\nReport:\n>>> {report}", allowed_mentions=discord.AllowedMentions.none(), username="REPORT", avatar_url="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Warning.svg/1200px-Warning.svg.png", files=hook_files)
+
+    @auto_meta_info_command()
+    async def parse_md(self, ctx: commands.Context, *, text: str):
+        meta, text = text.split('__markdown__')
+        meta_data = {}
+        for line in meta.splitlines():
+            if not line:
+                continue
+            key, value = [item.strip() for item in line.split('=')]
+            meta_data[key] = value
+        text_data = text.strip()
+        html = HTML_TEMPLATE.format(content=mistune.html(text_data))
+        weasy_html = await asyncio.to_thread(HTML, string=html)
+        with BytesIO() as bytefile:
+            await asyncio.to_thread(weasy_html.write_png, bytefile, optimize_images=True, presentational_hints=True, resolution=96, stylesheets=[r"C:\Users\Giddi\Downloads\style.css"])
+            bytefile.seek(0)
+            html_image_file = discord.File(bytefile, "blah.png")
+        with BytesIO() as bytefile:
+            await asyncio.to_thread(weasy_html.write_pdf, bytefile, optimize_images=True, presentational_hints=True, stylesheets=[r"C:\Users\Giddi\Downloads\style.css"])
+            bytefile.seek(0)
+            pdf_file = discord.File(bytefile, "blah.pdf")
+        embed = discord.Embed(title='hey an png', description='meh')
+        embed.set_image(url="attachment://blah.png")
+        await ctx.send("```ini\n" + '\n'.join(f"{_key} -> {_value}" for _key, _value in meta_data.items()) + '\n```\n' + ZERO_WIDTH)
+        # await ctx.send(CodeBlock(html, 'HTML'))
+        await ctx.send(embed=embed, file=html_image_file)
+        await ctx.send(file=pdf_file)
+
+    @auto_meta_info_command()
+    async def do_error(self, ctx: commands.Context):
+        await ctx.send("raising 'discord.NoMoreItems' artificially!", delete_after=120)
+        raise discord.NoMoreItems('fake_error')
 
     @auto_meta_info_command()
     async def get_server_stati(self, ctx: commands.Context, channel: discord.TextChannel):

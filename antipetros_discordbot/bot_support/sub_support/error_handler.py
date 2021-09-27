@@ -35,6 +35,8 @@ from antipetros_discordbot.utility.enums import UpdateTypus
 from antipetros_discordbot.utility.discord_markdown_helper.discord_formating_helper import embed_hyperlink
 from antipetros_discordbot.utility.discord_markdown_helper.general_markdown_helper import CodeBlock
 from typing import TYPE_CHECKING
+from antipetros_discordbot.auxiliary_classes.asking_items import AskConfirmation
+from antipetros_discordbot.utility.asyncio_helper import message_delete
 if TYPE_CHECKING:
     from antipetros_discordbot.engine.antipetros_bot import AntiPetrosBot
     from antipetros_discordbot.bot_support.bot_supporter import BotSupporter
@@ -172,8 +174,26 @@ class ErrorHandler(SubSupportBase):
                                                        fields=fields,
                                                        thumbnail="https://i.postimg.cc/J0zSHgRH/sorry-thumbnail.png",
                                                        color='red')
-        await ctx.send(**embed_data, delete_after=delete_after, allowed_mentions=discord.AllowedMentions.none())
-        await self.bot.message_creator(embed=await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error)), file=await self._make_traceback_file(error_traceback))
+        sorry_message = await ctx.send(**embed_data, delete_after=delete_after, allowed_mentions=discord.AllowedMentions.none())
+        error_report_embed = await self.error_reply_embed(ctx, error, 'Error With No Special Handling Occured', msg=str(error))
+        if self.bot.is_debug is True or ctx.author.id != self.bot.creator_id:
+            error_report_preview_msg = await ctx.author.send(embed=error_report_embed, delete_after=180)
+            question = AskConfirmation(author=ctx.author, channel=await ctx.author.create_dm(), delete_question=True, error_on=False)
+            question.set_title(f"Do you want to send the above report to __{self.bot.creator.name}__?")
+            question.set_description(
+                f"It would help {self.bot.creator.mention} in preventing future errors!\n{ZERO_WIDTH}\n**{('⚠️⏤⏤!⏤⏤'*3)+'⚠️'}**\n{ZERO_WIDTH}\n **Please be aware, that the Report contains your**\n**-** `Username`\n**-** `invoked command`\n**-** `all command arguments`\n{ZERO_WIDTH}\n**{('⚠️⏤⏤!⏤⏤'*3)+'⚠️'}**")
+            try:
+                if await question.ask() is AskConfirmation.ACCEPTED:
+                    await self.bot.message_creator(embed=error_report_embed, file=await self._make_traceback_file(error_traceback))
+                    await ctx.author.send(f'Report was sent to **__{self.bot.creator.mention}__**', allowed_mentions=discord.AllowedMentions.none())
+                    await message_delete(sorry_message, 120, self.bot.is_shutting_down_event)
+                else:
+                    await ctx.author.send('Report was **__NOT__** sent', allowed_mentions=discord.AllowedMentions.none())
+            finally:
+                await error_report_preview_msg.delete()
+
+        else:
+            await self.bot.message_creator(embed=error_report_embed, file=await self._make_traceback_file(error_traceback))
 
     async def _handle_ask_canceled_error(self, ctx, error, error_traceback):
         await error.ask_object.channel.send(error.msg, delete_after=90)

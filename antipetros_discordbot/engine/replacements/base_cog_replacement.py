@@ -243,7 +243,7 @@ class AntiPetrosBaseCog(commands.Cog):
         for loop_name, loop in self.loops.items():
             if loop.is_running() is True:
                 loop.cancel()
-                log.info("loop %s, on Cog %s was cancelled", loop_name. self.name)
+                log.info("loop %s, on Cog %s was cancelled", loop_name, self.name)
         log.debug("Cog '%s' UNLOADED!", str(self))
 
     def dump(self):

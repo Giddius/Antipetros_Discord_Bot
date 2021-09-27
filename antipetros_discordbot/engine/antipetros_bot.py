@@ -40,7 +40,7 @@ from antipetros_discordbot.auxiliary_classes.asking_items import AbstractUserAsk
 from antipetros_discordbot.cogs.community_events_cogs.voting_cog import VoteItem
 from discord.client import _cleanup_loop, _cancel_tasks
 from antipetros_discordbot.utility.sqldata_storager import general_db
-from antipetros_discordbot.utility.asyncio_helper import RestartBlocker
+from antipetros_discordbot.utility.asyncio_helper import RestartBlocker, message_delete
 import signal
 import platform
 # endregion[Imports]
@@ -133,6 +133,7 @@ class AntiPetrosBot(commands.Bot):
 
     max_message_length = 1900
     schema = AntiPetrosBotSchema()
+    is_shutting_down_event = asyncio.Event()
 # endregion[ClassAttributes]
 
     def __init__(self, token: str = None, ** kwargs):
@@ -164,6 +165,7 @@ class AntiPetrosBot(commands.Bot):
         self.to_update_methods.append(self.ToUpdateItem(self.update_prefix_params, [UpdateTypus.CONFIG, UpdateTypus.CYCLIC]))
         self.after_invoke(self.after_command_invocation)
         self.restart_blocker: RestartBlocker = RestartBlocker()
+        self.updated_lock = asyncio.Lock()
         self._setup()
 
         glog.class_init_notification(log, self)
@@ -515,7 +517,8 @@ class AntiPetrosBot(commands.Bot):
             self.used_startup_message = await channel.send(**embed_data, delete_after=delete_time)
         else:
             msg = f"{title}\n\n{description}\n\n{image}"
-            self.used_startup_message = await channel.send(msg, delete_after=delete_time)
+            self.used_startup_message = await channel.send(msg)
+            await message_delete(self.used_startup_message, delete_time, self.is_shutting_down_event)
 
     async def _handle_previous_shutdown_msg(self) -> None:
         log.debug("shutdown_message_pickle_file = %s, exists=%s", self.shutdown_message_pickle_file, str(os.path.isfile(self.shutdown_message_pickle_file)))
@@ -627,6 +630,15 @@ class AntiPetrosBot(commands.Bot):
                 shutil.rmtree(item.path)
 
     async def close(self) -> None:
+        self.is_shutting_down_event.set()
+        log.info("waiting on cleanup message tasks.")
+
+        for task in asyncio.all_tasks():
+            if any(task.get_name().startswith(prefix) for prefix in {'TEMP_EMOJI_REMOVAL', 'TEMP_MESSAGE_REMOVAL', "INVOCATION_MESSAGE_REMOVAL", "DELETE_AFTER_MESSAGE_REMOVAL", "STORED_MESSAGE_REMOVAL"}):
+                if task.done():
+                    continue
+                await task
+                log.info("cleanup message task done: %r", task.get_name())
         self._watch_for_alias_changes.cancel()
 
         self._watch_for_config_changes.cancel()
@@ -643,6 +655,7 @@ class AntiPetrosBot(commands.Bot):
         except Exception as error:
             log.error(error, exc_info=True)
         log.info("calling bot method super().close()")
+
         await super().close()
         self._clean_temp_folder()
         time.sleep(2)

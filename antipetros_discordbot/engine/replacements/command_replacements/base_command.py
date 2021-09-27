@@ -135,7 +135,7 @@ class AntiPetrosBaseCommand(commands.Command):
     def confirm_command_received_emoji(self):
         return self.bot.salute_emoji
 
-    def set_logged(self, value: bool):
+    def set_logged(self, value: bool = True):
         self.notifications[self._logged_notifier] = value
 
     async def _check_rate_limited(self):
@@ -162,6 +162,8 @@ class AntiPetrosBaseCommand(commands.Command):
         thumbnail = None
         footer = None
         embed_data = await self.bot.make_generic_embed(title=title, description=description, thumbnail=thumbnail, footer=footer)
+        args = [i for i in ctx.args if not isinstance(i, (commands.Context, commands.Cog))]
+        log.critical("Command %r from Cog %r was invoked by %r(%r) in %r(%r), args_used: %r", self.name, self.cog.name, ctx.author.name, ctx.author.id, ctx.channel.name, ctx.channel.id, args)
         await ctx.temp_send(**embed_data, allowed_mentions=discord.AllowedMentions.none())
 
     async def _confirm_command_received_notifier(self, ctx: commands.Context):
@@ -179,7 +181,7 @@ class AntiPetrosBaseCommand(commands.Command):
         await super().call_after_hooks(ctx)
         await ctx.delete_temp_items()
         if self.clear_invocation is True:
-            asyncio.create_task(delete_message_if_text_channel(ctx))
+            asyncio.create_task(delete_message_if_text_channel(ctx), name="INVOCATION_MESSAGE_REMOVAL")
 
     @singledispatchmethod
     def handle_category_kwargs(self, categories: Any):

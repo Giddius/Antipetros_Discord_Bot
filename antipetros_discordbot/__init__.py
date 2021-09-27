@@ -1,7 +1,8 @@
 """
 A Discord Bot for the Antistasi (ArmA 3) Community Discord Server
 """
-__version__ = '2.1.4'
+__version__ = '2.1.5'
+
 
 import os
 from importlib.metadata import metadata
@@ -51,3 +52,4 @@ def set_env():
 
 set_env()
 os.environ['COLLECT_ATTACHMENT_TYPES_ENABLED'] = "0"
+print(__file__)

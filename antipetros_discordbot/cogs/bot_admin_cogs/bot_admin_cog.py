@@ -88,7 +88,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Init]
 
-
     def __init__(self, bot: "AntiPetrosBot"):
         self.listeners_enabled = {'stop_the_reaction_petros_listener': False}
         super().__init__(bot)
@@ -127,7 +126,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Loops]
 
-
     @tasks.loop(minutes=5)
     async def check_ws_rate_limit_loop(self):
         is_rate_limited = self.bot.is_ws_ratelimited()
@@ -158,7 +156,6 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 
 # region [Listener]
 
-
     @commands.Cog.listener(name='on_reaction_add')
     async def stop_the_reaction_petros_listener(self, reaction: discord.Reaction, user):
         if self.completely_ready is False:
@@ -174,6 +171,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Listener]
 
 # region[Commands]
+
 
     @auto_meta_info_command(logged=True, clear_invocation=True)
     @owner_or_admin()
@@ -280,9 +278,9 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
             await ctx.send(**_embed_data, delete_after=_delete_time)
             await ctx.message.delete(delay=float(_delete_time))
 
-    @auto_meta_info_command(aliases=['die', 'rip', 'go-away', 'go_away', 'go.away', 'goaway', 'get_banned'])
+    @auto_meta_info_command(aliases=['die', 'rip', 'go-away', 'go_away', 'go.away', 'goaway', 'get_banned'], logged=True)
     @owner_or_admin()
-    async def shutdown(self, ctx, *, reason: str = 'No reason given'):
+    async def shutdown(self, ctx: commands.Context, *, reason: str = 'No reason given'):
         """
         Shuts the bot down, via normal shutdown procedure.
 
@@ -294,7 +292,11 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
         """
         log.critical('shutdown command received from "%s" with reason: "%s"', ctx.author.name, reason)
         await ctx.message.delete()
-        await self.bot.shutdown_mechanic()
+        await asyncio.sleep(5)
+        wait_msg = await ctx.send('Waiting for all running remarks to finish')
+        async with self.bot.restart_blocker.wait_until_unblocked():
+            await wait_msg.delete()
+            await self.bot.shutdown_mechanic(ctx=ctx)
 
     @ auto_meta_info_command(aliases=['you_dead?', 'are-you-there', 'poke-with-stick'])
     async def life_check(self, ctx: commands.Context):
@@ -452,6 +454,7 @@ class BotAdminCog(AntiPetrosBaseCog, command_attrs={'hidden': True, 'categories'
 # endregion[Helper]
 
 # region [SpecialMethods]
+
 
     def cog_check(self, ctx):
         return True

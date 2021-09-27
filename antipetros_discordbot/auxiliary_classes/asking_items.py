@@ -368,7 +368,6 @@ class AbstractUserAsking(ABC):
 
     async def on_cancel(self, answer):
         if AskAnswer.CANCELED in self.error_on:
-            await self.channel.send("Remark was **Canceled!**")
             raise AskCanceledError(self, answer)
 
         return self.CANCELED
