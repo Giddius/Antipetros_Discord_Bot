@@ -134,6 +134,7 @@ class AntiPetrosBot(commands.Bot):
     max_message_length = 1900
     schema = AntiPetrosBotSchema()
     is_shutting_down_event = asyncio.Event()
+    is_shutting_down_event.clear()
 # endregion[ClassAttributes]
 
     def __init__(self, token: str = None, ** kwargs):

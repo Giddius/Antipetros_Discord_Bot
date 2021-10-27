@@ -402,7 +402,7 @@ class GeneralDebugCog(AntiPetrosBaseCog, command_attrs={'hidden': True}):
         html = HTML_TEMPLATE.format(content=mistune.html(text_data))
         weasy_html = await asyncio.to_thread(HTML, string=html)
         with BytesIO() as bytefile:
-            await asyncio.to_thread(weasy_html.write_png, bytefile, optimize_images=True, presentational_hints=True, resolution=96, stylesheets=[r"C:\Users\Giddi\Downloads\style.css"])
+            await asyncio.to_thread(weasy_html.write_png, bytefile, optimize_images=True, presentational_hints=True, resolution=96)
             bytefile.seek(0)
             html_image_file = discord.File(bytefile, "blah.png")
         with BytesIO() as bytefile:

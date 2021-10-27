@@ -472,7 +472,7 @@ class KlimBimCog(AntiPetrosBaseCog, command_attrs={'hidden': False, "categories"
             select_amount (Optional[int], optional): How many items to select. Defaults to 1.
 
         Example:
-            `@AntiPetros 2 this is the first item; this is the second; this is the third`
+            `@AntiPetros choose_random 2 this is the first item; this is the second; this is the third`
         """
         if select_amount > 25:
             embed_data = await self.bot.make_generic_embed(title="Amount too high",

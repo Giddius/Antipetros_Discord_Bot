@@ -149,9 +149,7 @@ class AntiPetrosBaseContext(commands.Context):
             asyncio.create_task(_remove_temp_reaction(emoji, 15), name=f'TEMP_EMOJI_REMOVAL_{emoji}')
 
     async def delete_after(self, msg: discord.Message, delay: float = None):
-        done, pending = await asyncio.wait([self.bot.is_shutting_down_event.wait()], timeout=delay, return_when=asyncio.FIRST_COMPLETED)
-        for pending_aws in pending:
-            pending_aws.cancel()
+        await asyncio.wait_for(self.bot.is_shutting_down_event.wait(), delay)
         try:
             await msg.delete()
         except discord.errors.NotFound:

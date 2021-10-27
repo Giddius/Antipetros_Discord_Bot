@@ -18,7 +18,7 @@ from textwrap import indent, dedent
 import re
 from asyncstdlib import map as async_map
 from typing import TYPE_CHECKING, Union, Iterable, Callable, Any, IO, Optional, List, Tuple, Set, Dict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from functools import cached_property, total_ordering
 from dateparser import parse as date_parse
 from collections import namedtuple, deque
@@ -583,10 +583,16 @@ class ServerItem:
         self.on_notification_timeout = {ServerStatus.ON: False, ServerStatus.OFF: False}
         self.last_restart_request_received = None
         self.is_online_message = None
+        self._long_restart_warning_timeout = False
 
     async def retrieve_is_online_message(self):
         self.is_online_message = await IsOnlineMessage.load(server=self)
         return self.is_online_message
+
+    @property
+    def last_restart_notification_threshold(self) -> timedelta:
+        _out = COGS_CONFIG.retrieve(self.cog.config_name, 'last_restart_notification_threshold', typus=int, direct_fallback=8)
+        return timedelta(hours=_out)
 
     @property
     def has_access_to_logs(self):
@@ -627,10 +633,18 @@ class ServerItem:
             await asyncio.sleep(0)
 
     async def get_last_restarted_at_pretty(self) -> str:
+        async def set_long_restart_timeout():
+            self._long_restart_warning_timeout = True
+            await asyncio.sleep(self.last_restart_notification_threshold.total_seconds() / 2)
+            self._long_restart_warning_timeout = False
         last_restarted = await self.get_last_restarted_at()
         if last_restarted is not None:
             as_date_and_time = last_restarted.strftime(self.cog.bot.std_date_time_format_utc)
             timespan_seconds = (datetime.now(tz=timezone.utc) - last_restarted).total_seconds()
+            if timespan_seconds >= self.last_restart_notification_threshold.total_seconds() and self._long_restart_warning_timeout is False:
+                channel = self.cog.bot.channel_from_id(645930607683174401)
+                await channel.send(f"⚠️ __**WARNING**__ ⚠️\n\n`{self.pretty_name}` has not been restarted for more than {alt_seconds_to_pretty(timespan_seconds)}.")
+                asyncio.create_task(set_long_restart_timeout())
             as_timespan = await asyncio.to_thread(alt_seconds_to_pretty, seconds=timespan_seconds, last_separator=' and ')
             return f"> {as_timespan} ago.\n> `{as_date_and_time}`"
 
